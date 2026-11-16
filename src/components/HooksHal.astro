@@ -420,6 +420,7 @@ const feiten = [...c.trust, (nl ? ['In de offerte', 'levertijd'] : ['In the quot
 const kaartBeeld = !kopBeeld;
 const BEELD = {
   soort: 'getal' as const,
+  kaart: true,   /* levering 108: op een kaart van het veld (lijst 105) */
   label: 'Hook · 9:16',
   voor: lang === 'nl' ? 'vanaf' : 'from', getal: euro(AMOUNT.hooks, lang), eenheid: 'per hook',
   voet: lang === 'nl' ? `${vatLabel('excl', 'nl')}. Op aanvraag: je krijgt eerst schriftelijk een prijs.` : `${vatLabel('excl', 'en')}. On request: you get a written price first.`,

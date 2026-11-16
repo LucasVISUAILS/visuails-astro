@@ -1,4 +1,5 @@
 ---
+import { openingVersie } from '../data/openingStanden.js';  /* levering 99: ?v= op de beelden van de proef (letter77) */
 /**
  * VISUAILS — de voorpagina ("de witte hal"), sinds 12 oktober 2026.
  * ═══════════════════════════════════════════════════════════════════════════
@@ -58,8 +59,8 @@ import { catalogStyles as catalogNl } from '../data/catalogStyles.nl.js';
 import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
 import HalOpening80 from './HalOpening80.astro';
 import HalBanner94 from './HalBanner94.astro';
+import HalOnderVideo110 from './HalOnderVideo110.astro';
 import HalGalerij80 from './HalGalerij80.astro';
-import HalPoster89 from './HalPoster89.astro';
 import HalMaken80 from './HalMaken80.astro';
 import HalHoeKort80 from './HalHoeKort80.astro';
 import Aanbevelingen from './Aanbevelingen.astro';
@@ -68,6 +69,7 @@ import Aanbevelingen from './Aanbevelingen.astro';
 import '../styles/voorpagina-rust.css';
 import '../styles/voorpagina-78.css';
 import '../styles/voorpagina-80.css';
+import '../styles/voorpagina-105.css';   /* fase 3 van het kaartveld: links en rechts (lijst 113) */
 /* Levering 75 (Lucas, 25 oktober, 23:35): stap 2 van catalog is alleen nog de lagen in 3D
    ("veel korter en simpeler, wel met de 3 lagen erin"). Het handwerk ervoor (rechtzetten,
    opbouwen, nakijken, de pen; scripts/maak-recht.py en maak-pad.py) staat niet meer op de pagina. */
@@ -131,19 +133,25 @@ const COPY = {
     makenLabel: 'Wat we maken', makenKop: ['Elk beeld voor je merk.', 'Van productpagina tot feed.'],
     /* levering 78: wat er verder is, zodat niemand denkt dat het hier ophoudt (Lucas, 16:50) */
     ookKop: 'Ook voor jouw merk',
+    /* levering 99 (lijst 100 A3 a en E2) */
+    vrij: ['De beelden zijn van jou: gebruik ze in je webshop, op Instagram, TikTok, in advertenties of in print. De animaties laten zien wat de meeste merken doen; jij beslist.', 'Wat je mag', '/terms#intellectueel-eigendom-gebruiksrechten'],
+    bestelTekst: 'Bestel dit',
     /* levering 95 (lijst 95, A1 a): hooks en de eigen look zijn kaarten bij Wat we maken geworden */
     ook: [['Je eigen merkmodel', '/custom-models'], ['Een abonnement', '/plans']],
     ookAnders: ['Iets anders nodig?', 'Vraag het ons', '/contact'],
     diensten: [
-      ['Productfoto’s', `vanaf ${e(ladderFloor('catalog'))} per product`, '/catalog', 'Voorkant, achterkant, detail en op model, op de achtergrond die bij je merk past.', 'Bekijk productfoto’s'],
-      ['Lifestyle', `vanaf ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Je product in een sfeer: vier beelden in één look, klaar voor een carrousel.', 'Bekijk lifestyle'],
-      ['Video', videoPrijsLabel('nl'), '/video', 'Een korte, verticale clip van je product, voor Reels en je webshop.', 'Bekijk video'],
+      ['Productfoto’s', `vanaf ${e(ladderFloor('catalog'))} per product`, '/catalog', 'Voorkant, achterkant, detail en op model, op de achtergrond die bij je merk past.', 'Bekijk productfoto’s', '/start#catalog'],
+      ['Lifestyle', `vanaf ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Je product in een sfeer: vier beelden in één look, klaar voor een carrousel.', 'Bekijk lifestyle', '/start#lifestyle'],
+      ['Video', videoPrijsLabel('nl'), '/video', 'Een korte, verticale clip van je product, voor Reels en je webshop.', 'Bekijk video', '/start#video'],
       ['Hooks', `vanaf ${e(AMOUNT.hooks)} per hook`, '/hooks', 'Een korte verticale clip voor je advertenties, 6 tot 8 seconden.', 'Bekijk hooks'],
-      ['Eigen look', lifestyleNl.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Je eigen wereld, gebouwd rond je product. Samen met ons bedacht.', 'Bekijk de eigen look'],
+      ['Eigen look', lifestyleNl.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Je eigen wereld, gebouwd rond je product. Samen met ons bedacht.', 'Bekijk de eigen look', '/start#op-maat'],
     ],
-    eenProduct: `Eén product: ${e(ladderRate('catalog', 1))} (catalog) of ${e(ladderRate('lifestyle', 1))} (lifestyle). Meer producten, lager tarief.`,
+    /* levering 110 (Lucas, 16 november 02:59: "het gebeurt te vaak dat alleen catalog en lifestyle als producten worden neergezet"):
+       onder Elk beeld voor je merk geen twee prijzen meer; de bedragen staan op /pricing */
+    eenProduct: 'Geprijsd per product: hoe meer je bestelt, hoe lager het tarief.',
     vorige: 'Vorige', volgende: 'Volgende', veeg: 'Veeg voor de andere twee',
-    galerijKop: 'Kies een look.', galerijZin: 'Elk beeld is een look die je kunt bestellen.', posterKop: 'Bouw de wereld van je merk.',
+    /* levering 99 (lijst 100, A5 met Lucas' notitie): "Pick a look mag ook aangepast worden naar Some examples … ik [wil] niet dat klanten hier een style kiezen" — subtieler; een klik op een beeld gaat nog steeds naar zijn look */
+    galerijKop: 'Een paar voorbeelden.', galerijZin: 'Wat we onder andere maken. Klik op een beeld voor de look.', galerijLabel: 'Voorbeelden', posterKop: 'Bouw de wereld van je merk.',
     looksLabel: 'Looks', looksKop: ['Kies een look.', 'Je collectie als één shoot.'], probeer: `Probeer · ${sample.price}`, bestelLook: 'Bestel deze look',
     vorigeLooks: 'Vorige look', volgendeLooks: 'Volgende look',
     kiesLook: 'Kies een look', kiesSoort: 'Kies een soort beeld', lookVan: (n: number | string, t: number) => `Look ${n} van ${t}`, bekijkLook: 'Bekijk de look',
@@ -184,18 +192,21 @@ const COPY = {
     restLink: 'More about the AI marking',
     makenLabel: 'What we make', makenKop: ['Every image for your brand.', 'From product page to feed.'],
     ookKop: 'Also for your brand',
+    vrij: ['The visuals are yours: use them in your shop, on Instagram, TikTok, in ads or in print. The animations show what most brands do; you decide.', 'What you may do', '/terms#intellectual-property-usage-rights'],
+    bestelTekst: 'Order this',
     ook: [['Your own brand model', '/custom-models'], ['A monthly plan', '/plans']],
     ookAnders: ['Need something else?', 'Ask us', '/contact'],
     diensten: [
-      ['Product photos', `from ${e(ladderFloor('catalog'))} per product`, '/catalog', 'Front, back, detail and on model, on the background that suits your brand.', 'See product photos'],
-      ['Lifestyle', `from ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Your product in a setting: four images in one look, ready for a carousel.', 'See lifestyle'],
-      ['Video', videoPrijsLabel('en'), '/video', 'A short, vertical clip of your product, for reels and your shop.', 'See video'],
+      ['Product photos', `from ${e(ladderFloor('catalog'))} per product`, '/catalog', 'Front, back, detail and on model, on the background that suits your brand.', 'See product photos', '/start#catalog'],
+      ['Lifestyle', `from ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Your product in a setting: four images in one look, ready for a carousel.', 'See lifestyle', '/start#lifestyle'],
+      ['Video', videoPrijsLabel('en'), '/video', 'A short, vertical clip of your product, for reels and your shop.', 'See video', '/start#video'],
       ['Hooks', `from ${e(AMOUNT.hooks)} per hook`, '/hooks', 'A short vertical clip for your ads, 6 to 8 seconds.', 'See hooks'],
-      ['Your own look', lifestyleEn.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Your own world, built around your product. Thought up together with us.', 'See your own look'],
+      ['Your own look', lifestyleEn.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Your own world, built around your product. Thought up together with us.', 'See your own look', '/start#op-maat'],
     ],
-    eenProduct: `One product: ${e(ladderRate('catalog', 1))} (catalog) or ${e(ladderRate('lifestyle', 1))} (lifestyle). More products, a lower rate.`,
+    /* levering 110: see the Dutch above — no longer two prices under "Every image for your brand"; the amounts live on /pricing */
+    eenProduct: 'Priced per product: the more you order, the lower the rate.',
     vorige: 'Previous', volgende: 'Next', veeg: 'Swipe for the other two',
-    galerijKop: 'Pick a look.', galerijZin: 'Every image is a look you can order.', posterKop: 'Build the world of your brand.',
+    galerijKop: 'Some examples.', galerijZin: 'A few of the things we make. Click an image to see its look.', galerijLabel: 'Examples', posterKop: 'Build the world of your brand.',
     looksLabel: 'Looks', looksKop: ['Pick a look.', 'Your collection as one shoot.'], probeer: `Try · ${sample.price}`, bestelLook: 'Order this look',
     vorigeLooks: 'Previous look', volgendeLooks: 'Next look',
     kiesLook: 'Pick a look', kiesSoort: 'Pick a kind of image', lookVan: (n: number | string, t: number) => `Look ${n} of ${t}`, bekijkLook: 'See the look',
@@ -264,16 +275,20 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
     link={{ label: c.proefLink80, href: lp('/test-sample') }}
     klantLink={{ label: KLANT[lang].studio, href: '/account' }} />
 
+  {/* ── ONDER DE VIDEO — levering 110 (lijst 121, 122): wat VISUAILS doet en wat de klant eraan heeft, in de woorden van
+      Lucas (16 november, 03:29). Op de telefoon na het vlak met de stappen. */}
+  <HalOnderVideo110 lang={lang} />
+
   {/* ── WAT WE MAKEN — levering 80 (lijst 64, s-maken) ──────────────────────────
       Lucas: "Echt heel weinig informatie geven en de klant meer te weten laten komen wanneer hij voor een
       categorie kiest." Per dienst één uitgeknipt product met zijn schaduw, de naam, de vanafprijs en de
       link (HalMaken80.astro). Was (76 – 79): het productvel met tabs. De opening glijdt na de video
       hierheen en zet hem in het midden van het scherm. */}
-  <HalMaken80 lang={lang} label={c.makenLabel} kop={c.makenKop[0]} zin={c.makenKop[1]} diensten={c.diensten as string[][]} ookKop={c.ookKop} ook={c.ook as string[][]} eenProduct={c.eenProduct} />
+  <HalMaken80 rij105 lang={lang} label={c.makenLabel} kop={c.makenKop[0]} zin={c.makenKop[1]} diensten={c.diensten as string[][]} ookKop={c.ookKop} ook={c.ook as string[][]} eenProduct={c.eenProduct} vrij={c.vrij as string[]} bestelTekst={c.bestelTekst} />
 
   {/* ── HOE HET WERKT — levering 96 (lijst 96, A2 a): omhoog, direct na Wat we maken: wie het ziet weet meteen dat wij de
       beelden maken. Met de vaste sectiekop (was een kop alleen voor een schermlezer). */}
-  <HalHoeKort80 lang={lang} titel={c.hoeLabel} kop={c.hoeKop96} stappen={(c.stappen as string[][]).map((s) => s[0])} levertijd={LEVERTIJD} link={c.hoeLink80} />
+  <HalHoeKort80 rij105 lang={lang} titel={c.hoeLabel} kop={c.hoeKop96} stappen={(c.stappen as string[][]).map((s) => s[0])} levertijd={LEVERTIJD} link={c.hoeLink80} />
 
   {/* ── DE LAPTOP — sinds levering 94 onder Wat we maken (lijst 92, laptop b), zonder eigen kop: de webshop, het bericht en
       de clip uit de bannervideo in het scherm, met zijn telefoonfoto K3 bij de clip. Eén scroll speelt hem dicht. */}
@@ -319,20 +334,23 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       tegengestelde richting schuiven … Klanten kunnen op een specifieke foto klikken … en worden dan naar
       de juiste plek geleid waar ze die style kunnen bestellen." Vervangt "Kies een look" (76 – 79: één
       look groot, de proef, de gezichten). HalGalerij80.astro. */}
-  <HalGalerij80 lang={lang} label={c.looksLabel} kop={c.galerijKop} zin={c.galerijZin} />
+  <HalGalerij80 lang={lang} label={c.galerijLabel} kop={c.galerijKop} zin={c.galerijZin} />
 
   {/* ── 04b · DE LOGOPOSTER — levering 89 (lijst 81, C1; was levering 80) ──────────
       Het veld p2 (de Snede, met korrel) loopt boven en onder in het wit van de pagina uit; het scrollen speelt
       de animatie van het tekstlogo: de letters gaan de V in, en de V wordt het venster op de foto
       (HalPoster89.astro, src/scripts/poster89.js). De blauwe fade van levering 80 is weg. */}
-  <HalPoster89 lang={lang} kop={c.posterKop} />
+  {/* ── DE POSTER — weg sinds levering 106 (lijst 114, V4: "Deze poster mag voor nu weg want voegt niet veel toe"). Tot
+      levering 105 HalPoster89 (het veld met de V); in lijst 113 even een foto over de hele breedte. */}
 
   {/* ── 04c · HOE HET WERKT, KORT — levering 80 (lijst 64, s-hoe) ─────────────────
       Drie stappen in één regel, de levertijd uit de code en de link naar de hele uitleg (HalHoeKort80.astro). */}
 
   {/* ── DE €1-PROEF — levering 96 (lijst 96, A2 a): voor de vragen; het slot sluit de pagina af. */}
-  <HalProef lang={lang} id="h-proef" label={c.proefLabel} kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '/start' }} />
-
+  {/* levering 99 (lijst 100 E1): ook hier NON/STD — voorkant, achterkant, detail en op model (zoals de opening en de kaarten) */}
+  {/* fase 3 (lijst 113): de €1-kaart links, de beelden rechts (voorpagina-105.css); voor een klant zijn eigen vier */}
+  <HalProef lang={lang} id="h-proef" label={c.proefLabel} kop={c.proefKop} zin={c.proefZin} alt={{ label: c.proefAlt, href: '/start' }}
+    beelden={['/img/hal/opening/galerij/hoodie-0.webp', '/img/hal/opening/galerij/hoodie-1.webp', '/img/hal/opening/galerij/hoodie-3.webp', '/img/hal/maken/lifestyle99/hoodie.webp'].map((src) => ({ src: `${src}?v=${openingVersie()}`, w: 880, h: 1100 }))} />
   {/* ── 05 · MEER WETEN ──────────────────────────────────────────────────── */}
   {/* Levering 76 (13:00): geen kaarten meer, maar de regels onder de knop van een productpagina:
       links de kop groot (het ene grote element van deze sectie), rechts drie regels met een
@@ -381,13 +399,19 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
       bestelde: zijn eigen look en zijn eigen beelden, geen €1 (v26-proefblok a). */}
 
   {/* ── HET SLOT — levering 96 (lijst 96, A2 a): de pagina krijgt een einde (stopte bij de vragen), met de knoppen. */}
-  <section class="slot96 sk-s" aria-labelledby="h-slot">
-    <SectieKop id="h-slot" label={c.slotLabel} kop={c.slotKop.join(' ')} />
-    <p class="slot96-zin">{c.slotZin}</p>
+  {/* fase 3 (lijst 113): de tekst links, het slot als kaart van het veld rechts */}
+  <section class="slot96 sk-s r105-slot" aria-labelledby="h-slot">
+    <div class="r105-tekst">
+      <SectieKop id="h-slot" label={c.slotLabel} kop={c.slotKop.join(' ')} />
+      <p class="slot96-zin">{c.slotZin}</p>
+    </div>
+    <div class="r105-slotkaart k-inkt" data-kaart>
+    <p class="r105-slotregel">{LEVERTIJD}.</p>
     <p class="slot96-knoppen">
       <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start')} {...startKnop(lang)}><span data-vis-label>{c.ctaStart}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
       <a class="h-link k k-tekst" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{c.proefLink80}<Fragment set:html={rolIkoon('doorgaan')} /></a>
     </p>
+    </div>
   </section>
 
   <ul class="h-vertrouwen" role="list">

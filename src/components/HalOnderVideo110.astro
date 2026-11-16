@@ -1,0 +1,25 @@
+---
+/* ═══════════════════════════════════════════════════════════════════════════
+   ONDER DE VIDEO — levering 110, 16 november 2026 (lijst 121, lijst 122)
+   Lucas, 02:59: "onder de video een klein beetje informatie verschaffen, vlak onder de video zoals in het voorbeeld, wat
+   VISUAILS inhoudelijk is en wat de klant eraan gaat hebben. Dit moet echt sterk zijn en niet te lang." De tekst is van
+   hem (03:29). Links de kop, rechts het label en twee zinnen: de eerste in inkt (wat we doen), de rest in grijs (wat de
+   klant eraan heeft). De rechterkolom staat onder het witte vlak van de banner (zelfde breedte, --b94-paneel). Op de
+   telefoon komt het blok na het vlak met de stappen, zodat de knop dicht bij de video blijft (lijst 121, Q3 a).
+   Geen sectiekop met nummer: dit hoort bij de banner, niet bij de secties eronder.
+   ═══════════════════════════════════════════════════════════════════════════ */
+import '../styles/onder-video-110.css';
+import { BANNER } from '../data/banner94.js';
+interface Props { lang: 'en' | 'nl' }
+const { lang } = Astro.props;
+const T = BANNER[lang].onder;
+---
+<section class="ov110" aria-labelledby="ov110-kop">
+  <div class="ov110-in">
+    <div class="ov110-kopvak"><h2 id="ov110-kop" class="ov110-kop">{T.kop}</h2></div>
+    <div class="ov110-tekst">
+      <p class="ov110-lbl"><i aria-hidden="true"></i>{T.label}</p>
+      <p class="ov110-zin"><b>{T.wat}</b> {T.waarom}</p>
+    </div>
+  </div>
+</section>

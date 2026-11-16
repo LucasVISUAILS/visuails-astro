@@ -1,0 +1,39 @@
+/* ═══ LEVERING 100 · STAP 2 · DE KAARTEN (14 november 2026; kladblok/PLAN-KAARTVELD-100.md) ═══════════════════════════
+   Elke kaart is een venster op de grote kaart (src/scripts/kaartveld.js). De vier fotoblokken van lijst 86 (het €1-blok, het
+   slot, de Studiobrief, de 404) worden kaarten: de foto en de glazen plaat gaan weg (Lucas 03:47: "Die glasplaten mogen
+   helemaal weg"), de tekst staat direct op de kaart en het licht wijkt eronder. Hoeken 18 px, zoals het veld ze tekent.
+   Tot het veld er is, en zonder WebGL: een verloop van mint 700 via mint 800 naar zwart (wit erop minstens 7,0 : 1).
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-footer .sb, .h-gd-brief, .h-ed-brief, .h-nf-getal) {
+  background: linear-gradient(135deg, #016645 0%, #023D29 45%, #090D0B 100%) !important;
+  border-radius: 18px !important; border: 0 !important; box-shadow: none !important;
+  position: relative; isolation: isolate; overflow: visible !important; color: #FFFFFF;
+}
+html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-footer .sb, .h-gd-brief, .h-ed-brief, .h-nf-getal).kv-aan { background: transparent !important; }   /* het veld dekt de kaart; in de ader schijnt het wit van de pagina door, niet een zwarte rand (17:19) */
+
+/* het doek van de kaart: 150 px ruimer dan de kaart (de aderen), achter de inhoud */
+html body.hal canvas.kv-doek:not(#k):not(#k) {
+  position: absolute !important; inset: -150px !important; width: calc(100% + 300px) !important; height: calc(100% + 300px) !important;
+  max-width: none !important; margin: 0 !important; padding: 0 !important; flex: none !important; grid-area: auto !important;
+  z-index: -1 !important; pointer-events: none; opacity: 0; transition: opacity .8s cubic-bezier(.22, .8, .2, 1);
+}
+html body.hal .kv-aan > canvas.kv-doek:not(#k):not(#k) { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { html body.hal canvas.kv-doek { transition: none; } }
+
+/* de glazen platen weg */
+html body.hal :is(.h-proef > .h-proef-woord, .site-footer .sb, .h-gd-brief, .h-ed-brief)::before { display: none !important; }
+html body.hal .fb-glas { background: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: none !important; border-radius: 0 !important; }   /* geen plaat meer, dus ook geen hoeken (hoekregel) */
+
+/* Aanmelden in de Studiobrief: wit met zwart; onder de muis schuift mint van links naar rechts (geen blauw meer) */
+html body.hal :is(.site-footer .sb, .h-gd-brief, .h-ed-brief) .sb-veld button {
+  background: #FFFFFF linear-gradient(90deg, #3DFFB0 0 50%, #FFFFFF 50% 100%) 100% 0 / 200% 100% no-repeat !important;
+}
+html body.hal :is(.site-footer .sb, .h-gd-brief, .h-ed-brief) .sb-veld button:is(:hover, :focus-visible) {
+  background: #3DFFB0 linear-gradient(90deg, #3DFFB0 0 50%, #FFFFFF 50% 100%) 0 0 / 200% 100% no-repeat !important;
+}
+
+/* hoog contrast: geen veld, het vlak in de systeemkleur */
+@media (forced-colors: active) {
+  html body.hal canvas.kv-doek { display: none; }
+  html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-footer .sb, .h-gd-brief, .h-ed-brief, .h-nf-getal) { background: Canvas !important; }
+}

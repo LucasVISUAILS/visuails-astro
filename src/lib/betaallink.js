@@ -30,6 +30,7 @@ import {
   C as MAILKLEUR,
 } from './mailTemplate.js';
 import { BETALEN_NA_BTW_AKKOORD, VERVAL_DAG } from '../data/termijnen.js';
+import { DIENST_NAAM as OP_MAAT_NAAM } from '../data/opMaat.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
@@ -90,6 +91,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
   try {
     const dj = JSON.parse(o.details_json || '{}') || {};
     if (o.service === 'custom' && dj.request === 'custom-look') svcNaam = lang === 'nl' ? 'Eigen look' : 'Custom look';
+    /* Op maat (15 november 2026): de dienst zelf, "Catalog op maat". */
+    if (o.service === 'custom' && dj.request === 'op-maat') svcNaam = OP_MAAT_NAAM[lang][dj.opmaat_dienst] || svcNaam;
   } catch { /* dan het label */ }
 
   /* ── DE LINK IN DE MAIL IS ONZE EIGEN, NIET DIE VAN MOLLIE — 24 september 2026
@@ -125,6 +128,10 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     ? (lang === 'nl'
       ? `<strong>Dit is het restant</strong> van ${esc(d.restant_van || '')}, na je aanbetaling. Daarna is alles betaald.`
       : `<strong>This is the remainder</strong> of ${esc(d.restant_van || '')}, after your deposit. After this everything is paid.`)
+    : aanbetaling && d.request === 'op-maat'
+    ? (lang === 'nl'
+      ? `<strong>Dit is de helft</strong> van je offerte van ${esc(euro(Math.round((Number(d.opmaat_totaal) || 0) * 100)))} excl. btw. De andere helft (${esc(euro(Math.round((Number(d.opmaat_rest) || 0) * 100)))} excl. btw) betaal je bij levering, met een eigen betaallink.`
+      : `<strong>This is half</strong> of your quote of ${esc(euro(Math.round((Number(d.opmaat_totaal) || 0) * 100)))} excl. VAT. You pay the other half (${esc(euro(Math.round((Number(d.opmaat_rest) || 0) * 100)))} excl. VAT) on delivery, with its own payment link.`)
     : aanbetaling
     ? (lang === 'nl'
       ? `<strong>Dit is een aanbetaling</strong>, niet de volledige prijs. Het restant spreken we met je af zodra we weten wat het wordt, en daarvoor krijg je een aparte betaallink. Blijkt je idee niet te maken met onze werkwijze, dan krijg je de aanbetaling terug.`

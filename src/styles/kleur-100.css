@@ -1,0 +1,82 @@
+/* ═══ LEVERING 100 · ZWART, WIT EN MINT (14 november 2026, lijst 104; docs/KLEURENSCHEMA.md "Levering 100") ═══════════
+   Laatst geladen (na zonder-snede-99.css). De kleurwaarden zelf zijn in alle stijlbladen omgezet (zwart #090D0B, wit, de
+   grijzen in de toon van het zwart; blauw uur werd mint 700, blauw diep mint 800, blauw licht mint). Hier staan alleen
+   de regels die een rol veranderen.
+   ════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Geselecteerde tekst: mint 300 met zwart (15,3 : 1) */
+body.hal ::selection, ::selection { background: #9DF5D2; color: #090D0B; }
+
+/* De voet is zwart (Lucas, 04:55), met witte tekst; lopende tekst en kleine koppen 78 % (12,5 : 1) */
+body.hal .site-footer {
+  background: #090D0B !important;
+  color: #FFFFFF;
+  border-top: 0 !important;
+  --ink: #FFFFFF; --ink-1: #FFFFFF; --ink-2: rgba(255, 255, 255, .78); --ink-3: rgba(255, 255, 255, .78);
+}
+body.hal .site-footer,
+body.hal .site-footer p,
+body.hal .site-footer li,
+body.hal .site-footer small,
+body.hal .site-footer .footer-h { color: rgba(255, 255, 255, .78) !important; }
+body.hal .site-footer a,
+body.hal .site-footer .brand,
+body.hal .site-footer strong { color: #FFFFFF !important; }
+body.hal .site-footer a:hover { color: #FFFFFF !important; text-decoration-color: #3DFFB0 !important; }
+body.hal .site-footer :focus-visible { outline: 2px solid #3DFFB0 !important; outline-offset: 2px; }
+
+/* De kleine tekst onderin (©, Cookievoorkeuren): wit 78 % (12,5 : 1) */
+body.hal .site-footer .footer-bottom span,
+body.hal .site-footer .foot-cc { color: rgba(255, 255, 255, .78) !important; }
+body.hal .site-footer .foot-cc:hover { color: #FFFFFF !important; }
+
+/* De sociale knoppen: rond, een dunne witte rand, het icoon wit (de knop was wit, het icoon nu ook: onzichtbaar) */
+body.hal .site-footer a:empty { background: transparent !important; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .42) !important; }
+body.hal .site-footer a:empty::before { background-color: #FFFFFF !important; }
+body.hal .site-footer a:empty:hover { box-shadow: inset 0 0 0 1.5px #3DFFB0 !important; }
+
+/* Het logo op zwart is wit (het pakket 100: wit of mint op zwart); geen venster en geen snede meer in de voet */
+body.hal .site-footer .hal-wm-voet,
+body.hal .site-footer .hal-wm-voet use,
+body.hal .hal-wm-reus,
+body.hal .hal-wm-reus use { fill: #FFFFFF !important; color: #FFFFFF !important; }
+body.hal .site-footer .hal-wm-voet .mk-kleur { opacity: 0 !important; }
+
+/* Bestellen in de balk is mint met zwart (15,0 : 1); onder de muis schuift de diepe mint van links naar rechts (12,4 : 1),
+   zoals de andere knoppen die een bestelling beginnen (knoppen.css sectie J) */
+html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):not(#k):not(#k):not(#k):not(#k) {
+  background: #3DFFB0 linear-gradient(90deg, #1FEA9C 0 50%, #3DFFB0 50% 100%) 100% 0 / 200% 100% no-repeat !important;
+  color: #090D0B !important;
+}
+html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):is(:hover, :focus-visible):not(#k):not(#k):not(#k):not(#k) {
+  background: #1FEA9C linear-gradient(90deg, #1FEA9C 0 50%, #3DFFB0 50% 100%) 0 0 / 200% 100% no-repeat !important;
+}
+html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):focus-visible:not(#k):not(#k):not(#k):not(#k) { outline: 2px solid #3DFFB0 !important; outline-offset: 2px; }
+
+/* Het logo in de voet heeft geen venster meer (het stukje met korrel haalde op zwart geen 3 : 1, gemeten 2,72): onder de muis
+   en met de toets erop wordt het mint (15,0 : 1 op zwart), bij minder beweging meteen */
+body.hal .site-footer .hal-wm-voet .mk-raam { display: none !important; }
+body.hal .site-footer .footer-brand .brand :is(.hal-wm-voet, .hal-wm-voet use) { transition: fill .7s cubic-bezier(.22, .8, .2, 1); }
+body.hal .site-footer .footer-brand .brand:is(:hover, :focus-visible) :is(.hal-wm-voet, .hal-wm-voet use) { fill: #3DFFB0 !important; }
+@media (prefers-reduced-motion: reduce) { body.hal .site-footer .footer-brand .brand :is(.hal-wm-voet, .hal-wm-voet use) { transition: none; } }
+
+/* ═══ LIJST 106 · "BLAUW B" (14 november 2026) ═══════════════════════════════════════════════════════════════════
+   Links en de focusrand worden zwart. Mint 700 (#016645, 7,0 : 1 op wit) blijft alleen op drie plekken: het logo onder
+   de muis, "aandacht", en een zwarte knop onder de muis. De oude tokens heten nog blauw; hun waarde wordt hier zwart,
+   en de drie plekken die mint 700 houden krijgen hun kleur terug via --h-mint7. */
+:root, html body.hal, html body.studio { --h-blauw: #090D0B; --k-blauw: #090D0B; --focus-ring: #090D0B; --h-mint7: #016645; }
+/* een zwarte knop onder de muis: mint 700 met wit (7,0 : 1) */
+html body :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):is(:hover, :focus-visible):not(#k):not(#k) {
+  background: var(--h-mint7) var(--k-schuif) 0 0 / 200% 100% no-repeat;
+}
+html body.hal :is(.site-footer .btn-primary, .sb .sb-veld button, .h-mini-knop, .h-knop-inkt, .h-form .s22 .knop-inkt, .h-lk-slot .h-knop-inkt):is(:hover, :focus-visible):not(#k):not(#k) { background: var(--h-mint7); border-color: var(--h-mint7); }
+html body.werkplaats.hal .of-werk :is(.wk-paneel-eigen button, .pu-kies-knop):hover:not(#k) { background: var(--h-mint7); }
+html body.studio.st-hal .btn-primary:is(:hover, :focus-visible):not(#k) { background: var(--h-mint7); }
+/* het logo onder de muis: mint 700 (in de zwarte balk en de zwarte voet blijft het mint, zie hierboven) */
+.hal .hal-vm-lade, body.hal .hal-wm-reus:not(.site-footer *) { --mk-kleur: var(--h-mint7); }
+.hal .wm-echo-1, .hal .wm-echo-2 { fill: var(--h-mint7); }
+/* tekstlinks die het oude blauw letterlijk hadden (Studio, de poster): zwart */
+html body.studio.st-hal .st-link:not(#k) { color: #090D0B; background-image: linear-gradient(90deg, #090D0B, rgb(9 13 11 / .5) 45%, rgb(9 13 11 / 0)); }
+.p9 .p9-look:focus-visible:not(#k) { outline-color: #090D0B; }
+/* op zwart blijft de focusrand mint (de balk, de voet, de kaarten) */
+html body.hal :is(.site-header, .site-footer, .kv-aan) :focus-visible:not(#k):not(#k) { outline-color: #3DFFB0 !important; }

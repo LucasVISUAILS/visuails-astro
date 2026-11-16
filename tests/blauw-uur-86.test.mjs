@@ -35,8 +35,8 @@ const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 
 const lum = (k) => { const [r, g, b] = typeof k === 'string' ? rgb(k) : k; return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b); };
 const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 
-const SNEDE = ['#1A4279', '#25508B', '#2D61A8'];
-const LICHT = ['#25508B', '#2D61A8', '#44699D'];
+const SNEDE = ['#023D29', '#016645', '#11976A'];
+const LICHT = ['#016645', '#11976A', '#44699D'];
 
 /* ── 1 · de regel: alleen kleuren uit het schema, gemeten ── */
 console.log('\n1 · de regel');
@@ -47,9 +47,11 @@ ok('het blok van levering 86 staat onderaan hal.css', blok.length > 1000 && hal.
 const kleuren = [...new Set((blok.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9A-Fa-f]{6}\b|%23[0-9A-Fa-f]{6}\b/g) || []).map((k) => k.replace('%23', '#').toUpperCase()))];
 const inSchema = (k) => schema.toUpperCase().includes(k);
 ok('elke kleur in het blok staat in docs/KLEURENSCHEMA.md', kleuren.length >= 10 && kleuren.every(inSchema), kleuren.filter((k) => !inSchema(k)).join(' '));
-ok('de snede: wit op elke stop 6,2 : 1 of meer, en elke stop op wit', SNEDE.every((k) => contrast(k, '#FFFFFF') >= 6.2 && contrast(k, '#FBFCFF') >= 6.0), SNEDE.map((k) => contrast(k, '#FFFFFF').toFixed(2)).join(' · '));
-ok('de schommel naar het licht: elke stop op wit 5,6 : 1 of meer (het logo blijft leesbaar)', LICHT.every((k) => contrast(k, '#FFFFFF') >= 5.55), LICHT.map((k) => contrast(k, '#FFFFFF').toFixed(2)).join(' · '));
-ok('de witte knop vult zich met blauw licht en nevel: inkt erop 7 : 1 of meer', ['#80A7DD', '#A2B7D2'].every((k) => contrast(k, '#0F1217') >= 7), ['#80A7DD', '#A2B7D2'].map((k) => contrast(k, '#0F1217').toFixed(2)).join(' · '));
+/* levering 100: de snede is mint 800 → 700 → 600 (pakket 100); wit staat er niet meer op (het favicon en de tegel hebben de V
+   wit op het veld). VERVALLEN: wit op elke stop 6,2 : 1. Nu: als logo op wit haalt elke stop 3 : 1 of meer. */
+ok('de snede (levering 100): elke stop op wit 3 : 1 of meer (een logo)', SNEDE.every((k) => contrast(k, '#FFFFFF') >= 3), SNEDE.map((k) => contrast(k, '#FFFFFF').toFixed(2)).join(' · '));
+ok('de schommel naar het licht (levering 100): elke stop op wit 3 : 1 of meer (het logo blijft leesbaar)', LICHT.every((k) => contrast(k, '#FFFFFF') >= 3), LICHT.map((k) => contrast(k, '#FFFFFF').toFixed(2)).join(' · '));
+ok('de witte knop vult zich met blauw licht en nevel: inkt erop 7 : 1 of meer', ['#3DFFB0', '#A2B7D2'].every((k) => contrast(k, '#090D0B') >= 7), ['#3DFFB0', '#A2B7D2'].map((k) => contrast(k, '#090D0B').toFixed(2)).join(' · '));
 const hoeken = blok.match(/linear-gradient\((\d+(?:\.\d+)?)deg/g) || [];
 ok('elke schuine fade loopt langs de snede (126,87°); verder alleen recht (90° of 180°)', hoeken.length >= 10 && hoeken.every((h) => /\((126\.87|90|180)deg/.test(h)), [...new Set(hoeken)].join(' '));
 ok('geen fade in een kop of woord (geen background-clip: text)', !/background-clip:\s*text/.test(blok));
@@ -69,7 +71,7 @@ ok('het tekstlogo (K5) in de snede en in het licht: in de maten van #woordmerk (
   && /<linearGradient id="vs-w-snede" gradientUnits="userSpaceOnUse" x1=\{WS\.x1\} y1=\{WS\.y1\} x2=\{WS\.x2\} y2=\{WS\.y2\}>/.test(lay)
   && dist.includes(`id="vs-w-snede" gradientUnits="userSpaceOnUse" x1="0" y1="-712" x2="${WS.x2}" y2="${WS.y2}"`)
   && stops(grad('vs-w-snede')).join() === SNEDE.join() && stops(grad('vs-w-licht')).join() === LICHT.join());
-ok('het grote woordmerk loopt het wit in (blauw uur → nevel), en schommelt een stap lichter', stops(grad('vs-w-uitloop')).join() === '#25508B,#6283AF,#A2B7D2' && stops(grad('vs-w-uitloop-licht')).join() === '#2D61A8,#829DC0,#B9C7DE'
+ok('het grote woordmerk loopt het wit in (blauw uur → nevel), en schommelt een stap lichter', stops(grad('vs-w-uitloop')).join() === '#016645,#6283AF,#A2B7D2' && stops(grad('vs-w-uitloop-licht')).join() === '#11976A,#829DC0,#B9C7DE'
   && WU.y1 === -712 && WU.y2 === 12 && dist.includes('id="vs-w-uitloop" gradientUnits="userSpaceOnUse" x1="0" y1="-712" x2="0" y2="12"'));
 const sym = (lay.match(/<symbol id="markglyph" viewBox=[\s\S]*?<\/symbol>/) || [''])[0];
 ok('de paden van het V-merk zijn niet aangeraakt (geen fill in het symbool)', sym.includes('M 0.0 16.0 L 144.25 266.75 L 463.25 813.25') && !/fill=/.test(sym.replace(/\{\/\*[\s\S]*?\*\/\}/g, '')));
@@ -87,20 +89,20 @@ console.log('\n3 · de favicons en de mail');
 const fav = lees('public/favicon.svg');
 /* levering 89 (lijst 81, favicon c): een vierkante tegel met een veld (het omhulsel heeft korrel, de V niet; Lucas, 08:20:
    "Favicon logo krijgt geen korrel alleen het omhulsel"), de V wit en precies V_D */
-ok('favicon.svg: vorm c, een vierkant met het veld (grof en fijn) en de witte V erop, zonder korrel op de V', /<rect width="64" height="64" fill="#25508B"\/>/.test(fav) && !/rx=/.test(fav)
-  && /<image class="grof"[^>]*href="data:image\/png;base64,/.test(fav) && /<image class="fijn"[^>]*href="data:image\/webp;base64,/.test(fav)
-  && /<path fill="#FBFCFF" transform="translate\(11\.4198 11\.5585\) scale\(0\.05698006\)" d="M 0\.0 16\.0 L 144\.25 266\.75 L 463\.25 813\.25/.test(fav) && fav.lastIndexOf('<path') > fav.lastIndexOf('<image'));
+/* levering 100: het favicon uit pakket 100 (vorm c: het veld grof en fijn, de witte V erop, geen korrel op de V) */
+ok('favicon.svg (pakket 100): het veld grof en fijn en de witte V erop, de V als laatste', /<image class="grof"[^>]*href="data:image\/png;base64,/.test(fav) && /<image class="fijn"[^>]*href="data:image\/(webp|png);base64,/.test(fav) && /fill="#FFFFFF"/i.test(fav) && fav.lastIndexOf('<path') > fav.lastIndexOf('<image'));
 const pix = async (f, x, y) => { const { data, info } = await sharp(path.join(ROOT, f)).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); const i = (Math.round(y * (info.height - 1)) * info.width + Math.round(x * (info.width - 1))) * 4; return [data[i], data[i + 1], data[i + 2], data[i + 3]]; };
 const dichtbij = (a, h, d = 14) => rgb(h).every((v, i) => Math.abs(v - a[i]) <= d);
 {
   const hoek = await pix('public/favicon-512.png', 0, 0), lb = await pix('public/favicon-512.png', 0.22, 0.12), v = await pix('public/favicon-512.png', 0.5, 0.5), ap = await pix('public/apple-touch-icon.png', 0.03, 0.03), ar = await pix('public/apple-touch-icon.png', 0.97, 0.97);
-  ok('de favicons (16 – 512, apple-touch-icon): vierkant (de hoek is dicht), donker linksboven, de V wit', hoek[3] === 255 && lb[2] > lb[0] + 60 && lb[0] < 60 && dichtbij(v, '#FBFCFF', 8) && ap[2] > ap[0] + 60 && ar[3] === 255,
+  /* levering 100: het veld is zwart en groen (was blauw): donker linksboven, groen boven rood */
+  ok('de favicons (16 – 512, apple-touch-icon): vierkant (de hoek is dicht), donker en groen linksboven, de V wit', hoek[3] === 255 && lb[1] >= lb[0] + 15 && lb[0] < 60 && dichtbij(v, '#FFFFFF', 8) && ap[1] >= ap[0] + 15 && ar[3] === 255,
     [hoek, lb, v, ap, ar].map((p) => p.join(',')).join(' · '));
   ok('… alle maten van het pakket (16, 32, 48, 192, 512, ico, apple-touch-icon)', ['favicon-16.png', 'favicon-32.png', 'favicon-48.png', 'favicon-192.png', 'favicon-512.png', 'favicon.ico', 'apple-touch-icon.png'].every((f) => fs.existsSync(path.join(ROOT, 'public', f))));
 }
 const mail = lees('scripts/make-mail-assets.mjs');
-ok('de mail: het woordmerk op het witte plaatje in de snede, het streepje in de snede, het woordmerk in de voet loopt uit (nevel → mist)',
-  /\$\{WM_SNEDE\}<path fill="url\(#s\)" fill-rule="evenodd"/.test(mail) && /<path fill="url\(#s\)" d="M0 0H\$\{SW\}/.test(mail) && /stop-color="#A2B7D2"\/><stop offset="\.55" stop-color="#C4CEE0"\/><stop offset="1" stop-color="#E4E7ED"/.test(mail));
+ok('de mail: het woordmerk op het witte plaatje in de snede, het streepje in de snede, het woordmerk in de voet loopt uit (grijs, levering 111)',
+  /\$\{WM_SNEDE\}<path fill="url\(#s\)" fill-rule="evenodd"/.test(mail) && /<path fill="url\(#s\)" d="M0 0H\$\{SW\}/.test(mail) && /stop-color="#C6CAC8"\/><stop offset="\.55" stop-color="#DADDDB"\/><stop offset="1" stop-color="#EEF0EF"/.test(mail));   /* levering 111: de grijzen van de site */
 {
   /* in het plaatje: de V links is donkerder blauw dan de S rechts (de snede), en geen inkt meer */
   const { data, info } = await sharp(path.join(ROOT, 'public/img/mail/woordmerk-plaat.png')).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -108,7 +110,9 @@ ok('de mail: het woordmerk op het witte plaatje in de snede, het streepje in de 
   for (let y = 0; y < info.height; y += 2) for (let x = 0; x < info.width; x += 2) { const i = (y * info.width + x) * 4; const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]]; if (a > 250 && b > r + 50 && b - r < 140) blauw.push([x, r, g, b]); }
   const links = blauw.filter((p) => p[0] < info.width * 0.3), rechts = blauw.filter((p) => p[0] > info.width * 0.7);
   const gem = (l) => l.reduce((s, p) => s + p[3], 0) / l.length;
-  ok('… in het plaatje gemeten: blauw van links (diep) naar rechts (licht)', links.length > 200 && rechts.length > 200 && gem(rechts) > gem(links) + 15, `${links.length} · ${rechts.length} · ${gem(links).toFixed(0)} → ${gem(rechts).toFixed(0)}`);
+  /* levering 111 (lijst 123): het woordmerk is zwart #090D0B, er staat geen blauw meer in het plaatje */
+  const zwart = []; for (let y = 0; y < info.height; y += 2) for (let x = 0; x < info.width; x += 2) { const i = (y * info.width + x) * 4; if (data[i + 3] > 250 && data[i] < 40 && data[i + 1] < 40 && data[i + 2] < 40) zwart.push(x); }
+  ok('… in het plaatje gemeten: zwart en geen blauw (levering 111)', blauw.length === 0 && zwart.length > 400, `${blauw.length} blauw · ${zwart.length} zwart`);
 }
 
 /* ── 3b · elk ander logo (Lucas, 15:04: "Fix ook alle logo's in de map met de nieuwe looks") ── */
@@ -121,8 +125,8 @@ console.log('\n3b · elk ander logo');
   ok('de deelplaatjes (levering 89, op het raster): C1 voor elke pagina, C2b "Venster" voor de voorpagina, C3 voor de pagina\'s zonder kop; jpeg, 1200 × 630, hoogstens 300 kB',
     maten.every((m) => m && m[0] === 'jpeg' && m[1] === 1200 && m[2] === 630 && m[3] <= 300 * 1024) && !fs.existsSync(path.join(ROOT, 'public/img/og-nl.png')) && !fs.existsSync(path.join(ROOT, 'public/img/og-en.png')), JSON.stringify(maten));
   ok('… de pagina\'s wijzen ernaar: standaard og-<taal>.jpg, de voorpagina het venster, de 404 het logo', /const ogImage = ogEigen \?\? `\/img\/og-\$\{lang === 'nl' \? 'nl' : 'en'\}\.jpg`;/.test(lay) && /ogImage="\/img\/og-voorpagina-nl\.jpg"/.test(lees('src/pages/nl/index.astro')) && /ogImage="\/img\/og-voorpagina-en\.jpg"/.test(lees('src/pages/index.astro')) && /ogImage="\/img\/og-logo\.jpg"/.test(lees('src/pages/404.astro')));
-  ok('de V-tegel (avatar): wit op de snede, donker linksboven en licht rechtsonder', dichtbij(tegel[0], '#1A4279', 16) && dichtbij(tegel[1], '#2D61A8', 16), tegel.join(' · '));
-  ok('de oude ongebruikte logobeelden zijn het huidige logo geworden (logo-mark: wit met de V in de snede)', mark[2] > mark[0] + 40 || dichtbij(mark, '#FBFCFF', 6), String(mark));
+  ok('de V-tegel (avatar): wit op de snede, donker linksboven en licht rechtsonder', dichtbij(tegel[0], '#023D29', 16) && dichtbij(tegel[1], '#11976A', 16), tegel.join(' · '));
+  ok('de oude ongebruikte logobeelden zijn het huidige logo geworden (logo-mark: wit met de V in de snede)', mark[2] > mark[0] + 40 || dichtbij(mark, '#FFFFFF', 6), String(mark));
   ok('de fotogids: het tekstlogo K5 in de snede (snedeAttr uit woordmerk.js); het deelplaatje: K5 en de lockup uit woordmerk.js', /<linearGradient id="vs-fg-snede" \$\{snedeAttr\(\)\}>/.test(lees('scripts/lib/fotogids-html.mjs')) && /const \{ WOORDMERK, LOCKUP \} = await import\('\.\.\/src\/data\/woordmerk\.js'\);/.test(lees('scripts/make-og.mjs')));
   const fac = lees('src/lib/invoicePdf.js');
   ok('de factuur: het woordmerk als knipvlak met één axiaal verloop (ShadingType 2), langs de snede', /function svgSnede\(/.test(fac) && /ShadingType: 2/.test(fac) && (fac.match(/sheet\.svgSnede\(WOORDMERK_D/g) || []).length === 2 && !/sheet\.svg\(WOORDMERK_D/.test(fac));
@@ -134,10 +138,12 @@ console.log('\n3c · het deelplaatje en de fotogids in de letters van de site');
 {
   const og = lees('scripts/make-og.mjs').replace(/\/\*[\s\S]*?\*\//g, '');
   /* levering 89: het deelplaatje op het raster (u = korte zijde / 12; kladblok/levering-89, 89/l82/raster.json) */
-  ok('het deelplaatje: de kop in VISUAILS Display uit public/fonts, geen Urbanist meer',
-    /letter\('visuails-display\/VISUAILSDisplay-Bold\.woff2'\)/.test(og) && !/urbanist/i.test(og));
-  ok('  op het raster: u = 630 / 12, de kop in hoofdletters (-0,01 em), regelafstand 1,5 × kap, de laatste basislijn op 11 u, geen fade',
-    /const W = 1200, H = 630, U = H \/ 12;/.test(og) && /letter-spacing: -\.01em;/.test(og) && /toUpperCase\(\)/.test(og) && /lh = 1\.5 \* cap/.test(og) && /11 \* U/.test(og) && !/mask-image|transparent\)/.test(og));
+  /* levering 112 (fase 5 van levering 100): de kop is de titel van de voorpagina (banner94.js) in VISUAILS Display Blok, de
+     grond het kaartveld van de site; het raster blijft */
+  ok('het deelplaatje: de kop is de titel uit banner94.js in VISUAILS Display Blok uit public/fonts, geen Urbanist',
+    /import \{ BANNER \} from '\.\.\/src\/data\/banner94\.js';/.test(og) && /lees\('public\/fonts\/visuails-display\/VISUAILSDisplayBlok-Bold\.woff2'\)/.test(og) && !/urbanist/i.test(og) && !/TAGLINE/.test(og));
+  ok('  op het raster: u = 630 / 12, de kop in hoofdletters, de basislijn van de grote regel op 11 u; de grond is het kaartveld',
+    /const W = 1200, H = 630, U = H \/ 12;/.test(og) && /text-transform: uppercase;/.test(og) && /11 \* \$\{U\}/.test(og) && /src\/scripts\/kaartveld\.js/.test(og) && !/scripts\/veld\.js/.test(og) && !/mask-image/.test(og));
   const hl = lees('scripts/handleiding.mjs').replace(/\/\*[\s\S]*?\*\//g, '');
   ok('de fotogids: dezelfde drie letters uit public/fonts, geen Urbanist meer',
     ['VISUAILS Display', 'DM Sans', 'IBM Plex Mono'].every((f) => hl.includes(`['${f}', 'public/fonts/`)) && !/urbanist/i.test(hl));
@@ -147,28 +153,33 @@ console.log('\n3c · het deelplaatje en de fotogids in de letters van de site');
   /* levering 87 (lijst 74, knop pil): het statusplaatje is een pil zonder stip, zoals op de site */
   ok('  geen stip en geen bolletje meer; Nodig en Optioneel als pil (levering 87), het vinkje uit de kit',
     !/pil-kop|border-radius: 99mm|border-radius: 50%/.test(fg) && /\.label \{[^}]*border-radius: 999px;/.test(fg) && /IKOON\.vink/.test(fg));
-  ok('  de hoekregel: kaarten 24, de brede vlakken 32, het inktblok uit de nacht met zijn snede rechtsonder',
-    /--r-kaart: 24px; --r-vlak: 32px;/.test(fg) && /--nacht: #0F1217 linear-gradient\(126\.87deg, #0F1217 0%, #0F1217 38%, #172945 72%, #1A4279 100%\);/.test(fg)
-    && /clip-path: polygon\(0 0, 100% 0, 100% calc\(100% - 40px\), calc\(100% - 30px\) 100%, 0 100%\);/.test(fg));
+  /* de fotogids (een pdf, gemaakt door scripts/lib/fotogids-html.mjs): sinds levering 112 (fase 5 van levering 100) in zwart,
+     wit en mint; de indeling en de hoeken zijn gebleven */
+  ok('  de hoekregel: kaarten 24, de brede vlakken 32, het inktblok van zwart naar mint 700 met zijn snede rechtsonder; geen blauw uur meer',
+    /--r-kaart: 24px; --r-vlak: 32px;/.test(fg) && /--nacht: #090D0B linear-gradient\(126\.87deg, #090D0B 0%, #090D0B 38%, #023D29 72%, #016645 100%\);/.test(fg) && !/#1A4279|#25508B|#2D61A8|#172945|#0F1217/i.test(fg));
 }
 
 /* ── 4 · de knoppen, in de bron ── */
 console.log('\n4 · de knoppen');
-ok('de gloed weg bij alle knoppen (h-knop::before), ook de schaduw onder Bestellen', /html body\.hal \.h-knop::before \{ content: none; display: none; \}/.test(blok) && /\.nav-cta[^{]*\{\n  color: #FFFFFF !important; box-shadow: none !important;/.test(blok));
+ok('de gloed weg bij alle knoppen (h-knop::before), ook de schaduw onder Bestellen', /html body\.hal \.h-knop::before \{ content: none; display: none; \}/.test(blok) && /\.nav-cta[^{]*\{\n  box-shadow: none !important;/.test(blok));
 /* knoppensysteem lijst 88/89: de inktknop staat sinds het knoppensysteem in src/styles/knoppen.css (.k-vol, --knop-inkt van lijst 84 A2 b) */
 const knoppenCss = lees('src/styles/knoppen.css');
 /* levering 97 (lijst 96, B1 a "strak"): onder de muis schuift blauw uur van links naar rechts door de knop (was: de snede vanuit de hoek) */
 ok('K2 · de inktknop: inkt in rust; onder de muis en met de toets schuift blauw uur van links naar rechts (levering 97)', /background: var\(--k-inkt\) var\(--k-schuif\) 100% 0 \/ 200% 100% no-repeat;/.test(knoppenCss)
   && /background: var\(--k-blauw\) var\(--k-schuif\) 0 0 \/ 200% 100% no-repeat;/.test(knoppenCss));
 /* levering 98 (lijst 99, A4): de snede is uit hal.css; Bestellen staat in knoppen.css (sectie I) */
-ok('K1 · Bestellen: blauw uur; onder de muis en met de toets schuift blauw diep van links naar rechts (knoppen.css)', /\.nav-cta, \.container\.nav \.nav-cta\):not\(#k\):not\(#k\)[^{]*\{\n  background: #25508B linear-gradient\(90deg, #1A4279 0 50%, #25508B 50% 100%\) 100% 0 \/ 200% 100% no-repeat !important;/.test(knoppenCss)
-  && /:is\(:hover, :focus-visible\):not\(#k\):not\(#k\)[\s\S]*?background: #1A4279 linear-gradient\(90deg, #1A4279 0 50%, #25508B 50% 100%\) 0 0 \/ 200% 100% no-repeat !important;/.test(knoppenCss)
-  && !/#25508B 27\.5%, #2D61A8 50%, #25508B 72\.5%/.test(blok));
+/* levering 99 (lijst 100, D2 a): Bestellen bovenin is een witte knop op de inktbalk (balk-99.css); onder de muis schuift
+   lijn (#E7EAE8) van links naar rechts. De snede staat nergens meer. */
+const balkCss = lees('src/styles/balk-99.css');
+ok('K1 · Bestellen: wit op de inktbalk; onder de muis schuift lijn van links naar rechts (balk-99.css)', /background: #FFFFFF linear-gradient\(90deg, #E7EAE8 0 50%, #FFFFFF 50% 100%\) 100% 0 \/ 200% 100% no-repeat !important;/.test(balkCss)
+  && /background: #E7EAE8 linear-gradient\(90deg, #E7EAE8 0 50%, #FFFFFF 50% 100%\) 0 0 \/ 200% 100% no-repeat !important;/.test(balkCss)
+  && /background: #090D0B !important; border-radius: var\(--b99-r\) !important;/.test(balkCss)
+  && !/#016645 27\.5%, #11976A 50%, #016645 72\.5%/.test(blok));
 /* knoppensysteem lijst 88/89: de lijnknop krijgt onder de muis het vlak en een lijn in inkt (lijst 88 regel 1); de ring in de snede is weg */
-ok('K3 · de lijnknop: onder de muis het vlak #F4F5F7 en de lijn in inkt', /:is\(\.k, \.btn, \.knop\):hover:not\(#k\), :is\(\.k, \.btn, \.knop\):focus-visible:not\(#k\) \{ background: var\(--k-vlak\); box-shadow: inset 0 0 0 1\.5px var\(--k-inkt\);/.test(knoppenCss));
+ok('K3 · de lijnknop: onder de muis het vlak #F4F5F4 en de lijn in inkt', /:is\(\.k, \.btn, \.knop\):hover:not\(#k\), :is\(\.k, \.btn, \.knop\):focus-visible:not\(#k\) \{ background: var\(--k-vlak\); box-shadow: inset 0 0 0 1\.5px var\(--k-inkt\);/.test(knoppenCss));
 const paar = lees('src/scripts/knoppaar.js');
-ok('K4 · de kier: het script zet de lucht alleen in de strook van de kier, niet op inkt of bij een witte knop', /const LUCHT = 'linear-gradient\(180deg, #25508B 0%, #2D61A8 100%\)';/.test(paar) && /rij\.closest\('\.h-lk-slot, \.h-proef-woord'\)/.test(paar) && /k\.classList\.contains\('k-wit'\) \|\| k\.closest\('\.k-inkt'\)/.test(paar) && /ra\.right - rr\.left - rij\.clientLeft - snede - 1/.test(paar) && !/addEventListener\('resize'/.test(paar));
-/* knoppensysteem lijst 88/89: de focusrand is 2 px blauw uur, 2 px buiten de knop (SPEC: #25508B offset 2, op inkt #80A7DD) */
+ok('K4 · de kier: het script zet de lucht alleen in de strook van de kier, niet op inkt of bij een witte knop', /const LUCHT = 'linear-gradient\(180deg, #016645 0%, #11976A 100%\)';/.test(paar) && /rij\.closest\('\.h-lk-slot, \.h-proef-woord'\)/.test(paar) && /k\.classList\.contains\('k-wit'\) \|\| k\.closest\('\.k-inkt'\)/.test(paar) && /ra\.right - rr\.left - rij\.clientLeft - snede - 1/.test(paar) && !/addEventListener\('resize'/.test(paar));
+/* knoppensysteem lijst 88/89: de focusrand is 2 px blauw uur, 2 px buiten de knop (SPEC: #016645 offset 2, op inkt #3DFFB0) */
 ok('D3 · de focusrand van een knop: 2 px blauw uur, 2 px buiten de knop; op inkt blauw licht', /:is\(\.k, \.btn, \.knop\):focus-visible:not\(#k\) \{ outline: 2px solid var\(--k-blauw\); outline-offset: 2px; \}/.test(knoppenCss) && /outline-color: var\(--k-blauw-licht\)/.test(knoppenCss));
 /* knoppensysteem lijst 88/89: de knop zelf staat bij minder beweging stil in knoppen.css */
 ok('minder beweging: geen overgang op de knoppen, kaarten en Bestellen', /@media \(prefers-reduced-motion: reduce\) \{\n  \[data-rol\] \.ik \.ik-a \{ transition: none !important; transform: none !important; \}\n  :is\(\.k, \.btn, \.knop\):not\(#k\) \{ transition: none; \}/.test(knoppenCss) && /@media \(prefers-reduced-motion: reduce\) \{\n  html body\.hal \.h-knop-inkt, html body\.hal \.h-knop-wit, html body\.hal \.h-knop-lijn::after,/.test(blok));
@@ -221,12 +232,12 @@ try {
     const { ctx, page, fouten } = await open('/nl/');
     /* levering 94: helemaal bovenaan is de balk weg (lijst 92); een klein stukje omlaag staat hij er */
     await page.evaluate(() => scrollTo(0, 40)); await page.waitForTimeout(500);
-    const logo = await page.evaluate(() => { const v = document.querySelector('.site-header .hal-vm-balk'); const f = v.querySelector('.mk-fill'), k = v.querySelector('.mk-kleur'); return [getComputedStyle(f).fill, getComputedStyle(k).fill]; });
-    ok('het V-merk in de balk: in de snede, de schommel naar het licht', logo[0] === 'url("#vs-v-snede")' && logo[1] === 'url("#vs-v-licht")', logo.join(' · '));
-    const p1 = await pixel(page, '.site-header .hal-vm-balk', 0.12, 0.08), p2 = await pixel(page, '.site-header .hal-vm-balk', 0.954, 0.246);
-    ok('… gemeten: blauw, en het vlagje rechtsboven lichter dan de V linksboven', isBlauw(p1) && isBlauw(p2) && lum(p2) > lum(p1), `${p1} → ${p2}`);
+    /* levering 99 (lijst 100, D3 a): in de balk staat het woordmerk, wit op inkt */
+    const logo = await page.evaluate(() => { const v = document.querySelector('.site-header .hal-wm-balk'); return v ? getComputedStyle(v.querySelector('.mk-fill, .wm-vorm, path')).fill : 'geen'; });
+    ok('het woordmerk in de balk: wit op inkt (levering 99)', logo === 'rgb(255, 255, 255)', logo);
     const voet = await page.evaluate(() => [getComputedStyle(document.querySelector('.site-footer .hal-wm-voet .mk-fill')).fill, getComputedStyle(document.querySelector('.hal-wm-reus .mk-fill')).fill]);
-    ok('het woordmerk in de voet in de snede, het grote woordmerk loopt het wit in (D7)', voet[0] === 'url("#vs-w-snede")' && voet[1] === 'url("#vs-w-uitloop")', voet.join(' · '));
+    /* levering 100: de voet is zwart; het woordmerk erin en het grote woordmerk eronder zijn wit (kleur-100.css). VERVALLEN: D7 */
+    ok('het woordmerk in de voet en het grote woordmerk: wit op de zwarte voet (levering 100)', voet[0] === 'rgb(255, 255, 255)' && voet[1] === 'rgb(255, 255, 255)', voet.join(' · '));
     const gloed = await page.evaluate(() => [...document.querySelectorAll('.h-knop')].filter((k) => getComputedStyle(k, '::before').content !== 'none').length);
     ok('geen gloed onder een knop (::before is weg)', gloed === 0, String(gloed));
 
@@ -243,15 +254,15 @@ try {
     const rust = [await pixel(page, K, 0.05, 0.5), await pixel(page, K, 0.9, 0.62)];
     /* levering 87: als pil valt de hoek linksboven weg; het donkerste zichtbare punt is het linker uiteinde (#172945 op 17,5 %) */
     /* 9 november 2026 (lijst 84, A2 = b): in rust gewoon inkt, overal (was: de nacht, inkt links en blauw rechtsonder) */
-    ok('K2 · in rust inkt, van links tot rechtsonder (lijst 84, A2 = b)', dichtbij(rust[0], '#0F1217', 14) && dichtbij(rust[1], '#0F1217', 14), rust.join(' · '));
+    ok('K2 · in rust de actiekleur mint, van links tot rechtsonder (levering 99, lijst 101)', dichtbij(rust[0], '#3DFFB0', 8) && dichtbij(rust[1], '#3DFFB0', 8), rust.join(' · '));
     await page.hover(K); await page.waitForTimeout(700);
     const muis = [await pixel(page, K, 0.15, 0.2), await pixel(page, K, 0.5, 0.15), await pixel(page, K, 0.995, 0.5), await pixel(page, K, 0.5, 0.995)];
     /* onder de muis de snede: vanuit de hoek rechtsonder blauw, naar links toe donkerder (de tweede helft van het verloop) */
     /* levering 97: onder de muis is de hele knop blauw uur (het blauw is van links naar rechts doorgeschoven) */
-    ok('… onder de muis blauw uur, van links tot rechts (levering 97)', muis.every((p) => dichtbij(p, '#25508B', 14)), muis.join(' · '));
-    ok('… en geen haarlijn inkt aan de rechter- of onderrand', muis.slice(2).every((p) => !dichtbij(p, '#0F1217', 12)), muis.slice(2).join(' · '));
+    ok('… onder de muis de diepe mint, van links tot rechts (levering 99)', muis.every((p) => dichtbij(p, '#1FEA9C', 8)), muis.join(' · '));
+    ok('… en geen haarlijn inkt aan de rechter- of onderrand', muis.slice(2).every((p) => !dichtbij(p, '#090D0B', 12)), muis.slice(2).join(' · '));
     const wit = await page.evaluate((k) => { const c = getComputedStyle(document.querySelector(k)); return c.color; }, K);
-    ok('… de letters blijven wit (6,2 : 1 of meer op elke stop)', wit === 'rgb(255, 255, 255)', wit);
+    ok('… de letters inkt (14,7 : 1 op mint; levering 99)', wit === 'rgb(9, 13, 11)', wit);
 
     /* K1: Bestellen */
     await page.evaluate(() => scrollTo(0, 40)); await page.waitForTimeout(500);   /* de balk terug (levering 94) */
@@ -264,7 +275,9 @@ try {
     /* 9 november 2026 (lijst 84, A1 = c): de snede, schoon — geen stukje met korrel meer. In rust rechts lichter; onder de
        muis schuift het licht door de knop, dan is links het lichtst. */
     /* levering 97: in rust blauw uur; onder de muis schuift blauw diep van links naar rechts door de knop */
-    ok('K1 · Bestellen (levering 97): blauw uur; onder de muis blauw diep, van links tot rechts', c1.every((p) => dichtbij(p, '#25508B', 14)) && c2.every((p) => dichtbij(p, '#1A4279', 14)) && !(await page.$eval(C, (e) => e.classList.contains('pk'))), `${c1.join(' · ')} → ${c2.join(' · ')}`);
+    /* levering 99 (lijst 100, D2 a): wit op de inktbalk; onder de muis lijn #E7EAE8, van links tot rechts */
+    /* levering 100: Bestellen in de balk is mint; onder de muis schuift de diepe mint van links naar rechts (kleur-100.css) */
+    ok('K1 · Bestellen (levering 100): mint op de zwarte balk; onder de muis de diepe mint, van links tot rechts', c1.every((p) => dichtbij(p, '#3DFFB0', 10)) && c2.every((p) => dichtbij(p, '#1FEA9C', 10)) && !(await page.$eval(C, (e) => e.classList.contains('pk'))), `${c1.join(' · ')} → ${c2.join(' · ')}`);
     const schaduw = await page.evaluate((c) => getComputedStyle(document.querySelector(c)).boxShadow, C);
     ok('… zonder gloed eronder (alleen een laag binnen de knop)', schaduw === 'none' || schaduw.split(/,(?![^(]*\))/).every((d) => d.includes('inset')), schaduw);
 
@@ -276,18 +289,18 @@ try {
     const ring = await page.evaluate((k) => { const e = document.querySelector(k); const a = getComputedStyle(e, '::after'); return { fv: e.matches(':focus-visible'), inhoud: a.content, inset: a.top, bg: a.backgroundImage.slice(0, 40), outline: getComputedStyle(e).outlineColor }; }, K);
     // knoppensysteem lijst 88/89: de focusrand is een outline van 2 px blauw uur, 2 px buiten de knop (geen ring in de snede meer)
     const ring2 = await page.evaluate((k) => { const e = document.querySelector(k); const c = getComputedStyle(e); return { fv: e.matches(':focus-visible'), kleur: c.outlineColor, dik: c.outlineWidth, af: c.outlineOffset, stijl: c.outlineStyle }; }, K);
-    ok('D3 · met de toets: 2 px blauw uur, 2 px buiten de knop', ring2.fv && ring2.kleur === 'rgb(37, 80, 139)' && ring2.dik === '2px' && ring2.af === '2px' && ring2.stijl === 'solid', JSON.stringify(ring2));
+    ok('D3 · met de toets: 2 px zwart, 2 px buiten de knop (lijst 106: blauw b)', ring2.fv && ring2.kleur === 'rgb(9, 13, 11)' && ring2.dik === '2px' && ring2.af === '2px' && ring2.stijl === 'solid', JSON.stringify(ring2));
 
     /* D6: het inktblok */
     const proef = await page.evaluate(() => getComputedStyle(document.querySelector('.h-proef > .h-proef-woord')).backgroundImage);
     /* levering 89 (lijst 78 C2): het €1-blok is het veld B4 Nacht, een stukje nacht met korrel, het licht rechtsonder */
     /* lijst 86 (9 november 2026): het €1-blok heeft zijn vaste foto (fotoblok.css); tests/fotoblok-browser meet het */
-    ok('D6 · het €1-blok: de vaste foto van lijst 86', /\/_astro\/proef-1600\.[\w-]+\.(avif|webp)/.test(proef), proef.slice(0, 160));
+    ok('D6 · het €1-blok is een kaart uit het kaartveld (levering 100; was de vaste foto van lijst 86)', /linear-gradient\(135deg, rgb\(1, 102, 69\)/.test(proef), proef.slice(0, 160));
     const tekst = await page.evaluate(() => { const blok = document.querySelector('.h-proef > .h-proef-woord'); const br = blok.getBoundingClientRect(); return [...blok.querySelectorAll('p, h1, h2, span, a')].filter((e) => e.textContent.trim() && e.getBoundingClientRect().width).map((e) => { const g = document.createRange(); g.selectNodeContents(e); const r = g.getBoundingClientRect(); return { x: (r.right - br.left) / br.width, y: (r.bottom - br.top) / br.height, kleur: getComputedStyle(e).color }; }); });  /* de tekst zelf, niet zijn vak: sinds levering 87 loopt het vak van een korte zin tot de rand (h-1r) */
     /* het lichtste punt onder tekst: de rechteronderhoek van het verste tekstvak, op de fade */
     const t = Math.max(...tekst.filter((e) => /255, 255, 255/.test(e.kleur)).map((e) => { const b = 0.8 * e.x + 0.6 * e.y; return b / 1.4; }));
     const meng = (a, b, f) => a.map((v, i) => v + (b[i] - v) * f);
-    const kleurOp = (tt) => tt <= 0.38 ? rgb('#0F1217') : tt <= 0.72 ? meng(rgb('#0F1217'), rgb('#172945'), (tt - 0.38) / 0.34) : meng(rgb('#172945'), rgb('#1A4279'), (tt - 0.72) / 0.28);
+    const kleurOp = (tt) => tt <= 0.38 ? rgb('#090D0B') : tt <= 0.72 ? meng(rgb('#090D0B'), rgb('#172945'), (tt - 0.38) / 0.34) : meng(rgb('#172945'), rgb('#023D29'), (tt - 0.72) / 0.28);
     const wit86 = meng(kleurOp(t), [255, 255, 255], 0.86);
     /* levering 87: een korte zin staat nu op één regel (Lucas, 03:23) en loopt in het inktblok verder de fade in;
        de eis gaat van 10 : 1 naar AAA (7 : 1), ruim boven de huisregel van 4,5 */
@@ -300,26 +313,23 @@ try {
   /* K3, K4 en D2 op /catalog en /how-it-works */
   {
     const { ctx, page, fouten } = await open('/nl/catalog/');
-    const rij = '.h-acties[data-h-kier]';
-    const n = await page.locator(rij).count();
-    ok('K4 · een knoppenpaar op wit krijgt de lucht in zijn kier (data-h-kier)', n >= 1, String(n));
-    if (n) {
-      await page.locator(rij).first().scrollIntoViewIfNeeded(); await page.mouse.move(5, 5); await page.waitForTimeout(400);
-      const kier = await page.evaluate((s) => { const r = document.querySelector(s); const [a, b] = [...r.children].filter((k) => k.classList.contains('h-knop')); const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(); const sn = parseFloat(getComputedStyle(a).getPropertyValue('--h-snede')), k = parseFloat(getComputedStyle(a).getPropertyValue('--h-kier')); const x = (dy) => ra.right - (sn / ra.height) * dy + k / 2; return { boven: [x(4), ra.top + 4], onder: [x(ra.height - 4), ra.bottom - 4], achter: [rb.right + 20, rb.top + rb.height / 2], bg: r.style.backgroundImage }; }, rij);
-      const shot = async ([x, y]) => { const b2 = await page.screenshot({ clip: { x: Math.round(x), y: Math.round(y), width: 1, height: 1 } }); const { data: d } = await sharp(b2).raw().toBuffer({ resolveWithObject: true }); return [d[0], d[1], d[2]]; };
-      const [kb, ko, ka] = [await shot(kier.boven), await shot(kier.onder), await shot(kier.achter)];
-      ok('… gemeten: in de kier blauw, bovenaan blauw uur en onderaan lichter', isBlauw(kb) && isBlauw(ko) && lum(ko) > lum(kb), `${kb} → ${ko}`);
-      ok('… en niet buiten de kier (naast het paar staat de grond)', !isBlauw(ka) && lum(ka) > 0.8, String(ka));
+    /* 14 november 2026 (Lucas 03:36, 03:48: "Die hoeken hoeven op geen enkele manier behouden te worden"): geen snede meer
+       tussen twee knoppen, dus ook geen lucht in een kier (data-h-kier). De knoppen staan los, 10 px ertussen, 8 px rond. */
+    const rij = '.h-acties:has(> .h-knop ~ .h-knop)';
+    const los = await page.evaluate((s) => [...document.querySelectorAll(s)].map((r) => { const k = [...r.children].filter((x) => x.classList.contains('h-knop') && !x.hidden); if (k.length < 2) return true; const a = k[0].getBoundingClientRect(), b = k[1].getBoundingClientRect(); return k.every((x) => getComputedStyle(x).clipPath === 'none') && (b.left - a.right >= 9 || b.top >= a.bottom); }), rij);
+    ok('K4 · een knoppenpaar: geen snede meer, de knoppen los (minstens 9 px ertussen of onder elkaar)', los.length >= 1 && los.every(Boolean), JSON.stringify(los));
+    ok('… en nergens nog data-h-kier', (await page.locator('.h-acties[data-h-kier]').count()) === 0);
+    {
       /* K3: de lijnknop onder de muis */
-      // knoppensysteem lijst 88/89: onder de muis het vlak #F4F5F7 en de lijn in inkt (de ring in de snede is weg)
+      // knoppensysteem lijst 88/89: onder de muis het vlak #F4F5F4 en de lijn in inkt
       const L = `${rij} > .h-knop.k-lijn`;
-      await page.hover(L); await page.waitForTimeout(600);
+      await page.locator(L).first().scrollIntoViewIfNeeded(); await page.locator(L).first().hover(); await page.waitForTimeout(600);
       const na = await page.evaluate((s) => { const c = getComputedStyle(document.querySelector(s)); return [c.backgroundColor, c.boxShadow]; }, L);
-      ok('K3 · de lijnknop: onder de muis het vlak en de lijn in inkt', na[0] === 'rgb(244, 245, 247)' && /rgb\(15, 18, 23\) 0px 0px 0px 1\.5px inset/.test(na[1]), na.join(' · '));
+      ok('K3 · de lijnknop: onder de muis het vlak en de lijn in inkt', na[0] === 'rgb(244, 245, 244)' && /rgb\(9, 13, 11\) 0px 0px 0px 1\.5px inset/.test(na[1]), na.join(' · '));
     }
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(700);
-    const tel = await page.evaluate(() => [...document.querySelectorAll('.h-acties')].filter((r) => 'hKier' in r.dataset).every((r) => r.classList.contains('h-passen') || getComputedStyle(r.querySelector('.h-knop')).clipPath !== 'none'));
-    ok('… op de telefoon alleen waar de knoppen nog één vorm zijn', tel);
+    const tel = true || await page.evaluate(() => [...document.querySelectorAll('.h-acties')].filter((r) => 'hKier' in r.dataset).every((r) => r.classList.contains('h-passen') || getComputedStyle(r.querySelector('.h-knop')).clipPath !== 'none'));
+    ok('… op de telefoon ook geen snede (er is geen vorm van twee knoppen meer)', await page.evaluate(() => [...document.querySelectorAll('.h-acties > .h-knop')].every((k) => getComputedStyle(k).clipPath === 'none')));
     ok('… zonder fouten', fouten.length === 0, fouten.join(' | '));
     await ctx.close();
   }
@@ -328,27 +338,27 @@ try {
     await page.evaluate(() => document.querySelector('.h-lk-slot').scrollIntoView()); await page.waitForTimeout(300);
     const slot = await page.evaluate(() => { const s = document.querySelector('.h-lk-slot'); const r = s.querySelector('.h-acties'); return { bg: getComputedStyle(s).backgroundImage, kier: 'hKier' in r.dataset, svc: getComputedStyle(s.querySelector('.svcsw-a')).backgroundImage }; });
     /* levering 89 (lijst 82, E2): het ene inktblok is een stukje nacht of snede met korrel (posterkleur.js) */
-    ok('D6 · het slot onderaan (lijst 86: de vaste foto); K4 niet op het inktblok; de links daar wit', /slot-1600\.[\w-]+\.(avif|webp)|data:image\/avif/.test(slot.bg) && !slot.kier && /255, 255, 255/.test(slot.svc), JSON.stringify(slot).slice(0, 260));
-    const K = '.h-lk-slot .h-knop.k-vol';  // knoppensysteem lijst 88/89: de volle knop op inkt is wit, onder de muis mist (#E6E8EC)
+    ok('D6 · het slot onderaan (levering 100: een kaart, geen foto meer); K4 niet op het inktblok; de links daar wit', !slot.kier && /255, 255, 255/.test(slot.svc), JSON.stringify(slot).slice(0, 260));
+    const K = '.h-lk-slot .h-knop.k-vol';  // knoppensysteem lijst 88/89: de volle knop op inkt is wit, onder de muis mist (#E7EAE8)
     await page.locator(K).scrollIntoViewIfNeeded(); await page.mouse.move(5, 5); await page.waitForTimeout(400);
     const a = await pixel(page, K, 0.15, 0.2);
     await page.hover(K); await page.waitForTimeout(700);
     const b = await pixel(page, K, 0.15, 0.2), kl = await page.evaluate((k) => getComputedStyle(document.querySelector(k)).color, K);
-    ok('de witte knop op het inktblok wordt onder de muis mist (#E6E8EC), de letters blijven inkt', dichtbij(a, '#FFFFFF', 4) && dichtbij(b, '#E6E8EC', 6) && kl === 'rgb(15, 18, 23)', `${a} → ${b} · ${kl}`);
+    ok('de bestelknop op het inktblok is mint en wordt onder de muis diepe mint, de letters inkt (levering 99)', dichtbij(a, '#3DFFB0', 8) && dichtbij(b, '#1FEA9C', 8) && kl === 'rgb(9, 13, 11)', `${a} → ${b} · ${kl}`);
     await ctx.close();
   }
   {
     const { ctx, page } = await open('/nl/how-it-works/');
     /* D1: de streep van het sectielabel */
     const pil = await page.evaluate(() => { const p = [...document.querySelectorAll('p.h-pil')].find((e) => !e.closest('.h-lk-slot, .h-proef') && !e.classList.contains('h-pil-donker')); const d = document.querySelector('p.h-pil-donker'); return [getComputedStyle(p, '::before').backgroundImage, d ? getComputedStyle(d, '::before').backgroundImage : 'geen']; });
-    ok('D1 · de streep van het sectielabel in de snede; op het inktblok en een donkere band wit', /linearGradient/.test(pil[0]) && /%231A4279/.test(pil[0]) && (pil[1] === 'geen' || /%23FFFFFF/.test(pil[1])), pil.map((p) => p.slice(60, 140)).join(' | '));
+    ok('D1 · de streep van het sectielabel in de snede; op het inktblok en een donkere band wit', /linearGradient/.test(pil[0]) && /%23023D29/.test(pil[0]) && (pil[1] === 'geen' || /%23FFFFFF/.test(pil[1])), pil.map((p) => p.slice(60, 140)).join(' | '));
 
     const L = '.h-hw-details a';
     const d2 = await page.evaluate((s) => { const c = getComputedStyle(document.querySelector(s)); return [c.textDecorationLine, c.backgroundImage, c.backgroundSize]; }, L);
-    ok('D2 · een link in de tekst: geen streep van de browser, maar 2 px die het wit in loopt', d2[0] === 'none' && /linear-gradient\(90deg, rgb\(37, 80, 139\), rgba\(37, 80, 139, 0\.5\) 45%, rgba\(37, 80, 139, 0\)\)/.test(d2[1]) && d2[2] === '100% 2px', d2.join(' · '));
+    ok('D2 · een link in de tekst: geen streep van de browser, maar 2 px die het wit in loopt', d2[0] === 'none' && /linear-gradient\(90deg, rgb\(1, 102, 69\), rgba\(1, 102, 69, 0\.5\) 45%, rgba\(1, 102, 69, 0\)\)/.test(d2[1]) && d2[2] === '100% 2px', d2.join(' · '));
     await page.hover(L); await page.waitForTimeout(200);
     const vol = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).backgroundImage, L);
-    ok('… onder de muis vol', vol === 'linear-gradient(90deg, rgb(37, 80, 139), rgb(37, 80, 139))', vol);
+    ok('… onder de muis vol', vol === 'linear-gradient(90deg, rgb(1, 102, 69), rgb(1, 102, 69))', vol);
     const K = '.h-hw-dienst';
     const k0 = await page.evaluate((s) => getComputedStyle(document.querySelector(s), '::after').opacity, K);
     await page.hover(K); await page.waitForTimeout(600);
@@ -361,8 +371,9 @@ try {
   {
     const { ctx, page } = await open('/nl/lifestyle/');
     const d4 = await page.evaluate(() => { const i = document.querySelector('.h-lijntje i'); return i ? getComputedStyle(i).backgroundImage : 'geen'; });
-    /* levering 89 (lijst 82, E6): het balkje legt een vaste poster bloot, een stukje snede */
-    ok('D4 · het balkje met de schuine kop (levering 89, E6): een stukje snede dat vast ligt', /\/img\/stuk\/t-knop-\d\.webp/.test(d4), d4.slice(0, 100));
+    /* levering 111 (lijst 123, KL): het balkje is zwart, zonder stukje (was levering 89, E6: een blauw stukje snede) */
+    const d4k = await page.evaluate(() => getComputedStyle(document.querySelector('.h-lijntje i')).backgroundColor);
+    ok('D4 · het balkje met de schuine kop is zwart, zonder stukje (levering 111)', d4 === 'none' && d4k === 'rgb(9, 13, 11)', `${d4.slice(0, 60)} · ${d4k}`);
     await ctx.close();
   }
   {

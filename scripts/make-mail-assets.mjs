@@ -44,7 +44,7 @@ const COLOURS = {
   /* Op de donkere kopband van de mail. Uit KLEURENSCHEMA.md, 20 september
      2026: op zwart is het accent het LICHTE violet (8,30:1); het violet van de
      vulling haalt daar 2,93:1. */
-  groen: '#80A7DD',
+  groen: '#016645',
   wit: '#FFFFFF',     // spare, for a light-on-dark variant of any future template
 };
 
@@ -79,7 +79,7 @@ const { WOORDMERK, WOORDMERK_SNEDE, WOORDMERK_UITLOOP, snedeAttr, LOCKUP } = awa
    midden in. */
 const WH = 66;
 const WW = 372;
-const wsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WW}" height="${WH}" viewBox="${WOORDMERK.symbool}" preserveAspectRatio="xMidYMid meet"><path fill="#0F1217" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+const wsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${WW}" height="${WH}" viewBox="${WOORDMERK.symbool}" preserveAspectRatio="xMidYMid meet"><path fill="#090D0B" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
 const wfile = path.join(OUT, 'woordmerk-inkt.png');
 await sharp(Buffer.from(wsvg), { density: 384 })
   .resize({ width: WW, height: WH, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -100,7 +100,9 @@ console.log(`  ${path.relative(ROOT, wfile)}  ${wmeta.width}×${wmeta.height}  $
    blauw diep #1A4279 via blauw uur #25508B naar #2D61A8 langs de snede (126,87°), zoals op de site
    (#vs-w-snede in Layout.astro). In de maten van de tekening, dus dezelfde fade op elk formaat.
    Op wit haalt elke stop 6,2 : 1 of meer. */
-const SNEDE = '<stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/>';
+/* levering 111 (16 november 2026, lijst 123): het logo en het streepje zijn zwart #090D0B, zoals op de site sinds
+   levering 100. Alleen herkleurd: de vormen komen uit src/data/woordmerk.js, zoals altijd. Was blauw uur (levering 86). */
+const SNEDE = '<stop offset="0" stop-color="#090D0B"/><stop offset=".55" stop-color="#090D0B"/><stop offset="1" stop-color="#090D0B"/>';
 const WM_SNEDE = `<defs><linearGradient id="s" ${snedeAttr()}>${SNEDE}</linearGradient></defs>`;
 const PX = 16, PY = 12;
 const PW = (124 + 2 * PX) * 3, PH = (22 + 2 * PY) * 3;
@@ -162,11 +164,12 @@ console.log(`  ${path.relative(ROOT, pfile)}  ${pmeta.width}×${pmeta.height}  $
 
   const VW = 376 * 3, VH = 38 * 3;
   const volle = Math.round(VW * (WOORDMERK.hoog / WOORDMERK.breed));
-  /* levering 86 (D7): het woordmerk in de voet loopt het wit in, zoals het grote woordmerk onder de
-     site (#vs-w-uitloop), maar een stap lichter: van nevel #A2B7D2 bovenaan via #C4CEE0 naar mist
-     #E4E7ED (de Mist-fade uit het schema). Zo blijft de voet van de mail even rustig als in lichtgrijs
+  /* levering 111: dezelfde uitloop in de grijzen van de site (#C6CAC8, #DADDDB, #EEF0EF) in plaats van nevel.
+     levering 86 (D7): het woordmerk in de voet loopt het wit in, zoals het grote woordmerk onder de
+     site (#vs-w-uitloop), maar een stap lichter: van nevel #C6CAC8 bovenaan via #DADDDB naar mist
+     #EEF0EF (de Mist-fade uit het schema). Zo blijft de voet van de mail even rustig als in lichtgrijs
      en staat hij ook in de donkere stand van de Gmail-app er nog (nevel op #1F1F1F ruim 7 : 1). */
-  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><defs><linearGradient id="u" gradientUnits="userSpaceOnUse" x1="${WOORDMERK_UITLOOP.x1}" y1="${WOORDMERK_UITLOOP.y1}" x2="${WOORDMERK_UITLOOP.x2}" y2="${WOORDMERK_UITLOOP.y2}"><stop offset="0" stop-color="#A2B7D2"/><stop offset=".55" stop-color="#C4CEE0"/><stop offset="1" stop-color="#E4E7ED"/></linearGradient></defs><path fill="url(#u)" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
+  const vsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${VW}" height="${volle}" viewBox="${WOORDMERK.symbool}"><defs><linearGradient id="u" gradientUnits="userSpaceOnUse" x1="${WOORDMERK_UITLOOP.x1}" y1="${WOORDMERK_UITLOOP.y1}" x2="${WOORDMERK_UITLOOP.x2}" y2="${WOORDMERK_UITLOOP.y2}"><stop offset="0" stop-color="#C6CAC8"/><stop offset=".55" stop-color="#DADDDB"/><stop offset="1" stop-color="#EEF0EF"/></linearGradient></defs><path fill="url(#u)" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
   const vfile = path.join(OUT, 'voet-woordmerk.png');
   await sharp(Buffer.from(vsvg), { density: 384 })
     .resize({ width: VW, height: volle, fit: 'fill' })

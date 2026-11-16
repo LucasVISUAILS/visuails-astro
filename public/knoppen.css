@@ -34,19 +34,19 @@
    ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --k-inkt: #0F1217;
+  --k-inkt: #090D0B;
   --k-wit: #FFFFFF;
-  --k-lijn: #C5C8CF;          /* lijn sterk: de rand van een lijnknop (KLEURENSCHEMA, "een rand die je moet zien") */
-  --k-vlak: #F4F5F7;          /* vlak: een lijnknop onder de muis */
-  --k-mist: #E6E8EC;          /* de witte knop op inkt onder de muis */
-  --k-blauw: #25508B;         /* blauw uur: de focusrand, een tekstlink onder de muis */
-  --k-blauw-licht: #80A7DD;   /* blauw licht: hetzelfde op inkt */
+  --k-lijn: #C6CAC8;          /* lijn sterk: de rand van een lijnknop (KLEURENSCHEMA, "een rand die je moet zien") */
+  --k-vlak: #F4F5F4;          /* vlak: een lijnknop onder de muis */
+  --k-mist: #E7EAE8;          /* de witte knop op inkt onder de muis */
+  --k-blauw: #016645;         /* blauw uur: de focusrand, een tekstlink onder de muis */
+  --k-blauw-licht: #3DFFB0;   /* blauw licht: hetzelfde op inkt */
   /* de inktknop (lijst 84, A2 b): in rust inkt, onder de muis vult hij zich vanuit de hoek rechtsonder met de snede */
-  --knop-inkt: linear-gradient(126.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%);   /* niet meer gebruikt (levering 97) */
+  --knop-inkt: linear-gradient(126.87deg, #090D0B 0%, #090D0B 50%, #023D29 62%, #016645 80%, #11976A 100%);   /* niet meer gebruikt (levering 97) */
   /* levering 97 (lijst 96, B1 a "strak"): onder de muis schuift blauw uur van links naar rechts door de knop. De strook
      is twee keer de knop: links blauw uur, rechts inkt; in rust staat hij rechts (je ziet inkt), onder de muis links. */
-  --k-schuif: linear-gradient(90deg, #25508B 0 50%, #0F1217 50% 100%);
-  --k-schuif-wit: linear-gradient(90deg, #E6E8EC 0 50%, #FFFFFF 50% 100%);
+  --k-schuif: linear-gradient(90deg, #016645 0 50%, #090D0B 50% 100%);
+  --k-schuif-wit: linear-gradient(90deg, #E7EAE8 0 50%, #FFFFFF 50% 100%);
   --k-letter: 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
   --k-gaan: .26s cubic-bezier(.22, .8, .2, 1);
 }
@@ -71,7 +71,7 @@
   /* --k-paar-l / --k-paar-r: wat een knoppaar met de snede ertussen extra vraagt (hal.css, "TWEE KNOPPEN WORDEN ÉÉN VORM") */
   padding: 0 calc(var(--k-pr, var(--k-p)) + var(--k-paar-r, 0px)) 0 calc(var(--k-pl, var(--k-p)) + var(--k-paar-l, 0px));
   border: 0;
-  border-radius: 0;
+  border-radius: var(--k-r, 8px);
   font: 600 var(--k-l) / 1.2 var(--k-letter);
   font-stretch: normal;
   letter-spacing: -.005em;
@@ -117,7 +117,7 @@
   --k-h: 32px; --k-p: 2px; --k-pi: 2px; --k-ik: 16px; --k-gat: 7px;
   min-height: var(--k-h); padding: 0 2px; border-radius: 0; justify-content: flex-start; text-align: left;
   background: none; box-shadow: none; color: var(--k-inkt);
-  text-decoration: underline; text-decoration-color: rgb(15 18 23 / .3); text-decoration-thickness: 1.5px; text-underline-offset: 4px;
+  text-decoration: underline; text-decoration-color: rgb(9 13 11 / .3); text-decoration-thickness: 1.5px; text-underline-offset: 4px;
 }
 :is(.k, .btn, .knop).k-tekst:hover:not(#k), :is(.k, .btn, .knop).k-tekst:focus-visible:not(#k) { background: none; box-shadow: none; color: var(--k-blauw); text-decoration-color: currentColor; }
 
@@ -205,32 +205,47 @@ html[data-thema="donker"] .k-zeker[open] > summary:not(#k) { background: rgb(255
 /* ── H · aanmerken is een vinkvak, geen knop (lijst 88, rollen 4): het krijgt wel hetzelfde potlood ─────── */
 :is(label.st-vink, label.pick) .ik { display: inline-block; width: 15px; height: 15px; flex: none; fill: currentColor; vertical-align: -2px; margin-right: 6px; }
 
-/* ── I · SCHERP, OVERAL WAT KLIKT — levering 97, 13 november 2026 (lijst 96: B1 a "strak", B2 a "alles wat klikt") ──────
-   Lucas, 01:47: "de knoppen die nu allemaal rond zijn gaan aanpassen naar 0, dus scherpe hoeken … duidelijk en subtiel".
-   Alles wat je aanklikt is scherp: de knoppen hierboven, en de knoppen die op hun eigen plek nog rond werden gezet — de
-   icoonknoppen (pijlen, pauze, sluiten), het taal- en het menuknopje, de WhatsApp-knop, Bestellen bovenin, de
-   cookieknoppen, de rijen in het menu, Studio. Wat iets AANGEEFT blijft rond: statuspillen, chips ("binnenkort"), de
-   kleurbolletjes, de sluiter in de catalogusanimatie. Dat is het verschil tussen een knop en een etiket.
-   Kracht: :not(#k):not(#k) en !important, omdat de plekken zelf (hal.css, studio-hal.css, werkplaats.css) hun ronde
-   hoeken met !important of een lange keten zetten. ─────────────────────────────────────────────────────────────────── */
+/* ── I · ZACHT, OVERAL WAT KLIKT — levering 99, 13 november 2026 (lijst 100, D3 a) ────────────────────────────────────
+   Levering 97 (lijst 96 B1 a) maakte alles wat je aanklikt scherp (0). Lucas, 21:48: "De hoeken van de knoppen mogen wat
+   doller en softer zijn ook zoals in het voorbeeld." Nu: 8 px op alle vier de hoeken (--k-r), op elke knop en elk ding
+   dat je aanklikt; 8 = de 14 px van de bovenbalk min de 6 px binnenrand (balk-99.css). Wat iets AANGEEFT blijft een pil:
+   statuspillen, chips, de kleurbolletjes, de filters, de tabbladen, de sluiter in de catalogusanimatie.
+   Kracht: :not(#k):not(#k) en !important, omdat de plekken zelf (hal.css, studio-hal.css, werkplaats.css) hun hoeken met
+   !important of een lange keten zetten. ────────────────────────────────────────────────────────────────────────────── */
+:root { --k-r: 8px; }
 :is(.k, .btn, .knop, .h-knop, .h-mini-knop, .h-lv-knop, .knop-inkt, .cc-btn, .nav-cta, .nav-trigger, .nav-taal-klein .ls,
     .nav-ik-item, .nav-ik-taal, .nav-ik-taal .ls, .menu-toggle, .mobile-close, .wa-launcher, .wa-launcher-label, .m8-pijl,
-    .o8-pauze, .b94-pauze, .h-melding-sluit, .h-rest-pijl, .h-look-pijl, .h-cirkel, .h-knop .o, .h-brug, .st-taal, .st-taal > *,
-    .st-navlink, .st-uit, .pu-rail-knop, .pu-slot-btn, .o8-klik-knop, .source-btn, [data-wk-eigen-zet]):not(#k):not(#k) { border-radius: 0 !important; }
+    .o8-pauze, .b94-pauze, .h-melding-sluit, .h-rest-pijl, .h-look-pijl, .h-knop .o, .h-brug, .st-taal, .st-taal > *,
+    .st-navlink, .st-uit, .pu-rail-knop, .pu-slot-btn, .o8-klik-knop, .source-btn, [data-wk-eigen-zet]):not(#k):not(#k) { border-radius: var(--k-r) !important; }
+/* een rondje blijft rond (ontwerptaal: "rondjes blijven rond"); levering 97 had ook .h-cirkel scherp gemaakt */
+.h-cirkel:not(#k):not(#k) { border-radius: 50% !important; }
 /* de focusrand volgt de vorm */
-:is(.m8-pijl, .m8-stip button, .b94-ga, .b94-pauze, .o8-pauze, .menu-toggle, .wa-launcher):focus-visible:not(#k):not(#k) { border-radius: 0 !important; }
-/* Bestellen bovenin (en onderaan het menu op de telefoon): blauw uur; onder de muis schuift blauw diep van links naar
-   rechts door de knop (was: het licht dat schuin door de knop schoof). Wit erop 8,1 : 1 en 10,6 : 1. */
-html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):not(#k):not(#k), html body.hal .mobile-nav .mobile-cta .btn-primary:not(#k):not(#k) {
-  background: #25508B linear-gradient(90deg, #1A4279 0 50%, #25508B 50% 100%) 100% 0 / 200% 100% no-repeat !important;
-  transition: background-position .32s cubic-bezier(.22, .8, .2, 1) !important;
-}
-html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):is(:hover, :focus-visible):not(#k):not(#k),
-html body.hal .mobile-nav .mobile-cta .btn-primary:is(:hover, :focus-visible):not(#k):not(#k) {
-  background: #1A4279 linear-gradient(90deg, #1A4279 0 50%, #25508B 50% 100%) 0 0 / 200% 100% no-repeat !important;
-}
+:is(.m8-pijl, .m8-stip button, .b94-ga, .b94-pauze, .o8-pauze, .menu-toggle, .wa-launcher):focus-visible:not(#k):not(#k) { border-radius: var(--k-r) !important; }
+/* Bestellen bovenin: wit op de inktbalk (balk-99.css); onderaan het menu op de telefoon: de actiekleur (J). */
 :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k) { transition: background-position .32s cubic-bezier(.22, .8, .2, 1), color .2s, box-shadow .2s; }
 @media (prefers-reduced-motion: reduce) {
-  :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k),
-  html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):not(#k):not(#k), html body.hal .mobile-nav .mobile-cta .btn-primary:not(#k):not(#k) { transition: none !important; }
+  :is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt):not(#k), html body.hal .mobile-nav .mobile-cta .btn-primary:not(#k):not(#k) { transition: none !important; }
 }
+
+/* ── J · DE ACTIEKLEUR: de knop die tot bestellen leidt — levering 99, 13 november 2026 (lijst 100, D1 en D4) ────────────
+   Lucas, 21:48: "ik [wil] die blauwe kleur voor de knop gebruiken voor de wat meer call to action knoppen. De blue hour
+   colour is niet echt een kleur die eruit springt." De kleur zelf komt uit lijst 101 (één token; zie KLEURENSCHEMA.md).
+   De regel (lijst 100, D4): elke knop die een bestelling begint of verder brengt krijgt de actiekleur; inkt is "kijk
+   verder". Herkend aan wat hij doet, niet aan een losse klasse, zodat een nieuwe pagina hem vanzelf goed krijgt:
+   een volle knop naar /start of /test-sample, en de knoppen Verder en Verstuur in het bestelformulier. Een kleine knop
+   in een rij kaarten ("Kies deze look", .k-klein) blijft inkt: dan staat de kleur hoogstens één keer per scherm. Bestellen bovenin
+   is wit (balk-99.css): de vaste weg terug, niet de knop die schreeuwt. Onder de muis schuift de diepere toon van links
+   naar rechts, zoals bij elke volle knop. ─────────────────────────────────────────────────────────────────────────── */
+:root { --k-actie: #3DFFB0; --k-actie-diep: #1FEA9C; --k-actie-tekst: #090D0B; }   /* signaalmint (lijst 101, d) */
+:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit, .k-actie):not(.k-klein, .btn-sm):not(#k):not(#k),
+html body.hal .mobile-nav .mobile-cta .btn-primary:not(#k):not(#k) {
+  color: var(--k-actie-tekst) !important; box-shadow: none !important;
+  background: var(--k-actie) linear-gradient(90deg, var(--k-actie-diep) 0 50%, var(--k-actie) 50% 100%) 100% 0 / 200% 100% no-repeat !important;
+}
+:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit, .k-actie):is(:hover, :focus-visible):not(.k-klein, .btn-sm):not(#k):not(#k),
+html body.hal .mobile-nav .mobile-cta .btn-primary:is(:hover, :focus-visible):not(#k):not(#k) {
+  color: var(--k-actie-tekst) !important;
+  background: var(--k-actie-diep) linear-gradient(90deg, var(--k-actie-diep) 0 50%, var(--k-actie) 50% 100%) 0 0 / 200% 100% no-repeat !important;
+}
+:is(.k, .btn, .knop):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit, .k-actie):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):not(#k) :is(svg, .ik) { fill: currentColor; color: inherit; }
+:is(.k, .btn, .knop):is([disabled], [aria-disabled="true"]):is([data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit):not(#k):not(#k) { opacity: .45; }

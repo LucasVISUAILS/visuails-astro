@@ -15,8 +15,8 @@
  *       metThema() bij de uitgang, juist omdat vijftig aanroepen van page()
  *       er eentje kunnen vergeten. Deze toets loopt daarom langs meerdere
  *       schermen, inclusief het inlogscherm.
- *   3 · Zonder cookie moet het attribuut er NIET zijn. Een donkere stand is
- *       een keuze; het uitgangspunt blijft licht.
+ *   3 · Sinds levering 111 (lijst 123) is donker de standaard: zonder cookie
+ *       staat het attribuut er WEL; met vis_thema=licht niet.
  *
  * En één regel die niets met kleur te maken heeft: de schakelaar mag geen
  * JavaScript zijn. De CSP van dit paneel is `default-src 'none'`, dus een
@@ -85,9 +85,15 @@ console.log('\nmet de cookie draagt elke pagina het attribuut');
   const login = await haal('/admin/login', 'vis_thema=donker');
   ok('/admin/login draagt het ook', /<html lang="nl" data-thema="donker">/.test(await login.text()));
 
-  const licht = await haal('/admin');
+  /* levering 111 (16 november 2026, lijst 123, Q3 a): donker is de standaard. Zonder cookie draagt de pagina het
+     attribuut; alleen wie licht kiest (vis_thema=licht), krijgt hem zonder. */
+  const zonder = await haal('/admin', `vis_admin=${token}`);
+  ok('zonder cookie is /admin donker (de standaard sinds levering 111)', /<html lang="nl" data-thema="donker">/.test(await zonder.text()));
+  const zonderLogin = await haal('/admin/login', '');
+  ok('  ook het inlogscherm', /<html lang="nl" data-thema="donker">/.test(await zonderLogin.text()));
+  const licht = await haal('/admin', `vis_admin=${token}; vis_thema=licht`);
   const h = await licht.text();
-  ok('zonder cookie staat het attribuut er niet', /data-thema/.test(h), false);
+  ok('met vis_thema=licht staat het attribuut er niet', /data-thema/.test(h), false);
   ok('  en de pagina is verder dezelfde', /<html lang="nl">/.test(h));
 }
 

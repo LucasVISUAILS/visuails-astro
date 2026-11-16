@@ -52,7 +52,7 @@ const { t, lang, customer, thema, navDicht } = st;
     <p class="st-meta st-blok-lede">{t.osLede}</p>
     {v.eigenLooks.length === 0
       ? (
-        <div class="st-kaart-vlak st-leegvlak">
+        <div class="st-kaart-vlak st-leegvlak k-inkt st-veldkaart st-vk-4">
           <div><h2>{t.osEmptyH}</h2><p>{t.osEmptyBody}</p></div>
           <a class="btn btn-2nd" data-rol="doorgaan" href={v.startLook} set:html={knopInhoud('doorgaan', t.osEmptyCta)} />
         </div>

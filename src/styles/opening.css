@@ -84,7 +84,7 @@ html[lang="en"] .o-toneel { --o-th: 125px; }
    vierhoek in beeld 0; de still ligt erboven en dekt de rand af */
 .o-podium:not(.o-gezet) .o-sc { left: var(--o-x); top: var(--o-y); width: var(--o-b); height: var(--o-h); transform: none !important; }
 /* het scherm wordt donker met de hoek van de klep: een laag inkt, dekking per beeld */
-.o-donker { position: absolute; inset: 0; background: var(--h-inkt, #0F1217); opacity: 0; }
+.o-donker { position: absolute; inset: 0; background: var(--h-inkt, #090D0B); opacity: 0; }
 .o-beeld > picture { display: contents; }
 .o-still, .o-doek { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; display: block; }
 .o-doek { visibility: hidden; }
@@ -107,7 +107,7 @@ html[lang="en"] .o-kop { font-size: clamp(28px, calc(var(--o-tw) / 17.73), 56.89
 /* margin 0: de algemene regel "kop + blok" (global.css, --gap-head-block) zette hier 32 px boven */
 .o-tekst > .o-rij { margin: 0; }
 .o-rij { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; }
-.o-podium .o-lede { flex: 1 1 360px; max-width: 34em; margin: 0; font: 500 18px/1.45 var(--h-letter); color: var(--h-inkt-2, #0F1217); --h-maat: 34em; text-wrap: balance; }
+.o-podium .o-lede { flex: 1 1 360px; max-width: 34em; margin: 0; font: 500 18px/1.45 var(--h-letter); color: var(--h-inkt-2, #090D0B); --h-maat: 34em; text-wrap: balance; }
 
 /* de standen: naam en teller, de streep (de klok), vorige en volgende, pauze. Zichtbaar zodra
    het script draait (html.h-js); zonder script doen de knoppen niets. visibility en geen
@@ -116,8 +116,8 @@ html[lang="en"] .o-kop { font-size: clamp(28px, calc(var(--o-tw) / 17.73), 56.89
 html.h-js .o-stand { visibility: visible; }
 .o-stand-naam { display: grid; grid-template-columns: minmax(0, auto) auto; align-items: baseline; column-gap: 12px; row-gap: 8px; min-width: 0; margin: 0 8px 0 0; }
 .o-stand-naam b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 600 13.5px/1.15 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
-.o-stand-teller { justify-self: end; font: 600 var(--h-t-label)/1 var(--h-letter); color: var(--h-grijs, #636974); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.o-stand-streep { grid-column: 1 / -1; position: relative; height: 2px; border-radius: 999px; background: rgba(15, 18, 23, .12); overflow: hidden; }
+.o-stand-teller { justify-self: end; font: 600 var(--h-t-label)/1 var(--h-letter); color: var(--h-grijs, #5E6461); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.o-stand-streep { grid-column: 1 / -1; position: relative; height: 2px; border-radius: 999px; background: rgba(9, 13, 11, .12); overflow: hidden; }
 .o-stand-streep i { position: absolute; inset: 0; border-radius: 999px; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
 .o-stand-streep i.is-aan { animation: h-streep linear both; animation-play-state: paused; }
 .o-loopt .o-stand-streep i.is-aan { animation-play-state: running; }
@@ -142,10 +142,10 @@ html.h-js .o-stand { visibility: visible; }
 /* inline-block: dan is het vak van de letters zo hoog als de regel en niet als de letter,
    en steekt het niet in de regel erboven (tests/a11y.test.mjs meet dat) */
 .o-acc-t { display: inline-block; }
-.o-acc-blauw { position: absolute; left: 0; top: 0; color: var(--h-blauw, #25508B); pointer-events: none; opacity: calc(var(--o-amp) * (1 - cos(var(--o-adem) * 360deg)) / 2);
+.o-acc-blauw { position: absolute; left: 0; top: 0; color: var(--h-blauw, #016645); pointer-events: none; opacity: calc(var(--o-amp) * (1 - cos(var(--o-adem) * 360deg)) / 2);
   /* een zachte gloed in blauw uur die met de adem meekomt (Lucas, 15:24: "Gloed mag in
      accentkleur, zolang het er modern en eruit ziet als iets dat bij VISUAILS past") */
-  text-shadow: 0 0 .32em rgba(37, 80, 139, .38), 0 0 .9em rgba(37, 80, 139, .18); }
+  text-shadow: 0 0 .32em rgba(1, 102, 69, .38), 0 0 .9em rgba(1, 102, 69, .18); }
 /* 25 oktober (de controle): één keer, dan inkt. Eerst ademde het zonder einde (8 s per ronde);
    Lucas koos "één keer, dan stil": wat vanzelf beweegt en langer duurt dan 5 s, moet stil te
    zetten zijn (WCAG 2.2.2). Aan het eind is --o-adem 1 en de blauwe laag weer 0. */
@@ -164,7 +164,7 @@ html.h-js .o-stand { visibility: visible; }
    echo, dun en verschoven (de ontwerptaal). Dan even alleen wit, en dezelfde snede legt het
    label en de kop van Hoe het werkt bloot, van links naar rechts. Het script zet de clip-path
    per beeld (HalOpening.astro, snij()); zonder het podium (telefoon, minder beweging) niets. */
-.o-mes { position: absolute; left: 0; top: 0; z-index: 3; display: none; pointer-events: none; background: var(--h-inkt, #0F1217);
+.o-mes { position: absolute; left: 0; top: 0; z-index: 3; display: none; pointer-events: none; background: var(--h-inkt, #090D0B);
   clip-path: polygon(calc(100% - 2px) 0, 100% 0, 2px 100%, 0 100%); will-change: transform, opacity; }
 .o-aan .o-mes { display: block; opacity: 0; }
 .o-hoe-titel { position: relative; }
@@ -195,13 +195,13 @@ html.h-js .o-stand { visibility: visible; }
 
 /* de tabs: drie knoppen in één vorm, met de snede uit het logo ertussen (de ontwerptaal) */
 .o-tabs { display: flex; flex: none; --h: 40px; --loop: 30px; --kier: 3.6px; }
-.o-tabs button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 var(--h-t-klein)/1 var(--h-letter); cursor: pointer; padding: 0 calc(var(--loop) * .55 + 16px); white-space: nowrap; transition: background-color .16s steps(2, end); }
+.o-tabs button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F4); color: var(--h-inkt); font: 600 var(--h-t-klein)/1 var(--h-letter); cursor: pointer; padding: 0 calc(var(--loop) * .55 + 16px); white-space: nowrap; transition: background-color .16s steps(2, end); }
 .o-tabs button:first-child { border-radius: var(--o-hoek-knop); padding-left: 20px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 .o-tabs button:not(:first-child) { margin-left: calc(var(--kier) - var(--loop)); clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 .o-tabs button:last-child { padding-right: 20px; border-radius: 999px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
-.o-tabs button:hover { background: var(--h-lijn, #E6E8EC); }
+.o-tabs button:hover { background: var(--h-lijn, #E7EAE8); }
 .o-tabs button[aria-selected="true"] { background: var(--h-inkt); color: #FFFFFF; }
-.o-tabs button:focus-visible { clip-path: none; z-index: 1; outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
+.o-tabs button:focus-visible { clip-path: none; z-index: 1; outline: 2px solid var(--h-blauw, #016645); outline-offset: 2px; }
 
 .o-blokken { position: relative; }
 .o-voet { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
@@ -237,7 +237,7 @@ html.h-js body.hal.o-aan .o-hoe .h-in { opacity: 1; animation: none; }
 
 /* de lijnen tussen de stappen: een haarlijn door het wit, op de hoogte van het vak, met een
    blokje in inkt dat oversteekt als de volgende stap begint */
-html body.hal.hal .o-hoe .h-brug { right: calc(-1 * var(--o-gat)); left: auto; top: auto; bottom: calc(26px + (var(--o-beeld, 280px) - 8px) / 2); width: var(--o-gat); height: 1px; padding: 0; border-radius: 0; background: var(--h-lijn-sterk, #C5C8CF); box-shadow: none; transform: none; animation: none !important; display: block; z-index: 0; }
+html body.hal.hal .o-hoe .h-brug { right: calc(-1 * var(--o-gat)); left: auto; top: auto; bottom: calc(26px + (var(--o-beeld, 280px) - 8px) / 2); width: var(--o-gat); height: 1px; padding: 0; border-radius: 0; background: var(--h-lijn-sterk, #C6CAC8); box-shadow: none; transform: none; animation: none !important; display: block; z-index: 0; }
 html body.hal.hal .o-hoe .h-brug svg { display: none; }
 html body.hal.hal .o-hoe .h-brug::after { content: ""; position: absolute; left: 0; top: -3px; width: 7px; height: 7px; border-radius: 999px; background: var(--h-inkt); opacity: 0; }
 html body.hal.hal .o-hoe.u-s2:not(.u-s3):not([data-uitleg-staat="klaar"]) .h-stap:nth-child(1) .h-brug::after,
@@ -276,25 +276,25 @@ html body.hal.hal .o-hoe .o-ontleed { position: absolute; left: 0; right: 0; bot
 .o-ont-vlak { background: #EFEFEF; }
 .o-ont-laag .o-ont-donker { opacity: .2; transform: translateY(.5%); filter: brightness(0) blur(2.5px); }
 /* de rand van elke laag, alleen als ze uit elkaar liggen (vlak is het één beeld) */
-.o-ont-laag::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .16); opacity: 0; pointer-events: none; }
+.o-ont-laag::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .16); opacity: 0; pointer-events: none; }
 .o-ont-los::after { display: none; }
-.o-ont-schaduw::before { content: ""; position: absolute; inset: 0; background: repeating-conic-gradient(#E6E8EC 0% 25%, #FFFFFF 0% 50%) 50% / 12px 12px; opacity: 0; }
+.o-ont-schaduw::before { content: ""; position: absolute; inset: 0; background: repeating-conic-gradient(#E7EAE8 0% 25%, #FFFFFF 0% 50%) 50% / 12px 12px; opacity: 0; }
 /* de gloed om het product: blauw uur, langs de vorm van de broek (drop-shadow volgt de uitsnede) */
-.o-ont-los img { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
-.o-ont-ai { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); font: 600 12px/1 var(--h-mono, monospace); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; color: var(--h-blauw, #25508B); opacity: 0; }
+.o-ont-los img { filter: drop-shadow(0 0 0 rgba(1, 102, 69, 0)) drop-shadow(0 0 0 rgba(61, 255, 176, 0)); }
+.o-ont-ai { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); font: 600 12px/1 var(--h-mono, monospace); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; color: var(--h-blauw, #016645); opacity: 0; }
 
 /* open: zo staat hij zonder uitleg en bij minder beweging */
 .o-hoe:not([data-uitleg-staat]) .o-ontleed { opacity: 1; visibility: visible; }
 .o-hoe:not([data-uitleg-staat]) .o-ont-stapel { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); }
 .o-hoe:not([data-uitleg-staat]) .o-ont-laag { transform: translateZ(calc((2 - var(--i)) * var(--z))); }
 .o-hoe:not([data-uitleg-staat]) .o-ont-laag::after, .o-hoe:not([data-uitleg-staat]) .o-ont-schaduw::before, .o-hoe:not([data-uitleg-staat]) .o-ont-ai { opacity: 1; }
-.o-hoe:not([data-uitleg-staat]) .o-ont-los img { filter: drop-shadow(0 0 10px rgba(37, 80, 139, .45)) drop-shadow(0 0 2px rgba(128, 167, 221, .7)); }
+.o-hoe:not([data-uitleg-staat]) .o-ont-los img { filter: drop-shadow(0 0 10px rgba(1, 102, 69, .45)) drop-shadow(0 0 2px rgba(61, 255, 176, .7)); }
 @media (prefers-reduced-motion: reduce) {
   .o-hoe .o-ontleed { opacity: 1 !important; visibility: visible !important; }
   .o-ont-stapel { transform: rotateX(54deg) rotateZ(-38deg) scale(.66); }
   .o-ont-laag { transform: translateZ(calc((2 - var(--i)) * var(--z))); }
   .o-ont-laag::after, .o-ont-schaduw::before, .o-ont-ai { opacity: 1 !important; }
-  .o-ont-los img { filter: drop-shadow(0 0 10px rgba(37, 80, 139, .45)) drop-shadow(0 0 2px rgba(128, 167, 221, .7)); }
+  .o-ont-los img { filter: drop-shadow(0 0 10px rgba(1, 102, 69, .45)) drop-shadow(0 0 2px rgba(61, 255, 176, .7)); }
 }
 
 /* in stap 2, met de uitleg: één keer open, even zweven, en weer dicht.
@@ -340,9 +340,9 @@ html body.hal.hal .o-hoe[data-uitleg-staat] .o-ontleed { opacity: 1; visibility:
 @keyframes o-ont-golf { 0%, 100% { --o-golf: -1; } 50% { --o-golf: 1; } }
 @keyframes o-ont-rand { 0%, 16% { opacity: 0; } 26%, 74% { opacity: 1; } 86%, 100% { opacity: 0; } }
 @keyframes o-ont-gloed {
-  0%, 38% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
-  46%, 62% { filter: drop-shadow(0 0 12px rgba(37, 80, 139, .5)) drop-shadow(0 0 2px rgba(128, 167, 221, .8)); }
-  68%, 100% { filter: drop-shadow(0 0 0 rgba(37, 80, 139, 0)) drop-shadow(0 0 0 rgba(128, 167, 221, 0)); }
+  0%, 38% { filter: drop-shadow(0 0 0 rgba(1, 102, 69, 0)) drop-shadow(0 0 0 rgba(61, 255, 176, 0)); }
+  46%, 62% { filter: drop-shadow(0 0 12px rgba(1, 102, 69, .5)) drop-shadow(0 0 2px rgba(61, 255, 176, .8)); }
+  68%, 100% { filter: drop-shadow(0 0 0 rgba(1, 102, 69, 0)) drop-shadow(0 0 0 rgba(61, 255, 176, 0)); }
 }
 @keyframes o-ont-woord {
   0%, 38% { opacity: 0; transform: translate(-50%, 6px); animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
@@ -353,7 +353,7 @@ html body.hal.hal .o-hoe[data-uitleg-staat] .o-ontleed { opacity: 1; visibility:
 /* ── lifestyle, stap 1: kies je look ────────────────────────────────────────────── */
 .o-kies-rij { list-style: none; margin: 0; padding: 0; position: absolute; inset: 14px 14px 60px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px 10px; }
 html body.hal.hal .o-kies-rij li { position: relative; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 6px; min-height: 0; max-width: none; }
-.o-kies-beeld { position: relative; display: grid; place-items: center; min-height: 0; border-radius: var(--r-klein); overflow: hidden; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); transition: opacity .3s; }
+.o-kies-beeld { position: relative; display: grid; place-items: center; min-height: 0; border-radius: var(--r-klein); overflow: hidden; background: var(--h-vlak, #F4F5F4); box-shadow: inset 0 0 0 1px var(--h-lijn, #E7EAE8); transition: opacity .3s; }
 .o-kies-beeld img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .o-kies-beeld i { font: 300 26px/1 var(--h-letter); font-style: normal; color: var(--h-inkt); }
 .o-kies-rij b { font: 600 var(--h-t-label)/1.2 var(--h-letter); color: var(--h-inkt); transition: color .3s; }
@@ -367,34 +367,34 @@ html body.hal.hal .o-kies-rij li { position: relative; display: grid; grid-templ
    naam grijs (5,52 : 1). Zolang stap 1 niet aan de beurt is, doet de regel onderaan dit
    bestand hetzelfde voor het hele vak. */
 .o-hoe[data-uitleg-staat]:not(.u-s1) .o-kies-vink { transform: scale(0); }
-.o-hoe[data-uitleg-staat]:not(.u-s1) .o-kies-rij li.is-gekozen .o-kies-beeld { box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); }
+.o-hoe[data-uitleg-staat]:not(.u-s1) .o-kies-rij li.is-gekozen .o-kies-beeld { box-shadow: inset 0 0 0 1px var(--h-lijn, #E7EAE8); }
 .o-hoe.u-s1 .o-kies-rij li :is(.o-kies-beeld, b) { transition-delay: calc(var(--d) * 120ms); }
 .o-hoe.u-s1 .o-kies-rij li:not(.is-gekozen) .o-kies-beeld { opacity: .55; transition: opacity .3s 1.15s; }
-.o-hoe.u-s1 .o-kies-rij li:not(.is-gekozen) b { color: var(--h-grijs, #636974); transition: color .3s 1.15s; }
+.o-hoe.u-s1 .o-kies-rij li:not(.is-gekozen) b { color: var(--h-grijs, #5E6461); transition: color .3s 1.15s; }
 .o-hoe.u-s1 .o-kies-vink { transition-delay: 1.05s; }
 .o-hoe.u-s1 .o-kies-rij li.is-gekozen .o-kies-beeld { transition: box-shadow .2s steps(2, end) 1s, opacity .3s calc(var(--d) * 120ms); }
 .o-hoe[data-uitleg-staat="klaar"] .o-kies-rij li:not(.is-gekozen) .o-kies-beeld, .o-hoe:not([data-uitleg-staat]) .o-kies-rij li:not(.is-gekozen) .o-kies-beeld { opacity: .55; }
-.o-hoe[data-uitleg-staat="klaar"] .o-kies-rij li:not(.is-gekozen) b, .o-hoe:not([data-uitleg-staat]) .o-kies-rij li:not(.is-gekozen) b { color: var(--h-grijs, #636974); }
+.o-hoe[data-uitleg-staat="klaar"] .o-kies-rij li:not(.is-gekozen) b, .o-hoe:not([data-uitleg-staat]) .o-kies-rij li:not(.is-gekozen) b { color: var(--h-grijs, #5E6461); }
 
 /* ── video, stap 1: de stijlen, als lijstje ─────────────────────────────────────── */
-.o-stijl-rij { list-style: none; margin: 0; position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-58%); padding: 8px; display: grid; gap: 4px; border-radius: 8px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); }
+.o-stijl-rij { list-style: none; margin: 0; position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-58%); padding: 8px; display: grid; gap: 4px; border-radius: 8px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--h-lijn, #E7EAE8); }
 html body.hal.hal .o-stijl-rij li { position: relative; display: flex; align-items: center; justify-content: space-between; min-height: 36px; padding: 0 10px; border-radius: 6px; max-width: none; font: 600 13.5px/1.2 var(--h-letter); color: var(--h-inkt); }
-html body.hal.hal .o-stijl-rij li.is-gekozen { background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-inkt); }
+html body.hal.hal .o-stijl-rij li.is-gekozen { background: var(--h-vlak, #F4F5F4); box-shadow: inset 0 0 0 1px var(--h-inkt); }
 .o-stijl-rij .o-kies-vink { position: static; }
 .o-hoe[data-uitleg-staat]:not(.u-s1) .o-stijl-rij li.is-gekozen { background: none; box-shadow: none; }
 .o-hoe.u-s1 .o-stijl-rij li.is-gekozen { transition: background-color .2s steps(2, end) 1s, box-shadow .2s steps(2, end) 1s; }
-.o-binnenkort-zin { position: absolute; left: 14px; right: 14px; bottom: 14px; margin: 0; font: 500 var(--h-t-label)/1.4 var(--h-mono, monospace); letter-spacing: .02em; color: var(--h-grijs, #636974); }
+.o-binnenkort-zin { position: absolute; left: 14px; right: 14px; bottom: 14px; margin: 0; font: 500 var(--h-t-label)/1.4 var(--h-mono, monospace); letter-spacing: .02em; color: var(--h-grijs, #5E6461); }
 
 /* ── lifestyle en video, stap 2: upload je foto's ───────────────────────────────── */
 html body.hal.hal .o-upload-rij { list-style: none; margin: 0; position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-58%); padding: 10px; display: grid; gap: 6px; border-radius: 8px; }
 html body.hal.hal .o-upload-rij li { display: grid; grid-template-columns: 26px auto minmax(40px, 1fr) 20px; align-items: center; gap: 10px; min-height: 38px; padding: 0 8px 0 6px; border-radius: 6px; max-width: none; font: 600 13.5px/1.2 var(--h-letter); color: var(--h-inkt); }
 .o-upload-ik { width: 26px; height: 26px; display: grid; place-items: center; color: var(--h-inkt); }
 .o-upload-ik svg { width: 15px; height: 15px; }
-.o-upload-balk { height: 4px; border-radius: 999px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
+.o-upload-balk { height: 4px; border-radius: 999px; background: var(--h-lijn, #E7EAE8); overflow: hidden; }
 .o-upload-balk s { display: block; height: 100%; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(1); }
 .o-upload-vink { width: 20px; height: 20px; display: grid; place-items: center; color: var(--h-inkt); transition: transform .38s var(--h-veer, ease); }
 .o-upload-vink svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-html body.hal.hal .o-upload-rij li.o-upload-klaar { display: block; min-height: 0; margin-top: 2px; padding: 9px 8px 2px; border-top: 1px solid var(--h-lijn, #E6E8EC); border-radius: 0; font-weight: 700; transition: opacity .3s var(--o-klaar-wacht, 0s); }
+html body.hal.hal .o-upload-rij li.o-upload-klaar { display: block; min-height: 0; margin-top: 2px; padding: 9px 8px 2px; border-top: 1px solid var(--h-lijn, #E7EAE8); border-radius: 0; font-weight: 700; transition: opacity .3s var(--o-klaar-wacht, 0s); }
 .o-hoe[data-uitleg-staat]:not(.u-s2) .o-upload-balk s { transform: scaleX(0); }
 .o-hoe[data-uitleg-staat]:not(.u-s2) .o-upload-vink { transform: scale(0); }
 .o-hoe[data-uitleg-staat]:not(.u-s2) .o-upload-klaar { opacity: 0; }
@@ -409,7 +409,7 @@ html body.hal.hal .o-upload-rij li.o-upload-klaar { display: block; min-height: 
 .o-hoe[data-uitleg-staat="klaar"] .o-stijl-rij li { transition-delay: 0s !important; }
 
 /* ── video, stap 3: de plek voor de clip ────────────────────────────────────────── */
-.o-klip-plek { position: absolute; left: 50%; top: 14px; bottom: 52px; aspect-ratio: 9 / 16; transform: translateX(-50%); border-radius: var(--r-klein); display: grid; place-items: center; background: var(--h-vlak, #F4F5F7); box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); color: var(--h-inkt); }
+.o-klip-plek { position: absolute; left: 50%; top: 14px; bottom: 52px; aspect-ratio: 9 / 16; transform: translateX(-50%); border-radius: var(--r-klein); display: grid; place-items: center; background: var(--h-vlak, #F4F5F4); box-shadow: inset 0 0 0 1px var(--h-lijn, #E7EAE8); color: var(--h-inkt); }
 .o-klip-plek i { width: 22px; height: 22px; display: grid; place-items: center; }
 .o-klip-plek svg { width: 22px; height: 22px; }
 
@@ -427,9 +427,9 @@ html body.hal.hal .o-hoe .h-stuur-v i svg, html body.hal.hal .o-hoe .h-lagen li 
 html.h-js body.hal.hal .o-hoe .h-stuur-v i { transition-property: scale, color; }
 html.h-js body.hal.hal .o-hoe .h-stap:not(.is-in) .h-stuur-v i,
 html.h-js body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s1) .h-stuur-v i,
-html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-lagen li > i { color: var(--h-lijn-sterk, #C5C8CF); }
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-lagen li > i { color: var(--h-lijn-sterk, #C6CAC8); }
 html body.hal.hal .o-hoe.u-s2:not([data-uitleg-staat="klaar"]) .h-lagen li > i { animation-name: o-vink; }
-@keyframes o-vink { from { transform: scale(.55); color: #C5C8CF; } to { transform: none; color: #0F1217; } }
+@keyframes o-vink { from { transform: scale(.55); color: #C6CAC8; } to { transform: none; color: #090D0B; } }
 
 /* ── op de telefoon: één blok dat van 01 naar 02 naar 03 gaat ─────────────────────────
    Lucas (16:42): "Op telefoon wil ik dat de animatie 1 blok blijft en van 01 naar 02 naar 03
@@ -521,7 +521,7 @@ html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) > .h
 html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld { opacity: .4; }
 html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s1) .h-stap:nth-child(1) :is(.h-nr b, .h-stap-naam),
 html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) :is(.h-nr b, .h-stap-naam),
-html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) :is(.h-nr b, .h-stap-naam) { color: var(--h-grijs, #636974); }
+html body.hal.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) :is(.h-nr b, .h-stap-naam) { color: var(--h-grijs, #5E6461); }
 @media (prefers-reduced-motion: reduce) { html body.hal.hal .o-hoe .h-stap > .h-stap-beeld, html body.hal.hal .o-hoe .h-stap :is(.h-nr b, .h-stap-naam) { transition: none; } }
 
 /* ── lifestyle en video: in de vakken staat tekst ────────────────────────────────────
@@ -541,7 +541,7 @@ html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-
 html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld :is(.o-kies-beeld, .h-keur-rij img, .o-klip-plek, .o-upload-ik, .o-upload-balk) { opacity: .4; }
 html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s1) .h-stap:nth-child(1) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar),
 html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s2) .h-stap:nth-child(2) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar),
-html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar) { color: var(--h-grijs, #636974); }
+html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-s3) .h-stap:nth-child(3) > .h-stap-beeld :is(b, figcaption, .o-upload-klaar) { color: var(--h-grijs, #5E6461); }
 @media (prefers-reduced-motion: reduce) { html body.hal.hal .o-hoe .h-stap-beeld :is(.o-klip-plek, .o-upload-ik, .o-upload-balk, .o-stijl-rij b, .o-upload-rij b, .o-binnenkort-zin) { transition: none; } }
 
 /* ── het formaat, in stap 3 (levering 76) ─────────────────────────────────────────────
@@ -558,7 +558,7 @@ html body.hal.hal .o-hoe:not([data-dienst="catalog"])[data-uitleg-staat]:not(.u-
 html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt-vak { --o-r: var(--o-r0); }
 html.h-js body.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .o-fmt-vak { animation: o-fmt-r .5s cubic-bezier(.65, 0, .25, 1) 1.45s both; }
 @keyframes o-fmt-r { from { --o-r: var(--o-r0); } to { --o-r: var(--o-r1); } }
-html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li { container-type: size; background: var(--h-vlak, #F4F5F7); }
+html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li { container-type: size; background: var(--h-vlak, #F4F5F4); }
 /* li img, niet li > img: de bouwstap zet om elke img een <picture> (scripts/avif-naast-webp.mjs) */
 html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li img {
   --o-y: max(0px, (100cqh - 100cqw / var(--o-r)) / 2); --o-x: max(0px, (100cqw - 100cqh * var(--o-r)) / 2);
@@ -568,17 +568,17 @@ html body.hal.hal .o-hoe .o-fmt-vak .h-keur-rij > li:nth-child(n) .h-vink { top:
 /* rechtsonder klein welk formaat: mono, de gekozen in inkt; concentrisch in de hoek (24 − 12) */
 .o-fmt { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: inline-flex; align-items: center; gap: 10px; height: 30px; padding: 0 11px;
   border-radius: 999px; font: 600 var(--h-t-label)/1 var(--h-mono, 'IBM Plex Mono', monospace); letter-spacing: .04em; font-variant-numeric: tabular-nums; pointer-events: none; }
-.o-fmt b { font-weight: 600; color: var(--h-grijs, #636974); }
+.o-fmt b { font-weight: 600; color: var(--h-grijs, #5E6461); }
 .o-fmt b.is-eind { color: var(--h-inkt); }
-html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt b.is-eind { color: var(--h-grijs, #636974); }
+html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt b.is-eind { color: var(--h-grijs, #5E6461); }
 html.h-js body.hal .o-hoe[data-uitleg-staat]:not(.u-s3) .o-fmt b.is-begin { color: var(--h-inkt); }
 html.h-js body.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .o-fmt b.is-begin { animation: o-fmt-af 1ms steps(1, start) 1.6s both; }
 html.h-js body.hal .o-hoe.u-s3:not([data-uitleg-staat="klaar"]) .o-fmt b.is-eind { animation: o-fmt-aan 1ms steps(1, start) 1.6s both; }
-@keyframes o-fmt-af { from { color: var(--h-inkt); } to { color: var(--h-grijs, #636974); } }
-@keyframes o-fmt-aan { from { color: var(--h-grijs, #636974); } to { color: var(--h-inkt); } }
+@keyframes o-fmt-af { from { color: var(--h-inkt); } to { color: var(--h-grijs, #5E6461); } }
+@keyframes o-fmt-aan { from { color: var(--h-grijs, #5E6461); } to { color: var(--h-inkt); } }
 @media (prefers-reduced-motion: reduce) {
   html.h-js body.hal .o-hoe .o-fmt-vak, html.h-js body.hal .o-hoe .o-fmt b { animation: none !important; }
   html.h-js body.hal .o-hoe[data-uitleg-staat] .o-fmt-vak { --o-r: var(--o-r1); }
   html.h-js body.hal .o-hoe[data-uitleg-staat] .o-fmt b.is-eind { color: var(--h-inkt); }
-  html.h-js body.hal .o-hoe[data-uitleg-staat] .o-fmt b.is-begin:not(.is-eind) { color: var(--h-grijs, #636974); }
+  html.h-js body.hal .o-hoe[data-uitleg-staat] .o-fmt b.is-begin:not(.is-eind) { color: var(--h-grijs, #5E6461); }
 }

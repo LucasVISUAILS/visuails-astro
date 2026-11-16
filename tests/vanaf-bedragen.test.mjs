@@ -62,10 +62,12 @@ if (!existsSync(pad('dist/nl/start/index.html'))) {
   process.exit(1);
 }
 
-/* De korte vorm op de voorpagina (VoorpaginaHal.astro, `eenProduct`). */
+/* De korte vorm op de voorpagina (VoorpaginaHal.astro, `eenProduct`). Levering 110 (lijst 121, G3): zonder bedragen,
+   omdat twee prijzen onder "Elk beeld voor je merk" deden alsof VISUAILS alleen catalog en lifestyle maakt; de bedragen
+   staan op /pricing (die pagina telt hieronder mee). */
 const kort = (taal) => taal === 'nl'
-  ? `Eén product: ${euro(ladderRate('catalog', 1), 'nl')} (catalog) of ${euro(ladderRate('lifestyle', 1), 'nl')} (lifestyle). Meer producten, lager tarief.`
-  : `One product: ${euro(ladderRate('catalog', 1), 'en')} (catalog) or ${euro(ladderRate('lifestyle', 1), 'en')} (lifestyle). More products, a lower rate.`;
+  ? 'Geprijsd per product: hoe meer je bestelt, hoe lager het tarief.'
+  : 'Priced per product: the more you order, the lower the rate.';
 
 const vloeren = new Set(['catalog', 'lifestyle'].flatMap((k) => [euro(ladderFloor(k), 'nl'), euro(ladderFloor(k), 'en')]).map((s) => s.replace(/\s/g, '')));
 const instap = new Set(['catalog', 'lifestyle'].flatMap((k) => [euro(ladderRate(k, 1), 'nl'), euro(ladderRate(k, 1), 'en')]).map((s) => s.replace(/\s/g, '')));

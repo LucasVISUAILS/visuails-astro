@@ -12,7 +12,13 @@
  * korrel als een data-URI-svg — en die is opmaak, geen inhoud. Zonder die
  * uitzondering meldde elke pagina een CSP-fout in de console.
  */
-export function studioHeaders() {
+/* ── ÉÉN UITZONDERING: DE INTAKE OP MAAT — 15 november 2026 (lijst 112) ─────────────────────────────────────
+   Studio draait zonder script: een fout waardoor tekst van een klant als code op het scherm komt, kan dan niets.
+   De intake op maat heeft een script nodig (de schatting die meerekent, uploaden, opslaan terwijl hij typt), en
+   Lucas koos voor één uitzondering: alleen /account/op-maat, alleen een bestand van onze eigen site (script-src
+   'self', dus geen code in de pagina zelf en niets van buiten), en fetch alleen naar onszelf (connect-src 'self').
+   tests/op-maat-studio.test.mjs bewaakt dat elke andere Studio-pagina zonder script blijft. */
+export function studioHeaders({ script = false } = {}) {
   return {
     'cache-control': 'no-store',
     'strict-transport-security': 'max-age=31536000; includeSubDomains',
@@ -20,7 +26,7 @@ export function studioHeaders() {
     'x-robots-tag': 'noindex, nofollow',
     'x-content-type-options': 'nosniff',
     'content-security-policy':
-      `default-src 'none'; img-src 'self' data:; style-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
+      `default-src 'none'; img-src 'self' data:${script ? ' blob:' : ''}; style-src 'self'; font-src 'self';${script ? " script-src 'self'; connect-src 'self';" : ''} form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
   };
 }
 

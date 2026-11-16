@@ -344,8 +344,8 @@ const STATUS_TE_ZETTEN = ['received', 'in_production', 'delivered', 'cancelled']
    DEZELFDE VORM ALS STUDIO: een cookie (`vis_thema`), gezet via een GET met
    `?thema=`, gevolgd door een omleiding terug. Geen JavaScript, want de CSP van
    dit paneel is `default-src 'none'` en daar hoort geen uitzondering voor een
-   schakelaar. Zonder cookie is het scherm licht — een donkere stand is een
-   keuze, geen verrassing, in beide richtingen.
+   schakelaar. Zonder cookie is het scherm donker (sinds levering 111, lijst 123);
+   licht is een keuze die de cookie onthoudt.
 
    DE COOKIE STAAT OP Path=/admin EN SameSite=Lax. Niet Strict zoals het
    sessiecookie: dit is een voorkeur en geen sleutel, en Strict betekent dat de
@@ -365,9 +365,11 @@ const STATUS_TE_ZETTEN = ['received', 'in_production', 'delivered', 'cancelled']
    doorgeven, en het is de enige manier zonder JavaScript. */
 const THEMA_COOKIE_DAGEN = 365;
 
+/* Levering 111 (16 november 2026, lijst 123, Q3 a): donker is de standaard, zoals in het plan (PLAN-KAARTVELD-100,
+   fase 6: "/admin donker: zwart met mint"). Alleen wie met de knop licht kiest, krijgt licht. Was: zonder cookie licht. */
 function themaCookie(request) {
   const raw = request?.headers?.get('cookie') || '';
-  return /(?:^|;\s*)vis_thema=donker(?:;|$)/.test(raw) ? 'donker' : 'licht';
+  return /(?:^|;\s*)vis_thema=licht(?:;|$)/.test(raw) ? 'licht' : 'donker';
 }
 
 /* De omleiding die de keuze vastlegt. Hij pakt de parameter eraf en stuurt je
@@ -532,6 +534,12 @@ async function adminGetInner(context) {
      hieronder. Zie de kop van renderDiagnose(). */
   /* De melding bovenaan Studio (ronde 9). Leesroute; zetten en weghalen is de POST hieronder. */
   if (path === '/admin/melding') return renderMelding(context, url);
+  /* Op maat (lijst 112): leesroutes; een beeld erbij, een ronde klaarzetten en de offerte zijn de POST. */
+  if (path === '/admin/op-maat') return (await import('./adminOpMaat.js')).renderOpMaatLijst(context, OPMAAT_HULP);
+  const opMaatId = path.match(/^\/admin\/op-maat\/(\d+)$/);
+  if (opMaatId) return (await import('./adminOpMaat.js')).renderOpMaatAanvraag(context, url, Number(opMaatId[1]), OPMAAT_HULP);
+  const opMaatBeeld = path.match(/^\/admin\/op-maat\/beeld\/(voorbeeld|referentie)\/(\d+)$/);
+  if (opMaatBeeld) return (await import('./adminOpMaat.js')).serveOpMaatBeeld(context, opMaatBeeld[1], Number(opMaatBeeld[2]));
   /* De Studiobrief (9 november 2026, ronde 92). Leesroutes; opslaan, proef, plannen en afmelden zijn de POST. */
   if (path === '/admin/studiobrief') return renderStudiobrief(context, url, admin);
   const sbVoorbeeld = path.match(/^\/admin\/studiobrief\/(\d+)\/voorbeeld$/);
@@ -678,6 +686,8 @@ async function adminPostInner(context) {
      hem dichtzette en waarom. */
   if (path === '/admin/agenda/dagen') return handleBlackoutDay(context, admin);
   if (path === '/admin/melding') return handleMeldingPost(context, admin);
+  const opMaatPost = path.match(/^\/admin\/op-maat\/(\d+)$/);
+  if (opMaatPost) return (await import('./adminOpMaat.js')).handleOpMaatPost(context, admin, Number(opMaatPost[1]), OPMAAT_HULP);
   if (path === '/admin/studiobrief') return handleStudiobriefPost(context, admin);
   if (path === '/admin/proef') return handleProefPost(context, admin);
   if (path === '/admin/formaten') return handleFormatenPost(context, admin);
@@ -2355,10 +2365,15 @@ async function handleCustomerWipe(context, customerId) {
   const modelKeys = await env.DB.prepare(
     'SELECT preview_key FROM custom_models WHERE customer_id = ?1 AND preview_key IS NOT NULL'
   ).bind(customerId).all().catch(() => ({ results: [] }));
+  /* Op maat (migratie 0071, lijst 107): de referentiebeelden van zijn aanvragen staan in R2 onder maat/<klant>/. */
+  const maatKeys = await env.DB.prepare(
+    `SELECT r.r2_key FROM maat_referenties r JOIN maat_aanvragen a ON a.id = r.aanvraag_id WHERE a.customer_id = ?1
+     UNION ALL SELECT v.r2_key FROM maat_voorbeelden v JOIN maat_aanvragen a ON a.id = v.aanvraag_id WHERE a.customer_id = ?1`
+  ).bind(customerId).all().catch(() => ({ results: [] }));
 
   let removed = 0;
   let failed = 0;
-  for (const row of [...(fileKeys.results || []), ...(variantKeys.results || []), ...(modelKeys.results || [])]) {
+  for (const row of [...(fileKeys.results || []), ...(variantKeys.results || []), ...(modelKeys.results || []), ...(maatKeys.results || [])]) {
     for (const key of [row.r2_key, row.preview_key].filter(Boolean)) {
       try { await env.UPLOADS?.delete(key); removed++; } catch { failed++; }
     }
@@ -2448,6 +2463,13 @@ async function handleCustomerWipe(context, customerId) {
     ...stripPay,
     env.DB.prepare('DELETE FROM customer_style_locks WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM custom_models WHERE customer_id = ?1').bind(customerId),
+    /* op maat (0071): van blad naar wortel, niet leunend op cascade */
+    env.DB.prepare('DELETE FROM maat_besluiten WHERE aanvraag_id IN (SELECT id FROM maat_aanvragen WHERE customer_id = ?1)').bind(customerId),
+    env.DB.prepare('DELETE FROM maat_voorbeelden WHERE aanvraag_id IN (SELECT id FROM maat_aanvragen WHERE customer_id = ?1)').bind(customerId),
+    env.DB.prepare('DELETE FROM maat_offertes WHERE aanvraag_id IN (SELECT id FROM maat_aanvragen WHERE customer_id = ?1)').bind(customerId),
+    env.DB.prepare('DELETE FROM maat_referenties WHERE aanvraag_id IN (SELECT id FROM maat_aanvragen WHERE customer_id = ?1)').bind(customerId),
+    env.DB.prepare('DELETE FROM maat_aanvragen WHERE customer_id = ?1').bind(customerId),
+    env.DB.prepare('DELETE FROM merkprofielen WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM account_sessions WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM account_tokens WHERE customer_id = ?1').bind(customerId),
     env.DB.prepare('DELETE FROM messages WHERE customer_id = ?1').bind(customerId),
@@ -4322,7 +4344,7 @@ async function renderFiles(context, orderId) {
     const restantBlok = betaald && d.quote_kind === 'aanbetaling' ? `
       <form class="controls" method="post" action="/admin/orders/${order.id}/restant">
         <label>Restant, &euro; excl. btw
-          <input name="amount" type="number" min="1" max="25000" step="0.01" inputmode="decimal" required></label>
+          <input name="amount" type="number" min="1" max="25000" step="0.01" inputmode="decimal" required${d.request === 'op-maat' && Number(d.opmaat_rest) > 0 ? ` value="${Number(d.opmaat_rest)}"` : ''}></label>
         <button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit">Restant vragen en betaallink mailen${rolIkoon('doorgaan')}</button>
       </form>
       <p class="meta">Wordt een eigen bestelling (${esc(order.ref)}-R…) met eigen factuur. De klant krijgt dezelfde offertemail, met "restant" erin.</p>` : '';
@@ -7149,7 +7171,7 @@ function klantTabs(actief) {
   const tab = (k, href, label) => (k === actief
     ? `<span class="fl-chip is-active" aria-current="page">${label}</span>`
     : `<a class="fl-chip" href="${href}">${label}</a>`);
-  return `<nav class="fl-row klant-tabs" aria-label="Klanten of abonnees">${tab('customers', '/admin/customers', 'Alle klanten')}${tab('abonnees', '/admin/abonnees', 'Abonnees')}</nav>`;
+  return `<nav class="fl-row klant-tabs" aria-label="Klanten, abonnees of op maat">${tab('customers', '/admin/customers', 'Alle klanten')}${tab('abonnees', '/admin/abonnees', 'Abonnees')}${tab('opmaat', '/admin/op-maat', 'Op maat')}</nav>`;
 }
 
 async function loadCustomers(env) {
@@ -13368,7 +13390,10 @@ async function handleRestant({ request, env }, orderId, admin) {
   const vat = Math.round(net * rate);
   const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE ref LIKE ?1").bind(`${o.ref}-R%`).first().catch(() => null);
   const ref = `${o.ref}-R${(Number(n?.n) || 0) + 1}`;
-  const details = JSON.stringify({ restant_van: o.ref, quote_kind: 'restant', business_declaration: d.business_declaration, request: d.request });
+  const details = JSON.stringify({ restant_van: o.ref, quote_kind: 'restant', business_declaration: d.business_declaration, request: d.request,
+    /* Op maat (15 november 2026): de dienst en de aanvraag gaan mee, zodat mail en factuur "Catalog op maat" zeggen. */
+    ...(d.request === 'op-maat' ? { opmaat_id: d.opmaat_id, opmaat_dienst: d.opmaat_dienst, opmaat_totaal: d.opmaat_totaal } : {}),
+    ...(d.vat_declaration ? { vat_declaration: d.vat_declaration } : {}) });
   try {
     await env.DB.prepare(
       `INSERT INTO orders (ref, customer_id, service, status, name, brand, email, phone, vat_number, lang, tier,
@@ -14455,11 +14480,16 @@ const NAV_GROEPEN = [
 ];
 /* Pagina's die bestaan maar niet in het menu staan: wel hun naam in de kruimel. Abonnees is een tab van
    Klanten, dus daar staat Klanten aan. */
-const NAV_BUITEN = { abonnees: 'Abonnees', vat: 'Btw-controle', formaten: 'Formaten', testimonials: 'Aanbevelingen' };
-const NAV_OUDER = { abonnees: 'customers' };
+/* Op maat (15 november 2026, levering 103) is een tab van Klanten, net als Abonnees: het menu blijft bij acht
+   ingangen (blind91-w-menu), en het werk komt via Nu doen ("Op maat: voorbeeld", "offerte", "aanbetaling"). */
+const NAV_BUITEN = { abonnees: 'Abonnees', opmaat: 'Op maat', vat: 'Btw-controle', formaten: 'Formaten', testimonials: 'Aanbevelingen' };
+const NAV_OUDER = { abonnees: 'customers', opmaat: 'customers' };
 /* De Maandset staat tussen deze twee merktekens; metMenu() haalt hem eruit als er geen abonnees zijn. */
 const NAV_MAANDSET_BEGIN = '<!--nav:maandset-->';
 const NAV_MAANDSET_EIND = '<!--/nav:maandset-->';
+/* De helpers die src/lib/adminOpMaat.js nodig heeft, zonder dat dat bestand admin.js importeert (geen kring). */
+const OPMAAT_HULP = { html: (...a) => html(...a), page: (...a) => page(...a), adminNav: (...a) => adminNav(...a), klantTabs: (...a) => klantTabs(...a), esc: (...a) => esc(...a), seeOther: (...a) => seeOther(...a), logAdmin: (...a) => logAdmin(...a) };
+
 function adminNav(actief = '') {
   /* ── DE ZIJBALK — herontwerp 3 oktober 2026 ──────────────────────────────
      Dezelfde schil als VISUAILS Studio: een donkere zijbalk met het menu en een

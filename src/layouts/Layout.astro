@@ -27,6 +27,14 @@ import '../styles/posterkleur.css';
 import '../styles/fotoblok.css';
 /* het knoppensysteem (lijst 88 + 89, 9 november 2026): de ene bron voor elke knop (src/styles/knoppen.css) */
 import '../styles/knoppen.css';
+/* de zwevende bovenbalk in inkt (levering 99, lijst 100 D2 a): alleen onder body.hal */
+import '../styles/balk-99.css';
+/* 14 november 2026: geen snede meer, nergens (Lucas 03:36 en 03:48) */
+import '../styles/zonder-snede-99.css';
+import '../styles/kleur-100.css';  /* levering 100: zwart, wit en mint (de rollen; de waarden staan in de stijlbladen zelf) */
+import '../styles/kaart-100.css';  /* levering 100 stap 2: de kaarten van het kaartveld (de vier fotoblokken worden kaarten) */
+import '../styles/kaart-108.css';  /* levering 108, kaartveld fase 4: de kaarten op de andere pagina's (lijst 105) */
+import '../styles/telefoon-115.css';  /* levering 108, kaartveld fase 4: op de telefoon alles in het midden, op elke pagina (lijst 114) */
 // Self-hosted Archivo (Fontsource) — served from our own build instead of
 // Google's servers (AVG/GDPR-clean, no third-party connection). font-display
 // is 'swap' by default in Fontsource, matching the old &display=swap.
@@ -131,6 +139,8 @@ import { WOORDMERK, WOORDMERK_LIJNEN, WOORDMERK_SNEDE as WS, WOORDMERK_UITLOOP a
    Allebei vooraf geladen: de kop is op bijna elke pagina het grootste wat er bij het laden staat. */
 const LETTER_HAL = '/fonts/dm-sans/dm-sans-latin.woff2';
 const KOPLETTER_HAL = '/fonts/visuails-display/VISUAILSDisplay-Bold.woff2';
+/* levering 110: de blokletter van de hoofdkop op de voorpagina (1,7 kB), alleen daar vooraf geladen (banner-94.css) */
+const KOPBLOK = '/fonts/visuails-display/VISUAILSDisplayBlok-Bold.woff2';
 
 interface Props {
   title: string;
@@ -465,6 +475,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
     ? <link rel="preload" as="font" type="font/woff2" href={LETTER_HAL} crossorigin="anonymous" />
     : <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />}
   {huid === 'hal' && <link rel="preload" as="font" type="font/woff2" href={KOPLETTER_HAL} crossorigin="anonymous" />}
+  {voorlader && <link rel="preload" as="font" type="font/woff2" href={KOPBLOK} crossorigin="anonymous" />}
   {/* The heading face IS the LCP element on most pages — same measured
        reasoning as the Archivo preload above. Anybody is deliberately NOT
        preloaded: it draws one word, below the fold on every page but the
@@ -526,7 +537,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       dat staat de hal niet toe (KLEURENSCHEMA.md). */}
   {/* levering 79: op een hal-pagina de grond #F4F7FD (was wit), zodat de adresbalk van de telefoon
       één vlak is met de balk eronder. */}
-  <meta name="theme-color" content={huid === 'hal' ? '#FBFCFF' : '#25508B'} />
+  <meta name="theme-color" content={huid === 'hal' ? '#FCFCFC' : '#016645'} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImageAbs} />
@@ -661,7 +672,7 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
            D7). Lucas: *"Ook het logo wil ik witte achtergrond met fade blue hour VISUAILS logo
            maken, om met het blauw door het wit te snijden."* Alleen herkleurd: dezelfde paden.
            De fade loopt langs de snede (126,87°: de lijnen van gelijke kleur lopen evenwijdig aan
-           de snede van het vlagje, 53,13°), van blauw diep linksboven naar #2D61A8 rechtsonder.
+           de snede van het vlagje, 53,13°), van blauw diep linksboven naar #11976A rechtsonder.
            userSpaceOnUse, in de maten van het symbool zelf (de V 702 × 813,25; het tekstlogo K5
            viewBox 0 -712 3763,74 724 sinds levering 89, de getallen uit WOORDMERK_SNEDE en
            WOORDMERK_UITLOOP in src/data/woordmerk.js), zodat de fade op elk formaat dezelfde is. De
@@ -670,12 +681,12 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
            de voet: van blauw uur bovenaan naar nevel, waar de onderrand hem afsnijdt.
            Alle kleuren uit docs/KLEURENSCHEMA.md; wit erop of het logo op wit: elke stop 6,2 : 1
            of meer (de uitloop is versiering, geen tekst). */}
-      <linearGradient id="vs-v-snede" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient>
-      <linearGradient id="vs-v-licht" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#25508B"/><stop offset=".55" stop-color="#2D61A8"/><stop offset="1" stop-color="#44699D"/></linearGradient>
-      <linearGradient id="vs-w-snede" gradientUnits="userSpaceOnUse" x1={WS.x1} y1={WS.y1} x2={WS.x2} y2={WS.y2}><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient>
-      <linearGradient id="vs-w-licht" gradientUnits="userSpaceOnUse" x1={WS.x1} y1={WS.y1} x2={WS.x2} y2={WS.y2}><stop offset="0" stop-color="#25508B"/><stop offset=".55" stop-color="#2D61A8"/><stop offset="1" stop-color="#44699D"/></linearGradient>
-      <linearGradient id="vs-w-uitloop" gradientUnits="userSpaceOnUse" x1={WU.x1} y1={WU.y1} x2={WU.x2} y2={WU.y2}><stop offset="0" stop-color="#25508B"/><stop offset=".55" stop-color="#6283AF"/><stop offset="1" stop-color="#A2B7D2"/></linearGradient>
-      <linearGradient id="vs-w-uitloop-licht" gradientUnits="userSpaceOnUse" x1={WU.x1} y1={WU.y1} x2={WU.x2} y2={WU.y2}><stop offset="0" stop-color="#2D61A8"/><stop offset=".55" stop-color="#829DC0"/><stop offset="1" stop-color="#B9C7DE"/></linearGradient>
+      <linearGradient id="vs-v-snede" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#023D29"/><stop offset=".55" stop-color="#016645"/><stop offset="1" stop-color="#11976A"/></linearGradient>
+      <linearGradient id="vs-v-licht" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#016645"/><stop offset=".55" stop-color="#11976A"/><stop offset="1" stop-color="#44699D"/></linearGradient>
+      <linearGradient id="vs-w-snede" gradientUnits="userSpaceOnUse" x1={WS.x1} y1={WS.y1} x2={WS.x2} y2={WS.y2}><stop offset="0" stop-color="#023D29"/><stop offset=".55" stop-color="#016645"/><stop offset="1" stop-color="#11976A"/></linearGradient>
+      <linearGradient id="vs-w-licht" gradientUnits="userSpaceOnUse" x1={WS.x1} y1={WS.y1} x2={WS.x2} y2={WS.y2}><stop offset="0" stop-color="#016645"/><stop offset=".55" stop-color="#11976A"/><stop offset="1" stop-color="#44699D"/></linearGradient>
+      <linearGradient id="vs-w-uitloop" gradientUnits="userSpaceOnUse" x1={WU.x1} y1={WU.y1} x2={WU.x2} y2={WU.y2}><stop offset="0" stop-color="#016645"/><stop offset=".55" stop-color="#6283AF"/><stop offset="1" stop-color="#A2B7D2"/></linearGradient>
+      <linearGradient id="vs-w-uitloop-licht" gradientUnits="userSpaceOnUse" x1={WU.x1} y1={WU.y1} x2={WU.x2} y2={WU.y2}><stop offset="0" stop-color="#11976A"/><stop offset=".55" stop-color="#829DC0"/><stop offset="1" stop-color="#B9C7DE"/></linearGradient>
     </defs>
     <symbol id="p-bottle" viewBox="0 0 120 150">
       <rect x="50" y="8" width="20" height="16" rx="3" fill="url(#gObj)"/>
@@ -904,8 +915,13 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
           een zwart-op-groen-versie van. Het V-teken is dus het merk; de V
           staat weer in de balk. */}
       <a href={lp('/')} class="brand" aria-label="VISUAILS home">
+        {/* ── HET WOORDMERK IN DE BALK — levering 99, 13 november 2026 (lijst 100, D2 a) ──
+            Lucas: "Ik zou ook in de hoek het tekstlogo willen van VISUAILS", en "het logo en de knop
+            in de topbar [mogen] wit worden". De balk is nu een zwevende balk in inkt (balk-99.css),
+            dus het woordmerk staat wit. Het V-merk blijft in de lade en de favicon; de footer draagt
+            het woordmerk ook, maar die twee delen geen ouder onder <body> (brand-lockup-guard). */}
         {huid === 'hal'
-          ? <VMerk klasse="hal-vm hal-vm-balk" electro venster />
+          ? <Woordmerk klasse="hal-wm hal-wm-balk" electro />
           : <svg class="mk brand-mark brand-glyph" viewBox="0 0 702.00 813.25" aria-hidden="true"><BrandMark /></svg>}
       </a>
       <nav aria-label={t('nav_primary')} class="primary-nav">
@@ -1722,6 +1738,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     /* levering 80: zacht scrollen, alleen met een muiswiel en heel licht (zie de notitie over Lenis
      * hieronder: dit is bewust kleiner; src/scripts/zachtscrollen.js) */
     import '../scripts/zachtscrollen.js';
+    import '../scripts/balk100.js';   /* levering 100: de balk klapt weg en valt terug (16:42) */
+    import '../scripts/kaartveld.js';   /* levering 100 stap 2: het kaartveld */
+    import '../scripts/lichtnet.js';    /* levering 109: licht onder het doek, het net tussen de kaarten (lijst 116, 117) */
     /* shader-hero.js is hier weg — 7 augustus 2026. Het chroomveld dat het
      * tekende stond op één sectie van de homepage, en die sectie is herbouwd
      * zonder canvas (zie sectie 18 in HomeV2.astro: het was een tweede
@@ -2123,7 +2142,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      hover niet van pagina tot pagina een andere kleur heeft. */
   .site-header:not(.scrolled) .brand-glyph { --mk-line-ink: currentColor; }
   @media (forced-colors: active) { .brand-word, .brand-mark { fill: CanvasText; --mk-ink: CanvasText; --mk-line-ink: CanvasText; } }
-  @media print { .brand-word, .brand-mark { fill: #0F1217; --mk-ink: #0F1217; --mk-line-ink: #0F1217; } }
+  @media print { .brand-word, .brand-mark { fill: #090D0B; --mk-ink: #090D0B; --mk-line-ink: #090D0B; } }
   .nav-links { display: flex; align-items: center; gap: .1rem; list-style: none; margin: 0; padding: 0; }
   /* Pill, like everything else pressable in this bar. A 14px trigger standing
      next to a fully round Start button is the specific "blokkerig" Lucas
@@ -2661,8 +2680,8 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
        is. Naar NUL vervagen was de andere optie en is fout: dan zweeft het merk
        en raakt het de rand niet meer, en dat is nu juist het idee. */
     fill: #FFFFFF;
-    -webkit-mask-image: linear-gradient(to bottom, #0F1217 0%, #0F1217 62%, rgb(11 15 23 / .40) 100%);
-    mask-image: linear-gradient(to bottom, #0F1217 0%, #0F1217 62%, rgb(11 15 23 / .40) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #090D0B 0%, #090D0B 62%, rgb(9 13 11 / .40) 100%);
+    mask-image: linear-gradient(to bottom, #090D0B 0%, #090D0B 62%, rgb(9 13 11 / .40) 100%);
   }
 
   /* ── DEZE REGEL HEEFT DE GLOED VERPLAATST, EN NIEMAND ZAG HET ────────────

@@ -124,10 +124,13 @@
 // geschiedenis.
 export const LADDER = {
   // Catalog set only — four images.
-  catalog: [[1, 4, 89], [5, 9, 65], [10, 19, 51], [20, null, 39]],
+  /* RONDE BEDRAGEN, 15 november 2026 (lijst 111, regel a): elk bedrag op een veelvoud van € 5, wat op 9 eindigde
+   * een euro omhoog. Lucas: "89 euro wordt nu 90 euro … Dit moet bij alle prijzen gebeuren." Was 89 / 65 / 51 / 39
+   * en 109 / 82 / 64 / 49. Een nieuw bedrag hier ook op € 5 houden: tests/ronde-prijzen-111.test.mjs controleert het. */
+  catalog: [[1, 4, 90], [5, 9, 65], [10, 19, 50], [20, null, 40]],
   // Lifestyle carousel only — four images since 14 October 2026 (it was three; the
   // price stayed the same, afvinklijst 23 v23-prijs a).
-  lifestyle: [[1, 4, 109], [5, 9, 82], [10, 19, 64], [20, null, 49]],
+  lifestyle: [[1, 4, 110], [5, 9, 80], [10, 19, 65], [20, null, 50]],
 };
 
 /*
@@ -395,7 +398,7 @@ export const SLOT_KINDS = {
 export const SERVICE_CREDITS = {
   catalog: 4,
   lifestyle: 5,
-  'video-motion': 5,
+  'video-motion': 8,   // lijst 111: Motion kost nu € 100; 8 credits = € 12,50 per credit, net als catalog (was 5 bij € 69)
   'video-lifestyle': 12,
   hooks: 10,
 };
@@ -1337,7 +1340,9 @@ export const AMOUNT = {
   // REPORT-SECTION-14-VAT.md's own frozen arithmetic, the same treatment
   // CATALOG_AT_WRITING / LIFESTYLE_AT_WRITING already get in that checker —
   // updated alongside this change.
-  video: 69,
+  // 15 november 2026 (lijst 109 n-videobasis, lijst 111): Motion wordt € 100. Lucas: "Motion word op de normale
+  // website 100". Lifestylevideo gaat van de videopagina; video op maat krijgt een eigen prijs per seconde (opMaat.js).
+  video: 100,
 
   /* ── LIFESTYLE- EN CAMPAGNEVIDEO — VOORLOPIG BEDRAG, 7 september 2026 ──────
    *
@@ -1361,7 +1366,7 @@ export const AMOUNT = {
    *
    * Zoals hooks zit ook dit niet op de ladder: de opzet ís het werk, en er is
    * geen tweede product om hem over uit te smeren. Zie de noot bij hooks. */
-  videoLifestyle: 149,
+  videoLifestyle: 150,  // ronde bedragen (lijst 111); lifestylevideo staat niet meer als product op de videopagina (lijst 109)
 
   /* ── HOOKS — VANAF € 119 PER PRODUCT, 2 SEPTEMBER 2026 ─────────────────────
    *
@@ -1394,8 +1399,8 @@ export const AMOUNT = {
    * gereserveerd venster krijgen, en dat is precies waarom /hooks vandaag geen
    * bestelknop heeft maar een gesprek. Een prijs kennen en een doorlooptijd
    * kunnen beloven zijn twee verschillende dingen. */
-  hooks: 119,
-  hooksVariant: 49,
+  hooks: 120,          // ronde bedragen, lijst 111 (was 119)
+  hooksVariant: 50,   // was 49
 
   /* ── EDITIONS — € 149 PER MAAND NA EEN OPZET VAN € 295, 2 SEPTEMBER 2026 ───
    *
@@ -1433,8 +1438,8 @@ export const AMOUNT = {
    * prijskaartje. On-brand doet dat NIET — die wordt per merk opgezet en
    * verbruikt capaciteit — en dat verschil is de hele reden dat er hier één
    * bedrag staat en niet twee. Zie STOCK-IDEE.md §1. */
-  editions: 149,
-  editionsSetup: 295,
+  editions: 150,       // ronde bedragen, lijst 111 (was 149)
+  editionsSetup: 300,  // was 295
 
   // The three package amounts that used to sit here — dropPilot, fullDrop and
   // retainer — are gone. They were kept as ladder-derived values through the
@@ -1583,7 +1588,7 @@ export const RESOLUTIE = { standaard: 2048, hoog: 4096 };
 // in een grid van 600 px; 4096 px daarvoor is opslag en geen kwaliteit. Wie het
 // tóch nodig heeft (een winkelpui, een beursdoek), vraagt het aan — zie
 // RESOLUTIE_COPY hieronder.
-export const HOOG_PER_PRODUCT = 9;
+export const HOOG_PER_PRODUCT = 10;  // ronde bedragen, lijst 111 (was 9)
 
 export const RESOLUTIE_COPY = {
   en: {
@@ -1633,8 +1638,8 @@ export const RESOLUTIE_COPY = {
 // niet waargemaakt wordt, is erger dan geen optie.
 export const VOORRANG = {
   deel: 0.20,            // 20% van het orderbedrag, excl. btw
-  bodem: 49,
-  plafond: 249,
+  bodem: 50,            // ronde bedragen, lijst 111 (was 49)
+  plafond: 250,         // was 249
   uren: 24,              // alleen nog voor oude teksten; de belofte staat hieronder
   maxProducten: 20,      // catalog/lifestyle/complete — 20 producten
   maxClips: 10,          // video en hooks
@@ -1890,7 +1895,7 @@ export const VOORRANG_COPY = {
  * producten) ligt ertussen op € 34, want gelijk mag niet (de ladder moet strikt
  * dalen) en 39 tot aan tien producten zou de tussenstap laten verdwijnen die de
  * rest van de site wél heeft. */
-export const EXTRA_PHOTO_LADDER = [[1, 4, 39], [5, 9, 34], [10, 19, 29], [20, null, 19]];
+export const EXTRA_PHOTO_LADDER = [[1, 4, 40], [5, 9, 35], [10, 19, 30], [20, null, 20]];  // ronde bedragen, lijst 111 (was 39 / 34 / 29 / 19)
 
 // Past four extra frames on one product it is no longer "one more angle", it
 // is a second brief — the same reasoning MAX_OUTFIT_PRODUCTS applies to "more
@@ -3721,6 +3726,8 @@ export function customCreditsTotal(credits) {
     throw new Error(`pricing.js: een maand op maat is ${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX} credits, niet ${credits}.`);
   }
   const preset = Object.keys(PLAN_CREDITS).find((id) => PLAN_CREDITS[id] === n) || null;
+  // NIET op € 5 (lijst 111 vroeg ronde bedragen): de klant kiest hier elk aantal credits tussen 30 en 300, en op € 5
+  // afgerond wordt een credit bij één credit meer soms duurder (30 → € 270, 31 → € 280). Hele euro's, zoals de klant ze zelf kiest.
   const total = preset ? PLAN_AMOUNT[preset] : Math.round((n * creditRateCents(n)) / 100);
   return { credits: n, total, perCredit: Math.round((total / n) * 100) / 100, preset };
 }
@@ -3854,7 +3861,9 @@ export function bijkoopPrijs(planBedrag, planCredits, pakket) {
   if (pct === undefined || !(c > 0) || !(Number(planBedrag) > 0)) return null;
   const teller = x * Math.round(Number(planBedrag) * 100) * (100 - pct);
   const noemer = c * 100 * 100;
-  return Math.floor((teller + noemer - 1) / noemer);
+  // Naar boven op € 5 (lijst 111: ronde bedragen); de korting blijft daardoor iets kleiner, nooit groter.
+  const vijf = noemer * 5;
+  return Math.floor((teller + vijf - 1) / vijf) * 5;
 }
 
 /** Het maandbedrag van een abonnement met `credits` per maand volgens de prijslijst (plan of op maat), of null. */

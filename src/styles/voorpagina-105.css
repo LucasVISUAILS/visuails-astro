@@ -1,0 +1,106 @@
+/* ═══ LEVERING 105 · KAARTVELD FASE 3 · DE VOORPAGINA LINKS EN RECHTS (15 november 2026; plan §4, lijst 113) ═══════════
+   Elke rij is 12 kolommen in de kolom van de site (hoogstens 1200 px, --sk-m). Tekst en beeld om en om, zodat het oog een
+   Z volgt:
+     1 de banner (blijft: zijn montage, de kop links);
+     2 Wat we maken: de kaarten links (8 kolommen), de tekst rechts (4);
+     3 Hoe het werkt: de tekst links (5), het verhaal rechts (6);
+     4 het €1-blok als kaart links (6), een foto rechts (5);
+     5 de galerij over de hele breedte (de poster is weg, lijst 114);
+     6 de tekst links (5), het slot als kaart rechts (6).
+   Op de telefoon onder elkaar; een kaart is 88 % breed, om en om links en rechts (lijst 113, telefoon a).
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+.h-voor { --r105-gat: clamp(20px, 2.4vw, 40px); }
+
+/* de sectiekop in een kolom: label boven, kop eronder, geen haarlijn over de hele breedte */
+.r105 > .sk, .r105-slot .sk { flex-direction: column; align-items: flex-start; justify-content: flex-start; margin: 0; padding: 0; border: 0; gap: 18px; }
+.r105 > .sk .sk-lbl, .r105-slot .sk .sk-lbl { order: -1; }
+
+/* ── 2 · WAT WE MAKEN: de kaarten links, de tekst rechts ── */
+@media (min-width: 901px) {
+  html body.hal.hal .h-voor > .m8.r105 {
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--r105-gat); row-gap: 20px; align-items: start;
+  }
+  .m8.r105 > .sk { grid-column: 9 / 13; grid-row: 1; align-self: center; }
+  .m8.r105 > .m8-carrousel { grid-column: 1 / 9; grid-row: 1 / span 4; margin: 0; overflow: hidden; min-width: 0; }
+  .m8.r105 .m8-baan { margin-inline: 0; padding-inline: 0; }
+  .m8.r105 > :is(.m8-vrij, .m8-ook, .m8-regel) { grid-column: 9 / 13; margin: 0; text-align: left; justify-content: flex-start; }
+  .m8.r105 > .m8-ook { flex-wrap: wrap; }
+}
+
+/* ── 3 · HOE HET WERKT: de tekst links, het verhaal rechts ── */
+@media (min-width: 901px) {
+  html body.hal.hal .h-voor > .w8.r105 {
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--r105-gat); align-items: center; text-align: left;
+  }
+  .w8.r105 > .sk { grid-column: 1 / 6; grid-row: 1; margin-bottom: 36px; }
+  .w8.r105 > .w8-regel { grid-column: 1 / 6; grid-row: 2; flex-direction: column; align-items: flex-start; justify-content: flex-start; row-gap: 14px; font-size: clamp(26px, 2.8vw, 40px); }
+  .w8.r105 .w8-stap { align-items: flex-start; }
+  .w8.r105 .w8-stap + .w8-stap { padding-left: 0; }
+  .w8.r105 .w8-stap + .w8-stap::before { display: none; }
+  .w8.r105 > .w8-onder { grid-column: 1 / 6; grid-row: 3; margin: 30px 0 0; text-align: left; }
+  .w8.r105 > :is(.w8-podium, .w8-clip) { grid-column: 7 / 13; grid-row: 1 / span 3; width: 100%; margin: 0; }
+}
+
+/* ── 4 · HET €1-BLOK: de kaart links (6 kolommen), de beelden rechts (5): de proef met NON/STD, of voor een klant zijn eigen vier ── */
+@media (min-width: 901px) {
+  html body.hal.hal .h-voor > .h-proef {
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--r105-gat); align-items: center;
+    max-width: none; margin: var(--sk-lucht) 0 0; padding: 0 var(--sk-m); box-sizing: border-box;   /* de lucht als marge: de melding "Eerst zien?" kijkt of het blok zelf in beeld is */
+  }
+  html body.hal.hal .h-voor > .h-proef > .h-proef-woord { grid-column: 1 / 7; grid-row: 1; }
+  html body.hal.hal .h-voor > .h-proef > .h-vier { grid-column: 8 / 13; grid-row: 1; margin: 0; max-width: none; }
+}
+
+/* ── 6 · HET SLOT: de tekst links, de kaart rechts ── */
+html body.hal.hal .h-voor > .slot96.r105-slot {
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--r105-gat); align-items: center; text-align: left;
+}
+.r105-slot > .r105-tekst { grid-column: 1 / 6; display: grid; gap: 22px; }
+.r105-slot .slot96-zin { margin: 0; }
+.r105-slot > .r105-slotkaart { grid-column: 7 / 13; display: grid; gap: 22px; align-content: end; min-height: clamp(220px, 20vw, 300px); padding: clamp(28px, 3vw, 44px); border-radius: 18px; background: #090D0B; color: #FFFFFF; box-sizing: border-box; }
+.r105-slotregel { margin: 0; max-width: 22em; font: 600 clamp(20px, 1.8vw, 26px)/1.25 var(--h-letter); color: #FFFFFF; text-wrap: balance; }
+.r105-slotkaart .slot96-knoppen { margin: 0; justify-content: flex-start; }
+.r105-slotkaart .slot96-knoppen > a { width: auto; }
+html body.hal .r105-slotkaart .h-link.k-tekst { color: #FFFFFF; }
+html body.hal .r105-slotkaart :focus-visible { outline-color: #3DFFB0; }
+
+/* ── een smal scherm: onder elkaar, een kaart 88 % breed ── */
+@media (max-width: 900px) {
+  html body.hal.hal .h-voor > .h-proef { padding-left: var(--sk-m); padding-right: var(--sk-m); }
+  html body.hal.hal .h-voor > .h-proef > .h-proef-woord { width: 88%; margin-inline: auto; box-sizing: border-box; }
+  html body.hal .h-proef .h-acties .h-knop { padding-inline: 16px; white-space: nowrap; }
+  html body.hal.hal .h-voor > .slot96.r105-slot { display: block; }
+  .r105-slot > .r105-slotkaart { width: 88%; margin: 32px auto 0; min-height: 0; }
+}
+/* ── DE TELEFOON: ALLES IN HET MIDDEN (lijst 114, 15 november 2026) ─────────────────────────────────────────────────────
+   Lucas: "Telefoon content centreren geldt overigens voor alles, behalve hele specifieke uitzonderingen." Uitzondering hier:
+   de rijen van Meer weten (een lijst met een pijl rechts, die leest als een tabel). */
+@media (max-width: 700px) {
+  .h-voor .sk { align-items: center; text-align: center; }
+  .h-voor .sk-tekst { justify-items: center; }
+  .h-voor .sk-zin { margin-inline: auto; }
+  .h-voor .sk-lbl { align-self: center; }
+  .m8 :is(.m8-vrij, .m8-ook, .m8-regel) { text-align: center; justify-content: center; margin-inline: auto; }
+  .m8.m8.m8-aan .m8-info { justify-items: center; text-align: center; }
+  .m8.m8.m8-aan :is(.m8-knoppen, .m8-nav) { justify-content: center; }
+  html body.hal.hal .h-voor > .h-proef > .h-proef-woord { text-align: center; padding: 28px 22px 34px; }
+  html body.hal .h-voor .h-proef :is(.h-pil, .h-acties) { justify-content: center; }
+  html body.hal .h-voor .h-proef .h-acties { align-self: stretch; width: 100%; }
+  html body.hal .h-voor .h-proef .h-acties .h-knop { width: 100%; }
+  .r105-slotkaart .slot96-knoppen > a { white-space: nowrap; justify-content: center; }
+  html body.hal .h-voor .h-proef .h-proef-zin { margin-inline: auto; }
+  .r105-slot > .r105-tekst { justify-items: center; text-align: center; }
+  .r105-slot .slot96-zin { margin-inline: auto; }
+  .r105-slot > .r105-slotkaart { justify-items: center; text-align: center; padding: 30px 18px; }
+  html body.hal .r105-slotkaart .slot96-knoppen > a.h-link { width: auto; max-width: none; white-space: nowrap; justify-content: center; }
+  .r105-slotkaart .slot96-knoppen { flex-direction: column; align-items: center; gap: 14px; }
+  .h-voor > .h-vertrouwen { justify-content: center; text-align: center; }
+}
+@media (forced-colors: active) { .r105-slot > .r105-slotkaart { background: Canvas; color: CanvasText; border: 1px solid CanvasText; } }
+
+/* in een kolom: de kop iets kleiner, zodat hij op twee regels blijft (hoogstens twee regels) */
+@media (min-width: 901px) {
+  html body.hal .r105 > .sk .sk-kop.h-kop, html body.hal .r105-slot .sk .sk-kop.h-kop { font-size: clamp(32px, 3.4vw, 50px); }
+  .w8.r105 > .w8-onder { display: grid; gap: 6px; justify-items: start; }
+  .w8.r105 .w8-link { margin-left: 0; }
+}

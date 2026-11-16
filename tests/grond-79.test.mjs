@@ -1,5 +1,5 @@
 /**
- * VISUAILS — de grond (levering 79, 1 november 2026; sinds levering 80 Wit #FBFCFF, lijst 64 grond b).
+ * VISUAILS — de grond (levering 79, 1 november 2026; sinds levering 80 Wit #FFFFFF, lijst 64 grond b).
  *
  *   node tests/grond-79.test.mjs        (npm run test:grond79; draai eerst de build)
  *
@@ -10,7 +10,7 @@
  *       "De grond" in docs/KLEURENSCHEMA.md;
  *   2 · de beelden: de laptop van de opening en de standen van de laptop op de dienstpagina's zijn
  *       doorzichtig waar de grond is (geen ingebakken wit);
- *   3 · in de browser, op 1440 en 390 breed: de grond is #F4F7FD; geen vlak (#F4F5F7) direct op de
+ *   3 · in de browser, op 1440 en 390 breed: de grond is #F4F7FD; geen vlak (#F4F5F4) direct op de
  *       grond; geen brede witte band zonder rand die de grond zou overschilderen; en op het scherm
  *       zelf is de grond rond en tussen de foto's precies #F4F7FD (geen wit blok achter een foto).
  */
@@ -25,8 +25,8 @@ import { browserPad } from '../scripts/lib/browserpad.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
-/* levering 80: de grond is Wit #FBFCFF (was #F4F7FD in 79) */
-const GROND = [251, 252, 255];
+/* levering 80: de grond is Wit #FFFFFF (was #F4F7FD in 79) */
+const GROND = [252, 252, 252];   /* levering 107: de grond is #FCFCFC (Lucas, 15 november 20:23); levering 100 – 106 puur wit */
 let goed = 0, fout = 0;
 const ok = (naam, cond, extra = '') => { if (cond) goed++; else fout++; console.log(`${cond ? ' ok  ' : ' FAIL'} ${naam}${cond || !extra ? '' : ` — ${extra}`}`); };
 
@@ -37,11 +37,14 @@ if (!staat.er || staat.oud) { console.log(`geen bruikbare build — ${staat.uitl
 console.log('\n1 · het schema');
 const lees = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const hal = lees('src/styles/hal.css');
-ok('hal.css: --h-grond is #FBFCFF (Wit), en --bg en de achtergrond van body.hal lezen hem', /--h-grond: #FBFCFF;/.test(hal) && /--bg-0: var\(--h-grond\); --bg: var\(--h-grond\);/.test(hal) && /background: var\(--h-grond\);\s+\/\* levering 79: de grond \(was wit\) \*\//.test(hal));
-ok('hal.css: de balk (sinds 80 van glas: de grond op 72 %; sinds 83 met de lichtvlek als laag erop), de lade en de voet op de grond', /\.site-header \{[^}]*background: var\(--h-grond, #FBFCFF\) !important/.test(hal) && /html body\.hal \.site-header \{[^}]*background: (radial-gradient\([^;]*\), )?rgba\(251, 252, 255, \.72\) !important/.test(hal) && /body\.hal \.mobile-nav \{ font-family: var\(--h-letter\); background: var\(--h-grond\); \}/.test(hal) && /margin: 120px 0 0; border-radius: 0; background: var\(--h-grond\);/.test(hal));
-ok('Layout.astro: de adresbalk van een hal-pagina is de grond', /content=\{huid === 'hal' \? '#FBFCFF'/.test(lees('src/layouts/Layout.astro')));
+ok('hal.css: --h-grond is #FCFCFC (levering 107), en --bg en de achtergrond van body.hal lezen hem', /--h-grond: #FCFCFC;/.test(hal) && /--bg-0: var\(--h-grond\); --bg: var\(--h-grond\);/.test(hal) && /background: var\(--h-grond\);\s+\/\* levering 79: de grond \(was wit\) \*\//.test(hal));
+/* levering 100 (lijst 104): de balk en de voet zijn zwart (balk-99.css, kleur-100.css); de lade blijft op de grond.
+   VERVALLEN: de balk van glas op de grond (sinds 80) en de voet op de grond. */
+ok('levering 100: de balk zwart, de voet zwart (kleur-100.css), de lade op de grond', /body\.hal \.mobile-nav \{ font-family: var\(--h-letter\); background: var\(--h-grond\); \}/.test(hal) && /\.site-footer \{[^}]*background: #090D0B/.test(lees('src/styles/kleur-100.css')));
+ok('Layout.astro: de adresbalk van een hal-pagina is de grond', /content=\{huid === 'hal' \? '#FCFCFC'/.test(lees('src/layouts/Layout.astro')));
 const schema = lees('docs/KLEURENSCHEMA.md');
-ok('docs/KLEURENSCHEMA.md: de grond in de tabel en een eigen hoofdstuk, met de contrasten', /\| \*\*Grond\*\* \| `#FBFCFF`/.test(schema) && /## Levering 80: de vijf kleuren/.test(schema) && /### De grond \(levering 79/.test(schema) && /5,38:1 op de grond/.test(schema));
+/* levering 100: de grond staat als Wit in de tabel van "Levering 100"; het hoofdstuk over de grijze grond (79) blijft als geschiedenis */
+ok('docs/KLEURENSCHEMA.md: de grond is #FCFCFC in de tabel (levering 107), en het hoofdstuk van 79 staat er nog', /\| Grond \| `#FCFCFC` \| de achtergrond van elke pagina/.test(schema) && /### De grond \(levering 79/.test(schema));
 
 /* ── 2 · de beelden ─────────────────────────────────────────────────────── */
 console.log('\n2 · de beelden');
@@ -94,7 +97,7 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
     const r = await page.evaluate(() => {
       const rgb = (s) => { const m = s && s.match(/rgba?\(([^)]+)\)/); if (!m) return null; const v = m[1].split(',').map((x) => parseFloat(x)); return { r: v[0], g: v[1], b: v[2], a: v.length > 3 ? v[3] : 1 }; };
       const isWit = (c) => c && c.a > 0.9 && c.r >= 254 && c.g >= 254 && c.b >= 254;
-      const isVlak = (c) => c && c.a > 0.9 && Math.abs(c.r - 244) <= 1 && Math.abs(c.g - 245) <= 1 && Math.abs(c.b - 247) <= 1;
+      const isVlak = (c) => c && c.a > 0.9 && Math.abs(c.r - 244) <= 1 && Math.abs(c.g - 245) <= 1 && Math.abs(c.b - 244) <= 1;
       const eigen = (el) => { const c = rgb(getComputedStyle(el).backgroundColor); return c && c.a > 0.05 ? c : null; };
       const vorm = (el) => { const cs = getComputedStyle(el); return cs.boxShadow !== 'none' || ['Top', 'Right', 'Bottom', 'Left'].some((z) => parseFloat(cs[`border${z}Width`]) > 0 && (rgb(cs[`border${z}Color`]) || { a: 0 }).a > 0.1); };
       /* op de grond: geen voorouder met een eigen kleur, of alleen witte zonder vorm (die schilderden "grond") */
@@ -110,17 +113,22 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
            (een wit vlak mét ronding is een kaart of het lichte vlakje op de grond, zoals "Op maat" op /plans) */
         if (isWit(c) && !vorm(el) && parseFloat(cs.borderTopLeftRadius) === 0 && q.width >= innerWidth * 0.85 && opGrond(el)) band.push(el.className.toString().slice(0, 40) || el.tagName);
       }
-      const body = getComputedStyle(document.body).backgroundColor;
-      const balk = getComputedStyle(document.querySelector('.site-header, .wk-balk') || document.body).backgroundColor;
+      /* levering 109: met licht onder het doek (lichtnet.js) ligt de grond op html en is body doorzichtig, zodat het doek ertussen past */
+      const bodyEigen = getComputedStyle(document.body).backgroundColor;
+      const body = document.documentElement.classList.contains('ln-aan') && /rgba\(0, 0, 0, 0\)|transparent/.test(bodyEigen) ? getComputedStyle(document.documentElement).backgroundColor : bodyEigen;
+      /* levering 99 (lijst 100, D2 a): de balk is een zwevende balk in inkt; wat telt is de balk zelf, niet de strook eromheen */
+      const balk = getComputedStyle(document.querySelector('.site-header .container.nav, .wk-balk') || document.body).backgroundColor;
       const voet = document.querySelector('.site-footer') ? getComputedStyle(document.querySelector('.site-footer')).backgroundColor : body;
       return { body, balk, voet, vlak: [...new Set(vlak)], band: [...new Set(band)] };
     });
-    const g = 'rgb(251, 252, 255)';
+    const g = 'rgb(252, 252, 252)', wit = 'rgb(255, 255, 255)';   /* levering 107: de grond #FCFCFC */
     /* de balk is sinds 80 van glas: de grond op 72 % (de css-regel staat hierboven) */
-    const balkGoed = r.balk === g || r.balk === 'rgba(251, 252, 255, 0.72)';
-    if (r.body !== g || !balkGoed || r.voet !== g || r.vlak.length || r.band.length) fouten.push(`${pad} ${JSON.stringify(r)}`);
+    /* het bestelformulier (/start/…) heeft zijn eigen witte balk en geen voet (de werkplaats; fase 4 van levering 100) */
+    const z = 'rgb(9, 13, 11)', wk = pad.includes('/start/');
+    const goedStel = (r.balk === z && r.voet === z) || (wk && [g, wit].includes(r.balk) && [g, wit].includes(r.voet));
+    if (r.body !== g || !goedStel) fouten.push(`${pad} ${JSON.stringify(r)}`);
   }
-  ok(`${PAGINAS.length} pagina's: grond, balk en voet #FBFCFF (de balk als glas); geen vlak direct op de grond; geen witte band zonder rand`, fouten.length === 0, fouten.slice(0, 4).join(' | '));
+  ok(`${PAGINAS.length} pagina's: grond #FCFCFC (levering 107), de balk en de voet zwart (levering 100)`, fouten.length === 0, fouten.slice(0, 4).join(' | '));
 
   /* het scherm zelf: de grond rond en tussen de foto's is exact de grond */
   const meet = async (pad, punten) => {
@@ -143,7 +151,7 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
   /* levering 94: de opening is de bannervideo; de laptop staat onder Wat we maken, op de grond (het veld is weg). Gemeten
      links en rechts naast de laptop, halverwege de hoogte van het podium */
   const op = await meet('/nl/', [['.o8-podium', 0.01, 0.5], ['.o8-podium', 0.99, 0.5], ['.o8-podium', 0.01, 0.15]]);
-  ok('  de laptop: naast hem is het exact de grond (#FBFCFF)', exact(op), JSON.stringify(op));
+  ok('  de laptop: naast hem is het exact de grond (#FCFCFC)', exact(op), JSON.stringify(op));
   /* de laptop op /catalog: linksboven in de foto en onder de hand links (niet onder een ballon: op de
      telefoon staat "Wat jij stuurt" onderaan in het midden) */
   const dienst = await meet('/nl/catalog/', [['.hl-doos', 0.27, 0.08], ['.hl-doos', 0.45, 0.97]]);

@@ -1,0 +1,40 @@
+/* ONDER DE VIDEO — levering 110 (HalOnderVideo110.astro). De rechterkolom is even breed als het witte vlak van de banner
+   (banner-94.css: --b94-paneel) en staat op dezelfde rand (--b94-rand), zodat het blok onder het vlak doorloopt. */
+/* .ov110.ov110: anders wint .h-pagina section { padding-block: 0 } uit hal.css (zoals bij .g8.g8 in galerij-80.css) */
+.ov110.ov110 {
+  --ov-rand: max(20px, 3.3vw);
+  background: none;   /* het licht onder het doek (lichtnet.js) loopt eronder door */
+  padding-block: 40px 72px;
+  padding-left: max(var(--ov-rand), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--ov-rand), env(safe-area-inset-right, 0px));
+}
+.ov110-in {
+  display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 27vw, 400px); column-gap: max(24px, 4vw); align-items: start;
+}
+/* de kop is hoogstens 2 regels: de zin is ± 26 em lang (gemeten 16 november 2026: 25,9 Engels, 24,5 Nederlands), de
+   langste van twee gebalanceerde regels ± 13,6 em; dus de kolom gedeeld door 14, en nooit groter dan 48 px */
+.ov110-kopvak { container-type: inline-size; min-width: 0; }
+html body.hal .ov110 .ov110-kop {
+  margin: 0; font: 700 min(48px, calc(100cqw / 14))/.98 var(--h-kopletter); letter-spacing: -.01em;
+  text-transform: uppercase; color: var(--h-inkt, #090D0B); text-wrap: balance;
+}
+.ov110-tekst { min-width: 0; }
+.ov110-lbl {
+  margin: 6px 0 14px; display: flex; align-items: center; gap: 10px;
+  font: 600 var(--h-t-label, 12px)/1.3 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt, #090D0B);
+}
+.ov110-lbl i { display: inline-block; width: 14px; height: 2px; background: var(--h-inkt, #090D0B); transform: skewX(-37deg); }
+.ov110-zin { margin: 0; max-width: 40ch; font: 400 clamp(17px, 1.32vw, 19px)/1.45 var(--h-letter); color: var(--h-grijs, #5E6461); text-wrap: pretty; }
+.ov110-zin b { font-weight: 500; color: var(--h-inkt, #090D0B); }
+
+@media (max-width: 760px) {
+  .ov110.ov110 { padding-block: 32px 56px; }
+  .ov110-in { grid-template-columns: minmax(0, 1fr); row-gap: 22px; }
+}
+/* de telefoon: in het midden, zoals de rest van de voorpagina (telefoon-115.css) */
+@media (max-width: 700px) {
+  .ov110-in { text-align: center; }
+  html body.hal .ov110 .ov110-kop { margin-inline: auto; }
+  .ov110-lbl { justify-content: center; }
+  .ov110-zin { margin-inline: auto; }
+}

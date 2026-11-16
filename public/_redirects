@@ -316,10 +316,10 @@
 /voorbeeld/video/                       /video                      301
 /voorbeeld/video/motion                 /video/motion               301
 /voorbeeld/video/motion/                /video/motion               301
-/voorbeeld/video/lifestyle              /video/lifestyle            301
-/voorbeeld/video/lifestyle/             /video/lifestyle            301
-/voorbeeld/video/campaign               /video/campaign             301
-/voorbeeld/video/campaign/              /video/campaign             301
+/voorbeeld/video/lifestyle              /video/custom               301
+/voorbeeld/video/lifestyle/             /video/custom               301
+/voorbeeld/video/campaign               /video/custom              301
+/voorbeeld/video/campaign/              /video/custom              301
 /voorbeeld/video/custom                 /video/custom               301
 /voorbeeld/video/custom/                /video/custom               301
 /voorbeeld/hooks                        /hooks                      301
@@ -330,10 +330,10 @@
 /nl/voorbeeld/video/                    /nl/video                   301
 /nl/voorbeeld/video/motion              /nl/video/motion            301
 /nl/voorbeeld/video/motion/             /nl/video/motion            301
-/nl/voorbeeld/video/lifestyle           /nl/video/lifestyle         301
-/nl/voorbeeld/video/lifestyle/          /nl/video/lifestyle         301
-/nl/voorbeeld/video/campaign            /nl/video/campaign          301
-/nl/voorbeeld/video/campaign/           /nl/video/campaign          301
+/nl/voorbeeld/video/lifestyle           /nl/video/custom         301
+/nl/voorbeeld/video/lifestyle/          /nl/video/custom         301
+/nl/voorbeeld/video/campaign            /nl/video/custom          301
+/nl/voorbeeld/video/campaign/           /nl/video/custom          301
 /nl/voorbeeld/video/custom              /nl/video/custom            301
 /nl/voorbeeld/video/custom/             /nl/video/custom            301
 /nl/voorbeeld/hooks                     /nl/hooks                   301
@@ -435,6 +435,16 @@
 /nl/voorbeeld/opening/editions            /nl/editions                  301
 /nl/voorbeeld/opening/editions/           /nl/editions                  301
 
+# Lijst 109 (15 november 2026): op de videopagina staan alleen Motion en video op maat. Lifestylevideo en campagne
+# zijn video op maat geworden; een oude link komt daar uit.
+/video/lifestyle                        /video/custom               301
+/video/lifestyle/                       /video/custom               301
+/video/campaign                         /video/custom               301
+/video/campaign/                        /video/custom               301
+/nl/video/lifestyle                     /nl/video/custom            301
+/nl/video/lifestyle/                    /nl/video/custom            301
+/nl/video/campaign                      /nl/video/custom            301
+/nl/video/campaign/                     /nl/video/custom            301
 
 # ── de enige regel met een splat, en daarom de laatste — 14 oktober 2026 ──────
 # Cloudflare telt een regel als "dynamisch" zodra hij een * of :naam heeft, én

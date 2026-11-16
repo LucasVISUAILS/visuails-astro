@@ -73,10 +73,10 @@ export function poppetjeSvg({ crop = 'full', product = '', own = [], klein = fal
  */
 export const POP_CSS = `
 .pop { display: block; width: 100%; height: auto; }
-.pop .r { fill: rgb(11 15 23 / .06); stroke: var(--line-strong, rgb(11 15 23 / .34)); stroke-width: 2; stroke-linejoin: round; }
-.pop .r-head { fill: var(--paper, #F4F5F7); }
+.pop .r { fill: rgb(9 13 11 / .06); stroke: var(--line-strong, rgb(9 13 11 / .34)); stroke-width: 2; stroke-linejoin: round; }
+.pop .r-head { fill: var(--paper, #F4F5F4); }
 .pop .r-arms, .pop .r-legs { fill: none; }
-.pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(11 15 23 / .13); stroke-width: 1.5; }
+.pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(9 13 11 / .13); stroke-width: 1.5; }
 .pop[data-product="top"] .r-top,
 .pop[data-product="outerwear"] .r-top,
 .pop[data-product="underwear"] .r-top,
@@ -86,14 +86,14 @@ export const POP_CSS = `
 .pop[data-product="dress"] .r-top,
 .pop[data-product="dress"] .r-bottom,
 .pop[data-product="shoes"] .r-shoes,
-.pop[data-product="socks"] .r-shoes { fill: var(--ink, #0F1217); stroke: var(--ink, #0F1217); }
+.pop[data-product="socks"] .r-shoes { fill: var(--ink, #090D0B); stroke: var(--ink, #090D0B); }
 .pop[data-own*="shoes"] .r-shoes,
 .pop[data-own*="bottom"] .r-bottom,
 .pop[data-own*="top"] .r-top,
-.pop[data-own*="underlayer"] .r-underlayer { fill: rgb(11 15 23 / .45); stroke: none; }
-.pop .pop-buiten { fill: var(--paper, #F4F5F7); fill-opacity: .8; }
-.pop .pop-kader { fill: none; stroke: var(--ink, #0F1217); stroke-width: 2; }
+.pop[data-own*="underlayer"] .r-underlayer { fill: rgb(9 13 11 / .45); stroke: none; }
+.pop .pop-buiten { fill: var(--paper, #F4F5F4); fill-opacity: .8; }
+.pop .pop-kader { fill: none; stroke: var(--ink, #090D0B); stroke-width: 2; }
 .pop.pop-klein .pop-buiten { display: none; }
-.pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(11 15 23 / .2)); }
+.pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(9 13 11 / .2)); }
 .pop.pop-klein .pop-kader { stroke-width: 3; }
 `;

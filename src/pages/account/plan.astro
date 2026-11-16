@@ -69,7 +69,7 @@ const ovOpties = v.overstap ? v.overstap.opties.filter((o) => ABO_EXTRA_ZICHTBAA
   {v.geen && (
     <Fragment>
       <section class="st-blok" aria-label={v.leeg.h}>
-        <div class="st-kaart-vlak st-geenabo k-inkt">
+        <div class="st-kaart-vlak st-geenabo k-inkt st-veldkaart st-vk-1">
           <span class="st-eyebrow">{v.leeg.eyebrow}</span>
           <h2>{v.leeg.h}</h2>
           <p>{v.leeg.p}</p>
@@ -146,7 +146,7 @@ const ovOpties = v.overstap ? v.overstap.opties.filter((o) => ABO_EXTRA_ZICHTBAA
       <Fragment>
       {/* ── HET SALDO ── */}
       <section class="st-blok" aria-labelledby="saldo-h">
-        <div class={`st-kaart-vlak st-vlak st-abo-saldo${v.saldo.leeg ? ' is-leeg' : ''}`} id="saldo">
+        <div class={`st-kaart-vlak st-vlak st-abo-saldo k-inkt st-veldkaart st-vk-2${v.saldo.leeg ? ' is-leeg' : ''}`} id="saldo">
           {v.plan && <span class="st-eyebrow">{T.planLabel} · {v.plan.naam}</span>}
           {/* Het spaarplafond (12 oktober 2026): "Je hebt 356 credits (je kunt
               er 360 sparen)", en bij een lopend abonnement geen vervaldatum maar

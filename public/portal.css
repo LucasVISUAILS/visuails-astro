@@ -102,24 +102,24 @@
      stylesheet van de site niet bereiken. De waarden zijn letterlijk die uit
      KLEURENSCHEMA.md — verandert daar iets, dan hier ook.
      ═══════════════════════════════════════════════════════════════════════ */
-  --accent:          #0F1217;
+  --accent:          #090D0B;
   --on-accent:       #FFFFFF;
-  --accent-text:     #0F1217;
+  --accent-text:     #090D0B;
   --accent-tint:     #ECEDEF;
-  --on-accent-tint:  #0F1217;
-  --accent-dim:      #0F1217;
-  --panel:           #0F1217;
-  --on-panel:        #F4F5F7;
+  --on-accent-tint:  #090D0B;
+  --accent-dim:      #090D0B;
+  --panel:           #090D0B;
+  --on-panel:        #F4F5F4;
   --sunken:          #DCDFE3;
-  --line-soft:       rgb(11 15 23 / .10);
+  --line-soft:       rgb(9 13 11 / .10);
 
   --st-wait-fill: transparent;  --st-wait-edge: #7C818B;              --st-wait-ink: #4B515A;
-  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0F1217;
-  --st-done-fill: #0F1217;      --st-done-edge: #0F1217;               --st-done-ink: #FFFFFF;
-  --st-rev-fill:  #F4F5F7;      --st-rev-edge:  rgb(37 80 139 / .30);   --st-rev-ink:  #25508B;
+  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(9 13 11 / .30);  --st-work-ink: #090D0B;
+  --st-done-fill: #090D0B;      --st-done-edge: #090D0B;               --st-done-ink: #FFFFFF;
+  --st-rev-fill:  #F4F5F4;      --st-rev-edge:  rgb(1 102 69 / .30);   --st-rev-ink:  #016645;
   --st-can-fill:  #E6E7EA;      --st-can-edge:  #818790;               --st-can-ink:  #3D414A;
 
-  --paper:      #F4F5F7;               /* body ground                       */
+  --paper:      #F4F5F4;               /* body ground                       */
   --paper-2:    #E6E7EA;               /* recessed / banded                 */
   --paper-lift: #E6E7EA;               /* raised — a card off the ground    */
 
@@ -132,26 +132,26 @@
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
      same way on every one of the three surfaces above. */
-  --ink-900:  #0F1217;
-  --ink-700:  rgb(11 15 23 / .66);
+  --ink-900:  #090D0B;
+  --ink-700:  rgb(9 13 11 / .66);
   /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
      met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
      blijven staan op de oudere, lichtere waarde. Op wit haalde die het nog
      (5,1:1), op de tweede grond #EDEDED niet: 4,36:1, en daar staat de meta-regel
      van elke aandachtkaart in. Precies de afdrijving waar de kop van dit blok
      voor waarschuwt, gevonden door te meten. */
-  --ink-500:  rgb(11 15 23 / .56);
-  --ink-300:  rgb(11 15 23 / .34);  /* rules, never text */
-  --ink-200:  rgb(11 15 23 / .20);  /* hairlines */
-  --ink-100:  #0F1217;
+  --ink-500:  rgb(9 13 11 / .56);
+  --ink-300:  rgb(9 13 11 / .34);  /* rules, never text */
+  --ink-200:  rgb(9 13 11 / .20);  /* hairlines */
+  --ink-100:  #090D0B;
 
   /* The three "on dark" names are now the same values as the ink ramp, because
      every ground is dark. They stay as separate names rather than being
      collapsed: the rules that read them are the rules that would break first
      if a light ground ever came back. */
-  --paper-on-dark:       #F4F5F7;
-  --paper-soft-on-dark:  rgb(244 245 247 / .72);
-  --paper-muted-on-dark: rgb(244 245 247 / .55);
+  --paper-on-dark:       #F4F5F4;
+  --paper-soft-on-dark:  rgb(244 245 244 / .72);
+  --paper-muted-on-dark: rgb(244 245 244 / .55);
 
   /* ---- mist tints ----
      Four warm/cool separator tints under the old scheme. On a near-black
@@ -192,16 +192,16 @@
 
   /* Ghost fill for secondary and small buttons — a paper alpha now, not an
      ink alpha. An ink alpha on a near-black ground is invisible. */
-  --ghost:      rgb(11 15 23 / .06);
+  --ghost:      rgb(9 13 11 / .06);
 
   /* Button surfaces as TOKENS, not as descendant rules — see global.css. */
   --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(11 15 23 / .12);
+  --btn-ghost-fill-hover:  rgb(9 13 11 / .12);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(11 15 23 / .06);
-  --btn-2nd-ink:           #0F1217;
-  --btn-2nd-border:        rgb(11 15 23 / .24);
-  --btn-2nd-border-hover:  rgb(11 15 23 / .60);
+  --btn-2nd-fill-hover:    rgb(9 13 11 / .06);
+  --btn-2nd-ink:           #090D0B;
+  --btn-2nd-border:        rgb(9 13 11 / .24);
+  --btn-2nd-border-hover:  rgb(9 13 11 / .60);
 
   /* ---- system colour ----
      Still two hues, still never the sole carrier of state — every status
@@ -240,7 +240,7 @@
   --line-strong: var(--ink-300);
   /* The border a focused field takes: strong enough to read as "this one",
      which on a dark ground means brighter, not darker. */
-  --line-ui:     rgb(11 15 23 / .45);
+  --line-ui:     rgb(9 13 11 / .45);
 
   --brand:         var(--ink-900);
   /* ── `--accent: var(--teal)` STOND HIER, EN HET WAS EEN KRINGETJE ────────
@@ -274,7 +274,7 @@
   --accent-soft:   #E6E7EA;
   --accent-line:   var(--ink-300);
 
-  --focus-ring:    #25508B;
+  --focus-ring:    #016645;
 
   /* The <select> caret, as a data URL rather than a token the SVG can read —
      a `stroke` inside a data: URL cannot see var(). Hand-copy of the ink
@@ -1012,9 +1012,9 @@ body {
   --surface-2: #F5F5F7;
   --paper-2: #F5F5F7;
   --paper-lift: #F5F5F7;
-  --line: rgb(11 15 23 / .09);
-  --line-strong: rgb(11 15 23 / .18);
-  --ghost: rgb(11 15 23 / .04);
+  --line: rgb(9 13 11 / .09);
+  --line-strong: rgb(9 13 11 / .18);
+  --ghost: rgb(9 13 11 / .04);
   --pt-r-kaart: 10px;
   --pt-r: 8px;
   margin: 0; padding: 0;
@@ -1210,59 +1210,59 @@ textarea, input[type="text"], input[type="email"], input[type="tel"], select {
 html body {
   --h-letter: "DM Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 77: DM Sans (lijst 60; was Instrument Sans, levering 76); de @font-face in /fonts/gedeeld.css */
   --font: var(--h-letter); --font-kop: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
-  --paper: #FFFFFF; --paper-2: #F4F5F7; --paper-lift: #F4F5F7; --bg: #FFFFFF; --bg-raise: #F4F5F7;
-  --surface: #FFFFFF; --surface-2: #F4F5F7; --surface-3: #E6E8EC; --sunken: #E6E8EC;
-  --ink-900: #0F1217; --ink-100: #0F1217; --ink-700: #0F1217; --ink-500: #636974; --ink-300: #C5C8CF; --ink-200: #E6E8EC;
-  --ink: #0F1217; --ink-2: #0F1217; --ink-3: #636974; --ink-4: #C5C8CF; --ink-faint: #636974;
-  --line: #E6E8EC; --line-soft: #E6E8EC; --line-strong: #C5C8CF; --line-ui: #858A94;
-  --ghost: rgb(11 15 23 / .04); --btn-ghost-fill: rgb(11 15 23 / .05); --btn-ghost-fill-hover: #E6E8EC;
-  --btn-2nd-ink: #0F1217; --btn-2nd-border: #C5C8CF; --btn-2nd-border-hover: #0F1217; --btn-2nd-fill-hover: #F4F5F7;
-  --panel: #0F1217; --on-panel: #FFFFFF; --paper-on-dark: #FFFFFF;
-  --accent: #0F1217; --on-accent: #FFFFFF; --accent-on: #FFFFFF; --accent-ink: #FFFFFF;
-  --accent-text: #0F1217; --accent-dim: #0F1217; --accent-2: #0F1217; --accent-word: #0F1217; --accent-bright: #0F1217;
-  --accent-tint: #F4F5F7; --on-accent-tint: #0F1217; --accent-soft: #F4F5F7; --accent-line: #858A94;
-  --teal: #0F1217; --teal-hover: #25508B; --teal-text: #0F1217; --brand: #0F1217; --focus-ring: #25508B;
-  --mist-teal: #F4F5F7; --mist-slate: #F4F5F7; --mist-stone: #F4F5F7;
-  --st-wait-fill: transparent; --st-wait-edge: #858A94; --st-wait-ink: #0F1217;
-  --st-work-fill: #F4F5F7; --st-work-edge: #E6E8EC; --st-work-ink: #0F1217;
-  --st-done-fill: #0F1217; --st-done-edge: #0F1217; --st-done-ink: #FFFFFF;
-  --st-rev-fill: #F4F5F7; --st-rev-edge: rgb(37 80 139 / .30); --st-rev-ink: #25508B;
-  --st-can-fill: #E6E8EC; --st-can-edge: #858A94; --st-can-ink: #0F1217;
-  --signal: #F4F5F7; --signal-ink: #0F1217; --verify: #0F1217; --verify-ink: #FFFFFF;
-  --warn: #F4F5F7; --warn-ink: #25508B; --flag: #F4F5F7; --flag-ink: #25508B; --clay: #25508B; --clay-text: #25508B; --mist-clay: #F4F5F7;
+  --paper: #FFFFFF; --paper-2: #F4F5F4; --paper-lift: #F4F5F4; --bg: #FFFFFF; --bg-raise: #F4F5F4;
+  --surface: #FFFFFF; --surface-2: #F4F5F4; --surface-3: #E7EAE8; --sunken: #E7EAE8;
+  --ink-900: #090D0B; --ink-100: #090D0B; --ink-700: #090D0B; --ink-500: #5E6461; --ink-300: #C6CAC8; --ink-200: #E7EAE8;
+  --ink: #090D0B; --ink-2: #090D0B; --ink-3: #5E6461; --ink-4: #C6CAC8; --ink-faint: #5E6461;
+  --line: #E7EAE8; --line-soft: #E7EAE8; --line-strong: #C6CAC8; --line-ui: #8A908D;
+  --ghost: rgb(9 13 11 / .04); --btn-ghost-fill: rgb(9 13 11 / .05); --btn-ghost-fill-hover: #E7EAE8;
+  --btn-2nd-ink: #090D0B; --btn-2nd-border: #C6CAC8; --btn-2nd-border-hover: #090D0B; --btn-2nd-fill-hover: #F4F5F4;
+  --panel: #090D0B; --on-panel: #FFFFFF; --paper-on-dark: #FFFFFF;
+  --accent: #090D0B; --on-accent: #FFFFFF; --accent-on: #FFFFFF; --accent-ink: #FFFFFF;
+  --accent-text: #090D0B; --accent-dim: #090D0B; --accent-2: #090D0B; --accent-word: #090D0B; --accent-bright: #090D0B;
+  --accent-tint: #F4F5F4; --on-accent-tint: #090D0B; --accent-soft: #F4F5F4; --accent-line: #8A908D;
+  --teal: #090D0B; --teal-hover: #016645; --teal-text: #090D0B; --brand: #090D0B; --focus-ring: #016645;
+  --mist-teal: #F4F5F4; --mist-slate: #F4F5F4; --mist-stone: #F4F5F4;
+  --st-wait-fill: transparent; --st-wait-edge: #8A908D; --st-wait-ink: #090D0B;
+  --st-work-fill: #F4F5F4; --st-work-edge: #E7EAE8; --st-work-ink: #090D0B;
+  --st-done-fill: #090D0B; --st-done-edge: #090D0B; --st-done-ink: #FFFFFF;
+  --st-rev-fill: #F4F5F4; --st-rev-edge: rgb(1 102 69 / .30); --st-rev-ink: #016645;
+  --st-can-fill: #E7EAE8; --st-can-edge: #8A908D; --st-can-ink: #090D0B;
+  --signal: #F4F5F4; --signal-ink: #090D0B; --verify: #090D0B; --verify-ink: #FFFFFF;
+  --warn: #F4F5F4; --warn-ink: #016645; --flag: #F4F5F4; --flag-ink: #016645; --clay: #016645; --clay-text: #016645; --mist-clay: #F4F5F4;
   --select-caret: url("/img/ui/keuzepijl-0f1217.svg");
   --pt-r-kaart: var(--r-kaart); --pt-r: 22px;  /* kaart 24 rond (25 oktober 2026); was 28 met één zachte hoek */
   --r-pill: 999px;
-  background: #FFFFFF; color: #0F1217; font-family: var(--h-letter); font-size: 1rem;
+  background: #FFFFFF; color: #090D0B; font-family: var(--h-letter); font-size: 1rem;
 }
-html body ::selection { background: #25508B; color: #FFFFFF; }
+html body ::selection { background: #016645; color: #FFFFFF; }
 /* Schema A (levering 62): een aangevinkt vakje is violet, zoals op de site (wat je kiest). */
-html body input[type="checkbox"], html body input[type="radio"] { accent-color: #25508B; }
-html body .bar { min-height: 68px; background: rgb(255 255 255 / .94); box-shadow: inset 0 -1px 0 #E6E8EC; }
-html body .mark { display: block; color: #0F1217; line-height: 0; }
+html body input[type="checkbox"], html body input[type="radio"] { accent-color: #016645; }
+html body .bar { min-height: 68px; background: rgb(255 255 255 / .94); box-shadow: inset 0 -1px 0 #E7EAE8; }
+html body .mark { display: block; color: #090D0B; line-height: 0; }
 html body .mark .woordmerk { display: block; height: 22px; width: auto; aspect-ratio: 3763.74 / 724; fill: currentColor; }
-html body .ref { font-size: .875rem; color: #636974; }
-html body h1 { font-weight: 450; font-size: 2.25rem; letter-spacing: -.025em; color: #0F1217; }
-html body .lede { font-size: 1rem; color: #636974; }
-html body :is(.facts, .work, .rr, .folder, .nu, .herbestel) { border-color: #E6E8EC; border-radius: var(--r-kaart); }
+html body .ref { font-size: .875rem; color: #5E6461; }
+html body h1 { font-weight: 450; font-size: 2.25rem; letter-spacing: -.025em; color: #090D0B; }
+html body .lede { font-size: 1rem; color: #5E6461; }
+html body :is(.facts, .work, .rr, .folder, .nu, .herbestel) { border-color: #E7EAE8; border-radius: var(--r-kaart); }
 html body .work, html body .rr, html body .folder { padding: 1.5rem 1.6rem; }
-html body .work h2, html body .rr h2, html body .folder h2, html body .herbestel h2 { font-size: 1.125rem; font-weight: 600; color: #0F1217; }
+html body .work h2, html body .rr h2, html body .folder h2, html body .herbestel h2 { font-size: 1.125rem; font-weight: 600; color: #090D0B; }
 /* De violette streep links was een gekleurde zijrand, en violet is voor een knop. */
-html body .nu { border-left: 1px solid #E6E8EC; padding: 1.4rem 1.6rem; }
-html body .nu-zin { font-size: 1.0625rem; color: #0F1217; }
-html body .fact dt { font-size: .8125rem; font-weight: 450; letter-spacing: 0; text-transform: none; color: #636974; }
+html body .nu { border-left: 1px solid #E7EAE8; padding: 1.4rem 1.6rem; }
+html body .nu-zin { font-size: 1.0625rem; color: #090D0B; }
+html body .fact dt { font-size: .8125rem; font-weight: 450; letter-spacing: 0; text-transform: none; color: #5E6461; }
 html body .fact dt::first-letter { text-transform: uppercase; }
 html body .fact dd { font-size: 1rem; }
-html body .note { border-radius: var(--r-klein); border-color: #E6E8EC; }
+html body .note { border-radius: var(--r-klein); border-color: #E7EAE8; }
 html body .btn { min-height: 42px; padding: 0 1.15rem; border-radius: var(--hoek-knop); font-family: var(--h-letter); font-weight: 600; font-size: .9375rem; }
-html body .btn-primary { background: #0F1217; color: #FFFFFF; }
-html body .btn-primary:hover, html body .btn-primary:focus-visible { background: #25508B; }
+html body .btn-primary { background: #090D0B; color: #FFFFFF; }
+html body .btn-primary:hover, html body .btn-primary:focus-visible { background: #016645; }
 html body .pick { border-radius: var(--hoek-knop); }
-html body .shot img { border-radius: var(--r-klein); background: #F4F5F7; }
-html body textarea, html body input[type="text"], html body input[type="email"], html body input[type="tel"], html body select { border-color: #858A94; border-radius: 999px; font-family: var(--h-letter); }
+html body .shot img { border-radius: var(--r-klein); background: #F4F5F4; }
+html body textarea, html body input[type="text"], html body input[type="email"], html body input[type="tel"], html body select { border-color: #8A908D; border-radius: 999px; font-family: var(--h-letter); }
 html body .stand { border-radius: 999px; font-family: var(--h-letter); font-weight: 600; }
-html body .pad .is-now .pad-stip { background: #0F1217; }
-html body .foot { color: #636974; }
+html body .pad .is-now .pad-stip { background: #090D0B; }
+html body .foot { color: #5E6461; }
 
 /* ── DOORLOOP 27 (15 oktober 2026) ──────────────────────────────────────────
    B36: per product een kop, per beeld het vak, de bestandsnaam klein eronder.
@@ -1350,7 +1350,7 @@ html body .foot { color: #636974; }
 }
 /* de maten in eenheden van het tekenvlak (3764 breed, het tekstlogo K5): op 112 tot 124 px is 56
    ongeveer anderhalve pixel, zoals de V in de balk van de site */
-.mark { --mk-line-ink: #25508B; --mk-kleur: #25508B; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
+.mark { --mk-line-ink: #016645; --mk-kleur: #016645; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
 
 /* ══ HET LOGO SCHOMMELT IN KLEUR — levering 68 (24 oktober 2026) ════════════════════
    Lucas: *"Ik wil dat het logo niet zelf beweegt maar dat de kleuren op als een soort
@@ -1369,7 +1369,7 @@ html body .foot { color: #636974; }
 .mk { --vs-amp: 0; animation: vs-schommel 3.6s linear infinite paused; transition: --vs-amp .7s cubic-bezier(.3, 0, .2, 1); }
 :is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk, button:focus-visible > .mk) { --vs-amp: 1; animation-play-state: running; transition-duration: .45s; }
 .mk .mk-line { display: none; }
-.mk .mk-kleur { fill: var(--mk-kleur, #25508B); stroke: none; opacity: calc(var(--vs-amp) * (1 - cos(var(--vs-fase) * 360deg)) / 2); pointer-events: none; }
+.mk .mk-kleur { fill: var(--mk-kleur, #016645); stroke: none; opacity: calc(var(--vs-amp) * (1 - cos(var(--vs-fase) * 360deg)) / 2); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .mk { animation: none; transition: none; }
   .mk .mk-kleur { opacity: var(--vs-amp); }
@@ -1393,7 +1393,7 @@ html body .foot { color: #636974; }
 @supports (background-image: image-set(url("/img/stuk/korrel-128.webp") 1x)) {
   .stand.is-geleverd { --pk-korrel: image-set(url("/img/stuk/korrel-128.webp") 1x, url("/img/stuk/korrel-256.webp") 2x); }
 }
-.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #0F1217 !important; color: #FFFFFF !important; box-shadow: none !important; }
+.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #090D0B !important; color: #FFFFFF !important; box-shadow: none !important; }
 @media (forced-colors: active) { .stand.is-geleverd { background: Canvas !important; color: CanvasText !important; border: 1px solid CanvasText !important; } }
 
 /* De knop en de statuspil zoals op de site en in Studio (levering 57): de knop met één
@@ -1445,7 +1445,7 @@ html body .foot { margin-top: 38px; }
 
 
 /* ══ LEVERING 86 · HET WOORDMERK IN DE SNEDE (3 november 2026, lijst 72, logo a en schommel a) ══
-   Zoals op de site en in Studio: het woordmerk in de fade van blauw diep naar #2D61A8 langs de snede
+   Zoals op de site en in Studio: het woordmerk in de fade van blauw diep naar #11976A langs de snede
    (alleen herkleurd), de schommel naar dezelfde fade een stap lichter. De fades staan in het woordmerk
    zelf (woordmerkSvg, src/data/wordmarkPath.js). */
 html body .mark .mk .mk-fill { fill: url(#vs-wi-snede); }

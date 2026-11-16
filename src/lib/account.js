@@ -551,6 +551,7 @@ const COPY = {
     // one word for "Orders" in this file, not two that could drift apart.
     ordersHeading: 'Orders',
     emptyOrders: 'Nothing here yet — your first order will show up the moment it comes in.',
+    eersteBestellingH: 'Your first order',
     fRef: 'Reference',
     fService: 'Service',
     fPlaced: 'Placed',
@@ -829,6 +830,7 @@ const COPY = {
     navBrandKit: 'Your look',
     navDetails: 'Your details',
     navPlan: 'Plan',
+    navOpMaat: 'Custom',
     navCollapse: 'Collapse menu',
     navExpand: 'Expand menu',
     themaNaarLicht: 'Light screen',
@@ -1260,6 +1262,7 @@ const COPY = {
 
     ordersHeading: 'Bestellingen',
     emptyOrders: 'Hier staat nog niets — je eerste bestelling verschijnt zodra hij binnenkomt.',
+    eersteBestellingH: 'Je eerste bestelling',
     fRef: 'Referentie',
     fService: 'Dienst',
     fPlaced: 'Geplaatst',
@@ -1447,6 +1450,7 @@ const COPY = {
     navBrandKit: 'Je vaste look',
     navDetails: 'Je gegevens',
     navPlan: 'Abonnement',
+    navOpMaat: 'Op maat',
     navCollapse: 'Menu inklappen',
     navExpand: 'Menu uitklappen',
     themaNaarLicht: 'Licht scherm',
@@ -1780,6 +1784,10 @@ export async function accountGet(context) {
   // expecting JSON (see handleMe()) — handing it an HTML body either way
   // would be a caller-visible content-type lie, not a graceful degradation.
   if (path === '/account/me') return handleMe(context);
+  // De intake op maat (lijst 107): eigen sessie- en eigenaarscontrole in src/lib/opMaatApi.js; JSON, dus vóór de HTML-tak.
+  if (path === '/account/op-maat/api') return (await import('./opMaatApi.js')).onRequestGet(context);
+  const opMaatBeeld = path.match(/^\/account\/op-maat\/beeld\/(\d+)$/);
+  if (opMaatBeeld) return (await import('./opMaatApi.js')).voorbeeldBeeld(context, Number(opMaatBeeld[1]));
 
   // A brand model's picture, for the brand that owns it. Ownership is checked
   // against the session's customer id and the r2_key is read from the row —
@@ -2014,6 +2022,8 @@ export async function accountPost(context) {
   // no ambient credential, so there is nothing for a forged cross-site POST to
   // ride on.
   if (path === '/account/login') return handleLoginPost(context);
+  // De intake op maat (lijst 107): doet zelf originIsSelf(), de sessie en een ratelimit, en antwoordt in JSON.
+  if (path === '/account/op-maat/api') return (await import('./opMaatApi.js')).onRequestPost(context);
   // Ook vóór de Origin-controle en vóór currentCustomer(), om dezelfde reden als
   // de regel hierboven: hier is nog geen sessie om op mee te liften, dus er is
   // niets wat een vervalste cross-site POST zou kunnen misbruiken. Wat er wél
@@ -6167,7 +6177,7 @@ function naarInloggen(request, na = '') {
  * header, including task #271e's 2026-07-29 widening (request.url's own host,
  * then env.ALLOWED_ORIGIN_HOSTS if that misses — unset, this is unchanged).
  */
-function originIsSelf(request, env) {
+export function originIsSelf(request, env) {
   // Same check, same reasoning, as admin.js's originIsSelf() — including
   // the 2026-08-01 Referrer-Policy fix documented there in full.
   //
@@ -10978,6 +10988,26 @@ export async function studioScreen(context, section) {
     try { emailStatus = new URL(request.url).searchParams.get('email') || ''; } catch { /* geen geldige URL */ }
     return { st, v: detailsView(t, lang, st.details, st.justSaved, st.detailsMissing, (emailStatus === 'gevraagd' || emailStatus === 'mislukt') ? emailStatus : '') };
   }
+  if (section === 'opmaat') {
+    /* De intake op maat (lijst 107, 109, 110 en 112). Het scherm zelf staat in src/pages/account/op-maat.astro; de
+       aanvragen, het merkprofiel en de schatting komen uit src/lib/opMaat.js en src/data/opMaatPrijs.js. */
+    const { aanvragenVan, merkVan, aanvraagVan } = await import('./opMaat.js');
+    const url = new URL(request.url);
+    const id = Number(url.searchParams.get('id')) || 0;
+    const aanvragen = await aanvragenVan(env, customer.customer_id).catch(() => []);
+    const open = id ? await aanvraagVan(env, customer.customer_id, id).catch(() => null) : null;
+    const merk = await merkVan(env, customer.customer_id).catch(() => ({}));
+    const merkmodel = (st.models || []).some((m) => m.has_preview && m.status !== 'in_design');
+    /* Lijst 112, schermen 9 en 10: de voorbeelden van de lopende ronde en de offerte. */
+    let ronde = 0, voorbeelden = [], offerte = null;
+    if (open) {
+      const R = await import('./opMaatRondes.js');
+      ronde = await R.huidigeRonde(env, open.id).catch(() => 0);
+      voorbeelden = (await R.voorbeeldenVan(env, open.id).catch(() => [])).filter((x) => x.ronde === ronde).map((x) => ({ id: x.id, url: `/account/op-maat/beeld/${x.id}` }));
+      offerte = await (await import('./opMaatOfferte.js')).offerteVoorScherm(env, open.id).catch(() => null);
+    }
+    return { st, v: { aanvragen, open, merk, merkmodel, dienst: String(url.searchParams.get('dienst') || ''), ronde, voorbeelden, offerte } };
+  }
   if (section === 'brand') {
     return { st, v: await brandKitView(env, t, lang, customer, st.models, st.lockByStyle, st.savedLock) };
   }
@@ -11048,6 +11078,8 @@ export function studioNav(t) {
     { key: 'details', href: '/account/details', label: t.navDetails, icon: ICON_DETAILS },
     { key: 'invoices', href: '/account/invoices', label: t.navInvoices, icon: ICON_INVOICE },
     { key: 'plan', href: '/account/plan', label: t.navPlan, icon: ICON_PLAN },
+    /* Lijst 112 (15 november 2026): de intake op maat. */
+    { key: 'opmaat', href: '/account/op-maat', label: t.navOpMaat, icon: ICON_NEW },
   ];
 }
 

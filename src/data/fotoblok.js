@@ -32,10 +32,10 @@ export const FOTOBLOK_MATEN = [800, 1600];
 
 /** Blauw uur als verloop op de helderheid (docs/KLEURENSCHEMA.md): inkt → blauw diep → blauw uur → blauw licht → wit. */
 export const FOTOBLOK_SCHEMA = [
-  [0, '#0B0F17'],
-  [0.34, '#1A4279'],
-  [0.58, '#25508B'],
-  [0.84, '#80A7DD'],
+  [0, '#090D0B'],
+  [0.34, '#023D29'],
+  [0.58, '#016645'],
+  [0.84, '#3DFFB0'],
   [1, '#FFFFFF'],
 ];
 

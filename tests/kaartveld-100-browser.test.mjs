@@ -1,17 +1,12 @@
 /**
- * VISUAILS — de fotoblokken (lijst 86, 9 november 2026).
- * Lucas koos glas a, kleur a, beweging a en B1 – B4 "goed": een vaste, bewogen foto in Blauw uur achter het €1-blok,
- * het slot onderaan, de Studiobrief en de 404, met een glazen plaat achter de tekst (src/styles/fotoblok.css,
- * src/data/fotoblok.js, scripts/fotoblok.mjs). Wat hier vastligt:
- *   1 · de bron: elk blok heeft zijn eigen foto, geen enkele met een merknaam (E10 – E13); de beelden bestaan in twee
- *       maten en twee soorten, zijn licht (≤ 40 kB) en alleen blauw (nergens warm: elk punt blauw ≥ rood);
- *   2 · de opmaak: fotoblok.css zit in de Layout, met een webp-terugval, glas met een terugval zonder backdrop-filter en
- *       hoog contrast; het slot omsluit zijn tekst met .fb-glas in alle acht componenten; geen posterkleur meer op die
- *       blokken;
- *   3 · in de browser (1440 en 390): elk blok heeft zijn foto (met het teken uit de inhoud in de naam), de tekst haalt
- *       op het slechtste beeldpunt minstens 4,5 : 1, alle tekst van het slot ligt op de plaat, de witte V op de 404
- *       minstens 3 : 1.
- *   node tests/fotoblok-browser.test.mjs        (eerst de build)
+ * VISUAILS — het kaartveld in de site (levering 100, stap 2; vervangt de toets van de fotoblokken van lijst 86).
+ * De vier blokken die fotoblok waren (het €1-blok, het slot, de Studiobrief, de 404) en alles met [data-kaart] zijn
+ * kaarten: een venster op één groot WebGL-veld (src/scripts/kaartveld.js, src/styles/kaart-100.css). Wat hier vastligt:
+ *   1 · de opmaak: kaartveld.js en kaart-100.css zitten in de Layout; elke kaart heeft één eigen lijn (dus hoogstens één
+ *       ader, Lucas 14 nov 17:31), vijf looks, en een css-verloop als terugval zonder WebGL;
+ *   2 · in de browser (1440 en 390): elke kaart draagt het veld (kv-aan, een eigen doek), en wit haalt op het slechtste
+ *       beeldpunt onder de tekst minstens 4,5 : 1, op twee momenten van de puls; de witte V op de 404 minstens 3 : 1.
+ *   node tests/kaartveld-100-browser.test.mjs        (eerst de build)
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,7 +15,6 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
 import { browserPad } from '../scripts/lib/browserpad.mjs';
-import { FOTOBLOKKEN, FOTOBLOK_MATEN, FOTOBLOK_NIET } from '../src/data/fotoblok.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const lees = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -30,31 +24,29 @@ const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 
 const L = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 
-console.log('\nVISUAILS — de fotoblokken (lijst 86)\n\n1 · de bron');
-const blokken = Object.keys(FOTOBLOKKEN);
-ok('vier blokken, elk een eigen foto', blokken.join() === 'proef,slot,brief,nf' && new Set(Object.values(FOTOBLOKKEN).map((b) => b.bron)).size === 4);
-ok('elke bronfoto staat in public/img/', blokken.every((b) => fs.existsSync(path.join(ROOT, 'public', 'img', FOTOBLOKKEN[b].bron))));
-ok('geen bronfoto met een merknaam of herkenbaar figuur (E10 – E13)', blokken.every((b) => !FOTOBLOK_NIET.some((re) => re.test(FOTOBLOKKEN[b].bron))), blokken.map((b) => FOTOBLOKKEN[b].bron).join(', '));
-for (const b of blokken) {
-  let alle = true, groot = 0, warm = 0;
-  for (const m of FOTOBLOK_MATEN) for (const s of ['avif', 'webp']) {
-    const f = path.join(ROOT, 'src', 'assets', 'fotoblok', `${b}-${m}.${s}`);
-    if (!fs.existsSync(f)) { alle = false; continue; }
-    groot = Math.max(groot, fs.statSync(f).size);
-    if (s === 'webp') { const { data } = await sharp(f).removeAlpha().raw().toBuffer({ resolveWithObject: true }); for (let i = 0; i < data.length; i += 3) if (data[i] > data[i + 2] + 6) warm++; }
-  }
-  ok(`${b}: 800 en 1600, avif en webp, hoogstens 40 kB (grootste ${(groot / 1024).toFixed(1)} kB), en nergens warm (${warm} punten rood > blauw)`, alle && groot <= 40 * 1024 && warm === 0);
-}
-
-console.log('\n2 · de opmaak');
-const css = lees('src/styles/fotoblok.css');
-ok('Layout.astro laadt fotoblok.css', /import '\.\.\/styles\/fotoblok\.css';/.test(lees('src/layouts/Layout.astro')));
-ok('elk blok: eerst webp (elke browser), dan avif via image-set in een eigen regel', blokken.every((b) => css.includes(`url("../assets/fotoblok/${b}-1600.webp") 50% 50% / cover no-repeat !important`) && css.includes(`image-set(url("../assets/fotoblok/${b}-1600.avif") type("image/avif")`) && css.includes(`url("../assets/fotoblok/${b}-800.webp")`)));
-ok('het glas: 58 % inkt, backdrop-filter, en zonder backdrop-filter 80 % inkt', css.includes('rgba(11, 15, 23, .58)') && css.includes('backdrop-filter: blur(22px) saturate(150%) brightness(.82)') && /@supports not \(\(backdrop-filter: blur\(1px\)\) or \(-webkit-backdrop-filter: blur\(1px\)\)\) \{[^}]*background: rgba\(11, 15, 23, \.8\)/.test(css));
-ok('hoog contrast: de foto weg, het vlak in de systeemkleur', /@media \(forced-colors: active\) \{[\s\S]*background: Canvas !important/.test(css));
-const comps = ['OverHal', 'ModelsHal', 'HooksHal', 'LookDetailHal', 'BrandModelHal', 'EditionsHal', 'VideoHal', 'VideoStyleHal'];
-ok('het slot omsluit zijn tekst met .fb-glas, in alle acht componenten', comps.every((c) => { const s = lees(`src/components/${c}.astro`); const i = s.indexOf('class="h-lk-slot'); return i > 0 && s.indexOf('<div class="fb-glas">', i) > i && s.indexOf('<div class="fb-glas">', i) < s.indexOf('</section>', i); }), comps.join(', '));
-ok('geen posterkleur meer op het €1-blok, het slot en de 404', !/inktblok\(\)/.test(lees('src/scripts/posterkleur.js')) && !/pkKlasse/.test(lees('src/components/NotFoundHal.astro')) && !/\.h-lk-slot\.pk \{|\.h-proef-woord\.pk \{/.test(lees('src/styles/posterkleur.css')));
+console.log('\nVISUAILS — het kaartveld (levering 100)\n\n1 · de opmaak');
+const layout = lees('src/layouts/Layout.astro'), veld = lees('src/scripts/kaartveld.js'), css = lees('src/styles/kaart-100.css');
+ok('kaartveld.js en kaart-100.css zitten in de Layout', /kaartveld\.js/.test(layout) && /kaart-100\.css/.test(layout));
+ok('de vier oude fotoblokken zijn kaarten', ['.h-proef > .h-proef-woord', '.h-lk-slot', '.site-footer .sb', '.h-nf-getal'].every((s) => veld.includes(s)));
+ok('alleen de eigen lijn van een kaart maakt een ader (geen losse lijnen over het veld)', /naast\(vec2 q[\s\S]{0,400}kaartDl\(q, i, uKaart\[i\]/.test(veld) && !/sdA|dsA|hsA/.test(veld));
+ok('de lijn begint in de kaart: één uiteinde, één ader', /smoothstep\(-\.6\*tb, -\.15\*tb, langs\)/.test(veld));
+ok('vijf looks (zijde, nacht, mint, horizon, gloed), op volgorde', /float look\(int i\)\{ return mod\(float\(i\), 5\.\); \}/.test(veld));
+ok('een kaart mengt niet met de look of de lijn van zijn buren', (veld.match(/- gD\)/g) || []).length >= 2);
+ok('zonder WebGL: een css-verloop op de kaart', /linear-gradient\(135deg, #016645/.test(css));
+ok('bij minder beweging staat het veld stil', /minder\.matches \? 4/.test(veld));
+/* levering 108 (Lucas, 15 nov 21:47): mat en glad, geen rand, de aderen als draad van chroom met stroom erdoor */
+ok('109 · een fijne filmkorrel, 8 keer per seconde (Lucas, 16 nov 00:00)', /c \+= kr \* \.045/.test(veld) && /floor\(uTijd\*8\.\)/.test(veld));
+ok('109 · de lijn ligt per kaart zo ver mogelijk van tekst en knoppen (lijnVoor), en verdwijnt vlak bij tekst (vrij)', /function lijnVoor\(/.test(veld) && /uniform vec4 uLijn\[/.test(veld) && /vrij = min\(vrij, smoothstep\(18\., 64\./.test(veld));
+ok('109 · in de kaart is de draad donker (draadIn), aan de rand komt hij naar boven', /vec3 draadIn\(/.test(veld) && /mix\(draadIn\(kd\.x\/DRAAD, st\), draadKleur\(kd\.x\/DRAAD, st\), rnd\)/.test(veld));
+ok('109 · de gloed loopt zacht af (een kern en een lange staart)', /float gloed\(float d, float b\)/.test(veld) && /vgl = gloed\(bdl, 5\.\)/.test(veld));
+ok('109 · elke kaart een eigen vouw van licht', /DE VOUW/.test(veld) && /float rug = exp/.test(veld));
+const net = lees('src/scripts/lichtnet.js');
+ok('109 · licht onder het doek: lichtnet.js zit in de Layout, zoekt een route om tekst heen (A*) en begint bij de lijnen van de kaarten', /lichtnet\.js/.test(layout) && /function route\(/.test(net) && /kv-lijnen/.test(net) && /zIndex: '-1'/.test(net));
+ok('108 · geen lichte rand langs de kaart (het licht komt niet terug in de laatste px voor de rand)', !/weg = max\(weg, smoothstep\(-16\., -2\., d\)\)/.test(veld));
+ok('108 · de draad is chroom: donkere randen, een smalle glans, een tweede weerkaatsing', /float chroom\(float s\)\{ return \.16 \+ \.84\*exp/.test(veld));
+ok('108 · de stroom trekt door de draad (golven van licht, met de tijd), ook in de ader', /float stroom\(float a, float fase\)[^\n]*uTijd/.test(veld) && /vpl = stroom\(nb\.z, nb\.w\)/.test(veld));
+ok('108 · de ader verdwijnt in het wit (geen witte geul meer in de kaart)', !/vec3 geul/.test(veld));
+ok('108 · de draad in de mint-trap, met een gloed van mint om de draad, ook in het wit (22:31)', /vec3 draadKleur[^\n]*M900[^\n]*M600[^\n]*M300/.test(veld) && /vgl = gloed\(bdl, 5\.\)/.test(veld) && /mix\(M500, M300, \.3\)\*ag/.test(veld));
 
 const DIST = path.join(ROOT, 'dist');
 if (!fs.existsSync(path.join(DIST, 'nl', 'index.html'))) { ok('dist/nl/index.html bestaat (eerst de build)', false); process.exit(1); }
@@ -124,7 +116,8 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
       }
       z(root, 'visibility', 'visible'); z(root, 'background', '#fff'); z(root, 'box-shadow', 'none');
       /* fotoblok: de plaat is een ::before van het blok; in het masker hoort hij weg (anders telt hij als tekst) */
-      root.classList.add('fb-meet'); if (!document.getElementById('fb-meet')) { const m = document.createElement('style'); m.id = 'fb-meet'; m.textContent = '.fb-meet::before, .fb-meet .fb-glas { background: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }'; document.head.append(m); }
+      /* het doek van het kaartveld hoort in het masker weg */
+      root.querySelectorAll('canvas.kv-doek').forEach((c) => z(c, 'visibility', 'hidden'));
       /* de rest van de pagina weg (wat over de plek heen valt, telt niet als tekst op het stukje) */
       for (const e of [document.documentElement, document.body]) { if (!e.hasAttribute('data-m-oud')) e.setAttribute('data-m-oud', e.getAttribute('style') ?? '\u0001'); }
       z(document.body, 'visibility', 'hidden'); z(document.documentElement, 'background', '#fff'); z(document.body, 'background', '#fff');
@@ -147,39 +140,44 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
 }
 
 
-/* elk blok op een paar pagina's, op de computer en de telefoon */
+/* elke kaart op een paar pagina's, op de computer en de telefoon, op twee momenten van de puls */
 const PLEKKEN = [
-  ['/nl/', '.h-proef > .h-proef-woord', 'proef', ['.h-kop', '.h-pil', 'p:not(.h-acties)']],
-  ['/nl/pricing/', '.h-proef > .h-proef-woord', 'proef', ['.h-kop', '.h-pil', 'p:not(.h-acties)']],
-  ['/test-sample/', '.h-proef > .h-proef-woord', 'proef', ['.h-kop', '.h-pil', 'p:not(.h-acties)']],
-  ['/nl/about/', '.h-lk-slot', 'slot', ['.fb-glas > .h-kop', '.fb-glas > .h-pil', '.fb-glas > p:not(.h-acties)']],
-  ['/nl/editions/', '.h-lk-slot', 'slot', ['.fb-glas > .h-kop', '.fb-glas > .h-pil', '.fb-glas > p:not(.h-acties)']],
-  ['/catalog/custom/', '.h-lk-slot', 'slot', ['.fb-glas > .h-kop', '.fb-glas > .h-pil', '.fb-glas > p:not(.h-acties)']],
-  ['/nl/hooks/', '.h-lk-slot', 'slot', ['.fb-glas > .h-kop', '.fb-glas > .h-pil', '.fb-glas > p:not(.h-acties)']],
-  ['/nl/about/', '.site-footer .sb', 'brief', ['.sb-kop', '.sb-zin', '.sb-noot']],
-  ['/nl/guides/', '.h-gd-brief', 'brief', ['.sb-kop', '.sb-zin', '.sb-noot']],
-  ['/nl/editions/', '.h-ed-brief', 'brief', ['.sb-kop', '.sb-zin', '.sb-noot']],
+  ['/nl/', '.h-proef > .h-proef-woord', ['.h-kop', '.h-pil', 'p:not(.h-acties)', '.k-lijn']],
+  ['/nl/pricing/', '.h-proef > .h-proef-woord', ['.h-kop', '.h-pil', 'p:not(.h-acties)']],
+  ['/nl/about/', '.h-lk-slot', ['.fb-glas > .h-kop', '.fb-glas > .h-pil', '.fb-glas > p:not(.h-acties)']],
+  ['/nl/editions/', '.h-lk-slot', ['.fb-glas > .h-kop', '.fb-glas > .h-pil', '.fb-glas > p:not(.h-acties)']],
+  ['/lifestyle/dunes/', '.h-lk-slot', ['.fb-glas > .h-kop', '.fb-glas > .h-pil', '.fb-glas .h-feiten li']],
+  ['/nl/about/', '.site-footer .sb', ['.sb-kop', '.sb-zin', '.sb-noot']],
+  ['/nl/guides/', '.h-gd-brief', ['.sb-kop', '.sb-zin', '.sb-noot']],
+  /* levering 108, fase 4: de nieuwe kaarten van lijst 105 */
+  ['/nl/plans/', '.h-kopbeeld-getal.kv-108', ['.h-kopbeeld-rij', '.h-kopbeeld-voet']],
+  ['/nl/hooks/', '.h-kopbeeld-getal.kv-108', ['.h-kopbeeld-rij', '.h-kopbeeld-voet']],
+  ['/nl/catalog/', '.h-dienst-eigen.kv-108', ['.h-dienst-extra-kop', '.h-dienst-extra-zin']],
+  ['/nl/video/', '.h-vd-klip.kv-108', ['.h-vd-klip-t', '.h-vd-klip-m']],
+  ['/nl/start/', '.h-st-mk.kv-108', ['.h-st-mk-naam', '.h-st-mk-zin']],
+  ['/nl/start/custom-look/', '.hold-status.kv-108', ['.hold-status-label', '.hold-status-word', '.hold-status-body']],
+  ['/nl/thank-you/', '.ty-bar.kv-108', ['h1']],
 ];
 for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
   const telefoon = breed < 600;
-  for (const [pad, wortel, blok, tekst] of PLEKKEN) {
-    const { ctx, page } = await open({ viewport: { width: breed, height: hoog }, deviceScaleFactor: 2, ...(telefoon ? { isMobile: true, hasTouch: true } : {}) });
-    /* levering 94: op de voorpagina laadt de bannervideo (14 MB, zonder bereikverzoeken bij deze testserver) door; dan 'load' */
+  for (const [pad, wortel, tekst] of PLEKKEN) {
+    const { ctx, page } = await open({ viewport: { width: breed, height: hoog }, deviceScaleFactor: 1, ...(telefoon ? { isMobile: true, hasTouch: true } : {}) });
     await page.goto(`${BASIS}${pad}`, { waitUntil: 'networkidle', timeout: 20000 }).catch(() => page.waitForTimeout(500));
-    const bg = await page.$eval(wortel, (e) => getComputedStyle(e).backgroundImage);
-    const naam = new RegExp(`/_astro/${blok}-${telefoon ? 800 : 1600}\\.[\\w-]+\\.(avif|webp)`);
-    const t = await slechtsteTekst(page, wortel, tekst.map((s) => `${wortel} ${s}`.replace(wortel + ' ', '')), [255, 255, 255]);
-    /* op het slot: elk stuk tekst binnen de plaat */
-    let buiten = [];
-    if (blok === 'slot') buiten = await page.$eval(wortel, (s) => { const p = s.querySelector('.fb-glas').getBoundingClientRect(); const uit = []; const w = document.createTreeWalker(s.querySelector('.fb-glas'), NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { if (!n.textContent.trim() || !n.parentElement.offsetParent) continue; const g = document.createRange(); g.selectNodeContents(n); for (const r of g.getClientRects()) if (r.width && (r.left < p.left - .5 || r.right > p.right + .5 || r.top < p.top - .5 || r.bottom > p.bottom + .5)) uit.push(n.textContent.trim().slice(0, 30)); } return uit; });
-    ok(`${breed} ${pad} ${blok}: de foto (${(bg.match(/\/_astro\/[^"')]+/) || ['geen'])[0]}), wit op het slechtste punt ${t.r.toFixed(2)} : 1${blok === 'slot' ? ', alle tekst op de plaat' : ''}`, naam.test(bg) && t.n > 200 && t.r >= 4.5 && buiten.length === 0, `${bg.slice(0, 90)} ${t.fout || ''} ${buiten.join(' | ')}`);
+    await page.evaluate((w) => document.querySelector(w)?.scrollIntoView({ block: 'center' }), wortel);
+    let slechtst = 99, n = 0, fout2 = '';
+    for (const t of [0, 7]) {
+      await page.evaluate((t) => window.__kaartveld?.zet(t), t); await page.waitForTimeout(150);
+      const m = await slechtsteTekst(page, wortel, tekst.map((s) => `${wortel} ${s}`.replace(wortel + ' ', '')), [255, 255, 255]);
+      slechtst = Math.min(slechtst, m.r); n = Math.max(n, m.n); fout2 = m.fout || fout2;
+    }
+    const aan = await page.$eval(wortel, (e) => e.classList.contains('kv-aan') && !!e.querySelector(':scope > canvas.kv-doek'));
+    ok(`${breed} ${pad} ${wortel}: het veld staat aan, wit op het slechtste punt ${slechtst.toFixed(2)} : 1`, aan && n > 200 && slechtst >= 4.5, `aan=${aan} n=${n} ${fout2}`);
     await ctx.close();
   }
-  const { ctx, page } = await open({ viewport: { width: breed, height: hoog }, deviceScaleFactor: 2, ...(telefoon ? { isMobile: true, hasTouch: true } : {}) });
+  const { ctx, page } = await open({ viewport: { width: breed, height: hoog }, deviceScaleFactor: 1, ...(telefoon ? { isMobile: true, hasTouch: true } : {}) });
   await page.goto(`${BASIS}/nl/404.html`, { waitUntil: 'networkidle' });
   const v = await slechtsteTekst(page, '.h-nf-getal', ['.h-nf-v']);
-  const kl = await page.$eval('.h-nf-getal', (e) => e.className);
-  ok(`${breed} de 404: de witte V op de foto minstens 3 : 1 (slechtste ${v.r.toFixed(2)}), zonder posterkleur`, v.r >= 3 && v.n > 200 && !/\bpk\b/.test(kl), kl);
+  ok(`${breed} de 404: de witte V op de kaart minstens 3 : 1 (slechtste ${v.r.toFixed(2)})`, v.r >= 3 && v.n > 200, v.fout || '');
   await ctx.close();
 }
 await browser.close(); server.close();

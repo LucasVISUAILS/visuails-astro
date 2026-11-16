@@ -12,10 +12,10 @@
 .w8-stap + .w8-stap { position: relative; padding-left: 1.08em; }
 /* de snede in het midden van de 1,08 em: onderaan op .24 em, door de schuinte (tan 37° × .78 = .59 em) bovenaan op .83 em */
 .w8-stap + .w8-stap::before { content: ""; position: absolute; left: .24em; bottom: .02em; width: .08em; height: .78em; background: var(--h-inkt); transform: skewX(-37deg); transform-origin: 0 100%; }
-.w8-nr { margin: 0 0 12px .06em; font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .08em; color: var(--h-grijs, #636974); }
-.w8 .w8-onder { --h-maat: none; margin: 34px auto 0; max-width: none; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+.w8-nr { margin: 0 0 12px .06em; font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .08em; color: var(--h-grijs, #5E6461); }
+.w8 .w8-onder { --h-maat: none; margin: 34px auto 0; max-width: none; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-grijs, #5E6461); }
 .w8 .w8-link { margin-left: 10px; color: var(--h-inkt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--h-inkt) 32%, transparent); }
-.w8 .w8-link:hover { color: var(--h-blauw, #25508B); text-decoration-color: currentColor; }
+.w8 .w8-link:hover { color: var(--h-blauw, #016645); text-decoration-color: currentColor; }
 
 /* de telefoonclip boven de stappen (levering 95) */
 .w8 .w8-clip { margin-bottom: clamp(32px, 3.4vw, 48px); }
@@ -31,9 +31,9 @@
 
 /* Grijs naar inkt (levering 83, lijst 68: grijs = a; het script staat in HalHoeKort80.astro). Het grijs is ons
    grijs (5,4 : 1); het woord springt in twee stappen naar inkt (160 ms), zoals het merk springt. */
-.w8.w8-grijs .w8-w { color: var(--h-grijs, #636974); transition: color 160ms steps(2, end); }
+.w8.w8-grijs .w8-w { color: var(--h-grijs, #5E6461); transition: color 160ms steps(2, end); }
 .w8.w8-grijs .w8-w.aan { color: var(--h-inkt); }
-.w8.w8-grijs .w8-stap + .w8-stap:not(.aan)::before { background: var(--h-grijs, #636974); }
+.w8.w8-grijs .w8-stap + .w8-stap:not(.aan)::before { background: var(--h-grijs, #5E6461); }
 .w8.w8-grijs .w8-stap + .w8-stap::before { transition: background-color 160ms steps(2, end); }
 @media (prefers-reduced-motion: reduce) { .w8.w8-grijs .w8-w { color: var(--h-inkt); transition: none; } }
 
@@ -47,3 +47,64 @@
   .w8.w8-ag .w8-stap:last-child { translate: 46px 0; }
   .w8.w8-ag.w8-trek .w8-stap { translate: 0 0; transition: translate .8s cubic-bezier(.55, .06, .68, .19); }
 }
+
+/* ── HET VERHAAL (levering 99, lijst 100 B1 a; src/scripts/hoeverhaal99.js) ─────────────────────────────────────────
+   Een podium van 720 × 540 eigen maten dat met de breedte mee schaalt (--w8v-s, gezet door HalHoeKort80.astro). Alle
+   tekst erin is 24 px: op 1440 24 px, op een telefoon (podium 350 breed) 11,7 px. Kaarten wit met een haarlijn, hoeken
+   12 (beelden) en 8 (de knop, zoals elke knop). De grond is die van de pagina. */
+.w8.w8-verhaal .w8-clip { display: none; }
+.w8 .w8-podium { position: relative; width: min(720px, 100%); aspect-ratio: 720 / 540; margin: 0 auto clamp(28px, 3vw, 44px); --w8v-s: 1; }
+.w8 .w8-podium[hidden] { display: none; }
+.w8v { position: absolute; left: 0; top: 0; width: 720px; height: 540px; transform: scale(var(--w8v-s)); transform-origin: 0 0; color: #090D0B;
+  font: 500 24px/1.2 var(--h-letter); background: var(--h-grond, #FFFFFF); }
+.w8v > * { position: absolute; margin: 0; opacity: 0; }
+.w8v picture, .w8v img { display: block; }
+.w8v figure { margin: 0; }
+.w8v figcaption { margin-top: 10px; font: 500 24px/1.2 var(--h-letter); color: #090D0B; }
+/* 1 · je stuurt */
+.w8v-clip { left: 10px; top: 20px; width: 400px; height: 500px; object-fit: cover; mix-blend-mode: multiply; opacity: 1; }
+.w8v-mand { left: 430px; top: 110px; width: 270px; padding: 20px; box-sizing: border-box; background: #fff; border-radius: 14px; box-shadow: 0 0 0 1px #E7EAE8, 0 18px 40px -24px rgb(9 13 11 / .4); display: grid; gap: 16px; }
+.w8v-mk { margin: 0; font-weight: 600; }
+.w8v-duims { display: flex; gap: 10px; }
+.w8v-duim { width: 70px; aspect-ratio: 4 / 5; border-radius: 8px; overflow: hidden; background: #F4F5F4; }
+.w8v-duim img { width: 100%; height: 100%; object-fit: cover; }
+.w8v-ok { margin: 0; display: flex; align-items: center; gap: 10px; font-weight: 500; color: #090D0B; }
+.w8v-ok i, .w8v-knop-ok i { width: 28px; height: 28px; border-radius: 50%; background: #090D0B; display: grid; place-items: center; flex: none; }
+.w8v-ok svg, .w8v-knop-ok svg { width: 18px; height: 18px; }
+/* 2 · wij maken; 3 · je keurt goed */
+.w8v-tegel { top: 90px; width: 150px; }
+.w8v-t0 { left: 30px; } .w8v-t1 { left: 200px; } .w8v-t2 { left: 370px; } .w8v-t3 { left: 540px; }
+.w8v-tegel picture { position: relative; width: 150px; height: 188px; border-radius: 12px; overflow: hidden; background: #FBFDFF; box-shadow: 0 0 0 1px #E7EAE8; }
+.w8v-tegel img { width: 100%; height: 100%; object-fit: cover; }
+.w8v-t0 img, .w8v-t1 img { object-fit: contain; }
+.w8v-flits { position: absolute; left: 0; top: 0; width: 150px; height: 188px; border-radius: 12px; background: #fff; opacity: 0; }
+.w8v-vink { position: absolute; right: -10px; top: -10px; width: 40px; height: 40px; border-radius: 50%; background: #090D0B; display: grid; place-items: center; opacity: 0; box-shadow: 0 0 0 3px #FFFFFF; }
+.w8v-vink svg { width: 24px; height: 24px; }
+.w8v-noot { left: 340px; top: 22px; padding: 10px 16px; background: #fff; border-radius: 12px 12px 12px 3px; box-shadow: 0 0 0 1px #C6CAC8; white-space: nowrap; }
+.w8v-knop { left: 262px; top: 430px; height: 60px; padding: 0 28px; display: inline-flex; align-items: center; gap: 10px; border-radius: 8px; font-weight: 600;
+  background: var(--k-actie, #3DFFB0); color: var(--k-actie-tekst, #090D0B); white-space: nowrap; }
+.w8v-knop-ok { background: #090D0B; color: #fff; }
+.w8v-knop-ok i { background: transparent; }
+.w8v-muis { left: 0; top: 0; width: 34px; height: 34px; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .25)); }
+.w8v-muis svg { width: 100%; height: 100%; display: block; }
+/* 4 · campagne: de drie bijschriften op één lijn (y 440) */
+.w8v-plek { top: 40px; }
+.w8v-plek figcaption { position: absolute; left: 0; top: 400px; margin: 0; }
+.w8v-shop { left: 10px; width: 290px; background: #fff; border-radius: 12px; box-shadow: 0 0 0 1px #E7EAE8, 0 18px 40px -26px rgb(9 13 11 / .4); padding-bottom: 14px; }
+.w8v-browser { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid #E7EAE8; }
+.w8v-browser i { width: 10px; height: 10px; border-radius: 50%; background: #C6CAC8; display: block; }
+.w8v-shop picture { height: 300px; background: #FBFDFF; }
+.w8v-shop img { width: 100%; height: 100%; object-fit: contain; }
+.w8v-shopnaam { margin: 8px 16px 0; font: 500 18px/1.3 var(--h-mono); letter-spacing: .08em; }
+
+.w8v-post { left: 320px; width: 210px; background: #fff; border-radius: 12px; box-shadow: 0 0 0 1px #E7EAE8, 0 18px 40px -26px rgb(9 13 11 / .4); }
+.w8v-acc { margin: 0; display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-weight: 600; font-size: 20px; }
+.w8v-acc i { width: 24px; height: 24px; border-radius: 50%; background: #121218; display: block; }
+.w8v-post picture { height: 262px; }
+.w8v-post img, .w8v-story img { width: 100%; height: 100%; object-fit: cover; }
+
+.w8v-story { left: 550px; width: 160px; height: 284px; border-radius: 12px; overflow: visible; }
+.w8v-story picture { width: 160px; height: 284px; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px #E7EAE8; }
+.w8v-cta { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 44px; border-radius: 8px; background: #fff; display: grid; place-items: center; font-weight: 600; font-size: 20px; }
+
+@media (prefers-reduced-motion: reduce) { .w8 .w8-podium { display: none; } .w8.w8-verhaal .w8-clip { display: block; } }

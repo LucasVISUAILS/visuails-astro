@@ -18,6 +18,8 @@
  *       goed, en een vreemde link in het antwoord wordt niet overgenomen.
  */
 import { readFileSync, existsSync } from 'node:fs';
+/* levering 99: het voorbeeld van de proef is de hoodie (drie uit de galerij en de lifestyle), niet meer ba2-na */
+const VOORBEELD = /\/img\/hal\/(opening\/galerij|maken\/lifestyle99)\/hoodie[-.]/;
 import { metVisIn } from './lib/vis-in.mjs';
 import http from 'node:http';
 import path from 'node:path';
@@ -430,6 +432,10 @@ else {
     const voorbij = await page.evaluate(() => {
       const e = document.querySelector('[data-o-stroom-eind]'), p = document.querySelector('[data-o8-podium], [data-o-podium], [data-t-podium], [data-lb-podium]');   /* levering 78: de tablet; 79: de laptop over de breedte; 80: HalOpening80 */
       if (e) return Math.round(e.getBoundingClientRect().bottom + scrollY - innerHeight * 0.5 + 100);
+      /* levering 106 (kaartveld fase 3): de poster is weg, dus direct na de laptop staat het €1-blok al in beeld, en daar hoort
+         de melding juist niet. "Voorbij de opening" is daarom ook voorbij het €1-blok. */
+      const pb = document.querySelector('section.h-proef');
+      if (pb && p) return Math.round(Math.max(p.getBoundingClientRect().bottom + scrollY + 100, pb.getBoundingClientRect().bottom + scrollY + 60));
       return p ? Math.round(p.getBoundingClientRect().bottom + scrollY + 100) : 1400;
     });
     await scrolNaar(page, voorbij);
@@ -575,16 +581,16 @@ else {
   }
   {
     const { st } = await blok('/nl/', { ...MET, herbestel: { ...MET.herbestel, beelden: EIGEN.slice(0, 2) } });
-    ok('minder dan vier eigen beelden: het voorbeeld blijft staan', st.klant && st.beelden.every((b) => /ba2-na/.test(b)), JSON.stringify(st.beelden));
+    ok('minder dan vier eigen beelden: het voorbeeld blijft staan', st.klant && st.beelden.length === 4 && st.beelden.every((b) => VOORBEELD.test(b)), JSON.stringify(st.beelden));
   }
   {
     const { st } = await blok('/nl/', { ...MET, herbestel: { ...MET.herbestel, beelden: ['https://elders.example/a.jpg', ...EIGEN.slice(1)] } });
-    ok('een vreemde beeldlink: het voorbeeld blijft staan', st.beelden.every((b) => /ba2-na/.test(b)), JSON.stringify(st.beelden));
+    ok('een vreemde beeldlink: het voorbeeld blijft staan', st.beelden.length === 4 && st.beelden.every((b) => VOORBEELD.test(b)), JSON.stringify(st.beelden));
   }
   {
     const { st } = await blok('/nl/', { ...STAND, herbestel: null });
     ok('klant zonder levering: "Meer producten? Start je volgende bestelling."', st.klant && st.kop === 'Meer producten? Start je volgende bestelling.', st.kop);
-    ok('  met de knop "Start een bestelling" en het voorbeeld', st.knop && st.knop[0] === '/nl/start/' && st.knop[1] === 'Start een bestelling' && st.beelden.every((b) => /ba2-na/.test(b)), JSON.stringify([st.knop, st.beelden]));
+    ok('  met de knop "Start een bestelling" en het voorbeeld', st.knop && st.knop[0] === '/nl/start/' && st.knop[1] === 'Start een bestelling' && st.beelden.length === 4 && st.beelden.every((b) => VOORBEELD.test(b)), JSON.stringify([st.knop, st.beelden]));
   }
   {
     const { st } = await blok('/nl/', { naam: 'Mara', laatste: null, herbestel: null, lopend: '', abonnee: false, saldo: 0, nieuw: true });

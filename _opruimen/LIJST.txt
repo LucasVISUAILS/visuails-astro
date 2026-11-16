@@ -102,3 +102,5 @@
 # ── 13 november 2026 · moet weg (levering 96: de foto's van de productpagina's in de laptop zijn een galerij die je scrolt; de schermen met beeld 2 – 4 groot zijn niet meer nodig) ──
 
 # ── 13 november 2026 · moet weg (levering 98: de laptops op /catalog, /lifestyle en /video tonen NON/STD; drie standen per set in plaats van vier) ──
+
+# 14 november 2026 (levering 100, stap 2): de fotoblokken zijn kaarten geworden; de toets is vervangen door tests/kaartveld-100-browser.test.mjs

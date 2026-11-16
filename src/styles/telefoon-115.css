@@ -1,0 +1,87 @@
+/* ═══ LEVERING 108 · KAARTVELD FASE 4 · DE TELEFOON: ALLES IN HET MIDDEN, OP ELKE PAGINA (15 november 2026; lijst 114, lijst 115) ═══
+   Lucas (lijst 114): "Telefoon content centreren geldt overigens voor alles, behalve hele specifieke uitzonderingen (maar komen
+   nauwelijks voor alleen als het echt beter is)." De voorpagina heeft dit al (voorpagina-105.css); dit blad doet de rest van de
+   site, tot 700 px breed. De voet is de uitzondering (22:31): die staat links, netjes in twee kolommen (punt 6).
+
+   Hoe: de tekst staat in het midden (text-align erft door), en wat smaller is dan zijn kolom staat er in het midden van. Rijen
+   met knoppen, labels en feiten schuiven naar het midden. Een rij die bewust uit elkaar staat (space-between) blijft zo.
+
+   De uitzonderingen, omdat ze als een tabel of een formulier lezen (lijst 115):
+     · de velden van een formulier (een label boven zijn veld, links, zoals je invult);
+     · de rijen van een vraag met een plus rechts (de FAQ en "Vragen over …");
+     · lijsten met een vinkje of icoon voor elke regel: als groep in het midden, de regels zelf links, zodat de vinkjes onder
+       elkaar blijven;
+     · tabellen.
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  /* 1 · de tekst in het midden */
+  html body.hal .h-pagina:not(.h-voor) { text-align: center; }
+  html body.hal .h-pagina:not(.h-voor) :is(h1, h2, h3, h4, p, dt, dd, figcaption, blockquote, legend):not(#k) { text-align: center; }
+
+  /* 2 · wat smaller is dan zijn kolom: in het midden van die kolom */
+  html body.hal .h-pagina:not(.h-voor) :is(h1, h2, h3, h4, p, blockquote, figcaption):not(#k):not(#k) { margin-inline: auto; }
+  html body.hal .h-pagina:not(.h-voor) :is(.h-pil, .h-chip, .h-knop, .h-link, .knop):not(#k) { align-self: center; justify-self: center; }
+
+  /* 3 · rijen naar het midden (knoppen, labels, feiten, chips, links) */
+  html body.hal .h-pagina:not(.h-voor) :is(.h-acties, .h-feiten, .h-1r, .h-1k, .h-st-ook-links, .h-st-meer, .h-dienst-extra-wegen,
+    .h-ls-waar, .h-kopbeeld-rij, .h-pk-credits, .h-ts-feiten, .h-ab-werk-acties, .h-ab-band, .h-ov-ctrl-voet, .h-ov-cijfer-rij,
+    .h-st-vk-meer, .h-st-looks, .h-strook, .h-faq-index-lijst, .h-pr-een, .h-pr-prijs, .h-ov-ctrl-stand, .ps-term-kop, .ps-sum-los, .h-nr, .h-pil):not(#k) {
+    justify-content: center;
+  }
+  html body.hal .h-pagina:not(.h-voor) :is(.h-sec-kop, .h-paginakop-tekst, .h-faq-kop-tekst, .h-st-band-kop, .h-ov-lucas-tekst,
+    .h-pl-kern, .h-ts-slot-woord, .h-st-stap, .h-bewijs-kaart, .h-dienst-komend, .h-dienst-eigen, .h-pr-tarief, .h-pr-kaart,
+    .h-faq-nog, .h-ls-model, .fb-glas, .h-st-set, .h-st-look, .h-pk):not(#k) {
+    justify-items: center; align-items: center;
+  }
+  html body.hal .h-pagina:not(.h-voor) :is(.h-sec-kop, .h-paginakop-tekst, .h-faq-kop-tekst, .h-st-band-kop, .h-pl-kern) > *:not(#k) { margin-inline: auto; }
+
+  /* 4 · uitzonderingen: formulieren, vraagrijen, lijsten met vinkjes, tabellen */
+  html body.hal .h-pagina:not(.h-voor) :is(form, fieldset, .dc-sum, details, table, .ps-set, .pl-kind, .bg-grid, .mp-grid, .bg-row, .mp-row):not(#k):not(#k) { text-align: left; }
+  html body.hal .h-pagina:not(.h-voor) :is(form, fieldset, .ps-set) :is(p, legend, label, dt, dd):not(#k):not(#k) { text-align: left; margin-inline: 0; }
+  html body.hal .h-pagina:not(.h-voor) details :is(p, h3, h4):not(#k):not(#k) { text-align: left; margin-inline: 0; }
+  html body.hal .h-pagina:not(.h-voor) :is(.checklist, .h-bm-vink, .h-cmp-tool-lijst, .h-lv-checks, .h-pr-vinken, .lm-vinkjes, .ty-verder):not(#k):not(#k) {
+    width: fit-content; max-width: 100%; margin-inline: auto; text-align: left;
+  }
+  html body.hal .h-pagina:not(.h-voor) :is(.checklist, .h-bm-vink, .h-cmp-tool-lijst, .h-lv-checks, .h-pr-vinken, .lm-vinkjes, .ty-verder) > li:not(#k):not(#k) { justify-content: flex-start; text-align: left; }
+  html body.hal .h-pagina:not(.h-voor) :is(.checklist, .h-bm-vink, .h-cmp-tool-lijst, .h-lv-checks, .h-pr-vinken, .lm-vinkjes, .ty-verder) li :is(p, span, b):not(#k):not(#k) { text-align: left; margin-inline: 0; }
+  /* een vinkje op een eigen kaartje (de feiten op /plans): het vinkje boven, de tekst eronder, alles in het midden */
+  html body.hal .h-pagina:not(.h-voor) .h-pl-feiten > li:not(#k):not(#k) { flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+  html body.hal .h-pagina:not(.h-voor) .h-pl-feiten > li > span:not(#k) { display: grid; justify-items: center; text-align: center; }
+
+  /* een rij met een nummer of icoon voor de tekst (de drie stappen bovenaan /start, de noot met de i): het nummer boven, de tekst
+     eronder, alles in het midden; anders staat het nummer links en de tekst in het midden */
+  html body.hal .h-pagina:not(.h-voor) :is(.h-st-kort-rij > li, .h-st-regel, .h-pr-tarief-zin):not(#k):not(#k) { flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+  html body.hal .h-pagina:not(.h-voor) .h-st-kort-rij > li > span:last-child:not(#k) { display: grid; justify-items: center; }
+  html body.hal .h-pagina:not(.h-voor) .h-pr-tarief-wegen:not(#k):not(#k) { flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+  /* de Studiobrief in een kaart (Editions, Gidsen): ook in het midden; het invulveld zelf blijft links */
+  html body.hal .h-pagina:not(.h-voor) :is(.h-ed-brief, .h-gd-brief) :is(p, h2, h3, .sb-kop, .sb-zin, .sb-noot):not(#k):not(#k) { text-align: center; margin-inline: auto; }
+  html body.hal .h-pagina:not(.h-voor) :is(.h-ed-brief, .h-gd-brief) :is(form, .sb-rechts, .sb-links, .sb-veld):not(#k):not(#k) { justify-items: center; justify-content: center; text-align: center; }
+
+  /* 5 · de kaarten: 88 % breed, in het midden, en hun inhoud ook (zoals op de voorpagina) */
+  html body.hal .h-pagina:not(.h-voor) :is(.h-proef > .h-proef-woord, .h-lk-slot, [data-kaart]):not(#k) { width: 88%; margin-inline: auto; box-sizing: border-box; text-align: center; }
+  /* een kaart die de opening van de pagina is (de kop van /test-sample staat erop) houdt de volle breedte: anders past de kop niet */
+  html body.hal .h-pagina:not(.h-voor) :is(.h-proef > .h-proef-woord, .h-lk-slot, [data-kaart]):has(h1):not(#k):not(#k) { width: auto; }
+  html body.hal .h-pagina:not(.h-voor) :is(.h-proef > .h-proef-woord, .h-lk-slot, [data-kaart]) :is(.h-acties, .h-pil, .slot96-knoppen):not(#k) { justify-content: center; }
+  html body.hal .h-pagina:not(.h-voor) :is(.h-proef > .h-proef-woord, .h-lk-slot, [data-kaart]) .h-acties:not(#k) { align-self: stretch; width: 100%; }
+  html body.hal .h-pagina:not(.h-voor) :is(.h-proef > .h-proef-woord, .h-lk-slot, [data-kaart]) .h-acties .h-knop:not(#k) { width: 100%; justify-content: center; }
+
+  /* 6 · de voet: de uitzondering (Lucas, 15 november 22:31: "De footer van de website op telefoon hoeft niet gecentreerd, dit is
+     een uitzondering. Deel de footer netjes in."). Alles links, in een raster van twee kolommen:
+       het logo, de zin, en Start een bestelling met de drie rondjes ernaast, over de hele breedte;
+       Wat we maken | Bedrijf naast elkaar;
+       Contact over de hele breedte;
+       de Studiobrief; de regel onderaan in twee rijen. */
+  html body.hal .site-footer .footer-grid:not(#k):not(#k) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; row-gap: 34px; text-align: left; }
+  html body.hal .site-footer .footer-brand:not(#k):not(#k) { grid-column: 1 / -1; }
+  html body.hal .site-footer .footer-col:not(#k):not(#k) { min-width: 0; }
+  html body.hal .site-footer .footer-col:last-child:not(#k):not(#k) { grid-column: 1 / -1; }
+  html body.hal .site-footer .footer-act:not(#k):not(#k) { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+  html body.hal .site-footer .footer-act .foot-social:not(#k):not(#k) { margin: 0; }
+  html body.hal .site-footer .footer-col li a:not(#k) { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  html body.hal .site-footer .footer-bottom:not(#k):not(#k) { display: grid; justify-items: start; gap: 12px; text-align: left; }
+  html body.hal .site-footer .footer-bottom > span:not(#k):not(#k) { display: flex; flex-wrap: wrap; gap: 8px 18px; text-align: left; }
+}
+/* de Studiobrief op een smalle telefoon: het veld even breed als de knop eronder (het stond smaller en in het midden) */
+@media (max-width: 420px) {
+  html body.hal .sb .sb-veld > input:not(#k) { align-self: stretch; width: 100%; box-sizing: border-box; }
+}

@@ -38,7 +38,6 @@ import HalVragen from './HalVragen.astro';
 import HalHoeDienst from './HalHoeDienst.astro';
 import HalProef from './HalProef.astro';
 import HalBeweging from './HalBeweging.astro';
-import { kies, pkKlasse } from '../data/stukken.js';
 
 /* basis: '/voorbeeld' op het voorbeeld, zodat de links tussen de hub en zijn
    lookpagina's binnen het voorbeeld blijven; leeg op de echte pagina. */
@@ -185,7 +184,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         <h2 id="ls-rij" class="h-kop h-h2"><span class="l">{c.rijKop[0]}</span> {c.rijKop[1]}</h2>
       </div>
       <p class="h-sec-rechts">
-        <span class="h-lijntje" aria-hidden="true"><i class={pkKlasse(kies('knop', `lifestyle:${basis}:strook`))} data-h-strook-stand></i></span>
+        <span class="h-lijntje" aria-hidden="true"><i data-h-strook-stand></i></span>
         <span class="h-paar"><button type="button" class="h-cirkel" data-h-strook-stap="-1" aria-label={c.vorige} set:html={ik('links')} />
         <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgende} set:html={ik('rechts')} /></span>
       </p>
@@ -233,13 +232,13 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
     </div>
     <ul class="h-dienst-extra" role="list">
       {eigen && (
-        <li class="h-dienst-eigen h-in">
+        <li class="h-dienst-eigen kv-108 h-in" data-kaart>
           <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('plus')} />
-          <div>
+          <div data-tekstvlak>
             <p class="h-dienst-extra-kop">{c.eigenKop} <span class="l">{eigen.name}.</span></p>
             <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{nl ? 'Op aanvraag' : 'On request'}</span></p>
           </div>
-          <p class="h-dienst-extra-wegen">
+          <p class="h-dienst-extra-wegen" data-tekstvlak>
             <a class="h-knop k k-lijn k-klein" data-rol="doorgaan" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
             <a class="h-st-meer" href={lp(`${basis}/lifestyle/custom`)}>{c.eigenMeer}<span set:html={ik('pijl')} /></a>
           </p>

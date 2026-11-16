@@ -47,10 +47,11 @@
 /* ── E1 · de lege fotoplek ────────────────────────────────────────────────────────────────────────────
    Op het beeld zelf, zolang het laadt; posterkleur.js haalt het weg zodra het beeld er is (dan schijnt er aan
    de ronde rand niets door). Licht en donker door elkaar, zoals de posters. */
-img.pk-fp, .pk-fp { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #E6EAF4 !important; }
+/* levering 111 (fase 6): de stukjes waren nog blauw uur; nu het vlak van de site, zonder poster */
+img.pk-fp, .pk-fp { background: #F4F5F4 !important; }
 /* in Studio (geen script): onder het beeld, 1 px binnen de rand, zodat er aan de ronde hoek niets doorschijnt */
 body.studio .st-beeld-media.pk-fp-onder::before { content: ""; position: absolute; inset: 1px; border-radius: inherit; pointer-events: none;
-  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #E6EAF4; }
+  background: #F4F5F4; }
 body.studio .st-beeld-media.pk-fp-onder > img { position: relative; }
 
 /* ── E2 (het slot) en B4 (het €1-blok en de 404) — VERVALLEN 9 november 2026 ─────────────────────────────
@@ -62,26 +63,26 @@ body.studio .st-beeld-media.pk-fp-onder > img { position: relative; }
    met de gloed rechts, achter de pijl. Onder de muis en met de toets erop wordt alleen de grond donkerder (een
    laag inkt erover), dus de witte letters worden nooit slechter leesbaar. Minder beweging: zonder overgang. */
 html body.hal .site-header .nav-cta.pk, html body.hal .site-header .container.nav .nav-cta.pk {
-  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 100% 50% / cover no-repeat, #25508B !important;
-  border-radius: 999px !important; box-shadow: inset 0 0 0 40px rgba(15, 18, 23, 0) !important;
+  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 100% 50% / cover no-repeat, #016645 !important;
+  border-radius: 999px !important; box-shadow: inset 0 0 0 40px rgba(9, 13, 11, 0) !important;
   transition: box-shadow .3s cubic-bezier(.2, .8, .2, 1) !important;
 }
 html body.hal .site-header .nav-cta.pk:hover, html body.hal .site-header .nav-cta.pk:focus-visible,
 html body.hal .site-header .container.nav .nav-cta.pk:hover, html body.hal .site-header .container.nav .nav-cta.pk:focus-visible {
-  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 100% 50% / cover no-repeat, #25508B !important;
-  box-shadow: inset 0 0 0 40px rgba(15, 18, 23, .22) !important;
+  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 100% 50% / cover no-repeat, #016645 !important;
+  box-shadow: inset 0 0 0 40px rgba(9, 13, 11, .22) !important;
 }
 @media (prefers-reduced-motion: reduce) { html body.hal .site-header .nav-cta.pk, html body.hal .site-header .container.nav .nav-cta.pk { transition: none !important; } }
 
 /* ── E4 · het gezicht met initialen (Studio, de zijbalk) ───────────────────────────────────────────────── */
 body.studio .st-wie-letter.pk, body.studio.st-hal .st-wie-letter.pk {
-  background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #25508B; color: #FFFFFF; box-shadow: none;
+  background: #090D0B; color: #FFFFFF; box-shadow: none;   /* levering 111: zwart (19,6 : 1); was een blauw stukje */
 }
 
 /* ── E5 · de status "geleverd" ────────────────────────────────────────────────────────────────────────────
    Alleen deze ene stand (hij was massief inkt); de andere vier blijven zoals ze zijn (KLEURENSCHEMA.md). Eén
    stukje voor de hele lijst (GELEVERD in stukken.js). public/account.css, admin.css en portal.css hebben dezelfde regel. */
-.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #0F1217 !important; color: #FFFFFF !important; box-shadow: none !important; }
+.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #090D0B !important; color: #FFFFFF !important; box-shadow: none !important; }
 
 /* ── E6 · het balkje met de schuine kop ───────────────────────────────────────────────────────────────────
    De strook op /lifestyle: het balkje laat zien welk deel van de strook je ziet en verspringt in vier stappen.
@@ -89,14 +90,14 @@ body.studio .st-wie-letter.pk, body.studio.st-hal .st-wie-letter.pk {
    zodat de poster stilstaat en het balkje eroverheen gaat. Geen korrel: op 5 px zie je die niet. */
 html body.hal .h-lijntje:has(> i.pk) { container-type: inline-size; }
 html body.hal .h-lijntje i.pk {
-  background: var(--pk) calc(var(--x, 0) * (var(--w, .38) - 1) * 100cqw) 50% / 100cqw 100% no-repeat, #25508B;
+  background: var(--pk) calc(var(--x, 0) * (var(--w, .38) - 1) * 100cqw) 50% / 100cqw 100% no-repeat, #016645;
   transition: transform .4s steps(4, end), background-position .4s steps(4, end);
 }
 @media (prefers-reduced-motion: reduce) { html body.hal .h-lijntje i.pk { transition: none; } }
 
 /* ── B4 · de 404: het veld Nacht met de witte V (lijst 78 C4) ─────────────────────────────────────────────
    Het grote vlak naast de kop. Het getal staat al in het label boven de kop; in het vlak staat de V. */
-html body.hal .h-nf-getal.pk { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #0F1217; box-shadow: none; }
+html body.hal .h-nf-getal.pk { background: var(--pk-korrel) 0 0 / 128px 128px, var(--pk) 50% 50% / cover no-repeat, #090D0B; box-shadow: none; }
 html body.hal .h-nf-getal .h-nf-v { position: relative; z-index: 2; display: block; width: auto; height: 46%; max-height: 220px; aspect-ratio: 702 / 813.25; fill: #FFFFFF; stroke: none; }
 
 @media (forced-colors: active) {

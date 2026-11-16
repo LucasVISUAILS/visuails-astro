@@ -18,7 +18,7 @@
  *       inkt; uitvinken is meteen weg;
  *   5 · grijs naar inkt: grijs onderaan het scherm, woord voor woord inkt, helemaal inkt op 45 %; bij minder
  *       beweging meteen inkt;
- *   6 · de poster: waar de V al het scherm dekt, zet scrollen de stijl van de poster niet meer opnieuw.
+ *   6 · de poster: sinds levering 106 weg van de voorpagina (lijst 114).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -127,10 +127,10 @@ try {
     const doel = await page.evaluate(DOEL, { rij: '.h-faq-index', knop: '.h-faq-tab' });
     ok(`${breed} /faq: het venster glijdt (na 70 ms tussen de oude en de nieuwe tab) en staat er na 240 ms precies op`, !gelijk(onderweg, voor) && !gelijk(onderweg, doel) && gelijk(na, doel), `${JSON.stringify(voor)} → ${JSON.stringify(onderweg)} → ${JSON.stringify(na)} doel ${JSON.stringify(doel)}`);
     const rij = await page.evaluate(() => { const t = document.querySelector('.h-faq-index:not(.sk-kopie) [data-faq-tab][aria-selected="true"]'); const s = getComputedStyle(t); return { bg: s.backgroundColor, kleur: s.color }; });
-    ok(`${breed} /faq:   de gekozen tab in de rij zelf staat niet in inkt (de inkt is het venster)`, rij.bg !== 'rgb(15, 18, 23)' && rij.kleur === 'rgb(15, 18, 23)', JSON.stringify(rij));
+    ok(`${breed} /faq:   de gekozen tab in de rij zelf staat niet in inkt (de inkt is het venster)`, rij.bg !== 'rgb(9, 13, 11)' && rij.kleur === 'rgb(9, 13, 11)', JSON.stringify(rij));
     /* het blok blijft één blok: halverwege, over de ruimte tussen twee tabs, is het venster inkt */
     const vorm = await page.evaluate(() => { const k = document.querySelector('.h-faq-index:not(.sk-kopie) > .sk-kopie'); const s = getComputedStyle(k); return { grond: s.backgroundColor, cp: s.clipPath }; });
-    ok(`${breed} /faq:   rechte tabs: de kopie heeft inkt als grond en het venster de ronde hoeken van de tab`, vorm.grond === 'rgb(15, 18, 23)' && /^inset\(.* round /.test(vorm.cp), JSON.stringify(vorm));
+    ok(`${breed} /faq:   rechte tabs: de kopie heeft inkt als grond en het venster de ronde hoeken van de tab`, vorm.grond === 'rgb(9, 13, 11)' && /^inset\(.* round /.test(vorm.cp), JSON.stringify(vorm));
     await page.locator('.h-faq-index:not(.sk-kopie) [data-faq-tab]').nth(0).click();
     const tussen = await page.evaluate(() => {
       const r = document.querySelector('.h-faq-index:not(.sk-kopie)'), k = r.querySelector(':scope > .sk-kopie');
@@ -183,8 +183,9 @@ try {
     const [v, d] = await Promise.all([page.evaluate(VENSTER, '.h-gl-pillen'), page.evaluate(DOEL, { rij: '.h-gl-pillen', knop: '.h-gl-pil' })]);
     ok('/gallery: de dienstpillen (met de snede): het venster staat op de gekozen pil', gelijk(v, d), `${JSON.stringify(v)} ${JSON.stringify(d)}`);
     const vorm = await page.evaluate(() => (getComputedStyle(document.querySelector('.h-gl-pillen:not(.sk-kopie) > .sk-kopie')).clipPath.match(/px/g) || []).length);
-    ok('  het venster heeft vier punten (de vorm van de pil, met de snede)', vorm === 8, String(vorm));
-    ok('  en de kopie heeft geen grond: de kier tussen de pillen is de snede, ook onderweg', await page.evaluate(() => getComputedStyle(document.querySelector('.h-gl-pillen:not(.sk-kopie) > .sk-kopie')).backgroundColor === 'rgba(0, 0, 0, 0)'));
+    /* 14 november 2026: geen snede meer tussen de pillen (Lucas 03:48); het venster volgt de losse pil */
+    ok('  de pillen staan los, zonder snede', await page.evaluate(() => [...document.querySelectorAll('.h-gl-pillen:not(.sk-kopie) > .h-gl-pil')].every((k) => getComputedStyle(k).clipPath === 'none')), String(vorm));
+    /* (vervallen 14 november 2026: de kier tussen de pillen was de snede) */
     await page.locator('label[for="gw-alles"]').click();
     await page.waitForTimeout(400);
     const [v2, d2] = await Promise.all([page.evaluate(VENSTER, '.h-gl-wissel'), page.evaluate(DOEL, { rij: '.h-gl-wissel', knop: '.h-gl-seg' })]);
@@ -267,32 +268,26 @@ try {
          plek is bijgewerkt (twee beelden) en de kleur is aangekomen (geen overgang meer onderweg), niet op de klok */
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       await page.waitForFunction(() => { const grijs = !!document.querySelector('.w8-grijs');
-        return [...document.querySelectorAll('.w8-w')].every((w) => getComputedStyle(w).color === (grijs && !w.classList.contains('aan') ? 'rgb(99, 105, 116)' : 'rgb(15, 18, 23)')); }, null, { timeout: 4000 }).catch(() => {});
-      return page.evaluate(() => [...document.querySelectorAll('.w8-w')].map((w) => (getComputedStyle(w).color === 'rgb(15, 18, 23)' ? 1 : 0)).join(''));
+        return [...document.querySelectorAll('.w8-w')].every((w) => getComputedStyle(w).color === (grijs && !w.classList.contains('aan') ? 'rgb(94, 100, 97)' : 'rgb(9, 13, 11)')); }, null, { timeout: 4000 }).catch(() => {});
+      return page.evaluate(() => [...document.querySelectorAll('.w8-w')].map((w) => (getComputedStyle(w).color === 'rgb(9, 13, 11)' ? 1 : 0)).join(''));
     };
     const s = [await stand(0.92), await stand(0.62), await stand(0.4)];
     if (stil) ok('minder beweging: meteen inkt', s.every((x) => !x.includes('0')), s.join(' '));
-    else ok('grijs onderaan het scherm, woord voor woord inkt (van links), helemaal inkt op 40 %', /^0+$/.test(s[0]) && /^1+0+$/.test(s[1]) && /^1+$/.test(s[2]), s.join(' '));
+    /* levering 99 (lijst 100, B1 a): het verhaal boven de drie woorden kleurt ze per scène: de woorden van één stap zijn
+       inkt (de stap van de scène), of alle drie (de campagne). Per stap twee woorden: Jij stuurt · Wij maken · Jij keurt goed */
+    else {
+      const verhaal = await page.evaluate(() => !!document.querySelector('.w8-verhaal'));
+      const scene = (x) => { return /^(1+0+|0+1+0+|0+1+|1+)$/.test(x) && x.includes('1'); };
+      ok('het verhaal kleurt de woorden per scène (één stap inkt, of alle drie)', verhaal && s.every(scene), s.join(' '));
+    }
     await ctx.close();
   }
 
-  /* ── 6 · de poster ── */
+  /* ── 6 · de poster ── weg van de voorpagina sinds levering 106 (lijst 114, V4: "Deze poster mag voor nu weg") */
   console.log('\n6 · de poster');
   {
     const { ctx, page, fouten } = await open('/nl/');
-    /* levering 89: de logoposter (p9); hij begint als hij in de buurt komt, pas dan heeft de baan zijn lengte */
-    await page.evaluate(() => window.scrollTo(0, document.querySelector('[data-p9]').getBoundingClientRect().top + scrollY - 200));
-    await page.waitForFunction(() => document.querySelector('[data-p9]').classList.contains('p9-aan'), null, { timeout: 60000 }).catch(() => {});
-    const baan = await page.evaluate(() => { const r = document.querySelector('[data-p9]').getBoundingClientRect(); return { top: r.top + scrollY, h: r.height }; });
-    await page.evaluate((b) => scrollTo(0, b.top + (b.h - innerHeight) * 0.6), baan);
-    await page.waitForTimeout(800);
-    const n = await page.evaluate(async (b) => {
-      const p8 = document.querySelector('[data-p9]');
-      let tel = 0; const mo = new MutationObserver((m) => { tel += m.length; }); mo.observe(p8, { attributes: true, attributeFilter: ['style'] });
-      for (let i = 0; i < 12; i++) { scrollBy(0, 24); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); }
-      await new Promise((r) => setTimeout(r, 500)); mo.disconnect(); return tel;
-    }, baan);
-    ok('waar de V het scherm al dekt: scrollen zet de stijl van de poster niet opnieuw', n === 0, `${n} keer`);
+    ok('de poster staat niet meer op de voorpagina (dus ook geen stijl die het scrollen zet)', await page.evaluate(() => !document.querySelector('[data-p9]')));
     ok('  geen scriptfout', !fouten.length, fouten.join(' | '));
     await ctx.close();
   }

@@ -115,14 +115,14 @@ console.log('\nwaarom de eenheid de euro is en geen credit');
   /* ── DE REKENSOM DIE HET BESLIST ────────────────────────────────────────
      Lucas' voorstel was 10 credits per product. Anker je de credit daarop, dan is
      één credit een tiende catalogset — en die is op elke trede een ander bedrag,
-     terwijl een clip op elke trede € 69 kost. Deze proef rekent voor wat dat met
+     terwijl een clip op elke trede € 100 kost (sinds lijst 111; was € 69). Deze proef rekent voor wat dat met
      de prijs van diezelfde clip doet, zodat de reden in de bank staat en niet
      alleen in een gesprek. */
   const creditsVoorClip = (rung) => Math.round(10 * AMOUNT.video / ladderRate('catalog', rung));
   const opStarter = creditsVoorClip(planRung('starter'));
   const opBrand = creditsVoorClip(planRung('brand'));
-  ok('een clip zou op Starter 14 credits kosten', opStarter, 14);
-  ok('en op Brand 18, terwijl hij in euro’s niets verandert', opBrand, 18);
+  ok('een clip zou op Starter 20 credits kosten', opStarter, 20);  // lijst 111: Motion € 100 (was 14 bij € 69)
+  ok('en op Brand 25, terwijl hij in euro’s niets verandert', opBrand, 25);  // was 18
   ok('dezelfde clip kost op elk plan hetzelfde bedrag',
     PLAN_IDS.map((id) => menuRate('video', planRung(id))), PLAN_IDS.map(() => AMOUNT.video));
   /* En de andere kant: een catalogset wordt in euro's WEL goedkoper op een groter

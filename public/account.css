@@ -125,21 +125,21 @@
      In de donkere modus keert de statusreeks om: daar is "vol" juist de
      LICHTSTE stand. De logica blijft dezelfde — vol = klaar.
      ═══════════════════════════════════════════════════════════════════════ */
-  --accent:          #C5C8CF;
-  --on-accent:       #0F1217;
-  --accent-text:     #C5C8CF;
+  --accent:          #C6CAC8;
+  --on-accent:       #090D0B;
+  --accent-text:     #C6CAC8;
   --accent-tint:     #1B1E24;
-  --on-accent-tint:  #C5C8CF;
+  --on-accent-tint:  #C6CAC8;
   --accent-dim:      #B9BCC4;
-  --panel:           #0F1217;
-  --on-panel:        #F4F5F7;
+  --panel:           #090D0B;
+  --on-panel:        #F4F5F4;
   --sunken:          #1C2025;
-  --line-soft:       rgb(244 245 247 / .11);
+  --line-soft:       rgb(244 245 244 / .11);
 
   --st-wait-fill: transparent;  --st-wait-edge: #5B606A;                --st-wait-ink: #A8ADB5;
-  --st-work-fill: #1B1E24;      --st-work-edge: rgb(197 200 207 / .34);  --st-work-ink: #C5C8CF;
-  --st-done-fill: #C5C8CF;      --st-done-edge: #C5C8CF;                --st-done-ink: #0F1217;
-  --st-rev-fill:  #122039;      --st-rev-edge:  rgb(128 167 221 / .34);   --st-rev-ink:  #80A7DD;
+  --st-work-fill: #1B1E24;      --st-work-edge: rgb(198 202 200 / .34);  --st-work-ink: #C6CAC8;
+  --st-done-fill: #C6CAC8;      --st-done-edge: #C6CAC8;                --st-done-ink: #090D0B;
+  --st-rev-fill:  #122039;      --st-rev-edge:  rgb(61 255 176 / .34);   --st-rev-ink:  #3DFFB0;
   --st-can-fill:  #1B1E24;      --st-can-edge:  #5B606A;                 --st-can-ink:  #A0A4AD;
 
   --paper:      #0B0D11;               /* body ground                       */
@@ -155,20 +155,20 @@
   /* ---- ink ----
      Light on dark, as alphas rather than as mixed greys, so a step lands the
      same way on every one of the three surfaces above. */
-  --ink-900:  #F4F5F7;
-  --ink-700:  rgb(244 245 247 / .72);
-  --ink-500:  rgb(244 245 247 / .55);
-  --ink-300:  rgb(244 245 247 / .20);  /* rules, never text */
-  --ink-200:  rgb(244 245 247 / .20);  /* hairlines */
-  --ink-100:  #F4F5F7;
+  --ink-900:  #F4F5F4;
+  --ink-700:  rgb(244 245 244 / .72);
+  --ink-500:  rgb(244 245 244 / .55);
+  --ink-300:  rgb(244 245 244 / .20);  /* rules, never text */
+  --ink-200:  rgb(244 245 244 / .20);  /* hairlines */
+  --ink-100:  #F4F5F4;
 
   /* The three "on dark" names are now the same values as the ink ramp, because
      every ground is dark. They stay as separate names rather than being
      collapsed: the rules that read them are the rules that would break first
      if a light ground ever came back. */
-  --paper-on-dark:       #F4F5F7;
-  --paper-soft-on-dark:  rgb(244 245 247 / .72);
-  --paper-muted-on-dark: rgb(244 245 247 / .55);
+  --paper-on-dark:       #F4F5F4;
+  --paper-soft-on-dark:  rgb(244 245 244 / .72);
+  --paper-muted-on-dark: rgb(244 245 244 / .55);
 
   /* ---- mist tints ----
      Four warm/cool separator tints under the old scheme. On a near-black
@@ -209,16 +209,16 @@
 
   /* Ghost fill for secondary and small buttons — a paper alpha now, not an
      ink alpha. An ink alpha on a near-black ground is invisible. */
-  --ghost:      rgb(244 245 247 / .08);
+  --ghost:      rgb(244 245 244 / .08);
 
   /* Button surfaces as TOKENS, not as descendant rules — see global.css. */
   --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(244 245 247 / .16);
+  --btn-ghost-fill-hover:  rgb(244 245 244 / .16);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(244 245 247 / .08);
-  --btn-2nd-ink:           #F4F5F7;
-  --btn-2nd-border:        rgb(244 245 247 / .28);
-  --btn-2nd-border-hover:  rgb(244 245 247 / .55);
+  --btn-2nd-fill-hover:    rgb(244 245 244 / .08);
+  --btn-2nd-ink:           #F4F5F4;
+  --btn-2nd-border:        rgb(244 245 244 / .28);
+  --btn-2nd-border-hover:  rgb(244 245 244 / .55);
 
   /* ---- system colour ----
      Still two hues, still never the sole carrier of state — every status
@@ -239,7 +239,7 @@
      darkest ink and, by coincidence of value, the dark ground — and every
      rule that used it as a ground went white the moment the ramp flipped.
      The deep ground is stated as a ground. */
-  --bg-deep:    #0F1217;
+  --bg-deep:    #090D0B;
   --bg-raise:   var(--paper-2);
   --surface:    var(--paper-lift);
   --surface-2:  var(--paper-2);
@@ -257,7 +257,7 @@
   --line-strong: var(--ink-300);
   /* The border a focused field takes: strong enough to read as "this one",
      which on a dark ground means brighter, not darker. */
-  --line-ui:     rgb(244 245 247 / .55);
+  --line-ui:     rgb(244 245 244 / .55);
 
   --brand:         var(--ink-900);
   /* ── `--accent: var(--teal)` STOND HIER, EN HET WAS EEN KRINGETJE ────────
@@ -301,12 +301,12 @@
      te zijn als in global.css, anders is drift niet te zien als een waarde maar als een
      ontbrekend concept. */
   --accent-dim:    #B9BCC4;
-  --accent-soft:   rgb(244 245 247 / .08);
+  --accent-soft:   rgb(244 245 244 / .08);
   /* ── HET ACCENT ALS LIJN OF TINT, EN NIET ALS VLAK — 30 augustus 2026 ─────
      Op een donkere grond is een lime haarlijn op 45% prima te zien. Op een
      lichte grond verdwijnt hij. Deze twee namen dragen dat verschil, zodat de
      regels eronder in beide standen kloppen zonder ze te verdubbelen. */
-  --accent-rand:   rgb(197 200 207 / .45);
+  --accent-rand:   rgb(198 202 200 / .45);
   --accent-vlak:   #1C2025;
   /* ── HET ACCENT ALS GEGEVEN ───────────────────────────────────────────────
      Een gevulde balk of een vakje is geen letter en geen knop: het draagt een
@@ -369,11 +369,11 @@
      en inkt als het inlogscherm van Studio (src/styles/studio.css). */
   --kv-veld:   #0B0D11;
   --kv-kaart:  #14161B;
-  --kv-lijn:   rgb(244 245 247 / .10);
-  --kv-veld-lijn: rgb(244 245 247 / .28);
-  --kv-ink-1:  #F4F5F7;
-  --kv-ink-2:  rgb(244 245 247 / .72);
-  --kv-ink-3:  rgb(244 245 247 / .58);
+  --kv-lijn:   rgb(244 245 244 / .10);
+  --kv-veld-lijn: rgb(244 245 244 / .28);
+  --kv-ink-1:  #F4F5F4;
+  --kv-ink-2:  rgb(244 245 244 / .72);
+  --kv-ink-3:  rgb(244 245 244 / .58);
 }
 /* ══════════════════════════════════════════════════════════════════════════════
    HET LICHTE SCHERM
@@ -420,22 +420,22 @@
      De hele reeks keert om, inclusief de statusset: in het licht is "vol"
      juist de DONKERSTE stand (geleverd = #1F0B66 met wit erop), in het donker
      de lichtste. Zie het blok bovenaan dit bestand. */
-  --accent:          #0F1217;
+  --accent:          #090D0B;
   --on-accent:       #FFFFFF;
-  --accent-text:     #0F1217;
+  --accent-text:     #090D0B;
   --accent-tint:     #ECEDEF;
-  --on-accent-tint:  #0F1217;
-  --accent-dim:      #0F1217;
+  --on-accent-tint:  #090D0B;
+  --accent-dim:      #090D0B;
   --sunken:          #DCDFE3;
-  --line-soft:       rgb(11 15 23 / .10);
+  --line-soft:       rgb(9 13 11 / .10);
 
   --st-wait-fill: transparent;  --st-wait-edge: #7C818B;              --st-wait-ink: #4B515A;
-  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0F1217;
-  --st-done-fill: #0F1217;      --st-done-edge: #0F1217;               --st-done-ink: #FFFFFF;
-  --st-rev-fill:  #F4F5F7;      --st-rev-edge:  rgb(37 80 139 / .30);   --st-rev-ink:  #25508B;
+  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(9 13 11 / .30);  --st-work-ink: #090D0B;
+  --st-done-fill: #090D0B;      --st-done-edge: #090D0B;               --st-done-ink: #FFFFFF;
+  --st-rev-fill:  #F4F5F4;      --st-rev-edge:  rgb(1 102 69 / .30);   --st-rev-ink:  #016645;
   --st-can-fill:  #E6E7EA;      --st-can-edge:  #818790;               --st-can-ink:  #3D414A;
 
-  --paper:      #F4F5F7;               /* body ground                       */
+  --paper:      #F4F5F4;               /* body ground                       */
   --paper-2:    #E6E7EA;               /* recessed / banded                 */
   --paper-lift: #E6E7EA;               /* raised — a card off the ground    */
 
@@ -443,18 +443,18 @@
      accent hoort en niet als een tweede, koudere kleur leest. De verhoudingen
      zijn dezelfde rollen als in het donker — 18,1:1 / 9,3:1 / 5,2:1 voor tekst,
      en de onderste twee zijn lijnen en nooit letters. */
-  --ink-900:  #0F1217;
-  --ink-700:  rgb(11 15 23 / .66);
+  --ink-900:  #090D0B;
+  --ink-700:  rgb(9 13 11 / .66);
   /* #686868 en niet #6E6E6E — 7 september 2026. global.css staat al op #686868
      met de noot "5,6:1 op wit · 4,53:1 op #EDEDED"; deze drie handkopieën waren
      blijven staan op de oudere, lichtere waarde. Op wit haalde die het nog
      (5,1:1), op de tweede grond #EDEDED niet: 4,36:1, en daar staat de meta-regel
      van elke aandachtkaart in. Precies de afdrijving waar de kop van dit blok
      voor waarschuwt, gevonden door te meten. */
-  --ink-500:  rgb(11 15 23 / .56);
-  --ink-300:  rgb(11 15 23 / .34);      /* rules, never text */
-  --ink-200:  rgb(11 15 23 / .20);      /* hairlines */
-  --ink-100:  #0F1217;
+  --ink-500:  rgb(9 13 11 / .56);
+  --ink-300:  rgb(9 13 11 / .34);      /* rules, never text */
+  --ink-200:  rgb(9 13 11 / .20);      /* hairlines */
+  --ink-100:  #090D0B;
 
   /* De vier mistkleuren zijn in het donker één lichtere trede; hier zijn ze één
      donkerdere. Vier namen, één waarde, om dezelfde reden als hierboven. */
@@ -479,22 +479,22 @@
 
   /* De vullingen waren paper-alfa's omdat een inkt-alfa op bijna zwart
      onzichtbaar is. Op een lichte grond geldt het omgekeerde, dus keren ze om. */
-  --ghost:      rgb(11 15 23 / .06);
+  --ghost:      rgb(9 13 11 / .06);
   --btn-ghost-fill:        var(--ghost);
-  --btn-ghost-fill-hover:  rgb(11 15 23 / .12);
+  --btn-ghost-fill-hover:  rgb(9 13 11 / .12);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(11 15 23 / .06);
-  --btn-2nd-ink:           #0F1217;
-  --btn-2nd-border:        rgb(11 15 23 / .24);
-  --btn-2nd-border-hover:  rgb(11 15 23 / .60);
+  --btn-2nd-fill-hover:    rgb(9 13 11 / .06);
+  --btn-2nd-ink:           #090D0B;
+  --btn-2nd-border:        rgb(9 13 11 / .24);
+  --btn-2nd-border-hover:  rgb(9 13 11 / .60);
 
   /* De lijn om een bedienbaar element. In het donker een felle witte alfa; hier
      de donkere tegenhanger, zodat een invoerveld nog steeds een rand heeft. */
-  --line-ui:    rgb(11 15 23 / .45);
+  --line-ui:    rgb(9 13 11 / .45);
 
   /* De focusring moet op de grond te zien zijn; violet is dat wél (7,16:1),
      maar een ring hoort de hoogste contrastwaarde te hebben die er is. */
-  --focus-ring: #25508B;
+  --focus-ring: #016645;
 
   /* Het pijltje in een <select> is een tekening in de kleur van de tekst. */
   --select-caret: url("/img/ui/keuzepijl-0f1217.svg");
@@ -522,10 +522,10 @@
   --flag-ink:    var(--clay-text);
   --accent-bright: var(--accent-text);
   /* De losse kaartschermen (herontwerp 3 oktober 2026) — zie onderaan. */
-  --kv-veld:   #F4F5F7;
+  --kv-veld:   #F4F5F4;
   --kv-kaart:  #FFFFFF;
-  --kv-lijn:   rgb(11 15 23 / .09);
-  --kv-veld-lijn: rgb(11 15 23 / .24);
+  --kv-lijn:   rgb(9 13 11 / .09);
+  --kv-veld-lijn: rgb(9 13 11 / .24);
   --kv-ink-1:  #0B0D11;
   --kv-ink-2:  rgb(11 13 17 / .72);
   --kv-ink-3:  rgb(11 13 17 / .60);
@@ -535,7 +535,7 @@
    staan hier en niet hierboven omdat het geen kleuren zijn maar tinten óp een
    grond: in het donker een vleugje wit, in het licht een vleugje inkt. */
 :root[data-thema="licht"] .bk-card[open],
-:root[data-thema="licht"] .prod[open] { background: rgb(11 15 23 / .028); }
+:root[data-thema="licht"] .prod[open] { background: rgb(9 13 11 / .028); }
 
 
 /* box-sizing only. The radius half of this reset is gone — see the radius
@@ -1170,7 +1170,7 @@ details.ask .btn { margin-top: .6rem; }
 
 .ask-mark { width: 100%; margin-top: .45rem; }
 .ask-tick { display: inline-flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; color: var(--ink-3); cursor: pointer; }
-.ask-tick input { width: 1rem; height: 1rem; accent-color: var(--accent, #25508B); cursor: pointer; }
+.ask-tick input { width: 1rem; height: 1rem; accent-color: var(--accent, #016645); cursor: pointer; }
 .ask-tick:hover { color: var(--ink); }
 .ask-mark textarea { display: block; width: 100%; max-width: 32rem; margin-top: .4rem; }
 /* Het notitieveld verschijnt pas na het vinkje (doorlichting §3.6, 4 september
@@ -1180,7 +1180,7 @@ details.ask .btn { margin-top: .6rem; }
 @supports selector(:has(input)) {
   .ask-mark:not(:has(input:checked)) textarea { display: none; }
 }
-.ask-mark:has(input:checked) textarea { border-color: var(--accent, #0F1217); }
+.ask-mark:has(input:checked) textarea { border-color: var(--accent, #090D0B); }
 .ask-mark:has(input:checked) .ask-tick { color: var(--ink); }
 
 /* "Alles goed" per product: één knop onder de tegels, los van het rondeformulier. */
@@ -1197,11 +1197,11 @@ details.ask .btn { margin-top: .6rem; }
 /* De waarschuwing is het enige dat de klant vóór de klik moet begrijpen.
    9 november 2026 (ronde 91, S10): hier stond een amberen vlak (rgb(229 180 92 / .16)), en het kleurenschema kent
    geen warme kleur (docs/KLEURENSCHEMA.md, lijst 55 warm a). "Aandacht" is blauw op vlak: het vlak van de
-   revisiestand (--st-rev-fill, licht #F4F5F7), tekst in inkt (#0F1217, 17,2:1 op #F4F5F7) en een streep in blauw uur
-   (--st-rev-ink, licht #25508B). Donker: #122039 met tekst #F4F5F7 en streep #80A7DD. */
+   revisiestand (--st-rev-fill, licht #F4F5F4), tekst in inkt (#090D0B, 17,2:1 op #F4F5F4) en een streep in blauw uur
+   (--st-rev-ink, licht #016645). Donker: #122039 met tekst #F4F5F4 en streep #3DFFB0. */
 .ronde-warn {
-  color: var(--ink, #0F1217); background: var(--st-rev-fill, #F4F5F7);
-  border-left: 2px solid var(--st-rev-ink, #25508B); border-radius: 0 var(--r-klein) var(--r-klein) 0;
+  color: var(--ink, #090D0B); background: var(--st-rev-fill, #F4F5F4);
+  border-left: 2px solid var(--st-rev-ink, #016645); border-radius: 0 var(--r-klein) var(--r-klein) 0;
   padding: .7rem .9rem;
 }
 /* Afgerond: de haarlijn wordt groen in plaats van dat er een groene doos komt. */
@@ -3858,8 +3858,8 @@ form.codeform input[name="code"]::placeholder { color: var(--ink-300); }
 .kal-dag.is-mijn { background: var(--accent-bright); }
 .kal-dag.is-mijn .kal-n, .kal-dag.is-mijn .kal-l { color: var(--paper); }
 .kal-dag.is-mijn .kal-l { font-weight: 700; }
-.kal-dag.is-mijn .kal-vul { background: rgb(11 15 23 / 0.20); }
-.kal-dag.is-mijn .kal-vul i { background: rgb(11 15 23 / 0.45); }
+.kal-dag.is-mijn .kal-vul { background: rgb(9 13 11 / 0.20); }
+.kal-dag.is-mijn .kal-vul i { background: rgb(9 13 11 / 0.45); }
 .kal-nu-paar { margin: .9rem 0 0; font-size: .92rem; }
 
 /* ── De vaste stijl bij lifestyle — 3 september 2026 ──────────────────────────
@@ -4072,17 +4072,17 @@ body:not(.has-shell) .nakijk-knoppen { display: flex; flex-wrap: wrap; gap: .6re
 html[data-thema="licht"] body {
   --h-letter: "DM Sans", "Urbanist Variable", ui-sans-serif, system-ui, sans-serif;  /* levering 77: DM Sans (lijst 60; was Instrument Sans, levering 76); de @font-face in /fonts/gedeeld.css */
   --font: var(--h-letter); --font-display: var(--h-letter); --stretch-kop: 100%;
-  --kv-veld: #F4F5F7; --kv-kaart: #FFFFFF; --kv-lijn: #E6E8EC; --kv-veld-lijn: #858A94;
-  --kv-ink-1: #0F1217; --kv-ink-2: #0F1217; --kv-ink-3: #636974;
-  --paper: #FFFFFF; --paper-2: #F4F5F7; --paper-lift: #F4F5F7; --surface: #FFFFFF; --surface-2: #F4F5F7;
-  --ink: #0F1217; --ink-2: #0F1217; --ink-3: #636974; --ink-4: #C5C8CF; --ink-900: #0F1217; --ink-700: #0F1217; --ink-500: #636974; --ink-300: #C5C8CF; --ink-200: #E6E8EC;
-  --line: #E6E8EC; --line-strong: #C5C8CF; --line-ui: #858A94; --ghost: rgb(11 15 23 / .04); --btn-ghost-fill: rgb(11 15 23 / .05);
-  --accent: #0F1217; --on-accent: #FFFFFF; --accent-text: #0F1217; --accent-dim: #0F1217; --accent-2: #0F1217; --teal: #0F1217; --teal-hover: #25508B; --teal-text: #0F1217; --focus-ring: #25508B;
-  --signal: #F4F5F7; --signal-ink: #0F1217; --warn: #F4F5F7; --warn-ink: #25508B;
-  --st-wait-fill: transparent; --st-wait-edge: #858A94; --st-wait-ink: #0F1217;
-  --st-work-fill: #F4F5F7; --st-work-edge: #E6E8EC; --st-work-ink: #0F1217;
-  --st-done-fill: #0F1217; --st-done-edge: #0F1217; --st-done-ink: #FFFFFF;
-  --st-rev-fill: #F4F5F7; --st-rev-edge: rgb(37 80 139 / .30); --st-rev-ink: #25508B;
+  --kv-veld: #F4F5F4; --kv-kaart: #FFFFFF; --kv-lijn: #E7EAE8; --kv-veld-lijn: #8A908D;
+  --kv-ink-1: #090D0B; --kv-ink-2: #090D0B; --kv-ink-3: #5E6461;
+  --paper: #FFFFFF; --paper-2: #F4F5F4; --paper-lift: #F4F5F4; --surface: #FFFFFF; --surface-2: #F4F5F4;
+  --ink: #090D0B; --ink-2: #090D0B; --ink-3: #5E6461; --ink-4: #C6CAC8; --ink-900: #090D0B; --ink-700: #090D0B; --ink-500: #5E6461; --ink-300: #C6CAC8; --ink-200: #E7EAE8;
+  --line: #E7EAE8; --line-strong: #C6CAC8; --line-ui: #8A908D; --ghost: rgb(9 13 11 / .04); --btn-ghost-fill: rgb(9 13 11 / .05);
+  --accent: #090D0B; --on-accent: #FFFFFF; --accent-text: #090D0B; --accent-dim: #090D0B; --accent-2: #090D0B; --teal: #090D0B; --teal-hover: #016645; --teal-text: #090D0B; --focus-ring: #016645;
+  --signal: #F4F5F4; --signal-ink: #090D0B; --warn: #F4F5F4; --warn-ink: #016645;
+  --st-wait-fill: transparent; --st-wait-edge: #8A908D; --st-wait-ink: #090D0B;
+  --st-work-fill: #F4F5F4; --st-work-edge: #E7EAE8; --st-work-ink: #090D0B;
+  --st-done-fill: #090D0B; --st-done-edge: #090D0B; --st-done-ink: #FFFFFF;
+  --st-rev-fill: #F4F5F4; --st-rev-edge: rgb(1 102 69 / .30); --st-rev-ink: #016645;
   font-family: var(--h-letter);
 }
 html[data-thema="licht"] body:not(.has-shell) .authcard { border-radius: var(--r-kaart); }
@@ -4167,7 +4167,7 @@ html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell
 .mk { --vs-amp: 0; animation: vs-schommel 3.6s linear infinite paused; transition: --vs-amp .7s cubic-bezier(.3, 0, .2, 1); }
 :is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk, button:focus-visible > .mk) { --vs-amp: 1; animation-play-state: running; transition-duration: .45s; }
 .mk .mk-line { display: none; }
-.mk .mk-kleur { fill: var(--mk-kleur, #25508B); stroke: none; opacity: calc(var(--vs-amp) * (1 - cos(var(--vs-fase) * 360deg)) / 2); pointer-events: none; }
+.mk .mk-kleur { fill: var(--mk-kleur, #016645); stroke: none; opacity: calc(var(--vs-amp) * (1 - cos(var(--vs-fase) * 360deg)) / 2); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .mk { animation: none; transition: none; }
   .mk .mk-kleur { opacity: var(--vs-amp); }
@@ -4193,14 +4193,14 @@ html:not([data-thema="licht"]) .mk.mk-venster .mk-kleur { display: inline; }
 @supports (background-image: image-set(url("/img/stuk/korrel-128.webp") 1x)) {
   .stand.is-geleverd { --pk-korrel: image-set(url("/img/stuk/korrel-128.webp") 1x, url("/img/stuk/korrel-256.webp") 2x); }
 }
-.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #0F1217 !important; color: #FFFFFF !important; box-shadow: none !important; }
+.stand.is-geleverd { background: var(--pk-korrel) 0 0 / 128px 128px, url(/img/stuk/n-knop-1.webp) 50% 50% / cover no-repeat, #090D0B !important; color: #FFFFFF !important; box-shadow: none !important; }
 @media (forced-colors: active) { .stand.is-geleverd { background: Canvas !important; color: CanvasText !important; border: 1px solid CanvasText !important; } }
 
-.mark { --mk-line-ink: #25508B; --mk-kleur: #25508B; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
-html:not([data-thema="licht"]) .mark { --mk-line-ink: #80A7DD; --mk-kleur: #80A7DD; }
+.mark { --mk-line-ink: #016645; --mk-kleur: #016645; --mk-sw: .55; --mk-off: 56px; --mk-j: 8px; --mk-r: .35deg; }
+html:not([data-thema="licht"]) .mark { --mk-line-ink: #3DFFB0; --mk-kleur: #3DFFB0; }
 /* Schema A (levering 62): een aangevinkt vakje is violet, zoals op de site (wat je kiest). */
-html[data-thema="licht"] body input[type="checkbox"], html[data-thema="licht"] body input[type="radio"] { accent-color: #25508B; }
-html[data-thema="licht"] body ::selection { background: #25508B; color: #FFFFFF; }
+html[data-thema="licht"] body input[type="checkbox"], html[data-thema="licht"] body input[type="radio"] { accent-color: #016645; }
+html[data-thema="licht"] body ::selection { background: #016645; color: #FFFFFF; }
 
 /* De knop en de statuspil zoals op de site en in Studio (levering 57): de knop met één
    zachte hoek linksboven, de pil als plaatje in de vaste breedte-letter zonder bolletje. */
@@ -4208,7 +4208,7 @@ html[data-thema="licht"] body .btn, html[data-thema="licht"] body:not(.has-shell
 
 
 /* ══ LEVERING 86 · HET WOORDMERK IN DE SNEDE (3 november 2026, lijst 72, logo a en schommel a) ══
-   Zoals op de site en in Studio: het woordmerk in de fade van blauw diep naar #2D61A8 langs de snede
+   Zoals op de site en in Studio: het woordmerk in de fade van blauw diep naar #11976A langs de snede
    (alleen herkleurd), de schommel naar dezelfde fade een stap lichter. De fades staan in het woordmerk
    zelf (woordmerkSvg, src/data/wordmarkPath.js).
    Op de kaarten van het account alleen in het lichte thema (donker is hier de standaard); donker blijft het woordmerk licht. */

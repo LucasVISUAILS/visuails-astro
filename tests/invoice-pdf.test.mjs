@@ -581,7 +581,8 @@ const verlopen = (markStreams.match(/\/VsSnede sh/g) || []).length;
    V-merk (twee paden, elk een knipvlak met het verloop van de V: VsSnedeV0 en VsSnedeV1) naast het tekstlogo K5. */
 const verlopenV = (markStreams.match(/\/VsSnedeV[01] sh/g) || []).length;
 check('drie vullingen en drie verlopen: drie vlakken, het tekstlogo en de twee paden van het V-merk (de lockup), geen watermerk', [vullingen, verlopen, verlopenV], [3, 1, 2]);
-check('  het woordmerk in de snede: blauw diep, blauw uur, #2D61A8 langs de snede', /ShadingType 2/.test(Buffer.from(markPdf).toString('latin1')) || /SNEDE = \[\[0, \[26 \/ 255, 66 \/ 255, 121 \/ 255\]\], \[0\.55, \[37 \/ 255, 80 \/ 255, 139 \/ 255\]\], \[1, \[45 \/ 255, 97 \/ 255, 168 \/ 255\]\]\];/.test(source), true);
+/* levering 111 (lijst 123, FA): het logo op de factuur is zwart #090D0B, zoals op de site sinds levering 100 */
+check('  het woordmerk in zwart #090D0B, op alle drie de punten van de snede', /SNEDE = \[\[0, \[9 \/ 255, 13 \/ 255, 11 \/ 255\]\], \[0\.55, \[9 \/ 255, 13 \/ 255, 11 \/ 255\]\], \[1, \[9 \/ 255, 13 \/ 255, 11 \/ 255\]\]\];/.test(source) && !/#1A4279|#25508B/.test(source.replace(/\/\*[\s\S]*?\*\//g, '')), true);
 check('  het watermerk staat uit', /const WM_OPACITY = 0;/.test(source), true);
 {
   const { WOORDMERK } = await import('../src/data/woordmerk.js');

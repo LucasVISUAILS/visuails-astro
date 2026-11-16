@@ -203,14 +203,14 @@ html body.werkplaats.hal .of-werk .pl-qty-lat { position: relative; padding: 0 1
 html body.werkplaats.hal .of-werk .pl-qty-schuif { -webkit-appearance: none; appearance: none; display: block; width: calc(100% + 22px); height: 32px; margin: 0 -11px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; }
 html body.werkplaats.hal .of-werk .pl-qty-schuif::-webkit-slider-runnable-track { height: 3px; border-radius: 999px; background: linear-gradient(90deg, var(--h-inkt) 0 var(--p, 0%), var(--h-lijn-sterk) var(--p, 0%) 100%); }
 html body.werkplaats.hal .of-werk .pl-qty-schuif::-moz-range-track { height: 3px; border-radius: 999px; background: linear-gradient(90deg, var(--h-inkt) 0 var(--p, 0%), var(--h-lijn-sterk) var(--p, 0%) 100%); }
-html body.werkplaats.hal .of-werk .pl-qty-schuif::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9.5px; border: 0; border-radius: 50%; background: var(--h-inkt); box-shadow: 0 0 0 3px var(--h-grond, #FBFCFF); }
-html body.werkplaats.hal .of-werk .pl-qty-schuif::-moz-range-thumb { width: 22px; height: 22px; border: 0; border-radius: 50%; background: var(--h-inkt); box-shadow: 0 0 0 3px var(--h-grond, #FBFCFF); }
+html body.werkplaats.hal .of-werk .pl-qty-schuif::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9.5px; border: 0; border-radius: 50%; background: var(--h-inkt); box-shadow: 0 0 0 3px var(--h-grond, #FFFFFF); }
+html body.werkplaats.hal .of-werk .pl-qty-schuif::-moz-range-thumb { width: 22px; height: 22px; border: 0; border-radius: 50%; background: var(--h-inkt); box-shadow: 0 0 0 3px var(--h-grond, #FFFFFF); }
 html body.werkplaats.hal .of-werk .pl-qty-schuif:focus-visible { outline: none; }
-html body.werkplaats.hal .of-werk .pl-qty-schuif:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--h-grond, #FBFCFF), 0 0 0 5px var(--h-blauw); }
-html body.werkplaats.hal .of-werk .pl-qty-schuif:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--h-grond, #FBFCFF), 0 0 0 5px var(--h-blauw); }
+html body.werkplaats.hal .of-werk .pl-qty-schuif:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--h-grond, #FFFFFF), 0 0 0 5px var(--h-blauw); }
+html body.werkplaats.hal .of-werk .pl-qty-schuif:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px var(--h-grond, #FFFFFF), 0 0 0 5px var(--h-blauw); }
 /* nog niets gekozen (zonder het standaardaantal): het knopje is een ring en de lijn is leeg */
-html body.werkplaats.hal .of-werk .pl-qty-schuif.is-leeg::-webkit-slider-thumb { background: var(--h-grond, #FBFCFF); box-shadow: inset 0 0 0 2px var(--h-inkt), 0 0 0 3px var(--h-grond, #FBFCFF); }
-html body.werkplaats.hal .of-werk .pl-qty-schuif.is-leeg::-moz-range-thumb { background: var(--h-grond, #FBFCFF); box-shadow: inset 0 0 0 2px var(--h-inkt), 0 0 0 3px var(--h-grond, #FBFCFF); }
+html body.werkplaats.hal .of-werk .pl-qty-schuif.is-leeg::-webkit-slider-thumb { background: var(--h-grond, #FFFFFF); box-shadow: inset 0 0 0 2px var(--h-inkt), 0 0 0 3px var(--h-grond, #FFFFFF); }
+html body.werkplaats.hal .of-werk .pl-qty-schuif.is-leeg::-moz-range-thumb { background: var(--h-grond, #FFFFFF); box-shadow: inset 0 0 0 2px var(--h-inkt), 0 0 0 3px var(--h-grond, #FFFFFF); }
 /* de treden: midden boven hun stuk van de schuif, de eerste links en de laatste rechts */
 html body.werkplaats.hal .of-werk .pl-qty-lat .wk-trap { position: relative; height: 42px; margin: 4px 0 0; padding: 0; list-style: none; }
 html body.werkplaats.hal .of-werk .pl-qty-lat .wk-trap li { position: absolute; top: 0; left: var(--x, 0%); transform: translateX(-50%); height: auto; max-width: none !important; margin: 0; padding: 0; background: none; border-radius: 0; }
@@ -295,7 +295,7 @@ html body.werkplaats.hal .of-werk .wk-voorrang-prijs .wk-niet-credits { font: 60
 html body.werkplaats.hal .of-werk .wk-opslag { display: none; }
 html body.werkplaats.hal .of-werk .wk-hoeken {
   position: fixed; z-index: 60; inset: 0; display: grid; place-items: center; max-width: none; margin: 0; padding: 24px 16px;
-  background: rgba(15, 18, 23, .42);
+  background: rgba(9, 13, 11, .42);
 }
 html body.werkplaats.hal .of-werk .wk-hoeken[hidden] { display: none; }
 html body.werkplaats.hal .of-werk .wk-hoeken-in {
@@ -335,7 +335,7 @@ html body.werkplaats.hal .of-werk .wk-krijg .bo-tegel-naam { font: 600 12px/1.2 
 /* Het vierkantje: in de hoek van het vak, 5 px van de rand (de hoekregel: vak 3 px). */
 html body.werkplaats.hal .of-werk .wk-kleur {
   position: absolute; right: 5px; bottom: 5px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 999px;
-  background: var(--bo-bg, var(--h-wit)); box-shadow: 0 0 0 2px var(--h-wit), 0 0 0 3px #858A94; cursor: pointer;
+  background: var(--bo-bg, var(--h-wit)); box-shadow: 0 0 0 2px var(--h-wit), 0 0 0 3px #8A908D; cursor: pointer;
 }
 html body.werkplaats.hal .of-werk .wk-kleur::after { content: ""; position: absolute; inset: -9px; }
 html body.werkplaats.hal .of-werk .wk-kleur:hover { box-shadow: 0 0 0 2px var(--h-wit), 0 0 0 3px var(--h-inkt); }
@@ -403,15 +403,15 @@ html body.werkplaats.hal .of-werk .wk-paneel-k {
 html body.werkplaats.hal .of-werk .wk-paneel-k:hover,
 html body.werkplaats.hal .of-werk .wk-paneel-k[aria-pressed="true"] { background: var(--h-nevel); }
 html body.werkplaats.hal .of-werk .wk-paneel-k[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--kies); }
-html body.werkplaats.hal .of-werk .wk-paneel-k s { width: 22px; height: 22px; border-radius: 999px; background: var(--c, var(--h-wit)); box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .18); }
-html body.werkplaats.hal .of-werk .wk-paneel-eigen-k s { background: var(--h-wit); box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .18), inset 0 0 0 5px var(--h-wit), inset 0 0 0 11px var(--h-lijn-sterk); }
+html body.werkplaats.hal .of-werk .wk-paneel-k s { width: 22px; height: 22px; border-radius: 999px; background: var(--c, var(--h-wit)); box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .18); }
+html body.werkplaats.hal .of-werk .wk-paneel-eigen-k s { background: var(--h-wit); box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .18), inset 0 0 0 5px var(--h-wit), inset 0 0 0 11px var(--h-lijn-sterk); }
 html body.werkplaats.hal .of-werk .wk-paneel-k em { font: 600 12px/1 var(--h-mono); font-style: normal; color: var(--h-inkt-3); }
 html body.werkplaats.hal .of-werk .wk-paneel-eigen { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: center; margin-top: 4px; }
 html body.werkplaats.hal .of-werk .wk-paneel-eigen[hidden] { display: none; }
 html body.werkplaats.hal .of-werk .wk-paneel-eigen span { padding-left: 8px; font: 600 var(--h-t-fijn)/1 var(--h-mono); color: var(--h-inkt-2); }
 html body.werkplaats.hal .of-werk .wk-paneel-eigen input {
   height: 40px; min-width: 0; margin: 0; padding: 0 10px; border: 0; border-radius: 999px; background: var(--h-wit);
-  box-shadow: inset 0 0 0 1px #858A94; font: 500 var(--h-t-klein)/1 var(--h-mono); text-transform: uppercase; color: var(--h-inkt);
+  box-shadow: inset 0 0 0 1px #8A908D; font: 500 var(--h-t-klein)/1 var(--h-mono); text-transform: uppercase; color: var(--h-inkt);
 }
 html body.werkplaats.hal .of-werk .wk-paneel-eigen button { height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--h-inkt); color: var(--h-wit); font: 600 var(--h-t-klein)/1 var(--h-letter); cursor: pointer; }
 html body.werkplaats.hal .of-werk .wk-paneel-eigen button:hover { background: var(--h-blauw); }
@@ -457,7 +457,7 @@ html body.werkplaats.hal .of-werk .pu-head .pu-n { display: none; }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head { grid-template-columns: minmax(0, 1fr) 240px; align-items: center; gap: 8px 12px; }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-name {
   grid-column: 1; grid-row: 1; height: 52px; width: 100%; padding: 0 16px; border: 0; border-radius: var(--hoek-knop);
-  background: var(--h-wit); box-shadow: inset 0 0 0 1px #858A94; font: 450 var(--h-t-klein)/1.2 var(--h-letter); letter-spacing: 0; color: var(--h-inkt);
+  background: var(--h-wit); box-shadow: inset 0 0 0 1px #8A908D; font: 450 var(--h-t-klein)/1.2 var(--h-letter); letter-spacing: 0; color: var(--h-inkt);
 }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-name:focus-visible { box-shadow: inset 0 0 0 2px var(--h-inkt); }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-soort { grid-column: 2; grid-row: 1; align-self: stretch; }
@@ -639,14 +639,14 @@ html body.werkplaats.hal .of-werk .wk-lookkaart-kop h4 { margin: 6px 0 0; font: 
 html body.werkplaats.hal .of-werk .wk-lookkaart-prijs { font: 600 var(--h-t-klein)/1 var(--h-letter); white-space: nowrap; color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-wie { margin: -8px 0 0; font: 450 15px/1.45 var(--h-letter); color: var(--h-inkt-2); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-samen { display: flex; gap: 8px; }
-html body.werkplaats.hal .of-werk .wk-lookkaart-samen .wk-duim { width: 56px; height: 70px; box-shadow: 0 0 0 1px rgba(15, 18, 23, .08); }
+html body.werkplaats.hal .of-werk .wk-lookkaart-samen .wk-duim { width: 56px; height: 70px; box-shadow: 0 0 0 1px rgba(9, 13, 11, .08); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-samen .wk-duim:first-child { border-radius: var(--r-klein); }
 html body.werkplaats.hal .of-werk .wk-lookkaart ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: 450 var(--h-t-klein)/1.45 var(--h-letter); color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookkaart li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; }
 html body.werkplaats.hal .of-werk .wk-lookkaart-vink .ik { width: 14px; height: 14px; margin-top: 3px; color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-notitie { display: grid; gap: 6px; }
 html body.werkplaats.hal .of-werk .wk-lookkaart-notitie span { font: 600 var(--h-t-fijn)/1.2 var(--h-letter); color: var(--h-inkt-2); }
-html body.werkplaats.hal .of-werk .wk-lookkaart-notitie input { width: 100%; height: 48px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--h-wit); box-shadow: inset 0 0 0 1px var(--h-veldlijn, #858A94); font: 450 15px/1.2 var(--h-letter); color: var(--h-inkt); }
+html body.werkplaats.hal .of-werk .wk-lookkaart-notitie input { width: 100%; height: 48px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--h-wit); box-shadow: inset 0 0 0 1px var(--h-veldlijn, #8A908D); font: 450 15px/1.2 var(--h-letter); color: var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-notitie input:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--h-inkt); }
 html body.werkplaats.hal .of-werk .wk-lookkaart-uit { justify-self: start; padding: 0; border: 0; background: none; cursor: pointer; font: 600 var(--h-t-fijn)/1.2 var(--h-letter); color: var(--h-inkt); text-decoration: underline; text-underline-offset: 3px; }
 /* De productknoppen van een look worden één vorm onder LOOK A (c-look). pipeline.js

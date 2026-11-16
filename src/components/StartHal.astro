@@ -53,8 +53,8 @@ import {
   ladderFloor, euro, vatLabel, vatLead, vatDetail,
   WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause, eenProductRegel, CATALOG_IMAGES, levervlakken, SERVICE_CREDITS, levertijdDelen, aboVanafPerProduct,
 } from '../data/pricing.js';
-import { videoStyles as videoEn } from '../data/videoStyles.js';
-import { videoStyles as videoNl } from '../data/videoStyles.nl.js';
+import { videoOpPagina as videoEn } from '../data/videoStyles.js';  // lijst 109: alleen Motion en op maat
+import { videoOpPagina as videoNl } from '../data/videoStyles.nl.js';  // lijst 109: alleen Motion en op maat
 import { telwoord } from '../data/models.js';
 import { REQUIRED_SHOT_IDS } from '../data/shots.js';
 import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
@@ -342,7 +342,7 @@ const BEELD = {
       <p class="h-pil"><span>{c.maatPil}</span></p>
       <h2 id="st-maat" class="h-kop h-h3">{c.maatH[0]} <span class="l">{c.maatH[1]}</span></h2>
     </header>
-    <ul class="h-st-mk" role="list">
+    <ul class="h-st-mk kv-108" role="list" data-kaart>
       {c.maat.map((m, i) => (
         <li class="h-st-mk-k h-in" style={`--d:${i}`}>
           <b class="h-st-mk-naam">{m.naam}</b>

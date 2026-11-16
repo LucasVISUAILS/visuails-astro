@@ -45,7 +45,7 @@
  */
 
 import { mailNote, mailNoteInMail } from '../data/mailNote.js';
-import { tagline } from '../data/brand.js';
+import { MAIL_ZIN } from '../data/brand.js';
 import { waHref } from '../data/whatsapp.js';
 import { groetwoord, AANHEF } from './aanhef.js';
 
@@ -84,37 +84,38 @@ const SITE = 'https://visuails.com';
    Wit, zwart en grijs zonder kleur: inkt #000000, lopende tekst #3D3D3D,
    klein #616161 (6,2:1 op wit), de lijn #DDDDDD, nevel #F2F2F2. Violet staat
    in de mail nergens: ook de knop is zwart, zoals de gewone knoppen op de site. */
-/* ── BLAUW UUR, 24 OKTOBER 2026 (levering 68, lijst 55) ───────────────────────
-   Inkt #0F1217 voor alle tekst en de knop, klein #636974 (5,52:1 op wit), de lijn
-   #E6E8EC, vlak #F4F5F7, aandacht blauw uur #25508B op vlak (7,41:1). De mail houdt
-   de knop inkt: een mailclient kent geen muis, dus het blauw van de site (Bestellen,
-   het logo onder de muis) komt hier niet. */
+/* ── ZWART, WIT EN GRIJS, 16 NOVEMBER 2026 (levering 111, lijst 123: MA goed, Q1 a) ──
+   De kleuren van de site sinds levering 100 (docs/KLEURENSCHEMA.md): zwart #090D0B voor alle tekst, het logo en
+   de knop, klein grijs #5E6461 (6,1 : 1 op wit), de lijn #E7EAE8, het vlak #F4F5F4. De status "aandacht" is
+   mint 700 op mint 100 (6,5 : 1), zoals op de site. Mint staat verder nergens in de mail: de Gmail-app maakt in
+   de donkere stand de letters op een knop wit, en wit op mint is 1,3 : 1 (lijst 123, MB: niet doen).
+   Was blauw uur (24 oktober 2026, levering 68): inkt #0F1217, klein #636974, aandacht #25508B. */
 const C = {
-  green: '#0F1217',
+  green: '#090D0B',
   onAccent: '#FFFFFF',
-  accentText: '#0F1217',
-  ink: '#0F1217',
-  text: '#0F1217',
-  head: '#0F1217',
-  muted: '#636974',
-  faint: '#636974',
-  rule: '#E6E8EC',
-  ruleSoft: '#E6E8EC',
+  accentText: '#090D0B',
+  ink: '#090D0B',
+  text: '#090D0B',
+  head: '#090D0B',
+  muted: '#5E6461',
+  faint: '#5E6461',
+  rule: '#E7EAE8',
+  ruleSoft: '#E7EAE8',
   paper: '#FFFFFF',
-  foot: '#F4F5F7',
-  tintBg: '#F4F5F7',
-  tintInk: '#0F1217',
-  page: '#F4F5F7',
+  foot: '#F4F5F4',
+  tintBg: '#F4F5F4',
+  tintInk: '#090D0B',
+  page: '#F4F5F4',
 
   /* De vijf toestanden, lichte stand — zie de tabel in KLEURENSCHEMA.md.
      Mail kent geen donkere stand: een mailclient kan zijn eigen donkere modus
      hebben, maar die herkleurt ons vlak niet, dus een tweede set zou alleen
      maar een tweede waarheid zijn. */
-  stWaitFill: 'transparent', stWaitEdge: '#858A94',            stWaitInk: '#0F1217',
-  stWorkFill: '#F4F5F7',     stWorkEdge: '#E6E8EC',             stWorkInk: '#0F1217',
-  stDoneFill: '#0F1217',     stDoneEdge: '#0F1217',             stDoneInk: '#FFFFFF',
-  stRevFill:  '#F4F5F7',     stRevEdge:  'rgba(37,80,139,.30)',  stRevInk:  '#25508B',
-  stCanFill:  '#E6E8EC',     stCanEdge:  '#858A94',             stCanInk:  '#0F1217',
+  stWaitFill: 'transparent', stWaitEdge: '#8A908D',            stWaitInk: '#090D0B',
+  stWorkFill: '#F4F5F4',     stWorkEdge: '#E7EAE8',             stWorkInk: '#090D0B',
+  stDoneFill: '#090D0B',     stDoneEdge: '#090D0B',             stDoneInk: '#FFFFFF',
+  stRevFill:  '#E4FCEF',     stRevEdge:  'rgba(1,102,69,.30)',  stRevInk:  '#016645',
+  stCanFill:  '#E7EAE8',     stCanEdge:  '#8A908D',             stCanInk:  '#090D0B',
 };
 
 import { stand } from '../data/status.js';
@@ -327,9 +328,9 @@ export const statusPil = (status, label) => {
 };
 
 /** The green call-to-action. A table cell with bgcolor, which Outlook honours. */
-/* Levering 87 (4 november 2026, lijst 74): de knop is een pil, zoals op de site (--hoek-knop: 999px). Lucas
-   koos "super ronde hoeken" in plaats van de ene zachte hoek. De hoek blijft een argument. */
-const knop = (href, label, hoek = '999px') =>
+/* Levering 87 (4 november 2026, lijst 74): de knop was een pil (999px). Levering 111 (lijst 123): 8 px, zoals de
+   knoppen op de site nu (knoppen.css: --k-r). De hoek blijft een argument. */
+const knop = (href, label, hoek = '8px') =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
     <!-- Levering 87: een pil, zoals de knop op de site (tot levering 86: één zachte hoek linksboven).
          Outlook op Windows kent border-radius niet en toont hem recht; dat is goed zo. -->
@@ -365,7 +366,7 @@ export const tekstLink = (href, label, { bottom = 20 } = {}) =>
     is een kaart, 24 px rond aan alle vier de hoeken, zoals --r-kaart op de site. De
     knop ligt linksonder; sinds levering 87 is hij een pil, net als elke andere knop. */
 export const payPanel = ({ label, amount, sub, href, cta }) =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:24px">
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:8px 0 0;border-radius:18px">
     <tr>
       <td style="padding:22px 24px;font-family:${FONT}">
         <p style="margin:0 0 2px;font-family:${MONO};font-size:12px;letter-spacing:.1em;color:${C.tintInk};text-transform:uppercase">${esc(label)}</p>
@@ -379,7 +380,7 @@ export const payPanel = ({ label, amount, sub, href, cta }) =>
 /** A quiet aside with a hairline down its left — the spam note lives in one. */
 export const note = html =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 16px"><tr>
-    <!-- De lijn van de hal (#E6E8EC), als bgcolor: dat slikt elke mailclient. -->
+    <!-- De lijn van de hal (C.rule), als bgcolor: dat slikt elke mailclient. -->
     <td width="3" bgcolor="${C.rule}" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
     <td style="padding:2px 0 2px 14px">
       <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.6;color:${C.muted}">${html}</p>
@@ -501,7 +502,7 @@ const footer = lang => {
          daar is deze mail juist van weggehouden (zie src/lib/mail.js over
          waarom alles als twee delen verstuurd wordt). De voet is waar een
          merkzin hoort: gelezen door wie doorleest, genegeerd door wie scant. -->
-    <p style="margin:0;font-size:12px;color:${C.faint}">${esc(tagline(lang).plain)}</p>
+    <p style="margin:0;font-size:12px;color:${C.faint}">${esc(MAIL_ZIN[lang] || MAIL_ZIN.en)}</p>
   </td></tr>
 </table>`;
 };

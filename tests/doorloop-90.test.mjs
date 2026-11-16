@@ -175,7 +175,7 @@ console.log('\nD · /admin');
   ok('D12, D13, D35: de uitleg over formaten volgt JPG als standaard', /Formaten: JPG hier, PNG en WebP op aanvraag/.test(admin) && !/het commando is hoe een bestelling de deur uit gaat/.test(admin));
   ok('D15: geen "4:5 — 4:5"', /naam\.includes\(String\(r\.label \|\| ''\)\) \? esc\(naam\)/.test(admin));
   ok('D19: "Deze bestelling is geleverd;" in kleine letters', /toLowerCase\(\)\)\}; de leverdag verzetten kan niet meer\./.test(admin));
-  ok('D20: de stille knop leesbaar in het donkere thema', /html\[data-thema="donker"\] \.btn\.btn-quiet \{ color: rgb\(244 245 247 \/ \.72\); \}/.test(lees('public/admin.css')));
+  ok('D20: de stille knop leesbaar in het donkere thema', /html\[data-thema="donker"\] \.btn\.btn-quiet \{ color: rgb\(244 245 244 \/ \.72\); \}/.test(lees('public/admin.css')));
   ok('D27: één kop Revisies', /<span class="ref">Revisierecht<\/span>/.test(admin));
   ok('D29: testabonnementen tellen niet mee per maand', /maandNetto: rijen\.reduce\(\(n, r\) => n \+ \(r\.test \? 0 : r\.maandNetto\), 0\)/.test(lees('src/lib/abonnees.js')));
   ok('D36: de intro van de btw-controle klopt', !/Bestellingen van buiten de EU staan hier niet meer/.test(admin));
@@ -187,8 +187,8 @@ console.log('\nD · /admin');
 console.log('\nLijst 84 · de voetknop en Aanmelden volgen de inktknop (K2)');
 {
   const hal = lees('src/styles/hal.css');
-  ok('één token voor de inktknop', /html body\.hal \{\s*--knop-inkt: linear-gradient\(126\.87deg, #0F1217 0%/.test(hal));
-  ok('de voet en de Studiobrief gebruiken het', /html body\.hal \.site-footer \.btn-primary, html body\.hal \.sb\.sb-licht \.sb-veld button \{\s*background: #0F1217 var\(--knop-inkt\)/.test(hal));
+  ok('één token voor de inktknop', /html body\.hal \{\s*--knop-inkt: linear-gradient\(126\.87deg, #090D0B 0%/.test(hal));
+  ok('de voet en de Studiobrief gebruiken het', /html body\.hal \.site-footer \.btn-primary, html body\.hal \.sb\.sb-licht \.sb-veld button \{\s*background: #090D0B var\(--knop-inkt\)/.test(hal));
   ok('minder beweging: zonder overgang', /@media \(prefers-reduced-motion: reduce\) \{\s*html body\.hal \.site-footer \.btn-primary, html body\.hal \.sb\.sb-licht \.sb-veld button \{ transition: none; \}/.test(hal));
 }
 
@@ -197,7 +197,8 @@ console.log('\nA · de publieke site');
   const hal = lees('src/styles/hal.css');
   const op = lees('src/styles/opening-80.css');
   ok('F1: de Studiobrief op Editions is weer inkt in de witte kaart', /html body\.hal \.h-lk-slot \.h-ed-brief \.sb-kop \{ color: var\(--h-inkt\); \}/.test(hal));
-  ok('F3: de structured data belooft niet meer één foto', !/'Product-visual studio[^']*single product photo/.test(lees('src/data/schema.js')) && /made from a few phone photos of each product/.test(lees('src/data/schema.js')));
+  /* levering 110 (lijst 121, G1): "phone photos" werd "photos" (het maakt niet uit hoe de foto's gemaakt zijn) */
+  ok('F3: de structured data belooft niet meer één foto', (() => { const d = (/ORG_DESCRIPTION =\s*'([^']*)'/.exec(lees('src/data/schema.js')) || [, ''])[1]; return !/single product photo/.test(d) && /made from a few photos of each product/.test(d); })());
   ok('F3: stap 2 zegt drie foto\'s, zoals de verplichte vakken', /Three photos are enough: the front, the back and a detail\./.test(flow) && /Drie foto’s zijn genoeg: de voorkant, de achterkant en een detail\./.test(flow));
   ok('F3: Catalog EN niet meer "One photo in."', !/'One photo in\.'/.test(lees('src/components/CatalogHal.astro')));
   ok('S1: de WebSite-knoop in beide talen', /inLanguage: \['en', 'nl'\],/.test(lees('src/data/schema.js')));

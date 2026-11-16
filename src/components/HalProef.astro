@@ -45,8 +45,9 @@ import { localizedPath } from '../i18n/ui.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import { klantTekst } from '../data/klant.js';
 
-interface Props { lang: 'en' | 'nl'; kop: [string, string]; zin: string; alt: { label: string; href: string }; id?: string; label?: string; plan?: boolean; }
-const { lang, kop, zin, alt, id = 'h-proef', label } = Astro.props;
+/* beelden (levering 99, lijst 100 E1): de voorpagina geeft de vier beelden van NON/STD mee; zonder blijft het de voorbeeldset */
+interface Props { lang: 'en' | 'nl'; kop: [string, string]; zin: string; alt: { label: string; href: string }; id?: string; label?: string; plan?: boolean; beelden?: { src: string; w: number; h: number }[]; }
+const { lang, kop, zin, alt, id = 'h-proef', label, beelden } = Astro.props;
 const nl = lang === 'nl';
 const lp = (p: string) => localizedPath(lang, p);
 const sample = TEST_SAMPLE[lang];
@@ -84,6 +85,6 @@ const altRol = /\/start|test-sample|^#/.test(alt.href) ? 'doorgaan' : (extern &&
     </p>
   </div>
   <ul class="h-vier" role="list" aria-hidden="true">
-    {geleverd(lang).map((b, i) => <li class="h-well" style={`--d:${i}`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /></li>)}
+    {(beelden || geleverd(lang)).map((b, i) => <li class="h-well" style={`--d:${i}`}><img src={b.src} width={b.w} height={b.h} alt="" loading="lazy" decoding="async" /></li>)}
   </ul>
 </section>

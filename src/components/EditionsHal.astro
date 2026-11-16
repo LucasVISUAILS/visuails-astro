@@ -447,6 +447,7 @@ const feiten = [...c.trust, (nl ? ['Elke maand', 'zodra Editions loopt'] : ['Eve
 const kaartBeeld = !kopBeeld;
 const BEELD = {
   soort: 'getal' as const,
+  kaart: true,   /* levering 108: op een kaart van het veld (lijst 105) */
   label: lang === 'nl' ? 'Editions · per maand' : 'Editions · per month',
   getal: String(STOCK_OFF_BRAND), eenheid: lang === 'nl' ? 'beelden' : 'images',
   voet: lang === 'nl' ? `Bij elk abonnement. ${STOCK_ON_BRAND} extra, alleen op jouw merk gebouwd: ${maand} per maand.` : `With every plan. ${STOCK_ON_BRAND} more, built on your brand alone: ${maand} a month.`,

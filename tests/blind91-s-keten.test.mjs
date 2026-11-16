@@ -160,11 +160,11 @@ const beeld = (id, extra = {}) => ({ id, kind: 'delivery', product_key: 'p1', sh
   ok('S10 .ronde-warn: vlak en streep uit de revisiestand (--st-rev-fill, --st-rev-ink), tekst in inkt', /background:\s*var\(--st-rev-fill/.test(regel) && /border-left:\s*2px solid var\(--st-rev-ink/.test(regel) && /color:\s*var\(--ink/.test(regel), regel);
   const lum = (hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
   const ratio = (a, b) => { const x = lum(a); const y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-  /* De waarden van de tokens, uit account.css zelf: licht (#F4F5F7, inkt #0F1217) en donker (#122039, #F4F5F7). */
+  /* De waarden van de tokens, uit account.css zelf: licht (#F4F5F4, inkt #090D0B) en donker (#122039, #F4F5F4). */
   const vlakken = [...css.matchAll(/--st-rev-fill:\s*(#[0-9A-Fa-f]{6})/g)].map((m) => m[1].toUpperCase());
-  ok('S10 de tokens bestaan licht en donker', vlakken.includes('#F4F5F7') && vlakken.includes('#122039'), vlakken.join(','));
-  ok('S10 contrast licht ≥ 4,5:1 (inkt #0F1217 op #F4F5F7)', ratio('#0F1217', '#F4F5F7') >= 4.5, ratio('#0F1217', '#F4F5F7').toFixed(2));
-  ok('S10 contrast donker ≥ 4,5:1 (#F4F5F7 op #122039)', ratio('#F4F5F7', '#122039') >= 4.5, ratio('#F4F5F7', '#122039').toFixed(2));
+  ok('S10 de tokens bestaan licht en donker', vlakken.includes('#F4F5F4') && vlakken.includes('#122039'), vlakken.join(','));
+  ok('S10 contrast licht ≥ 4,5:1 (inkt #090D0B op #F4F5F4)', ratio('#090D0B', '#F4F5F4') >= 4.5, ratio('#090D0B', '#F4F5F4').toFixed(2));
+  ok('S10 contrast donker ≥ 4,5:1 (#F4F5F4 op #122039)', ratio('#F4F5F4', '#122039') >= 4.5, ratio('#F4F5F4', '#122039').toFixed(2));
   /* Geen warme kleur als waarde in account.css en portal.css (commentaar telt niet). */
   const warm = [];
   for (const f of ['public/account.css', 'public/portal.css']) {

@@ -1,5 +1,184 @@
 # VISUAILS — kleurenschema
 
+## Levering 100 (14 november 2026): zwart, wit en mint
+
+**Dit gaat voor alles hieronder.**
+
+Lucas (01:59): *"Ik wil iets als ovyonlabs waarbij de kleur echt minimaal is en de rest wit en zwart … de website zelf heel
+simpel en 3 kleuren. Kaarten geven de rest van het gevoel … Het blauwe uur gaat dan weg en ik wil wat varianten van mint
+groen die op elkaar aansluiten."*
+
+En om 02:04: *"Het inkt wil ik dan ook wat meer richting zwart trekken maar niet pikzwart."*
+
+Het plan en de stappen staan in `kladblok/PLAN-KAARTVELD-100.md`, de proef en de keuzes in lijst 104.
+
+**De site: drie kleuren**
+
+| kleur | waarde | rol | gemeten |
+|---|---|---|---|
+| Grond | `#FCFCFC` | de achtergrond van elke pagina, ook Studio (levering 107, 15 november 2026) | |
+| Wit | `#FFFFFF` | kaarten en vlakken op de grond | |
+| Zwart | `#090D0B` | alle tekst, de balk, het logo, lijnknoppen | 19,6 : 1 op wit |
+| Mint | `#3DFFB0` | alleen de knop die een bestelling begint; zwart erop | 15,0 : 1; onder de muis `#1FEA9C`, 12,4 : 1 |
+
+**Over het zwart.** Het was inkt `#0B0F17`: lichtheid 17 %, blauwe toon. Het is nu iets zwarter (15 %), maar niet pikzwart,
+met de kleurtoon van de mint (163°).
+
+**Afgeleid, elk één rol.** Ze hebben allemaal de toon van het zwart.
+
+| kleur | waarde | rol | gemeten |
+|---|---|---|---|
+| grijs | `#5E6461` | kleine tekst | 6,1 : 1 op wit, 5,5 : 1 op vlak |
+| lijn | `#E7EAE8` | scheiding | |
+| lijn sterk | `#C6CAC8` | de rand van een knop of kaart onder de muis | |
+| veldlijn | `#8A908D` | de rand van een invulveld | 3,25 : 1 |
+| vlak | `#F4F5F4` | onder een pil of chip, de lege fotoplek | |
+
+**De mint-trap: alleen in de kaarten (het kaartveld)**
+
+Eén kleurtoon (163°). De tinten lopen alleen op in licht en verzadiging.
+
+| naam | waarde | | naam | waarde |
+|---|---|---|---|---|
+| mint 950 | `#01140B` | | mint 600 | `#11976A` |
+| mint 900 | `#002416` | | mint 500 | `#3DFFB0` (= mint) |
+| mint 800 | `#023D29` | | mint 300 | `#9DF5D2` |
+| mint 700 | `#016645` | | mint 100 | `#E4FCEF` |
+
+Gemeten:
+- wit op mint 950: 19,0 : 1;
+- mint 300 op mint 950: 14,9 : 1;
+- mint 700 op wit: 7,0 : 1 (het logo onder de muis, en het logo op wit als het groen moet zijn);
+- mint 700 op mint 100: 6,5 : 1 (de status "aandacht");
+- zwart op mint 300: 15,3 : 1 (geselecteerde tekst).
+
+**Regels**
+
+- **Mint staat op de site alleen** op de knop die een bestelling begint (Bestellen, Start een bestelling, Probeer voor
+  €1), hoogstens één keer per scherm en de balk. Verder alleen ín een kaart en in het logo op zwart.
+- **Mint staat nooit:**
+  - als tekst op wit (1,3 : 1);
+  - als vlak achter een sectie;
+  - als lijn of rand op wit.
+- **Op wit:**
+  - de focusrand is 2 px zwart;
+  - een link is zwart met een streep;
+  - geselecteerde tekst is mint 300 met zwart.
+- **Op zwart en in een kaart:** de focusrand is 2 px mint; tekst is wit (lopende tekst 82 %) of mint 300.
+- **Statussen** (pil plus woord):
+  - wacht: veldlijn;
+  - bezig: vlak;
+  - klaar: zwart met wit;
+  - aandacht: mint 100 met mint 700.
+  - Een fout in een formulier blijft rood, met een woord erbij.
+- **Het logo:**
+  - zwart op wit;
+  - wit of mint op zwart en op het veld;
+  - onder de muis kleurt het (schommel, 3,6 s) van zwart naar mint 700;
+  - pakket: `images/Logo/visuails-logo-100`.
+
+**Het kaartveld**
+
+- **Op een paar kaarten**: alleen waar geen eigen foto is en het om een dienst of moment gaat (het abonnement in Studio, je
+  saldo, de €1-kaart, het slot, bedankt …). Hoogstens drie per pagina, in Studio één per scherm. De plekken staan in lijst 105.
+  De rest is wit.
+- **Eén grote kaart per pagina**, vooral zwart, met veel verschillende kenmerken:
+  - zwart #090D0B met donkergroene vlakken (mint 950 tot 800), per kaart een zacht groen licht in een hoek en diep zwart
+    ertegenover;
+  - dunne strepen met een strakke, felle kern (mint 500 naar 100) en een gloed van mint 600 die zacht in het donker
+    wegvaagt: de band, de snede (53,13°), de horizons en de eigen streep van elke kaart;
+  - gloeden van mint 600 en 700;
+  - grove korrel.
+- **Elke kaart is een eigen stuk uit die grote kaart**, dus geen twee kaarten zijn gelijk, en ze lopen in elkaar over.
+- **Elke kaart heeft minstens één eigen streep.** Waar een streep de rand kruist, loopt hij als ader door in het wit: even
+  dik, als twee dunne evenwijdige lijnen die als geul tot 145 px de kaart in loopt: wit aan de rand, hoe dieper hoe donkerder,
+  met een felle rand en een schaduw (diepte). Buiten de kaart vaagt hij heel geleidelijk weg over 60 px. Geen punt, geen vork, geen rand van de kaart erin.
+- **Geen glazen platen, geen afgeknipte hoeken, geen snede tussen knoppen meer.**
+- **Het licht wijkt voor tekst.** Onder tekst blijven de strepen zichtbaar maar donkerder (mint 700); wit op een kaart haalt over de hele adem minstens 7,6 : 1 (gemeten in lijst 104).
+- **De puls en het ademen:** niets beweegt letterlijk. Door elke harde lijn trekt rustig een puls van licht, van donker
+  mint naar bijna wit en terug, elke lijn op zijn eigen moment; hij loopt door in de ader en stopt aan het uiteinde. De
+  gloed ademt in 16 s. Bij minder beweging staat alles stil.
+- **Mat en glad, de aderen van chroom (levering 108, 15 november).** Lucas: *"de groene kaarten een soort matte look …
+  helemaal geen outerline … heel glad en smooth. De aderen … een soort chrome shiny achtige feeling maar heel subtiel en
+  minimaal, alsof dat de bedrading van de website is die in het wit verdwijnt en in de kaarten licht te zien is met stroom
+  erdoorheen."* Dit gaat boven wat hierboven over korrel, de geul en de puls staat:
+  - geen korrel meer: het vlak is mat en glad (alleen een onzichtbare ruis van 1/255 tegen banen in het verloop);
+  - geen lichte rand langs de kaart;
+  - de lijn is een draad van chroom, 3,8 px, in de mint-trap (22:31: *"gebruik maken van het kleurenschema en de glow erop
+    ook"*): de randen mint 900 naar zwart, het lijf mint 600, een smalle glans van mint 300 naar bijna wit en een zwakke
+    tweede weerkaatsing; om de draad een zachte gloed van mint 500, in de kaart en in het wit; geen geul meer in de kaart;
+  - de draad loopt als ader 110 px het wit in, wordt iets dunner en verdwijnt heel geleidelijk in het wit;
+  - de stroom: zachte golven van licht die door de draad trekken (elke 320 px een, 90 px per seconde), in de kaart en in de
+    ader tegelijk, per kaart op zijn eigen moment; een golf maakt de glans en de gloed even feller. Bij minder beweging staat het stil.
+- **Levering 109 (16 november 00:00).** Lucas: *"Ik wil dat de kabels niet in de buurt komen van teksten en knoppen ook wil ik
+  dat ze donkerder door de kaart heen gaan alsof ze erin zitten. Ook mis ik de film grain op de kaart en mag de kaart zelf ook
+  nog wel wat meer variatie hebben … Ook mag de glow naast de kabel wat aflopen qua helderheid … de kabels allemaal iets
+  subtieler."* Dit gaat boven wat hierboven staat:
+  - de lijn ligt per kaart zo ver mogelijk van tekst en knoppen (het script kiest uit acht liggingen) en zakt weg binnen 64 px
+    van tekst;
+  - in de kaart is de draad donker (mint 900 naar zwart, een zwakke glans van mint 800); de laatste 40 px voor de rand komt
+    hij naar boven als chroom; de draad is 3 px, de glans gaat tot mint 300, niet tot wit;
+  - de gloed heeft een smalle kern en een lange zwakke staart, en is half zo sterk;
+  - een fijne filmkorrel (8 keer per seconde, stil bij minder beweging);
+  - elke kaart een eigen brede vouw van licht, in hoek, plek, breedte en buiging verschillend, zoals de golf in de logo-animatie.
+- **Licht onder het doek (levering 109, lijst 117 a).** De pagina is het doek van een softbox: onder de grond lopen banen van
+  wit licht (`#FFFFFF`, net lichter dan de grond `#FCFCFC`) met een zweem mint 300, van kaart naar kaart en van rand tot rand,
+  om tekst en knoppen heen. Bij een kaart gaat het licht over in de draad. Door de banen trekt een zachte golf licht. Alleen op
+  pagina's met kaarten; de grond staat dan op `html` en `body` is doorzichtig (`src/scripts/lichtnet.js`).
+- **De hoofdkop (levering 110).** De titel *We make your brand impossible to ignore* staat in VISUAILS Display Blok, met dezelfde kleuren als eerst: inkt op de grond, en in de letters het negatief in het donkere groen. Het blok onder de video gebruikt inkt `#090D0B` en grijs `#5E6461` (5,9 : 1 op de grond) en heeft geen eigen vlak, zodat het licht onder het doek eronder doorloopt.
+- **Mails, factuur en /admin (levering 111, fase 6, lijst 123).**
+  - **De mails** zijn zwart, wit en grijs, met dezelfde waarden als de site: tekst `#090D0B`, klein `#5E6461`, lijn `#E7EAE8` en vlak `#F4F5F4`.
+    - De knop is zwart met witte letters en hoeken van 8 px.
+    - Het logo en het streepje onder de kop zijn zwart; het woordmerk in de voet loopt uit van `#C6CAC8` naar `#EEF0EF`.
+    - De status *aandacht* is mint 700 op mint 100 (6,5 : 1).
+    - Mint staat verder nergens in een mail. De Gmail-app maakt in de donkere stand de letters op een knop wit, en wit op mint is 1,3 : 1.
+  - **De factuur** gebruikt dezelfde grijzen en een zwart logo.
+  - **/admin** begint donker: zwart met mint. Licht is een keuze die een cookie onthoudt.
+  - **De stukjes van het oude posterschema** (blauw uur) zijn van de site:
+    - de voortgangsbalk op /lifestyle is zwart;
+    - de lege fotoplek tijdens het laden is het vlak `#F4F5F4`;
+    - de initialen in Studio staan op zwart.
+- **De beelden (levering 112, fase 5).**
+  - **De deelplaatjes** (`scripts/make-og.mjs`) staan op het kaartveld van de site (`kaartveld.js`): elk plaatje is één kaart,
+    met een eigen stuk veld, en onder de tekst en het logo wijkt het licht. Logo en kop zijn wit. De kop is de titel van de
+    voorpagina (`banner94.js`) in VISUAILS Display Blok, de aanloop 42 % van de grote regel. C1 en C3 en het raster voor beelden
+    zijn gebleven; de grote regel vult zijn kolom met een kaphoogte van hoogstens 1,5 u. De voorpagina kreeg vorm b uit
+    lijst 103: de hoodie in drie stappen (jouw foto, drie productfoto's onder elkaar, op model) met de stap eronder, de grote regel op twee
+    regels.
+  - **De fotogids** (`scripts/lib/fotogids-html.mjs`, de twee pdf's in `public/downloads`): het woordmerk en de streep zwart,
+    de grijzen die van de site, en het inktblok van zwart via mint 800 naar mint 700 (wit erop minstens 7,0 : 1).
+  - **De logo-animaties** staan in het logopakket (`images/Logo/visuails-logo-100/animatie/`), niet op de site.
+- **De voet is zwart** (#090D0B) met witte tekst (lopende tekst 78 %).
+- De regels in het groot staan in het plan, §3.
+
+**Vervalt:**
+- blauw uur `#25508B`, blauw diep `#1A4279` en blauw licht `#80A7DD`;
+- inkt `#0B0F17` en wit `#FBFCFF`;
+- de gloed in de velden (roze `#F1B7AC`, daarna zacht mint `#9DF5D2` als gloed) en alle velden b1 tot p6;
+- de stukjes (posterkleur in het klein);
+- de fotoblokken met glas;
+- het éne inktblok op 53°.
+
+**De bron in de code** wordt in fase 1 één bestand met tokens (`--zwart`, `--wit`, `--mint`, `--mint-muis`, `--grijs`,
+`--lijn`, `--veldlijn`, `--vlak`, `--m950` … `--m100`). Tot die fase draagt de site nog de kleuren van levering 98.
+
+---
+
+**Levering 99 (13 november 2026): de actiekleur en de bovenbalk in inkt.** Lucas (21:48): *"ik [wil] die blauwe kleur voor
+de knop gebruiken voor de wat meer call to action knoppen. De blue hour colour is niet echt een kleur die eruit springt …
+er [is] nu geen kleur die er echt uit knalt in het kleurenschema."* Er komt één kleur bij, met één rol:
+
+- **Actie** `#3DFFB0` (signaalmint; lijst 101 d, Lucas 23:48: *"Signaalmint erin verwerken"*): de knop die een bestelling
+  begint of verder brengt (een volle knop naar /start of /test-sample, Verder en Verstuur in het bestelformulier, Bestellen
+  onderaan het menu op de telefoon). Inkt erop, 14,7 : 1. Onder de muis schuift **actie diep** `#1FEA9C` van links naar
+  rechts (inkt erop 12,2 : 1). Mint en blauw uur: 6,2 : 1 (op blauw diep 7,7 : 1), twee koele kleuren ver genoeg uit elkaar
+  om elkaar te laten spreken. Op de witte grond is de rand zacht (1,3 : 1): daarom altijd inkt als tekst en hoogstens één
+  keer per scherm; een kleine knop in een rij kaarten blijft inkt. De bron is één token (`--k-actie`, `--k-actie-diep`,
+  `--k-actie-tekst` in `src/styles/knoppen.css`, sectie J).
+- **De bovenbalk** is een zwevende balk in inkt `#0B0F17` (hoeken 14) met het woordmerk en Bestellen in wit (19,2 : 1);
+  het woordmerk onder de muis blauw licht `#80A7DD`. De regel "één inktblok per pagina" geldt niet voor de bovenbalk.
+- Blauw uur blijft voor het logo onder de muis, links en de focusrand; blauw diep voor een blauwe knop onder de muis.
+
 **Lijst 86 (9 november 2026): de fotoblokken.** Vier vaste blokken hebben een eigen foto van Lucas, bewogen langs de
 snede (53,13°, 22 % van de breedte, twee keer) en op de helderheid in Blauw uur gezet (inkt `#0B0F17` → blauw diep
 `#1A4279` → blauw uur `#25508B` → blauw licht `#80A7DD` → wit): het €1-blok (een straat in de avond), het slot onderaan
@@ -150,7 +329,7 @@ twee regels passen; regelafstand 1,5 × kap; de laatste basislijn op 11 u. (VISU
 
 Het deelplaatje (`scripts/make-og.mjs`, `npm run og`, jpeg tot 300 kB): **C1** (het veld o1, de L2 en de kop) voor elke
 pagina, **C2 b "Venster"** (de V als venster op Lucas' foto, op de nacht) voor de voorpagina, **C3** (de L3 op de nacht)
-voor een pagina zonder kop, zoals de 404. Het slechtste beeldpunt onder de kop: C1 7,31 : 1, C2 b 16,77 : 1 of meer, C3
+voor een pagina zonder kop, zoals de 404. *(Sinds levering 112 op het kaartveld, met de titel van de voorpagina, en de voorpagina met vorm b uit lijst 103 in plaats van C2 b; zie bovenaan, levering 100.)* Het slechtste beeldpunt onder de kop: C1 7,31 : 1, C2 b 16,77 : 1 of meer, C3
 14,24 : 1. Geen fade over een foto.
 
 ### Het favicon

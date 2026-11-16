@@ -152,7 +152,7 @@ try {
     ok(`${taal}: elke kaart 80% breed`, s.aandeel.every((a) => a >= 72 && a <= 80), s.aandeel.join(' / '));
     ok(`${taal}: de volgende look gluurt erbij, zichtbaar`, s.tweedeGluurt);
     ok(`${taal}: per kaart beeld, naam, zin en Kies deze look, en verder niets`, JSON.stringify(s.inKaart) === JSON.stringify([true, true, true, true, false, false, false, false]), JSON.stringify(s.inKaart));
-    ok(`${taal}: de prijs en de planprijs één keer, boven de rij`, s.prijs.length === 2 && /€\s?49/.test(s.prijs[0]) && /(abonnement|plan)/.test(s.prijs[1]) && s.prijsBoven, JSON.stringify(s.prijs));
+    ok(`${taal}: de prijs en de planprijs één keer, boven de rij`, s.prijs.length === 2 && /€\s?50/.test(s.prijs[0]) /* lijst 111: de onderste lifestyletrede is €50 (was €49) */ && /(abonnement|plan)/.test(s.prijs[1]) && s.prijsBoven, JSON.stringify(s.prijs));
     ok(`${taal}: de proef één keer, onder de rij, bij de eerste look`, s.proef.length === 1 && /€1/.test(s.proef[0][0]) && /style=dunes$/.test(s.proef[0][1]) && s.proefOnder, JSON.stringify(s.proef));
     ok(`${taal}: op heel /start precies vier prijsregels (twee per groep)`, s.tarieven === 4, String(s.tarieven));
     await page.evaluate(() => { const r = document.querySelector('[data-st-rij]'); r.scrollTo({ left: r.querySelectorAll('[data-st-look]')[2].offsetLeft - 16 }); });

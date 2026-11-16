@@ -1416,26 +1416,28 @@ Wat er op 6 okt in deze lijst stond en **nu wél bestaat**: plan wijzigen (overs
 
 ## 22 · Alle bedragen en getallen, met bron en vindplaats
 
+> **15 november 2026 (lijst 109, 110, 111):** alle prijzen staan op ronde bedragen (veelvoud van €5), Motion kost €100 en 8 credits, en de prijzen op maat staan in `src/data/opMaatPrijs.js`. Het volledige, bijgehouden overzicht per dienst staat sindsdien in `docs/HOE-VISUAILS-WERKT.md`. Regelnummers hieronder zijn van 24 oktober.
+
 Alles netto, tenzij er "incl." staat. Bron = constante of functie in de code, met regelnummer in de stand van 24 okt (na levering 68). "pricing.js" is `src/data/pricing.js`, "plans.js" is `src/data/plans.js`; andere paden staan voluit. "Zichtbaar" = waar een klant het ziet. Bedragen met "nagerekend" zijn met de functies zelf uitgerekend, niet overgenomen. Bij een verschil wint de code.
 
 **Prijzen per product en toeslagen**
 
 | Wat | Waarde | Bron | Zichtbaar |
 |---|---|---|---|
-| Catalog per product (4 beelden) | 1–4 €89 · 5–9 €65 · 10–19 €51 · 20+ €39 | `LADDER.catalog` pricing.js:127; `CATALOG_IMAGES` :3207 | /pricing, /, /catalog, /faq, /terms, formulier |
-| Lifestyle per product (4 beelden; vóór 14 okt 3) | €109 · €82 · €64 · €49 | `LADDER.lifestyle` :130; `LIFESTYLE_IMAGES` :3221; `lifestyleBeeldenVan()` :3231 | /pricing, /lifestyle, formulier |
-| Vanaf-prijs op de site | catalog €39, lifestyle €49 (onderste trede) | `ladderFloor()` :169; `eenProductRegel()` :186 | overal |
+| Catalog per product (4 beelden) | 1–4 €90 · 5–9 €65 · 10–19 €50 · 20+ €40 (lijst 111; was €89 · €65 · €51 · €39) | `LADDER.catalog` pricing.js:127; `CATALOG_IMAGES` :3207 | /pricing, /, /catalog, /faq, /terms, formulier |
+| Lifestyle per product (4 beelden; vóór 14 okt 3) | €110 · €80 · €65 · €50 (lijst 111; was €109 · €82 · €64 · €49) | `LADDER.lifestyle` :130; `LIFESTYLE_IMAGES` :3221; `lifestyleBeeldenVan()` :3231 | /pricing, /lifestyle, formulier |
+| Vanaf-prijs op de site | catalog €40, lifestyle €50 (onderste trede) | `ladderFloor()` :169; `eenProductRegel()` :186 | overal |
 | Compleet | bestaat niet meer: geen trede, geen korting | noot :119-124 | — |
 | Formuliermaximum | 20 producten; daarboven eerst contact | `FORM_MAX_PRODUCTS` :146 | formulier, dienstpagina's |
 | "Groter is even duur of goedkoper" | bij 4, 8, 9 en 16–19 producten (nagerekend) | `groterGoedkoper()` :225 | formulier |
 | Vaste leverdatum vanaf | 10 producten | `WINDOW_THRESHOLD` :943 | /pricing, /how-it-works, /terms, mails |
-| Extra hoek per foto per product | €39 · €34 · €29 · €19 (trede van de bestelling), max 4 per product, alleen catalog | `EXTRA_PHOTO_LADDER` :1849; `MAX_EXTRA_PER_PRODUCT` :1854; `UITBREIDBARE_DIENSTEN` src/data/angles.js:84 | /pricing, hoekenkiezer, /per-product |
-| 4K | €9 per product, vlak, alleen lifestyle, alle 4 beelden | `HOOG_PER_PRODUCT` :1586 | /pricing, formulier, /terms |
+| Extra hoek per foto per product | €40 · €35 · €30 · €20 (trede van de bestelling; lijst 111), max 4 per product, alleen catalog | `EXTRA_PHOTO_LADDER` :1849; `MAX_EXTRA_PER_PRODUCT` :1854; `UITBREIDBARE_DIENSTEN` src/data/angles.js:84 | /pricing, hoekenkiezer, /per-product |
+| 4K | €10 per product (lijst 111; was €9), vlak, alleen lifestyle, alle 4 beelden | `HOOG_PER_PRODUCT` :1586 | /pricing, formulier, /terms |
 | Resolutie | 2048 px standaard, 4096 px (4K) | `RESOLUTIE` :1566 | /pricing, /how-it-works |
 | Complete look | €50 per look van 2–3 stukken, 2 beelden erbij, alleen lifestyle | `LOOK_PRIJS` :1533; `LOOK_BEELDEN`, `LOOK_MIN`, `LOOK_MAX` src/data/looks.js:57-60 | /pricing, /lifestyle, /faq, formulier |
 | Outfittoeslag | vervangen door de complete look; `OUTFIT_SURCHARGE` (= €50) en `MAX_OUTFIT_PRODUCTS` (3) alleen nog voor een video-offerte | :1535-1536 | — |
 | Eigen-looktoeslag | €0–€500 per product, uit de offerte | src/lib/admin.js:7810; klem in src/lib/quote.js:374 | offerte, factuur |
-| Voorrang | 20% van het netto incl. toeslagen, naar boven op hele euro's, min €49, max €249; tot 20 producten (10 clips); betaald vóór 15:00 → volgende werkdag vóór 17:00 | `VOORRANG` :1634-1654; `voorrangBedrag()` :1712 | formulier, /terms |
+| Voorrang | 20% van het netto incl. toeslagen, naar boven op hele euro's, min €50, max €250 (lijst 111); tot 20 producten (10 clips); betaald vóór 15:00 → volgende werkdag vóór 17:00 | `VOORRANG` :1634-1654; `voorrangBedrag()` :1712 | formulier, /terms |
 | Voorrang in de praktijk | kaal hoogstens €244 (19 lifestyleproducten, €1.216); met 4K, looks of extra hoeken €249 (nagerekend met `quoteOrder()`) | noot :1786 (noemt alleen het kale geval) | — |
 | Referentiefoto's | hoogstens 4 per product | `MAX_REF_PER_PRODUCT` src/data/shots.js:370 | formulier |
 | Ontbrekende foto | na het appje 1 dag wachten, dan maken wat er is | `FOTO_WACHT_DAGEN` src/data/termijnen.js:51 | /admin |
@@ -1445,13 +1447,13 @@ Alles netto, tenzij er "incl." staat. Bron = constante of functie in de code, me
 | Wat | Waarde | Bron | Zichtbaar |
 |---|---|---|---|
 | Probeer VISUAILS | €1 (€1,21 incl. NL); 4 catalog- of 4 lifestylebeelden; één per bedrijf | `AMOUNT.testSample` :1317; `TEST_SAMPLE` :3377; `quoteTestSample()` src/lib/quote.js | overal "€1" |
-| Video motion / lifestyle-video | €69 / €149, alleen intern; de site zegt "op aanvraag" | `AMOUNT.video` :1340; `AMOUNT.videoLifestyle` :1364; `VIDEO_OP_AANVRAAG` :1246 | /video "Op aanvraag" |
+| Video motion / lifestyle-video | €100 / €150 (lijst 109 en 111; was €69 / €149), alleen intern; de site zegt "op aanvraag". Op de videopagina alleen nog Motion en video op maat (lijst 109) | `AMOUNT.video` :1340; `AMOUNT.videoLifestyle` :1364; `VIDEO_OP_AANVRAAG` :1246 | /video "Op aanvraag" |
 | Aantal clips in de aanvraag | 1, 2, 3, 4, 5, 6, 8, 10, 12 of "weet ik nog niet" | `clipCounts` src/components/order/HoldingPage.astro:313 | /start/video |
-| Hooks | vanaf €119, variant €49 | `AMOUNT.hooks`, `AMOUNT.hooksVariant` :1397-1398 | /hooks, /pricing |
-| Editions | €149 per maand + €295 opzet | `AMOUNT.editions`, `AMOUNT.editionsSetup` :1436-1437 | /editions ("binnenkort") |
+| Hooks | vanaf €120, variant €50 (lijst 111) | `AMOUNT.hooks`, `AMOUNT.hooksVariant` :1397-1398 | /hooks, /pricing |
+| Editions | €150 per maand + €300 opzet (lijst 111) | `AMOUNT.editions`, `AMOUNT.editionsSetup` :1436-1437 | /editions ("binnenkort") |
 | Maandset / Editions | 20 + 20 beelden per maand | `STOCK_OFF_BRAND`, `STOCK_ON_BRAND` :931-932 | /plans, /editions, Studio |
 | Merkmodel | €450 eenmalig (€544,50 incl. NL) | `AMOUNT.brandModel` :1463; `quoteBrandModel()` src/lib/quote.js:491 | /custom-models, /pricing |
-| Merkmodel, bouwcontrole | nooit duurder dan 10 lifestyleproducten (€640, 10 × €64) | `assertLadder()` :3064-3071 | — |
+| Merkmodel, bouwcontrole | nooit duurder dan 10 lifestyleproducten (€650, 10 × €65) | `assertLadder()` :3064-3071 | — |
 | Briefing merkmodel | 8 vragen ("ik weet wie") of 4 ("bedenk het voor mij") | `TRACKS` src/data/brandModelBrief.js:130-132 | /start/brand-model |
 | Fotoshoot elders (vergelijking) | €2.500–8.000 | `AMOUNT.shootDayLow/High` :1467-1468; `SHOOT_DAY` :3466 | /, /pricing, /compare |
 
@@ -1462,9 +1464,9 @@ Alles netto, tenzij er "incl." staat. Bron = constante of functie in de code, me
 | Plannen per maand | Starter €390 · Pro €790 · Merk €1.690 | `PLAN_AMOUNT` :278; namen src/data/planNames.js | /plans, /start/plan |
 | Credits per maand | 45 · 120 · 290 | `PLAN_CREDITS` :463 | /plans |
 | Prijs per credit | €8,67 · €6,58 · €5,83 | afgeleid in `plans()` :3002 | /plans |
-| Credits per dienst | catalog 4 · lifestyle 5 · motion 5 · lifestyle-clip 12 · hook 10 · extra foto 2 · 4K 1 · complete look 4 | `SERVICE_CREDITS` :395; `EXTRA_CREDITS` :414; `LOOK_CREDITS` :1534 | /plans, Studio, formulier |
+| Credits per dienst | catalog 4 · lifestyle 5 · motion 8 (lijst 111; was 5) · lifestyle-clip 12 · hook 10 · extra foto 2 · 4K 1 · complete look 4 | `SERVICE_CREDITS` :395; `EXTRA_CREDITS` :414; `LOOK_CREDITS` :1534 | /plans, Studio, formulier |
 | Met credits te bestellen | alleen catalog en lifestyle | `CREDIT_DIENSTEN` src/data/creditKosten.js:31 | formulier |
-| Besparing tegenover los | Starter €171 (30%) · Pro €380 (32%) · Merk €1.118 (40%) | `planSaving()` :2936 (nagerekend) | /plans, /start/plan, /thank-you |
+| Besparing tegenover los | Starter €160 (29%) · Pro €410 (34%) · Merk €1.190 (41%) (na lijst 111) | `planSaving()` :2936 (nagerekend) | /plans, /start/plan, /thank-you |
 | Met abonnement vanaf, per product | catalog €23,32 · lifestyle €29,14 | `aboVanafPerProduct()` :3690 (nagerekend) | /start |
 | Op maat | 30–300 credits, elk heel aantal; 30 → €272, 300 → €1.748; lineair tussen de plannen | `CUSTOM_CREDITS_MIN/MAX/STEP` :3631-3633; `customCreditsTotal()` :3670; `OVERSTAP_MAAT` src/lib/overstap.js | /plans, /start/plan, Studio |
 | Termijnen in het aanbod | maandelijks en 12 maanden vooruit | `OFFERED_TERM_IDS` plans.js:243 | /plans, /start/plan |
@@ -1473,7 +1475,7 @@ Alles netto, tenzij er "incl." staat. Bron = constante of functie in de code, me
 | Credits geldig | zolang het loopt vervalt niets; na pauze of stop tot 3 maanden na de laatste termijn | `CREDITS_GELDIG_MAANDEN` :482; src/lib/creditboek.js (kop) | /plans, Studio, mails |
 | Spaarplafond | 3 × maandcredits: 135 · 360 · 870 | `spaarPlafond()` :495 | /plans, Studio |
 | Doorschuiven 1 / 3 maanden | geldt niet meer; staat er nog voor oude schermen (§17) | `TERMS.*.rollover` plans.js:129, 162, 225 | — |
-| Bijkopen | 10 / 25 / 50 credits, 0 / 5 / 10% korting, hoogstens 100 per kalendermaand; Starter €87 · €206 · €390, Pro €66 · €157 · €297, Merk €59 · €139 · €263 | `BIJKOOP_PAKKETTEN`, `BIJKOOP_KORTING_PCT`, `BIJKOOP_MAX_PER_MAAND` :3787-3791; `bijkoopPrijs()` :3802 (nagerekend) | Studio (Credits), stap 5 |
+| Bijkopen | 10 / 25 / 50 credits, 0 / 5 / 10% korting, hoogstens 100 per kalendermaand; Starter €90 · €210 · €390, Pro €70 · €160 · €300, Merk €60 · €140 · €265 (naar boven op €5, lijst 111) | `BIJKOOP_PAKKETTEN`, `BIJKOOP_KORTING_PCT`, `BIJKOOP_MAX_PER_MAAND` :3787-3791; `bijkoopPrijs()` :3802 (nagerekend) | Studio (Credits), stap 5 |
 | Bijgekochte credits geldig | 3 maanden vanaf binnenkomst, eigen datum | src/lib/bijkopen.js (kop) | Studio |
 | Overstap-hint | als het volgende plan hoogstens €25 per maand meer kost dan plan + pakket | `OVERSTAP_HINT_MARGE` :3794 | Studio |
 | Plafond abonnees | 1.200 credits per maand (instelbaar in /admin › Klanten); "nog N plekken" pas bij 3 of minder | `ABO_CREDITS_PLAFOND` plans.js:412; `PLEKKEN_TONEN_TOT` :419 | /start/plan, /admin |

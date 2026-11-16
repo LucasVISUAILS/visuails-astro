@@ -1,0 +1,95 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+   DE ZWEVENDE BOVENBALK IN INKT — levering 99, 13 november 2026 (lijst 100, D2 a en D3 a)
+   Lucas (21:48): "De top bar mag een andere look krijgen zoals het bijgevoegde voorbeeld. De hoeken van de knoppen mogen
+   wat doller en softer zijn … Ik zou ook in de hoek het tekstlogo willen van VISUAILS", en "het logo en de knop in de
+   topbar [mogen] wit worden omdat ik die blauwe kleur … wil gebruiken voor de wat meer call to action knoppen".
+   - een balk in inkt (#090D0B) die zweeft: 12 px van de bovenrand, de kolom van de pagina breed, hoeken 14 px;
+   - links het woordmerk in wit (onder de muis blauw licht #3DFFB0, de kleur van het logo op inkt);
+   - de menu-items in één groepje (wit op 7 %), het item waar je bent een wit vlak met inkt (8 px; het groepje 12 = 8 + 4 binnenrand);
+   - rechts Inloggen en de taal in wit op 86 %, en Bestellen: een witte knop met inkt (19,2 : 1), 8 px.
+   De ontwerptaal ("één inktblok per pagina") geldt niet voor de bovenbalk: die hoort bij de site, niet bij de pagina.
+   Alleen onder body.hal; de werkplaats en Studio hebben hun eigen balk.
+   Kracht: html body.hal … en :not(#k), omdat hal.css de oude balk met lange ketens en !important zet.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+html body.hal {
+  --b99-hoog: 60px;
+  --b99-rand: 12px;
+  --b99-r: 14px;
+  --b99-kolom: min(1280px, calc(100vw - 2 * max(16px, env(safe-area-inset-left, 0px))));
+}
+html body.hal .site-header:not(#k) {
+  position: sticky; top: 0; z-index: var(--z-sticky, 50);
+  padding: calc(var(--b99-rand) + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)) !important;
+  background: transparent !important; border: 0 !important; box-shadow: none !important; height: auto !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  pointer-events: none;
+}
+html body.hal .site-header:not(#k)::before, html body.hal .site-header:not(#k)::after { display: none !important; }
+html body.hal .site-header .container.nav:not(#k) {
+  pointer-events: auto;
+  box-sizing: border-box; width: var(--b99-kolom) !important; max-width: none !important; margin: 0 auto !important;
+  height: var(--b99-hoog) !important; min-height: 0 !important;
+  display: flex !important; align-items: center !important; gap: 16px !important;
+  padding: 0 8px 0 22px !important;
+  background: #090D0B !important; border-radius: var(--b99-r) !important;
+  box-shadow: 0 10px 30px -14px rgb(9 13 11 / .45) !important;
+  color: rgb(255 255 255 / .86);
+}
+/* het woordmerk */
+html body.hal .site-header .brand:not(#k) { flex: none; display: inline-flex; align-items: center; margin: 0 !important; padding: 6px 0 !important; color: #FFFFFF; }
+html body.hal .site-header .hal-wm-balk:not(#k) { width: auto !important; height: 17px !important; aspect-ratio: 3763.74 / 724; display: block; color: #FFFFFF; fill: #FFFFFF; --mk-kleur: #3DFFB0; }
+html body.hal .site-header .hal-wm-balk .mk-fill:not(#k), html body.hal .site-header .hal-wm-balk .wm-vorm:not(#k) { fill: #FFFFFF !important; }
+html body.hal .site-header .brand:is(:hover, :focus-visible) .hal-wm-balk .mk-fill:not(#k) { fill: #3DFFB0 !important; transition: fill .3s; }
+/* het groepje menu-items */
+html body.hal .site-header .primary-nav:not(#k) { margin: 0 auto !important; }
+html body.hal .site-header .nav-links:not(#k) { display: flex !important; align-items: center; gap: 2px !important; margin: 0 !important; padding: 4px !important; background: rgb(255 255 255 / .07); border-radius: 12px; }   /* 12 = 8 + 4: de items (8) liggen concentrisch in het groepje */
+html body.hal .site-header :is(.nav-links > li > a, .nav-links > li > .nav-trigger):not(#k):not(#k) {
+  display: inline-flex !important; align-items: center; gap: 6px; height: 36px !important; padding: 0 14px !important; margin: 0 !important;
+  color: rgb(255 255 255 / .86) !important; background: transparent !important; border-radius: 8px !important; box-shadow: none !important;
+  font: 500 15px/1 var(--h-letter, inherit) !important; text-decoration: none !important; transition: background-color .2s, color .2s;
+}
+html body.hal .site-header :is(.nav-links > li > a, .nav-links > li > .nav-trigger):is(:hover, :focus-visible, [aria-expanded="true"]):not(#k):not(#k) { color: #FFFFFF !important; background: rgb(255 255 255 / .1) !important; }
+html body.hal .site-header .nav-links > li > a[aria-current="page"]:not(#k):not(#k),
+html body.hal .site-header .nav-links > li.has-menu:has(.nav-menu [aria-current="page"]) > .nav-trigger:not(#k):not(#k) { color: #090D0B !important; background: #FFFFFF !important; }
+html body.hal .site-header .nav-links .nav-trigger .ik:not(#k) { fill: currentColor; opacity: .7; }
+/* de uitklapmenu's blijven licht, maar hangen onder de balk */
+html body.hal .site-header .nav-menu:not(#k) { margin-top: 12px; }
+/* rechts */
+html body.hal .site-header .nav-actions:not(#k) { flex: none; display: flex !important; align-items: center; gap: 6px !important; margin: 0 !important; }
+html body.hal .site-header :is(.nav-account-link, .nav-taal-klein .ls):not(#k):not(#k) {
+  display: inline-flex; align-items: center; height: 36px; padding: 0 10px !important; border-radius: 8px !important;
+  color: rgb(255 255 255 / .86) !important; background: transparent !important; box-shadow: none !important; border: 0 !important;
+  font: 500 15px/1 var(--h-letter, inherit) !important; text-decoration: none !important;
+}
+html body.hal .site-header :is(.nav-account-link, .nav-taal-klein .ls):is(:hover, :focus-visible):not(#k):not(#k) { color: #FFFFFF !important; background: rgb(255 255 255 / .1) !important; }
+html body.hal .site-header .nav-ik-knop:not(#k):not(#k) { color: #FFFFFF !important; background: rgb(255 255 255 / .1) !important; border-radius: 8px !important; }
+/* Bestellen: wit met inkt; onder de muis schuift mist van links naar rechts (zoals een witte knop op inkt) */
+html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):not(#k):not(#k):not(#k) {
+  min-height: 44px !important; height: 44px !important; padding: 0 16px 0 18px !important; margin-left: 4px !important;
+  color: #090D0B !important; border: 0 !important; box-shadow: none !important; border-radius: 8px !important;
+  background: #FFFFFF linear-gradient(90deg, #E7EAE8 0 50%, #FFFFFF 50% 100%) 100% 0 / 200% 100% no-repeat !important;
+  transition: background-position .32s cubic-bezier(.22, .8, .2, 1) !important;
+}
+html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):is(:hover, :focus-visible):not(#k):not(#k):not(#k) {
+  background: #E7EAE8 linear-gradient(90deg, #E7EAE8 0 50%, #FFFFFF 50% 100%) 0 0 / 200% 100% no-repeat !important; color: #090D0B !important;
+}
+html body.hal .site-header .nav-cta :is(svg, .ik):not(#k) { fill: currentColor !important; color: #090D0B !important; }
+/* de focusrand op inkt: blauw licht */
+html body.hal .site-header :is(a, button):focus-visible:not(#k):not(#k) { outline: 2px solid #3DFFB0 !important; outline-offset: 2px !important; }
+/* het menuknopje op de telefoon: wit */
+html body.hal .site-header .menu-toggle:not(#k):not(#k) { color: #FFFFFF !important; background: transparent !important; border-radius: 8px !important; width: 44px; height: 44px; }
+html body.hal .site-header .menu-toggle:not(#k) span, html body.hal .site-header .menu-toggle:not(#k) span::before, html body.hal .site-header .menu-toggle:not(#k) span::after { background: #FFFFFF !important; }
+/* de telefoon en een smal venster (zelfde grens als Layout.astro, 58,75em): woordmerk links, menuknopje rechts */
+@media (max-width: 58.75em) {
+  html body.hal { --b99-hoog: 56px; --b99-rand: 10px; }
+  html body.hal .site-header .container.nav:not(#k) { padding: 0 6px 0 18px !important; justify-content: space-between !important; }
+  html body.hal .site-header .hal-wm-balk:not(#k) { height: 15px !important; }
+  html body.hal .site-header :is(.nav-links, .nav-actions .btn, .nav-actions .lang-switch, .nav-account-link, .nav-account-in):not(#k):not(#k):not(#k) { display: none !important; }
+  html body.hal .site-header .menu-toggle:not(#k):not(#k) { display: inline-flex !important; border: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html body.hal .site-header :is(.nav-cta, .container.nav .nav-cta):not(#k):not(#k):not(#k), html body.hal .site-header :is(.nav-links > li > a, .nav-links > li > .nav-trigger):not(#k):not(#k) { transition: none !important; }
+}
+@media (forced-colors: active) {
+  html body.hal .site-header .container.nav:not(#k) { border: 1px solid CanvasText !important; }
+}

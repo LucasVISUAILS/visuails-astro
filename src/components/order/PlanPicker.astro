@@ -345,8 +345,10 @@ for (const p of planList) {
         : `After this first month we charge ${euro(cents / 100, lang)} ${excl} (${incl(cents)} with ${pct}% VAT in the Netherlands) automatically every month until you cancel. You can cancel any month, yourself, in VISUAILS Studio.`);
     varianten.push({
       plan: p.id, term: t, naam: planName(p.id, lang), kop: kopVan(p.id), verleng,
-      bedrag: euro(cents / 100, lang),
-      eenheid: nl ? 'per maand' : 'per month',
+      /* Lijst 111 (15 november 2026, vooruit = a): op een vooruitbetaald jaar is het maandbedrag een gemiddelde
+         (€ 7.900 / 12 = € 658,33). Op de plaat op € 5 afgerond met "gemiddeld" erbij; het exacte totaal staat eronder. */
+      bedrag: euro(tt.prepaid ? Math.round(cents / 100 / 5) * 5 : cents / 100, lang),
+      eenheid: tt.prepaid ? (nl ? 'per maand, gemiddeld' : 'a month on average') : (nl ? 'per maand' : 'per month'),
       /* Op een vooruitbetaald jaar staat het maandbedrag er als VERGELIJKING —
          de klant rekent in maanden — maar wat hij afrekent is het jaar, dus dat
          bedrag hoort er onder te staan en niet alleen op de knop. */
@@ -926,7 +928,7 @@ const kaarten = planList.map((p) => {
             er nu gebeurt, de verklaringen en de knop staan in stap 5, naast de
             gegevens. Volgorde op de plaat: wat het kost en wat je bespaart,
             dan wat je elke maand krijgt, dan de beelden. */}
-        <aside class="ps-sum lime-plate plaat-vol">
+        <aside class="ps-sum lime-plate plaat-vol kv-108" data-kaart>
           <p class="ps-sum-label">{c.sumLabel}</p>
 
           {varianten.map((v) => (
@@ -2038,7 +2040,7 @@ const kaarten = planList.map((p) => {
      eruitziet als de andere maar niet reageert op typen is precies het soort
      ding waar iemand drie keer op klikt. */
   .ps-geg input.is-vast {
-    background: var(--surface-2, rgb(11 15 23 / .04));
+    background: var(--surface-2, rgb(9 13 11 / .04));
     color: var(--ink-2);
     cursor: default;
   }

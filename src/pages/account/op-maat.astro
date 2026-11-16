@@ -1,0 +1,585 @@
+---
+/**
+ * /account/op-maat — de intake op maat in Studio. 15 november 2026, lijst 107, 109, 110 en 112.
+ *
+ * Zonder dienst: de keuze uit de vier diensten en de aanvragen die de klant al heeft. Met een dienst of een aanvraag:
+ * het formulier, met de schatting ernaast die meerekent. De velden dragen data-pad="a.b.c"; /js/op-maat.js maakt daar
+ * de inhoud van, slaat op via /account/op-maat/api en zet de schatting die de server terugstuurt in het paneel. Wat
+ * de klant kan kiezen staat in src/data/opMaat.js, de bedragen in src/data/opMaatPrijs.js: hier staat geen bedrag
+ * dat niet uit die twee komt.
+ *
+ * DE UITZONDERING OP "GEEN SCRIPT". Studio draait zonder script (StudioLayout, studioKoppen.js); deze pagina mag als
+ * enige één bestand van onze eigen site laden (Lucas, 15 november 2026). Zonder script zegt de pagina dat.
+ *
+ * LIJST 112: alleen aanvinken zegt niets. Elke keuze heeft een veld "Wat bedoel je?", en zonder die zin kan hij niet
+ * versturen. Het formaat hoort niet bij de stijl. Hoeken: kaarten 24, knoppen 8, keuzes als pil; nergens één zachte hoek.
+ */
+import StudioLayout from '../../layouts/StudioLayout.astro';
+import { pagesContext } from '../../lib/route.js';
+import { studioScreen } from '../../lib/account.js';
+import {
+  DIENSTEN, DIENST_NAAM, STAND_TEKST, MERK_VELDEN, REF_WAT, BUITEN_VRAGEN, KANALEN, CONTACT, SOORTEN, STAND_GROEPEN, STAND_WIJ, STAND_LOOKS, STAND_LOOK_NAAM, hoekenVan, CAMERA,
+  MOMENT_EISEN, PLEKKEN, LIFESTYLE_LICHT, HOOK_KANALEN, EERSTE_MOMENT, DOELEN, KIJKER_ACTIE, IDEE_VRAGEN, VIDEO_DOELEN,
+  CAMERA_GROEPEN, TEMPO, VIDEO_SECONDEN, MAX_EXTRA_FOTOS,
+} from '../../data/opMaat.js';
+import { EDITS, VIDEO_PER_SECONDE, VIDEO_MIN_SECONDEN, CAMERA_PRIJS, GRATIS_STIJLRONDES } from '../../data/opMaatPrijs.js';
+import { AMOUNT, LADDER } from '../../data/pricing.js';
+import { currentBusiness, verleggingZin } from '../../data/business.js';
+import { vatStatement } from '../../data/vat.js';
+import '../../styles/op-maat.css';
+
+export const prerender = false;
+
+const s = await studioScreen(pagesContext(Astro), 'opmaat');
+if (s instanceof Response) return s;
+const { st, v } = s;
+const { t, lang, customer, thema, navDicht } = st;
+const nl = lang === 'nl';
+const L = (a: string, b: string) => (nl ? a : b);
+
+const open = v.open;
+const dienst: string = open ? open.dienst : (DIENSTEN.includes(v.dienst) ? v.dienst : '');
+const inh: any = (open && open.inhoud) || {};
+const merk: any = v.merk || {};
+const bewerkbaar = !open || open.stand === 'concept';
+const pad = (p: string) => p.split('.').reduce((o: any, k) => (o == null ? undefined : o[k]), inh);
+const tekst = (p: string) => { const x = pad(p); return typeof x === 'string' ? x : ''; };
+const toel = (id: string) => tekst(`toelichting.${id}`);
+const eur = (n: number) => `€${n}`;
+const prijs = (e: any, per = L('per product', 'per product')) => [e.eenmalig ? `+ ${eur(e.eenmalig)}` : '', e.perProduct ? `${e.eenmalig ? '' : '+ '}${eur(e.perProduct)} ${per}` : ''].filter(Boolean).join(' + ').replace('+ + ', '+ ');
+
+/* De namen van de keuzes. Kort, in de taal van de klant. */
+const N: Record<string, [string, string]> = {
+  muts: ['Muts', 'Beanie'], bucket: ['Bucket hat', 'Bucket hat'], short: ['Short', 'Shorts'], sok: ['Sok', 'Sock'], laars: ['Laars', 'Boot'],
+  tshirt: ['T-shirt', 'T-shirt'], hoodie: ['Hoodie', 'Hoodie'], trui: ['Trui', 'Sweater'], jas: ['Jas', 'Jacket'], broek: ['Broek', 'Trousers'],
+  jurk: ['Jurk', 'Dress'], rok: ['Rok', 'Skirt'], schoen: ['Schoen', 'Shoe'], tas: ['Tas', 'Bag'], pet: ['Pet', 'Cap'], bril: ['Bril', 'Glasses'],
+  horloge: ['Horloge', 'Watch'], sieraad: ['Sieraad', 'Jewellery'], fles: ['Fles', 'Bottle'], anders: ['Iets anders', 'Something else'],
+  'plat-netjes': ['Plat, netjes', 'Flat, neat'], 'plat-los': ['Plat, los', 'Flat, loose'], 'onzichtbare-paspop': ['Onzichtbare paspop', 'Invisible mannequin'],
+  hanger: ['Aan een hanger', 'On a hanger'], gevouwen: ['Gevouwen', 'Folded'], 'aan-model': ['Aan het model', 'On the model'], eigen: ['Iets anders', 'Something else'],
+  laag: ['Laag', 'Low'], ooghoogte: ['Ooghoogte', 'Eye level'], hoog: ['Hoog', 'High'],
+  stad: ['Stad', 'City'], natuur: ['Natuur', 'Nature'], thuis: ['Thuis', 'At home'], zaak: ['Een zaak', 'A venue'], onderweg: ['Onderweg', 'On the move'],
+  gewoon: ['Gewoon licht', 'Normal light'], nacht: ['Nacht', 'Night'], tegenlicht: ['Tegenlicht', 'Backlight'], flits: ['Harde flits', 'Hard flash'],
+  reels: ['Reels', 'Reels'], tiktok: ['TikTok', 'TikTok'], stories: ['Stories', 'Stories'], advertentie: ['Advertentie', 'Ad'],
+  onthulling: ['Een onthulling', 'A reveal'], contrast: ['Een contrast', 'A contrast'], 'onverwachte-actie': ['Iets onverwachts', 'Something unexpected'],
+  humor: ['Humor', 'Humour'], 'tekst-vraag': ['Een vraag in tekst', 'A question in text'],
+  verkopen: ['Verkopen', 'Sell'], lancering: ['Een lancering', 'A launch'], bekendheid: ['Bekendheid', 'Awareness'], volgers: ['Volgers', 'Followers'], 'naar-de-site': ['Naar de site', 'To the site'],
+  kopen: ['Kopen', 'Buy'], 'site-bezoeken': ['De site bezoeken', 'Visit the site'], volgen: ['Volgen', 'Follow'], delen: ['Delen', 'Share'], onthouden: ['Het onthouden', 'Remember it'],
+  product: ['Het product laten zien', 'Show the product'], campagne: ['Een campagne', 'A campaign'], social: ['Social', 'Social'],
+  rustig: ['Rustig', 'Calm'], premium: ['Premium', 'Premium'], energiek: ['Energiek', 'Energetic'],
+  webshop: ['Webshop', 'Online shop'], instagram: ['Instagram', 'Instagram'], advertenties: ['Advertenties', 'Ads'], marktplaats: ['Marktplaatsen', 'Marketplaces'], drukwerk: ['Drukwerk', 'Print'],
+  mail: ['Mail', 'Email'], telefoon: ['Telefoon', 'Phone'], whatsapp: ['WhatsApp', 'WhatsApp'],
+  licht: ['Licht', 'Light'], pose: ['Pose', 'Pose'], kleur: ['Kleur', 'Colour'], sfeer: ['Sfeer', 'Mood'], compositie: ['Compositie', 'Composition'],
+  stil: ['Stilstaand', 'Static'], 'push-in': ['Push-in', 'Push in'], 'pull-out': ['Pull-out', 'Pull out'], pan: ['Pan', 'Pan'], tilt: ['Tilt', 'Tilt'],
+  orbit: ['Orbit, om het product heen', 'Orbit around the product'], truck: ['Zijwaarts met diepte', 'Truck with depth'], handheld: ['Handheld', 'Handheld'],
+  crane: ['Crane met onthulling', 'Crane reveal'], 'whip-pan': ['Whip pan', 'Whip pan'], 'dolly-zoom': ['Dolly zoom', 'Dolly zoom'], combinatie: ['Twee bewegingen tegelijk', 'Two moves at once'],
+  doelgroep: ['Voor wie is het?', 'Who is it for?'], gevoel: ['Welk gevoel?', 'What feeling?'], boodschap: ['Wat moet er blijven hangen?', 'What should stick?'],
+  aanleiding: ['Waarom nu?', 'Why now?'], concurrent: ['Wat doet je concurrent?', 'What does your competitor do?'], nietDoen: ['Wat mag zeker niet?', 'What is off limits?'],
+};
+const n = (id: string) => (N[id] ? (nl ? N[id][0] : N[id][1]) : id);
+const VOORBEELD: Record<string, [string, string]> = {
+  doelgroep: ['Studenten die tussen colleges door scrollen', 'Students scrolling between lectures'],
+  gevoel: ['Dat ze er nu al bij willen horen', 'That they want in, right now'],
+  boodschap: ['Deze jas houdt het droog en ziet er goed uit', 'This jacket keeps you dry and looks good'],
+  aanleiding: ['De jas staat vrijdag online', 'The jacket goes live on Friday'],
+  concurrent: ['Een model dat ronddraait in een witte studio', 'A model spinning in a white studio'],
+  nietDoen: ['Geen dansjes, geen trending geluid', 'No dances, no trending audio'],
+};
+const groepVan = (b: string) => Object.keys(CAMERA_GROEPEN).find((g) => (CAMERA_GROEPEN as any)[g].includes(b)) || 'inbegrepen';
+const camPrijs = (g: string) => ((CAMERA_PRIJS as any)[g] ? ` (+ €${(CAMERA_PRIJS as any)[g]} ${L('per shot', 'per shot')})` : '');
+const soorten: any[] = Array.isArray(inh.soorten) && inh.soorten.length ? inh.soorten : [{}];
+const shots: any[] = Array.isArray(inh.shots) && inh.shots.length ? inh.shots : [{}];
+const E = EDITS as any;
+const vanaf = { catalog: LADDER.catalog[0][2], lifestyle: LADDER.lifestyle[0][2] };
+/* De 3D-stap (lijst 113): wat /js/op-maat-3d.js nodig heeft, als één JSON op de sectie. De bedragen komen uit
+   opMaatPrijs.js (c-pose); het totaal rekent de server. */
+const tl = nl ? 0 : 1;
+const standData = JSON.stringify({
+  groepen: STAND_GROEPEN.map((g) => ({ id: g.id, naam: g.naam[tl], draai: g.draai, kleding: !!g.kleding,
+    hoeken: Object.fromEntries(STAND_LOOKS.map((lk) => [lk, hoekenVan(g, lk).map((h) => ({ id: h.id, naam: h.naam[tl], yaw: h.yaw, pitch: h.pitch, lig: h.lig }))])) })),
+  soorten: Object.fromEntries(SOORTEN.map((so) => [so.id, { groep: so.groep, model: so.model, naam: n(so.id) }])),
+  prijs: { een: E.catalog['c-pose'].eenmalig, per: E.catalog['c-pose'].perProduct },
+});
+const gebruikteGroepen = new Set(soorten.map((x: any) => (SOORTEN.find((so) => so.id === x.soort) || SOORTEN[4]).groep));
+const standLook: string = STAND_LOOKS.includes(inh.standLook) ? inh.standLook : STAND_LOOKS[0];
+const groepHoek = (g: string) => (inh.standen && inh.standen[g] && inh.standen[g].hoek) || '';
+const vk = (x: any, k: string) => (x && x.voorkant && x.voorkant[k] !== undefined ? x.voorkant[k] : '');
+const titel = dienst ? DIENST_NAAM[nl ? 'nl' : 'en'][dienst] : L('Op maat', 'Custom');
+---
+<StudioLayout
+  lang={lang} t={t} thema={thema} navDicht={navDicht} actief="opmaat" customer={customer}
+  title={titel} kop={titel}
+  lede={dienst ? L('Vertel wat je wilt. De schatting rekent mee; de definitieve prijs volgt als wij je stijl hebben uitgedacht.', 'Tell us what you want. The estimate updates as you go; the final price follows once we have worked out your style.') : L('Een stijl die alleen van jou is. Versturen kost niets.', 'A style that is only yours. Sending it costs nothing.')}
+  script={dienst ? '/js/op-maat.js' : null}
+>
+  {!dienst && (
+    <Fragment>
+      <section class="om-blok" aria-label={L('Kies een dienst', 'Choose a service')}>
+        <div class="om-tegels">
+          <a class="om-tegel" href="/account/op-maat?dienst=catalog"><b>Catalog</b><span>{L(`vanaf €${vanaf.catalog} per set van 4, plus je keuzes`, `from €${vanaf.catalog} per set of 4, plus your choices`)}</span></a>
+          <a class="om-tegel" href="/account/op-maat?dienst=lifestyle"><b>Lifestyle</b><span>{L(`vanaf €${vanaf.lifestyle} per carrousel, plus je moment`, `from €${vanaf.lifestyle} per carousel, plus your moment`)}</span></a>
+          <a class="om-tegel" href="/account/op-maat?dienst=hooks"><b>Hooks</b><span>{L(`je eigen hookstijl, daarna €${AMOUNT.hooks} per hook`, `your own hook style, then €${AMOUNT.hooks} per hook`)}</span></a>
+          <a class="om-tegel" href="/account/op-maat?dienst=video"><b>Video</b><span>{L(`€${VIDEO_PER_SECONDE} per seconde, minimaal ${VIDEO_MIN_SECONDEN}`, `€${VIDEO_PER_SECONDE} a second, at least ${VIDEO_MIN_SECONDEN}`)}</span></a>
+        </div>
+        <p class="om-strook"><span class="om-mono">{L('Altijd inbegrepen', 'Always included')}</span>{L(`Een gratis eerste voorbeeld · ${GRATIS_STIJLRONDES} gratis rondes om bij te sturen · één revisie per bestelling`, `A free first preview · ${GRATIS_STIJLRONDES} free rounds to adjust · one revision per order`)}</p>
+      </section>
+      {v.aanvragen.length > 0 && (
+        <section class="om-blok" aria-label={L('Je aanvragen', 'Your requests')}>
+          <h2 class="om-h2">{L('Je aanvragen', 'Your requests')}</h2>
+          <ul class="om-aanvragen">
+            {v.aanvragen.map((a: any) => (
+              <li><a href={`/account/op-maat?id=${a.id}`}><b>{DIENST_NAAM[nl ? 'nl' : 'en'][a.dienst]}</b><span>{STAND_TEKST[nl ? 'nl' : 'en'][a.stand]}</span></a></li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </Fragment>
+  )}
+
+  {dienst && (
+    <div class="om" id="om" data-dienst={dienst} data-id={open ? open.id : ''} data-versie={open ? open.versie : ''} data-taal={lang} data-bewerk={bewerkbaar ? '1' : '0'} data-merkmodel={v.merkmodel ? '1' : '0'}>
+      <noscript><p class="om-strook">{L('Deze pagina heeft JavaScript nodig om je keuzes op te slaan en de schatting te laten meerekenen.', 'This page needs JavaScript to save your choices and update the estimate.')}</p></noscript>
+      <form class="om-form" id="om-form" novalidate>
+        {!bewerkbaar && open.stand !== 'voorstel' && open.stand !== 'offerte' && <p class="om-strook"><span class="om-mono">{L('Verstuurd', 'Sent')}</span>{STAND_TEKST[nl ? 'nl' : 'en'][open.stand]}</p>}
+
+        {open && open.stand === 'voorstel' && (
+          <section class="om-blok om-ronde" id="om-ronde">
+            <p class="om-label"><span>{L(`Voorbeeld ${v.ronde}`, `Preview ${v.ronde}`)}</span>{L('Wat vind je ervan?', 'What do you think?')}</p>
+            <h2 class="om-h2">{L('Je eerste blik op je stijl', 'A first look at your style')}</h2>
+            <p class="om-uitleg">{L('In neutrale kleuren en zonder jouw product: het gaat om de omgeving en het gevoel. Zet per beeld goed of aanpassen.', 'In neutral colours and without your product: it is about the setting and the feel. Mark each image good or to adjust.')}</p>
+            <ol class="om-teller" aria-label={L('Rondes', 'Rounds')}>{[1, 2, 3].map((n) => <li class={n <= v.ronde ? 'is-aan' : ''}>{n}</li>)}<li class="om-teller-tekst">{v.ronde < 3 ? L(`Nog ${3 - v.ronde} gratis ${3 - v.ronde === 1 ? 'ronde' : 'rondes'} na deze`, `${3 - v.ronde} free ${3 - v.ronde === 1 ? 'round' : 'rounds'} left after this`) : L('Dit is de laatste gratis ronde; daarna kijken we samen wat er nog kan.', 'This is the last free round; after that we look together at what is still possible.')}</li></ol>
+            <div class="om-voorbeelden">
+              {v.voorbeelden.map((b: any, i: number) => (
+                <figure class="om-voorbeeld">
+                  <img src={b.url} alt={L(`Voorbeeld ${i + 1}`, `Preview ${i + 1}`)} loading="lazy" width="400" height="500">
+                  <figcaption class="om-pillen" role="radiogroup" aria-label={L(`Beeld ${i + 1}`, `Image ${i + 1}`)}>
+                    <label class="om-pil"><input type="radio" name={`b-${b.id}`} value="goed" data-beeld={b.id}><span>{L('Goed', 'Good')}</span></label>
+                    <label class="om-pil"><input type="radio" name={`b-${b.id}`} value="aanpassen" data-beeld={b.id}><span>{L('Aanpassen', 'Adjust')}</span></label>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+            <div class="om-rij">
+              <label class="om-veld"><span>{L('Wat is goed?', 'What works?')}</span><textarea rows="3" maxlength="800" id="om-wel" placeholder={L('De muur en het tapijt, en de harde schaduw', 'The wall and the carpet, and the hard shadow')}></textarea></label>
+              <label class="om-veld"><span>{L('Wat moet anders?', 'What should change?')}</span><textarea rows="3" maxlength="800" id="om-anders" placeholder={L('Het licht mag warmer, minder blauw in de hoeken', 'The light can be warmer, less blue in the corners')}></textarea></label>
+              <label class="om-veld"><span>{L('Wat moet in elk geval blijven?', 'What must stay, no matter what?')}</span><textarea rows="3" maxlength="400" id="om-blijven" placeholder={L('De flits', 'The flash')}></textarea></label>
+            </div>
+            <div class="om-knoppen">
+              <button type="button" class="btn btn-primary" data-rol="doorgaan" id="om-reactie">{L('Stuur mijn reactie', 'Send my feedback')}</button>
+              <button type="button" class="btn btn-2nd" data-rol="bevestigen" id="om-goed">{L('Dit is goed: naar de offerte', 'This is right: on to the quote')}</button>
+            </div>
+            <p class="om-klein" id="om-ronde-stand" role="status"></p>
+          </section>
+        )}
+
+        {open && v.offerte && (open.stand === 'offerte' || (open.stand === 'vastgelegd' && v.offerte.akkoordOp) || (open.stand === 'akkoord' && v.offerte.aanpassing)) && (() => {
+          /* De offerte (15 november 2026). Akkoord maakt de bestelling en stuurt de betaallink naar het adres van de
+             offerte; "Iets aanpassen" zegt ons wat er anders moet. Bedragen excl. btw, de helft nu. */
+          const o = v.offerte;
+          const g = (x: number) => `€${Number(x).toLocaleString(nl ? 'nl-NL' : 'en-GB', { minimumFractionDigits: Number.isInteger(x) ? 0 : 2, maximumFractionDigits: 2 })}`;
+          const verlegd = o.btwBehandeling === 'eu_reverse_charge';
+          const btwZin = vatStatement(o.btwBehandeling, lang);
+          return (
+          <section class="om-blok om-offerte" id="om-offerte" data-ref={o.ref || ''}>
+            <p class="om-label"><span>{L('Offerte', 'Quote')}</span>{L('De stijl staat', 'The style is set')}</p>
+            <h2 class="om-h2">{L('Dit is de prijs', 'This is the price')}</h2>
+            <div class="om-regels om-groot">
+              {o.regels.map((r: any) => <p><span>{r.naam}</span><span>{g(r.bedrag)}</span></p>)}
+              <p class="om-totaalregel"><span>{L('Totaal excl. btw', 'Total excl. VAT')}</span><span>{g(o.totaal)}</span></p>
+              <p><span>{L('Nu, de helft', 'Now, half')}</span><span>{g(o.aanbetaling)}</span></p>
+              <p><span>{o.aanbetalingBtw > 0 ? L(`Btw ${Math.round(o.btwTarief * 100)}% over de helft`, `VAT ${Math.round(o.btwTarief * 100)}% on half`) : L('Btw', 'VAT')}</span><span>{o.aanbetalingBtw > 0 ? g(o.aanbetalingBtw) : (btwZin || L('geen', 'none'))}</span></p>
+              <p class="om-totaalregel"><span>{L('Nu te betalen', 'To pay now')}</span><span>{g(o.aanbetalingBruto)}</span></p>
+              <p><span>{L('Bij levering, excl. btw', 'On delivery, excl. VAT')}</span><span>{g(o.rest)}</span></p>
+            </div>
+
+            {open.stand === 'akkoord' && (
+              <p class="om-strook"><span class="om-mono">{L('Aanpassing', 'Change')}</span>{L(`Je vroeg: "${o.aanpassing}". We passen de offerte aan en sturen je een nieuwe.`, `You asked: "${o.aanpassing}". We are adjusting the quote and will send you a new one.`)}</p>
+            )}
+
+            {open.stand === 'vastgelegd' && (
+              o.betaald
+                ? <p class="om-strook"><span class="om-mono">{L('Betaald', 'Paid')}</span>{L(`De aanbetaling is binnen. Je bestelling ${o.ref} staat in de planning; de rest betaal je bij levering.`, `The deposit is in. Your order ${o.ref} is in the schedule; you pay the rest on delivery.`)}</p>
+                : <Fragment>
+                    <p class="om-strook"><span class="om-mono">{L('Akkoord', 'Accepted')}</span>{o.linkOp
+                      ? L(`Je gaf akkoord. De betaallink voor de helft staat in je mail op ${o.email}. Je kunt ook hier betalen.`, `You accepted. The payment link for half is in your mail at ${o.email}. You can also pay here.`)
+                      : L(`Je gaf akkoord. We sturen de betaallink voor de helft zo snel mogelijk naar ${o.email}. Je kunt ook hier betalen.`, `You accepted. We will send the payment link for half to ${o.email} as soon as we can. You can also pay here.`)}</p>
+                    {o.ref && <div class="om-knoppen"><a class="btn btn-primary" data-rol="doorgaan" href={`/api/order-pay?ref=${encodeURIComponent(o.ref)}&lang=${lang}`}>{L(`Betaal ${g(o.aanbetalingBruto)}`, `Pay ${g(o.aanbetalingBruto)}`)}</a></div>}
+                  </Fragment>
+            )}
+
+            {open.stand === 'offerte' && (
+              <Fragment>
+                <div class="om-keuze-akkoord">
+                  <label class="om-vink"><input type="checkbox" id="om-zakelijk" required data-melding={L('Vink aan dat je zakelijk bestelt: alleen dan kunnen we beginnen.', 'Tick that you are ordering as a business: only then can we start.')}>
+                    <span>{verlegd && verleggingZin(lang, { merk: customer?.brand || merk.naam || '', btw: o.btwNummer }) ? `${verleggingZin(lang, { merk: customer?.brand || merk.naam || '', btw: o.btwNummer })} ` : ''}{currentBusiness(lang)}</span></label>
+                  <p class="om-klein">{L(`Met akkoord krijg je meteen de betaallink voor ${g(o.aanbetalingBruto)} op ${o.email}.`, `When you accept, the payment link for ${g(o.aanbetalingBruto)} goes straight to ${o.email}.`)}</p>
+                  <div class="om-knoppen"><button type="button" class="btn btn-primary" data-rol="bevestigen" id="om-offerte-akkoord">{L('Akkoord, stuur de betaallink', 'Accept and send the payment link')}</button></div>
+                </div>
+                <details class="om-aanpassen" id="om-aanpassen">
+                  <summary>{L('Iets aanpassen', 'Ask for a change')}</summary>
+                  <label class="om-veld"><span>{L('Wat moet er anders?', 'What should change?')}</span><textarea id="om-aanpassing" rows="3" maxlength="800" data-melding={L('Schrijf in een paar woorden wat er anders moet.', 'Write in a few words what should change.')} placeholder={L('Bijvoorbeeld: zonder de extra detailfoto, of één omgeving minder.', 'For example: without the extra detail photo, or one setting fewer.')}></textarea></label>
+                  <div class="om-knoppen"><button type="button" class="btn btn-2nd" data-rol="aanmerken" id="om-offerte-aanpassen">{L('Stuur mijn aanpassing', 'Send my change')}</button></div>
+                </details>
+              </Fragment>
+            )}
+            <p class="om-klein" id="om-offerte-stand" role="status"></p>
+          </section>
+          );
+        })()}
+        <fieldset disabled={!bewerkbaar} class="om-velden">
+
+          <section class="om-blok" id="om-merk">
+            <p class="om-label">{L('Je merk', 'Your brand')}</p>
+            <h2 class="om-h2">{L('Over je merk, één keer', 'About your brand, once')}</h2>
+            <p class="om-uitleg">{L('Dit geldt voor al je aanvragen op maat. Je vult het één keer in.', 'This applies to all your custom requests. You fill it in once.')}</p>
+            <div class="om-rij">
+              <label class="om-veld"><span>{L('Merknaam', 'Brand name')}</span><input type="text" maxlength="80" data-merk="naam" value={merk.naam || customer?.brand || ''} required data-melding={L('Vul de naam van je merk in: die zetten we op je stijlkaart.', 'Fill in your brand name: it goes on your style card.')}></label>
+              <label class="om-veld"><span>{L('Website', 'Website')}</span><input type="text" maxlength="200" data-merk="site" value={merk.site || ''}></label>
+              <label class="om-veld"><span>Instagram</span><input type="text" maxlength="60" data-merk="instagram" value={merk.instagram || ''}></label>
+            </div>
+            <label class="om-veld"><span>{L('Wie is je klant?', 'Who is your customer?')}</span><textarea rows="2" maxlength="400" data-merk="klant" placeholder={L('Bijvoorbeeld: studenten en jonge makers die weinig kopen, maar het dan goed willen hebben', 'For example: students and young makers who buy little, but want it right')}>{merk.klant || ''}</textarea></label>
+            <div class="om-rij">
+              <label class="om-veld"><span>{L('Drie woorden voor je merk', 'Three words for your brand')}</span><input type="text" maxlength="100" data-merk="woorden" data-lijst="," value={(merk.woorden || []).join(', ')} placeholder={L('rauw, stil, eerlijk', 'raw, quiet, honest')}></label>
+              <label class="om-veld"><span>{L('Je kleuren (hex, met komma’s)', 'Your colours (hex, comma separated)')}</span><input type="text" maxlength="60" data-merk="kleuren" data-lijst="," value={(merk.kleuren || []).join(', ')} placeholder="#090D0B, #E6DCD3"></label>
+            </div>
+          </section>
+
+          {dienst === 'catalog' && (
+            <Fragment>
+              <section class="om-blok" id="om-schaal">
+                <p class="om-label">{L('Hoe ver wil je gaan?', 'How far do you want to go?')}</p>
+                <h2 class="om-h2">{L('Kies een vertrekpunt', 'Pick a starting point')}</h2>
+                <p class="om-uitleg">{L('Een stap zet de keuzes aan die erbij horen. Daarna kun je elke keuze los aan- of uitzetten.', 'A step switches on the choices that belong to it. After that you can turn each one on or off.')}</p>
+                <div class="om-schaal">
+                  <button type="button" class="om-stap" data-zet=""><b>{L('Licht', 'Light')}</b><span>{L('Witte grond, je producten in de standaardstand', 'White ground, your products in the standard pose')}</span></button>
+                  <button type="button" class="om-stap" data-zet="c-pose,c-licht,c-grading"><b>{L('Midden', 'Middle')}</b><span>{L('Eigen licht en een eigen kleurbewerking', 'Your own light and colour grade')}</span></button>
+                  <button type="button" class="om-stap" data-zet="c-pose,c-licht,c-camera,c-wereld,c-maat,c-grading,c-modelpose"><b>{L('Een hele wereld', 'A whole world')}</b><span>{L('Een eigen kamer met vaste maten, licht en poses, zoals Room 84', 'A room of your own with fixed proportions, light and poses, like Room 84')}</span></button>
+                </div>
+              </section>
+
+              <section class="om-blok" id="om-producten">
+                <p class="om-label">{L('Je producten', 'Your products')}</p>
+                <h2 class="om-h2">{L('Wat gaan we fotograferen?', 'What are we shooting?')}</h2>
+                <div class="om-rijen" data-rij="soorten">
+                  {soorten.map((x: any) => (
+                    <div class="om-rijtje" data-rij-item>
+                      <label class="om-veld"><span>{L('Soort', 'Type')}</span><select data-veld="soort">{STAND_GROEPEN.map((g) => <optgroup label={g.naam[tl]}>{SOORTEN.filter((so) => so.groep === g.id).map((so) => <option value={so.id} selected={(x.soort || 'tshirt') === so.id}>{n(so.id)}</option>)}</optgroup>)}</select></label>
+                      <label class="om-veld om-smal"><span>{L('Aantal', 'Number')}</span><input type="number" min="1" max="20" data-veld="aantal" value={x.aantal || 1}></label>
+                      {/* de eigen stand van dit product, gezet in de 3D-stap hieronder (lijst 113) */}
+                      <input type="number" hidden tabindex="-1" data-veld="voorkant.yaw" value={vk(x, 'yaw')}>
+                      <input type="number" hidden tabindex="-1" data-veld="voorkant.pitch" value={vk(x, 'pitch')}>
+                      <input type="checkbox" hidden tabindex="-1" data-veld="voorkant.lig" checked={vk(x, 'lig') === true}>
+                      <input type="text" hidden tabindex="-1" data-veld="voorkant.tekst" value={vk(x, 'tekst')}>
+                      <button type="button" class="om-weg" data-rij-weg aria-label={L('Weghalen', 'Remove')}>×</button>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" class="btn btn-2nd om-plus" data-rol="toevoegen" data-rij-erbij="soorten">{L('+ Nog een soort product', '+ Another product type')}</button>
+              </section>
+
+              <section class="om-blok om-standen" id="om-standen" data-stand={standData}>
+                <p class="om-label">{L('De stand', 'The pose')}</p>
+                <h2 class="om-h2">{L('Hoe staan je producten op de voorkant?', 'How do your products sit on the front?')}</h2>
+                <p class="om-uitleg">{L('Dit is de referentie voor je eerste foto, de voorkant. De achterkant, een detail en een foto op het model komen er altijd bij. Met jouw stand maken we 4 voorbeelden; daarna pas je details 2 keer kosteloos aan.', 'This is the reference for your first photo, the front. The back, a detail and an on-model photo are always included. From your pose we make 4 previews; after that you can adjust details twice for free.')}</p>
+                <p class="om-uitleg">{L(`Kies per groep één stand: die geldt voor alle producten in die groep. De standaardstand kost niets, net als "Wij kiezen". Een andere stand denken we apart uit: €${E.catalog['c-pose'].eenmalig} eenmalig, daarna €${E.catalog['c-pose'].perProduct} per product in die stand. Licht en schaduw kies je bij je keuzes; zonder keuze is dat lichte, natuurlijke schaduw.`, `Pick one pose per group: it applies to every product in that group. The standard pose is free, and so is "We choose". Any other pose we work out separately: €${E.catalog['c-pose'].eenmalig} once, then €${E.catalog['c-pose'].perProduct} per product in that pose. Light and shadow are part of your choices; without one, it is light, natural shadow.`)}</p>
+                <div class="om-keuzes2 om-look" role="radiogroup" aria-label={L('De look van je voorkant', 'The look of your front photo')}>
+                  {STAND_LOOKS.map((lk) => (
+                    <label class="om-optie"><input type="radio" name="standLook" value={lk} data-pad="standLook" checked={standLook === lk}><b>{STAND_LOOK_NAAM[lk][tl]}</b><span>{lk === 'ghost'
+                      ? L('Je product in zijn vorm, alsof iemand het draagt, maar zonder persoon.', 'Your product in its shape, as if someone wears it, but without a person.')
+                      : L('Je product plat neergelegd en van boven gefotografeerd.', 'Your product laid flat and shot from above.')}</span></label>
+                  ))}
+                </div>
+                <p class="om-klein" data-look-melding role="status"></p>
+                <p class="om-klein" data-geen-producten hidden>{L('Kies hierboven eerst wat je verkoopt.', 'First choose above what you sell.')}</p>
+                {STAND_GROEPEN.map((g) => {
+                  return (
+                  <div class="om-groep" data-groep={g.id} hidden={!gebruikteGroepen.has(g.id)}>
+                    <div class="om-groep-kop"><h3>{g.naam[tl]}</h3><span class="om-mono" data-groep-namen></span></div>
+                    {/* per look een rij; alleen die van de gekozen look telt (de andere is uit en wordt niet gelezen) */}
+                    {STAND_LOOKS.map((lk) => {
+                      const hk = hoekenVan(g, lk);
+                      const k = (standLook === lk && groepHoek(g.id)) || hk[0].id;
+                      const uit = standLook !== lk;
+                      return (
+                      <div class="om-pillen" role="radiogroup" data-look={lk} hidden={uit} aria-label={L(`Stand voor ${g.naam[tl]}`, `Pose for ${g.naam[tl]}`)}>
+                        {hk.map((h, i) => <label class="om-pil"><input type="radio" name={`stand-${lk}-${g.id}`} value={h.id} data-pad={`standen.${g.id}.hoek`} disabled={uit} checked={k === h.id}><span>{h.naam[tl]}{i === 0 && <small class="om-std">{L('standaard', 'standard')}</small>}</span></label>)}
+                        <label class="om-pil"><input type="radio" name={`stand-${lk}-${g.id}`} value={STAND_WIJ} data-pad={`standen.${g.id}.hoek`} disabled={uit} checked={standLook === lk && k === STAND_WIJ}><span>{L('Wij kiezen', 'We choose')}</span></label>
+                      </div>
+                      );
+                    })}
+                    <div class="om-3d-tegels" data-tegels></div>
+                    <p class="om-klein" data-groep-stand role="status"></p>
+                    <label class="om-veld om-groep-noot"><span>{L(`Notitie bij ${g.naam[tl].toLowerCase()} (mag leeg)`, `Note for ${g.naam[tl].toLowerCase()} (optional)`)}</span><textarea rows="2" maxlength="400" data-pad={`standen.${g.id}.tekst`} placeholder={L('Bijvoorbeeld: alles iets schuin, met de rits dicht', 'For example: all slightly angled, zip closed')}>{tekst(`standen.${g.id}.tekst`)}</textarea></label>
+                  </div>
+                  );
+                })}
+                <p class="om-strook" data-geen-3d hidden>{L('Je browser kan de 3D-modellen niet tonen. De stand per groep werkt wel; zeg in de notitie wat je bedoelt.', 'Your browser cannot show the 3D models. The pose per group still works; say in the note what you mean.')}</p>
+                <dialog class="om-3d-venster" id="om-3d" aria-labelledby="om-3d-titel">
+                  <div class="om-3d-dlg">
+                    <div class="om-3d-scene" id="om-3d-scene" tabindex="0" role="application" aria-label={L('Het product in 3D. Pijltje links en rechts draait, omhoog en omlaag kantelt.', 'The product in 3D. Left and right arrows turn it, up and down tilt it.')}><p class="om-3d-stand" id="om-3d-stand"></p></div>
+                    <div class="om-3d-paneel">
+                      <div class="om-3d-kop"><div><p class="om-mono" id="om-3d-groep"></p><h2 class="om-h2" id="om-3d-titel"></h2></div><button type="button" class="om-weg" id="om-3d-sluit" data-rol="sluiten" aria-label={L('Sluiten', 'Close')}>×</button></div>
+                      <p class="om-klein">{L('Sleep om te draaien, of kies een hoek.', 'Drag to turn, or pick an angle.')}</p>
+                      <div class="om-pillen" id="om-3d-hoeken" aria-label={L('Snel naar een hoek', 'Jump to an angle')}></div>
+                      <label class="om-veld"><span>{L('Wat bedoel je precies? (mag leeg)', 'What exactly do you mean? (optional)')}</span><textarea rows="3" maxlength="400" id="om-3d-notitie" placeholder={L('Bijvoorbeeld: iets schuiner, zodat je de zijkant ziet', 'For example: a bit more angled, so you see the side')}></textarea></label>
+                      <div class="om-knoppen">
+                        <button type="button" class="btn btn-primary" data-rol="bevestigen" id="om-3d-gebruik">{L('Gebruik deze stand', 'Use this pose')}</button>
+                        <button type="button" class="btn btn-2nd" data-rol="terugnemen" id="om-3d-groep-terug">{L('Zelfde als de groep', 'Same as the group')}</button>
+                      </div>
+                    </div>
+                  </div>
+                </dialog>
+              </section>
+
+              <section class="om-blok" id="om-keuzes">
+                <p class="om-label">{L('Je keuzes', 'Your choices')}</p>
+                <h2 class="om-h2">{L('Wat maakt het van jou?', 'What makes it yours?')}</h2>
+                <p class="om-uitleg">{L('Bij elke keuze schrijf je in een paar woorden wat je bedoelt. Zonder die zin weten wij niet wat je voor je ziet.', 'For each choice, write in a few words what you mean. Without it we cannot know what you have in mind.')}</p>
+                <div class="om-edits">
+                  {[
+                    ['c-licht', L('Eigen licht', 'Your own light'), L('Waar komt het licht vandaan, hard of zacht, welke kleur?', 'Where does the light come from, hard or soft, what colour?'), L('Eén directe flits van dichtbij, een harde schaduw op de muur', 'One direct flash up close, a hard shadow on the wall'), 'licht.eigen'],
+                    ['c-maat', L('Vaste verhoudingen in elke foto', 'Fixed proportions in every photo'), L('Wat moet in elke foto even groot zijn?', 'What should be the same size in every photo?'), L('De tas korter dan een onderarm, de plint tien centimeter', 'The bag shorter than a forearm, the skirting ten centimetres'), 'vasteMaten'],
+                    ['c-grading', L('Eigen kleurbewerking', 'Your own colour grade'), L('Hoe moeten de kleuren voelen?', 'How should the colours feel?'), L('Warm wit, koel tapijt, geen donkere hoeken', 'Warm white, cool carpet, no dark corners'), 'grading.eigen'],
+                  ].map(([id, naam, vraag, vb, p]) => (
+                    <div class="om-edit">
+                      <label class="om-edit-kop"><input type="checkbox" data-pad={p} data-toggle={id} checked={!!pad(p)}><b>{naam}</b><span class="om-prijs">{prijs(E.catalog[id])}</span></label>
+                      <label class="om-veld om-uitklap"><span>{vraag}</span><textarea rows="2" maxlength="600" data-pad={`toelichting.${id}`} placeholder={vb}>{toel(id)}</textarea></label>
+                    </div>
+                  ))}
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle="c-camera" checked={!!inh.camera && inh.camera !== 'ooghoogte'}><b>{L('Een eigen camerahoek of kader', 'Your own camera angle or frame')}</b><span class="om-prijs">{prijs(E.catalog['c-camera'])}</span></label>
+                    <div class="om-uitklap">
+                      <div class="om-pillen" role="radiogroup" aria-label={L('Camerahoogte', 'Camera height')}>{CAMERA.filter((c) => c !== 'ooghoogte').map((c) => <label class="om-pil"><input type="radio" name="camera" value={c} data-pad="camera" checked={inh.camera === c}><span>{n(c)}</span></label>)}</div>
+                      <label class="om-veld"><span>{L('Wat wil je met de camera?', 'What do you want from the camera?')}</span><textarea rows="2" maxlength="600" data-pad="toelichting.c-camera" placeholder={L('Een klein beetje scheef, alsof iemand thuis een foto maakt', 'Slightly tilted, as if someone took it at home')}>{toel('c-camera')}</textarea></label>
+                    </div>
+                  </div>
+                  <div class="om-edit">
+                    <p class="om-edit-kop"><b>{L('De achtergrond', 'The background')}</b></p>
+                    <div class="om-keuzerijen" role="radiogroup" aria-label={L('Achtergrond', 'Background')}>
+                      {[['naadloze-studio', L('Witte studiogrond', 'White studio ground'), null], ['effen-kleur', L('Een eigen effen kleur', 'A solid colour of your own'), 'c-kleur'], ['materiaal', L('Een materiaal of textuur', 'A material or texture'), 'c-materiaal'], ['echte-plek', L('Een volledige omgeving', 'A complete environment'), 'c-wereld']].map(([w, naam, id]) => (
+                        <label class="om-keuzerij"><input type="radio" name="omgeving" value={w} data-pad="omgeving.soort" checked={(inh.omgeving && inh.omgeving.soort ? inh.omgeving.soort : 'naadloze-studio') === w}><b>{naam}</b><span class="om-prijs">{id ? prijs(E.catalog[id]) : L('inbegrepen', 'included')}</span></label>
+                      ))}
+                    </div>
+                    <div class="om-uitklap om-achtergrond">
+                      <label class="om-veld om-smal"><span>{L('Kleur (hex)', 'Colour (hex)')}</span><input type="text" maxlength="7" data-pad="omgeving.kleur" value={tekst('omgeving.kleur')} placeholder="#E6DCD3"></label>
+                      <label class="om-veld"><span>{L('Beschrijf de achtergrond', 'Describe the background')}</span><textarea rows="2" maxlength="600" data-pad="omgeving.tekst" placeholder={L('Gebroken wit sierpleister in waaiers, daaronder een laag blauwgrijs gespikkeld tapijt', 'Off-white decorative plaster in fans, a low blue-grey speckled carpet below')}>{tekst('omgeving.tekst')}</textarea></label>
+                    </div>
+                  </div>
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle="c-modelpose" checked={!!tekst('model.pose')}><b>{L('Een vaste pose van het model', 'A fixed model pose')}</b><span class="om-prijs">{prijs(E.catalog['c-modelpose'])}</span></label>
+                    <label class="om-veld om-uitklap"><span>{L('Wie doet wat, en met welk lichaamsdeel?', 'Who does what, with which part of the body?')}</span><textarea rows="2" maxlength="300" data-pad="model.pose" placeholder={L('Hij zit op het tapijt met zijn rug tegen de muur en ritst een laars open', 'He sits on the carpet against the wall, unzipping a boot')}>{tekst('model.pose')}</textarea></label>
+                  </div>
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle="c-extra" checked={!!inh.extraFotos}><b>{L('Extra foto’s per product', 'Extra photos per product')}</b><span class="om-prijs">{prijs(E.catalog['c-extra'])} {L('per foto', 'per photo')}</span></label>
+                    <div class="om-uitklap">
+                      <label class="om-veld om-smal"><span>{L('Hoeveel extra?', 'How many extra?')}</span><input type="number" min="1" max={MAX_EXTRA_FOTOS} data-pad="extraFotos" value={inh.extraFotos || 1}></label>
+                      <label class="om-veld"><span>{L('Welke foto’s?', 'Which photos?')}</span><textarea rows="2" maxlength="600" data-pad="toelichting.c-extra" placeholder={L('Een detail van het beslag aan de zijkant', 'A detail of the hardware on the side')}>{toel('c-extra')}</textarea></label>
+                    </div>
+                  </div>
+                  <div class="om-edit">
+                    <p class="om-edit-kop"><b>{L('Het model op de vierde foto', 'The model on the fourth photo')}</b></p>
+                    <div class="om-keuzerijen" role="radiogroup" aria-label={L('Merkmodel', 'Brand model')}>
+                      <label class="om-keuzerij"><input type="radio" name="merkmodel" value="geen" data-pad="model.merkmodel" checked={!inh.model || !inh.model.merkmodel || inh.model.merkmodel === 'geen'}><b>{L('Een model van ons', 'One of our models')}</b><span class="om-prijs">{L('inbegrepen', 'included')}</span></label>
+                      {v.merkmodel && <label class="om-keuzerij"><input type="radio" name="merkmodel" value="bestaand" data-pad="model.merkmodel" checked={inh.model && inh.model.merkmodel === 'bestaand'}><b>{L('Mijn merkmodel', 'My brand model')}</b><span class="om-prijs">{L('inbegrepen', 'included')}</span></label>}
+                      <label class="om-keuzerij"><input type="radio" name="merkmodel" value="nieuw" data-pad="model.merkmodel" checked={inh.model && inh.model.merkmodel === 'nieuw'}><b>{L('Een nieuw merkmodel, alleen voor jou', 'A new brand model, only for you')}</b><span class="om-prijs">+ €{AMOUNT.brandModel} {L('één keer', 'once')}</span></label>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </Fragment>
+          )}
+
+          {dienst === 'lifestyle' && (
+            <Fragment>
+              <section class="om-blok" id="om-moment">
+                <p class="om-label">{L('Je moment', 'Your moment')}</p>
+                <h2 class="om-h2">{L('Welk moment?', 'Which moment?')}</h2>
+                <ul class="om-eisen">{MOMENT_EISEN[nl ? 'nl' : 'en'].map((e) => <li>{e}</li>)}</ul>
+                <label class="om-veld"><span>{L('In één zin', 'In one sentence')}</span><textarea rows="2" maxlength="300" data-pad="moment.zin" placeholder={L('Vlak voor de deur uit, op weg naar een bruiloft als gast', 'Just before heading out, off to a wedding as a guest')}>{tekst('moment.zin')}</textarea></label>
+                <div class="om-rij">
+                  <label class="om-veld"><span>{L('Wie?', 'Who?')}</span><input type="text" maxlength="160" data-pad="moment.wie" value={tekst('moment.wie')}></label>
+                  <label class="om-veld"><span>{L('Waar?', 'Where?')}</span><input type="text" maxlength="160" data-pad="moment.waar" value={tekst('moment.waar')}></label>
+                  <label class="om-veld"><span>{L('Wanneer?', 'When?')}</span><input type="text" maxlength="160" data-pad="moment.wanneer" value={tekst('moment.wanneer')}></label>
+                </div>
+                <label class="om-veld om-smal"><span>{L('Aantal producten', 'Number of products')}</span><input type="number" min="1" max="20" data-pad="aantal" value={inh.aantal || 1}></label>
+              </section>
+              <section class="om-blok" id="om-keuzes">
+                <p class="om-label">{L('Je keuzes', 'Your choices')}</p>
+                <h2 class="om-h2">{L('Wat maakt het van jou?', 'What makes it yours?')}</h2>
+                <p class="om-uitleg">{L('Bij elke keuze schrijf je in een paar woorden wat je bedoelt.', 'For each choice, write in a few words what you mean.')}</p>
+                <div class="om-edits">
+                  <div class="om-edit is-vast"><p class="om-edit-kop"><b>{L('Je moment uitwerken', 'Working out your moment')}</b><span class="om-prijs">{prijs(E.lifestyle['l-moment'])}</span></p></div>
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle="l-plek" checked={!!(inh.plek && (inh.plek.soort || inh.plek.tekst))}><b>{L('Een eigen plek', 'A place of your own')}</b><span class="om-prijs">{prijs(E.lifestyle['l-plek'])}</span></label>
+                    <div class="om-uitklap">
+                      <div class="om-pillen" role="radiogroup" aria-label={L('Soort plek', 'Kind of place')}>{PLEKKEN.map((p) => <label class="om-pil"><input type="radio" name="plek" value={p} data-pad="plek.soort" checked={inh.plek && inh.plek.soort === p}><span>{n(p)}</span></label>)}</div>
+                      <label class="om-veld"><span>{L('Beschrijf de plek', 'Describe the place')}</span><textarea rows="2" maxlength="400" data-pad="plek.tekst" placeholder={L('Een smalle gang met een spiegel, avondlicht door het raam', 'A narrow hallway with a mirror, evening light through the window')}>{tekst('plek.tekst')}</textarea></label>
+                    </div>
+                  </div>
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle="l-mensen" checked={inh.mensen && inh.mensen.aantal >= 2}><b>{L('Een tweede persoon (hoogstens twee)', 'A second person (two at most)')}</b><span class="om-prijs">{prijs(E.lifestyle['l-mensen'])}</span></label>
+                    <div class="om-uitklap"><input type="hidden" data-pad="mensen.aantal" value="2"><label class="om-veld"><span>{L('Wie is de tweede persoon?', 'Who is the second person?')}</span><textarea rows="2" maxlength="600" data-pad="toelichting.l-mensen" placeholder={L('Een vriendin die haar kraag recht trekt', 'A friend straightening her collar')}>{toel('l-mensen')}</textarea></label></div>
+                  </div>
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle="l-pose" checked={!!tekst('pose.idee')}><b>{L('Een vaste pose-idee', 'A fixed pose idea')}</b><span class="om-prijs">{prijs(E.lifestyle['l-pose'])}</span></label>
+                    <div class="om-uitklap om-rij">
+                      <label class="om-veld"><span>{L('Het idee', 'The idea')}</span><input type="text" maxlength="200" data-pad="pose.idee" value={tekst('pose.idee')} placeholder={L('Hand omhoog, zoals een artiest op het podium', 'Hand up, like an artist on stage')}></label>
+                      <label class="om-veld"><span>{L('Wie doet het?', 'Who does it?')}</span><input type="text" maxlength="160" data-pad="pose.wie" value={tekst('pose.wie')}></label>
+                      <label class="om-veld"><span>{L('Met welk lichaamsdeel?', 'With which part of the body?')}</span><input type="text" maxlength="120" data-pad="pose.lichaamsdeel" value={tekst('pose.lichaamsdeel')}></label>
+                    </div>
+                  </div>
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle="l-licht" checked={!!inh.licht && inh.licht !== 'gewoon'}><b>{L('Bijzonder licht', 'Special light')}</b><span class="om-prijs">{prijs(E.lifestyle['l-licht'])}</span></label>
+                    <div class="om-uitklap">
+                      <div class="om-pillen" role="radiogroup" aria-label={L('Licht', 'Light')}>{LIFESTYLE_LICHT.filter((x) => x !== 'gewoon').map((x) => <label class="om-pil"><input type="radio" name="llicht" value={x} data-pad="licht" checked={inh.licht === x}><span>{n(x)}</span></label>)}</div>
+                      <label class="om-veld"><span>{L('Hoe moet het licht voelen?', 'How should the light feel?')}</span><textarea rows="2" maxlength="600" data-pad="toelichting.l-licht" placeholder={L('Straatlicht van opzij, de rest donker', 'Street light from the side, the rest dark')}>{toel('l-licht')}</textarea></label>
+                    </div>
+                  </div>
+                  <div class="om-edit">
+                    <p class="om-edit-kop"><b>{L('Het model', 'The model')}</b></p>
+                    <div class="om-keuzerijen" role="radiogroup" aria-label={L('Merkmodel', 'Brand model')}>
+                      <label class="om-keuzerij"><input type="radio" name="merkmodel" value="geen" data-pad="mensen.merkmodel" checked={!inh.mensen || !inh.mensen.merkmodel || inh.mensen.merkmodel === 'geen'}><b>{L('Een model van ons', 'One of our models')}</b><span class="om-prijs">{L('inbegrepen', 'included')}</span></label>
+                      {v.merkmodel && <label class="om-keuzerij"><input type="radio" name="merkmodel" value="bestaand" data-pad="mensen.merkmodel" checked={inh.mensen && inh.mensen.merkmodel === 'bestaand'}><b>{L('Mijn merkmodel', 'My brand model')}</b><span class="om-prijs">{L('inbegrepen', 'included')}</span></label>}
+                      <label class="om-keuzerij"><input type="radio" name="merkmodel" value="nieuw" data-pad="mensen.merkmodel" checked={inh.mensen && inh.mensen.merkmodel === 'nieuw'}><b>{L('Een nieuw merkmodel, alleen voor jou', 'A new brand model, only for you')}</b><span class="om-prijs">+ €{AMOUNT.brandModel} {L('één keer', 'once')}</span></label>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </Fragment>
+          )}
+
+          {(dienst === 'hooks' || dienst === 'video') && (
+            <section class="om-blok" id="om-idee">
+              <p class="om-label">{L('Het idee', 'The idea')}</p>
+              <h2 class="om-h2">{L('Wie bedenkt het idee?', 'Who comes up with the idea?')}</h2>
+              <div class="om-keuzes2" role="radiogroup" aria-label={L('Het idee', 'The idea')}>
+                <label class="om-optie"><input type="radio" name="idee" value="eigen" data-pad="idee" checked={inh.idee === 'eigen'}><b>{L('Ik heb een idee', 'I have an idea')}</b><span>{dienst === 'hooks' ? L(`€${E.hooks['h-stijl-eigen'].eenmalig} voor de stijl · wij kijken gratis of het kan`, `€${E.hooks['h-stijl-eigen'].eenmalig} for the style · we check for free whether it can be done`) : L(`€${E.video['v-idee-eigen'].eenmalig} om het uit te schrijven tot een shotlijst`, `€${E.video['v-idee-eigen'].eenmalig} to turn it into a shot list`)}</span></label>
+                <label class="om-optie"><input type="radio" name="idee" value="ons" data-pad="idee" checked={inh.idee === 'ons'}><b>{L('Bedenk het voor mij', 'Come up with it for me')}</b><span>{dienst === 'hooks' ? L(`€${E.hooks['h-stijl-ons'].eenmalig} voor de stijl · je beantwoordt een paar vragen`, `€${E.hooks['h-stijl-ons'].eenmalig} for the style · you answer a few questions`) : L(`€${E.video['v-idee-ons'].eenmalig} · wij maken de shotlijst`, `€${E.video['v-idee-ons'].eenmalig} · we write the shot list`)}</span></label>
+              </div>
+              <label class="om-veld om-als-eigen"><span>{L('Je idee', 'Your idea')}</span><textarea rows="4" maxlength="1200" data-pad="eigenIdee" placeholder={L('Wat gebeurt er, van de eerste tot de laatste seconde?', 'What happens, from the first to the last second?')}>{tekst('eigenIdee')}</textarea></label>
+              <div class="om-rij">
+                <label class="om-veld"><span>{L('Wat moet het doen?', 'What should it do?')}</span><select data-pad="doel"><option value="">{L('Kies', 'Choose')}</option>{DOELEN.map((d) => <option value={d} selected={inh.doel === d}>{n(d)}</option>)}</select></label>
+                <label class="om-veld"><span>{L('Wat doet de kijker daarna?', 'What does the viewer do next?')}</span><select data-pad="kijker"><option value="">{L('Kies', 'Choose')}</option>{KIJKER_ACTIE.map((d) => <option value={d} selected={inh.kijker === d}>{n(d)}</option>)}</select></label>
+              </div>
+              <div class="om-vragen om-als-ons">
+                {IDEE_VRAGEN.map((q) => <label class="om-veld"><span>{n(q)}</span><input type="text" maxlength="400" data-pad={`vragen.${q}`} value={tekst(`vragen.${q}`)} placeholder={nl ? VOORBEELD[q][0] : VOORBEELD[q][1]}></label>)}
+              </div>
+            </section>
+          )}
+
+          {dienst === 'hooks' && (
+            <section class="om-blok" id="om-keuzes">
+              <p class="om-label">{L('Per hook', 'Per hook')}</p>
+              <h2 class="om-h2">{L('Wat zit er in elke hook?', 'What goes into each hook?')}</h2>
+              <p class="om-uitleg">{L(`Eén clip van hoogstens 8 seconden met één product, €${AMOUNT.hooks}. Het formaat kies je per bestelling, gratis. Geluid voeg je zelf toe.`, `One clip of at most 8 seconds with one product, €${AMOUNT.hooks}. You choose the format per order, for free. You add sound yourself.`)}</p>
+              <div class="om-pillen" role="group" aria-label={L('Waar komt hij?', 'Where will it go?')}>{HOOK_KANALEN.map((k) => <label class="om-pil"><input type="checkbox" value={k} data-pad="kanalen" data-veel checked={(inh.kanalen || []).includes(k)}><span>{n(k)}</span></label>)}</div>
+              <div class="om-edits">
+                <div class="om-edit">
+                  <label class="om-edit-kop"><input type="checkbox" data-toggle="h-tekst" checked={!!(inh.tekstOpBeeld && Object.keys(inh.tekstOpBeeld).length)}><b>{L('Tekst op beeld', 'Text on screen')}</b><span class="om-prijs">+ €{E.hooks['h-tekst'].perHook} {L('per hook', 'per hook')}</span></label>
+                  <div class="om-uitklap om-rij"><label class="om-veld"><span>{L('Welke tekst, in welke toon?', 'Which text, in what tone?')}</span><input type="text" maxlength="200" data-pad="tekstOpBeeld.tekst" value={tekst('tekstOpBeeld.tekst')} placeholder={L('Vrijdag binnen. Kort, droog.', 'In on Friday. Short, dry.')}></label></div>
+                </div>
+                {[['h-product', 'tweedeProduct', L('Een tweede product', 'A second product'), L('Welk product, en wat doet het naast het eerste?', 'Which product, and what does it do next to the first?')], ['h-eind', 'eindbeeld', L('Eindbeeld met je logo', 'End frame with your logo'), L('Hoe moet het eindbeeld eruitzien?', 'What should the end frame look like?')]].map(([id, p, naam, vraag]) => (
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-pad={p} data-toggle={id} checked={!!inh[p]}><b>{naam}</b><span class="om-prijs">+ €{E.hooks[id].perHook} {L('per hook', 'per hook')}</span></label>
+                    <label class="om-veld om-uitklap"><span>{vraag}</span><textarea rows="2" maxlength="600" data-pad={`toelichting.${id}`}>{toel(id)}</textarea></label>
+                  </div>
+                ))}
+                {[['h-persoon', 'personen', 2, L('Personen in beeld (hoogstens twee; je merkmodel mag gratis mee)', 'People in the shot (two at most; your brand model joins for free)'), L('Wie zijn het, en wat doen ze?', 'Who are they, and what do they do?')], ['h-effect', 'effecten', 3, L('Effecten: het product ontstaat, verandert of vliegt binnen', 'Effects: the product appears, changes or flies in'), L('Welk effect, op welk moment?', 'Which effect, at what moment?')]].map(([id, p, max, naam, vraag]) => (
+                  <div class="om-edit">
+                    <label class="om-edit-kop"><input type="checkbox" data-toggle={id} checked={!!inh[p]}><b>{naam}</b><span class="om-prijs">+ €{E.hooks[id].perHook} {L('per stuk', 'each')}</span></label>
+                    <div class="om-uitklap"><label class="om-veld om-smal"><span>{L('Hoeveel?', 'How many?')}</span><input type="number" min="1" max={max} data-pad={p} value={inh[p] || 1}></label><label class="om-veld"><span>{vraag}</span><textarea rows="2" maxlength="600" data-pad={`toelichting.${id}`}>{toel(id)}</textarea></label></div>
+                  </div>
+                ))}
+              </div>
+              <label class="om-veld"><span>{L('Iets anders? Wij bekijken het gratis en zetten het als losse regel in de offerte.', 'Anything else? We look at it for free and add it to the quote as a separate line.')}</span><textarea rows="2" maxlength="600" data-pad="anders">{tekst('anders')}</textarea></label>
+            </section>
+          )}
+
+          {dienst === 'video' && (
+            <section class="om-blok" id="om-keuzes">
+              <p class="om-label">{L('Je video', 'Your video')}</p>
+              <h2 class="om-h2">{L('Seconden, shots en camera', 'Seconds, shots and camera')}</h2>
+              <div class="om-rij">
+                <label class="om-veld"><span>{L('Je product', 'Your product')}</span><input type="text" maxlength="160" data-pad="hoofdproduct" value={tekst('hoofdproduct')} required data-melding={L('Welk product komt in de video? Daar bouwen we de shots omheen.', 'Which product is in the video? We build the shots around it.')}></label>
+                <label class="om-veld"><span>{L('Het materiaal', 'The material')}</span><input type="text" maxlength="200" data-pad="materiaal" value={tekst('materiaal')} placeholder={L('Gewassen wol, mat', 'Washed wool, matte')} required data-melding={L('Van welk materiaal is het? Dat bepaalt hoe het licht erop valt.', 'What is it made of? That decides how the light falls on it.')}></label>
+              </div>
+              <label class="om-veld om-schuif"><span>{L('Hoe lang?', 'How long?')} <output data-uit="seconden">{inh.seconden || 12}</output> {L('seconden', 'seconds')} · €{VIDEO_PER_SECONDE} {L('per seconde, minimaal', 'a second, at least')} {VIDEO_MIN_SECONDEN}</span><input type="range" min={VIDEO_SECONDEN.min} max={VIDEO_SECONDEN.max} data-pad="seconden" value={inh.seconden || 12}></label>
+              <p class="om-uitleg om-als-eigen">{L('Je shots. Eén shot zit erin; elk shot erbij is', 'Your shots. One shot is included; each extra shot is')} €{E.video['v-shot'].perShot}. {L('Elk shot krijgt één camerabeweging.', 'Each shot gets one camera move.')}</p>
+              <div class="om-rijen om-als-eigen" data-rij="shots">
+                {shots.map((x: any) => (
+                  <div class="om-rijtje" data-rij-item>
+                    <label class="om-veld"><span>{L('Wat zien we?', 'What do we see?')}</span><input type="text" maxlength="200" data-veld="tekst" value={x.tekst || ''} placeholder={L('Close-up van de stof, licht valt over de naad', 'Close-up of the fabric, light across the seam')}></label>
+                    <label class="om-veld"><span>{L('Camera', 'Camera')}</span><select data-veld="beweging">{Object.keys(CAMERA_GROEPEN).map((g) => <optgroup label={`${g === 'inbegrepen' ? L('Inbegrepen', 'Included') : g === 'gemiddeld' ? L('Gemiddeld', 'Medium') : L('Lastig', 'Hard')}${camPrijs(g)}`}>{(CAMERA_GROEPEN as any)[g].map((b: string) => <option value={b} selected={x.beweging === b}>{n(b)}</option>)}</optgroup>)}</select></label>
+                    <button type="button" class="om-weg" data-rij-weg aria-label={L('Weghalen', 'Remove')}>×</button>
+                  </div>
+                ))}
+              </div>
+              <button type="button" class="btn btn-2nd om-plus om-als-eigen" data-rol="toevoegen" data-rij-erbij="shots">{L(`+ Shot (€${E.video['v-shot'].perShot})`, `+ Shot (€${E.video['v-shot'].perShot})`)}</button>
+              <div class="om-edits">
+                <div class="om-edit">
+                  <p class="om-edit-kop"><b>{L('De omgeving', 'The setting')}</b></p>
+                  <div class="om-keuzerijen" role="radiogroup" aria-label={L('Omgeving', 'Setting')}>
+                    {[['effen', L('Een effen studiogrond', 'A plain studio ground'), null], ['eigen-kleur', L('Een eigen achtergrondkleur', 'A background colour of your own'), 'v-kleur'], ['materiaal', L('Een materiaal of textuur', 'A material or texture'), 'v-materiaal'], ['wereld', L('Een eigen plek of wereld', 'A place or world of your own'), 'v-wereld']].map(([w, naam, id]) => (
+                      <label class="om-keuzerij"><input type="radio" name="vomgeving" value={w} data-pad="omgeving.soort" checked={(inh.omgeving && inh.omgeving.soort ? inh.omgeving.soort : 'effen') === w}><b>{naam}</b><span class="om-prijs">{id ? [E.video[id].eenmalig ? `+ €${E.video[id].eenmalig}` : '', E.video[id].perShot ? `€${E.video[id].perShot} ${L('per shot', 'per shot')}` : ''].filter(Boolean).join(' + ') : L('inbegrepen', 'included')}</span></label>
+                    ))}
+                  </div>
+                  <label class="om-veld om-uitklap om-achtergrond"><span>{L('Beschrijf de omgeving', 'Describe the setting')}</span><textarea rows="2" maxlength="400" data-pad="omgeving.tekst" placeholder={L('Nat beton, één lamp van boven', 'Wet concrete, one lamp from above')}>{tekst('omgeving.tekst')}</textarea></label>
+                </div>
+                <div class="om-edit">
+                  <label class="om-edit-kop"><input type="checkbox" data-toggle="v-persoon" checked={!!inh.personen}><b>{L('Personen in beeld (hoogstens twee)', 'People in the shot (two at most)')}</b><span class="om-prijs">€{E.video['v-persoon'].perShot} {L('per persoon per shot', 'per person per shot')}</span></label>
+                  <div class="om-uitklap"><label class="om-veld om-smal"><span>{L('Hoeveel?', 'How many?')}</span><input type="number" min="1" max="2" data-pad="personen" value={inh.personen || 1}></label><label class="om-veld"><span>{L('Wie zijn het, en wat doen ze?', 'Who are they, and what do they do?')}</span><textarea rows="2" maxlength="600" data-pad="toelichting.v-persoon">{toel('v-persoon')}</textarea></label></div>
+                </div>
+                <div class="om-edit">
+                  <label class="om-edit-kop"><input type="checkbox" data-toggle="v-tekst" checked={!!tekst('tekstInBeeld')}><b>{L('Tekst in beeld', 'Text on screen')}</b><span class="om-prijs">+ €{E.video['v-tekst'].eenmalig}</span></label>
+                  <label class="om-veld om-uitklap"><span>{L('Welke tekst?', 'Which text?')}</span><input type="text" maxlength="200" data-pad="tekstInBeeld" value={tekst('tekstInBeeld')}></label>
+                </div>
+                <div class="om-edit">
+                  <label class="om-edit-kop"><input type="checkbox" data-pad="eindbeeld" data-toggle="v-eind" checked={!!inh.eindbeeld}><b>{L('Eindbeeld met je logo', 'End frame with your logo')}</b><span class="om-prijs">+ €{E.video['v-eind'].eenmalig}</span></label>
+                  <label class="om-veld om-uitklap"><span>{L('Hoe moet het eindbeeld eruitzien?', 'What should the end frame look like?')}</span><textarea rows="2" maxlength="600" data-pad="toelichting.v-eind">{toel('v-eind')}</textarea></label>
+                </div>
+              </div>
+              <label class="om-check"><input type="checkbox" data-pad="ruweBeelden" checked={!!inh.ruweBeelden}><span>{L('Stuur ook de ruwe beelden mee (gratis, zonder kwaliteitsgarantie: er kunnen fouten en kleurverschillen in zitten die in de geknipte video wel hersteld zijn)', 'Also send the raw footage (free, without a quality guarantee: it may contain errors and colour shifts that the edited video fixes)')}</span></label>
+              <p class="om-uitleg">{L('Muziek voegen wij niet toe; dat doe je zelf. Het formaat kies je per bestelling, gratis.', 'We do not add music; you do that yourself. You choose the format per order, for free.')}</p>
+            </section>
+          )}
+
+          <section class="om-blok" id="om-smaak">
+            <p class="om-label">{L('Wat je mooi vindt', 'What you like')}</p>
+            <h2 class="om-h2">{L('Laat zien wat je bedoelt', 'Show us what you mean')}</h2>
+            <p class="om-uitleg">{L('Een beeld zegt meer dan een zin. Kies bij elk beeld waar je op let. We gebruiken een beeld alleen om je stijl te begrijpen, nooit als bron voor een gezicht.', 'An image says more than a sentence. For each one, pick what matters. We only use an image to understand your style, never as the source of a face.')}</p>
+            <div class="om-refs" id="om-refs"></div>
+            <div class="om-upload">
+              <label class="btn btn-2nd om-plus" data-rol="uploaden"><input type="file" accept="image/jpeg,image/png,image/webp,image/heic,video/mp4,video/quicktime" id="om-bestand" class="om-verborgen">{L('+ Een referentie toevoegen', '+ Add a reference')}</label>
+              <div class="om-pillen" role="group" aria-label={L('Waar let je op?', 'What matters?')}>{REF_WAT.map((w) => <label class="om-pil"><input type="checkbox" value={w} name="ref-wat"><span>{w === 'product' ? L('Het product', 'The product') : n(w)}</span></label>)}</div>
+            </div>
+            <label class="om-veld"><span>{L('Wat wil je nooit zien?', 'What do you never want to see?')}</span><textarea rows="2" maxlength="800" data-pad="nooit" placeholder={L('Glimmende huid, een model dat in de camera lacht', 'Shiny skin, a model smiling into the camera')}>{tekst('nooit')}</textarea></label>
+            <details class="om-buiten">
+              <summary>{L('Buiten de lijntjes: vier vragen, als je zin hebt', 'Outside the lines: four questions, if you like')}</summary>
+              {BUITEN_VRAGEN[nl ? 'nl' : 'en'].map((q) => <label class="om-veld"><span>{q.vraag}</span><input type="text" maxlength="600" data-pad={`buiten.${q.id}`} value={tekst(`buiten.${q.id}`)} placeholder={q.voorbeeld}></label>)}
+            </details>
+          </section>
+
+          <section class="om-blok" id="om-praktisch">
+            <p class="om-label">{L('Praktisch', 'Practical')}</p>
+            <h2 class="om-h2">{L('Waar komen de beelden, en hoe bereiken we je?', 'Where will the images go, and how do we reach you?')}</h2>
+            <div class="om-pillen" role="group" aria-label={L('Waar komen ze?', 'Where will they go?')}>{KANALEN.map((k) => <label class="om-pil"><input type="checkbox" value={k} data-pad="praktisch.kanalen" data-veel checked={((inh.praktisch && inh.praktisch.kanalen) || []).includes(k)}><span>{n(k)}</span></label>)}</div>
+            <div class="om-rij">
+              <label class="om-veld"><span>{L('Wanneer heb je ze nodig?', 'When do you need them?')}</span><input type="text" maxlength="120" data-pad="praktisch.wanneer" value={tekst('praktisch.wanneer')} placeholder={L('Voor de lancering op 1 december', 'Before the launch on 1 December')}></label>
+              <div class="om-veld"><span>{L('Hoe bereiken we je?', 'How do we reach you?')}</span><div class="om-pillen" role="radiogroup" aria-label={L('Contact', 'Contact')}>{CONTACT.map((c) => <label class="om-pil"><input type="radio" name="contact" value={c} data-pad="praktisch.contact" checked={inh.praktisch && inh.praktisch.contact === c}><span>{n(c)}</span></label>)}</div></div>
+            </div>
+          </section>
+        </fieldset>
+      </form>
+
+      <aside class="om-schat" aria-live="polite" aria-label={L('Schatting', 'Estimate')}>
+        <p class="om-schat-kop"><span>{L('Schatting', 'Estimate')}</span><span class="om-opgeslagen" id="om-stand"></span></p>
+        <div class="om-regels" id="om-regels"><p class="om-leeg">{L('Kies iets, dan rekent het mee.', 'Choose something and it adds up.')}</p></div>
+        <p class="om-tot"><span>{L('Ongeveer', 'About')}</span><b id="om-totaal">€ –</b></p>
+        <p class="om-klein" id="om-aanbet"></p>
+        <p class="om-klein">{L('Excl. btw. De definitieve prijs volgt als wij je stijl hebben uitgedacht. Eerst krijg je een gratis voorbeeld, daarna heb je twee gratis rondes om bij te sturen.', 'Excl. VAT. The final price follows once we have worked out your style. First you get a free preview, then two free rounds to adjust.')}</p>
+        <ul class="om-mist" id="om-mist" hidden></ul>
+        {bewerkbaar && <button type="button" class="btn btn-primary om-verstuur" data-rol="doorgaan" id="om-verstuur">{L('Verstuur mijn aanvraag', 'Send my request')}</button>}
+        {bewerkbaar && <p class="om-klein">{L('Versturen kost niets.', 'Sending costs nothing.')}</p>}
+      </aside>
+    </div>
+  )}
+</StudioLayout>

@@ -46,7 +46,7 @@ console.log('het woordmerk met de schommel');
   }
   const sh = lees('src/styles/studio-hal.css');
   ok('Studio: rechts knipt het vak (dichtgeklapt alleen de V)', /body\.studio \.st-merk \{ overflow: visible; clip-path: inset\(-10px 0 -10px -10px\);/.test(sh));
-  ok('  de schommel naar blauw uur, in het donkere thema naar blauw licht', /body\.studio \.st-merk \{[^}]*--mk-kleur: #25508B;/.test(sh) && /body\.studio\.on-ink \.st-merk \{[^}]*--mk-kleur: #80A7DD;/.test(sh));
+  ok('  de schommel naar blauw uur, in het donkere thema naar blauw licht', /body\.studio \.st-merk \{[^}]*--mk-kleur: #016645;/.test(sh) && /body\.studio\.on-ink \.st-merk \{[^}]*--mk-kleur: #3DFFB0;/.test(sh));
 }
 
 console.log('\nde iconen');

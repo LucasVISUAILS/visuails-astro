@@ -5,18 +5,18 @@
 // VideoStyleDetail.astro; hier verschillen alleen de meta en de databron.
 import Layout from '../../../layouts/Layout.astro';
 import VideoStyleHal from '../../../components/VideoStyleHal.astro';
-import { videoStyles } from '../../../data/videoStyles.nl.js';
+import { videoOpPagina } from '../../../data/videoStyles.nl.js';  // lijst 109: alleen Motion en op maat
 import { reviewClaim } from '../../../data/pricing.js';
 import { metaDescription } from '../../../data/meta.js';
 
 export function getStaticPaths() {
-  return videoStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
+  return videoOpPagina.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
 
 const { style } = Astro.props;
 const metaPrice = `${style.priceTrust}${style.priceUnit}`;
 
-const zusters = videoStyles
+const zusters = videoOpPagina
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/video/${s.slug}`, naam: s.name }));
 

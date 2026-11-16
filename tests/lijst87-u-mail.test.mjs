@@ -61,9 +61,10 @@ console.log('\nE09 · de knop: een rand van 1 px in de lijnkleur, en dezelfde ma
   const { button } = await import('../src/lib/mailTemplate.js');
   const h = button('https://visuails.com/nl', 'Naar je bestelpagina');
   const td = (h.match(/<td bgcolor[^>]*>/) || [''])[0];
-  ok('rand 1px solid #E6E8EC', /border:1px solid #E6E8EC/.test(td), td);
+  /* levering 111 (lijst 123): de lijn van de site, en 8 px zoals de knoppen op de site */
+  ok('rand 1px solid #E7EAE8', /border:1px solid #E7EAE8/.test(td), td);
   ok('binnenruimte 14px 23px (was 15px 24px: + 1 px rand = dezelfde maat)', /padding:14px 23px/.test(td), td);
-  ok('nog steeds een pil', /border-radius:999px/.test(td), td);
+  ok('hoeken van 8 px, zoals de knoppen op de site', /border-radius:8px/.test(td), td);
   const schema = lees('docs/KLEURENSCHEMA.md');
   ok('#E6E8EC is de lijn uit KLEURENSCHEMA.md', /De lijn blijft `#E6E8EC`/.test(schema));
 }

@@ -1,0 +1,51 @@
+/* ═══ LEVERING 105 · KAARTVELD FASE 3 · DE KAARTEN IN STUDIO (15 november 2026; lijst 105 en 113) ═════════════════════
+   Studio draait zonder script, dus hier geen bewegend veld: elke kaart is een stilstaand stuk van de grote kaart, als beeld
+   (public/img/kaart/studio-1, 2, 4, 5 en 6.webp, gemaakt met src/scripts/kaartveld.js zelf, stilstaand zoals bij minder beweging).
+   Het licht staat rechts; de tekst links op het donker. Gemeten op de beelden (lijst 113): wit op de tekstplek minstens
+   9,8 : 1 op een breed scherm, en minstens 5,8 : 1 bij de uitsnede van de telefoon (de eis is 4,5 : 1).
+   Hoeken 18 px, zoals de kaarten van het veld. Hoogstens één kaart per scherm.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+body.studio .st-veldkaart {
+  background: #090D0B var(--vk-beeld, url(/img/kaart/studio-1.webp?v=110)) 100% 50% / cover no-repeat !important;
+  border: 0 !important; border-radius: 18px !important; color: #FFFFFF;
+  padding: 1.75rem !important; min-height: 11rem; box-sizing: border-box;
+}
+body.studio .st-vk-1 { --vk-beeld: url(/img/kaart/studio-1.webp?v=110); }
+body.studio .st-vk-2 { --vk-beeld: url(/img/kaart/studio-2.webp?v=110); }
+body.studio .st-vk-3 { --vk-beeld: url(/img/kaart/studio-6.webp?v=110); }   /* het donkerste stuk: deze kaart is laag, en op de telefoon staat de tekst over de hele breedte */
+body.studio .st-vk-4 { --vk-beeld: url(/img/kaart/studio-4.webp?v=110); }
+body.studio .st-vk-5 { --vk-beeld: url(/img/kaart/studio-5.webp?v=110); }
+/* de tekst blijft op het donkere deel: hoogstens 56 % van de kaart breed */
+@media (min-width: 761px) { body.studio .st-veldkaart > :not(.st-melding) { max-width: min(56%, 34rem); } }
+/* telefoon: de tekst staat over de hele breedte, dus het donkere deel naar links en een zachte laag van het zwart eroverheen */
+@media (max-width: 760px) {
+  body.studio .st-veldkaart {
+    background-image: linear-gradient(rgb(9 13 11 / .42), rgb(9 13 11 / .42)), var(--vk-beeld, url(/img/kaart/studio-1.webp?v=110)) !important;
+    background-position: 0 0, 28% 50% !important; background-size: auto, cover !important;
+  }
+}
+body.studio .st-veldkaart :is(h2, h3, .st-abo-getal, .st-abo-vertaling, p:not(.st-melding), .st-leeg) { color: #FFFFFF !important; }
+/* een melding in de kaart (credits vast na een terugboeking) houdt zijn eigen lichte vlak met donkere tekst */
+body.studio .st-veldkaart .st-melding { color: #090D0B !important; }
+body.studio .st-veldkaart :is(.st-meta, .st-abo-spaar, .st-abo-verval, .st-abo-nieuw) { color: rgb(255 255 255 / .86) !important; }
+body.studio .st-veldkaart .st-eyebrow { color: rgb(255 255 255 / .78) !important; }
+/* "bijna" en "boven het plafond": mint 300 en vet, met de zin erbij (kleur is nooit het enige teken) */
+body.studio .st-veldkaart :is(.st-abo-verval.is-bijna, .st-abo-nieuw.is-boven) { color: #9DF5D2 !important; font-weight: 600; }
+body.studio .st-veldkaart a:not(.btn) { color: #FFFFFF; text-decoration-color: rgb(255 255 255 / .55); }
+body.studio .st-veldkaart :is(a, button):focus-visible { outline-color: #3DFFB0 !important; }
+body.studio .st-veldkaart.st-leegvlak { flex-direction: column; align-items: flex-start; }
+body.studio .st-veldkaart.st-leegvlak > div { flex: 0 1 auto; }
+body.studio .st-veldkaart .st-leeg { margin: 0; padding: 0 !important; border: 0 !important; background: none !important; font-size: var(--h-t-lopend, 1rem); }
+body.studio .st-veldkaart .st-vk-kop { margin: 0 0 .4rem; font-size: 1.375rem; line-height: 1.25; font-weight: 600; letter-spacing: -.015em; }
+body.studio .st-veldkaart:has(.st-vk-kop) { display: flex; flex-direction: column; justify-content: flex-end; }
+body.studio .st-terug.st-veldkaart { min-height: 12rem; align-items: flex-end; }
+
+/* Inloggen: geen band van het veld; het groene logo staat er al boven (Lucas, 15 november 19:09) */
+/* de telefoon: alles in het midden (lijst 114: "Telefoon content centreren geldt overigens voor alles") */
+@media (max-width: 760px) {
+  body.studio .st-veldkaart { text-align: center; }
+  body.studio .st-veldkaart > * { margin-inline: auto; }
+  body.studio .st-veldkaart :is(.st-acties, .st-knoppen, .st-abo-knoppen, p:has(> .btn), div:has(> .btn)) { justify-content: center; }
+  body.studio .st-veldkaart:has(.st-vk-kop), body.studio .st-veldkaart.st-leegvlak { align-items: center; }
+}
+@media (forced-colors: active) { body.studio .st-veldkaart { background: Canvas !important; } }

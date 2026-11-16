@@ -110,12 +110,12 @@ const webhook = async (id) => {
 console.log('\n1 · de prijs');
 ok('de pakketten en de korting', [BIJKOOP_PAKKETTEN, BIJKOOP_KORTING_PCT], [[10, 25, 50], { 10: 0, 25: 5, 50: 10 }]);
 ok('de tabel van ABONNEMENT-KWARTAAL.md §4 (excl. btw)', PLAN_IDS.map((id) => BIJKOOP_PAKKETTEN.map((x) => bijkoopPrijs(PLAN_AMOUNT[id], PLAN_CREDITS[id], x))),
-  [[87, 206, 390], [66, 157, 297], [59, 139, 263]]);
+  [[90, 210, 390], [70, 160, 300], [60, 140, 265]]);  // lijst 111: naar boven op € 5 (was 87/206/390, 66/157/297, 59/139/263)
 ok('naar boven op hele euro\'s, exact: Starter 50 is precies 390 en geen 391', bijkoopPrijs(390, 45, 50), 390);
 ok('op maat: het eigen tarief van die stand (60 credits)', BIJKOOP_PAKKETTEN.map((x) => bijkoopPrijs(customCreditsTotal(60).total, 60, x)),
-  BIJKOOP_PAKKETTEN.map((x) => Math.ceil((x * customCreditsTotal(60).total / 60) * (100 - BIJKOOP_KORTING_PCT[x]) / 100 - 1e-9)));
+  BIJKOOP_PAKKETTEN.map((x) => Math.ceil((x * customCreditsTotal(60).total / 60) * (100 - BIJKOOP_KORTING_PCT[x]) / 100 / 5 - 1e-9) * 5));
 ok('een onbekend pakket heeft geen prijs', bijkoopPrijs(790, 120, 30), null);
-ok('pakkettenVoor(Pro)', pakkettenVoor(sub(1)).map((p) => [p.credits, p.euros]), [[10, 66], [25, 157], [50, 297]]);
+ok('pakkettenVoor(Pro)', pakkettenVoor(sub(1)).map((p) => [p.credits, p.euros]), [[10, 70], [25, 160], [50, 300]]);
 ok('planTarief(op maat 60) leest het maandbedrag van de lijn', planTarief({ plan: 'maat', slots_json: JSON.stringify({ credits: 60 }), status: 'active' })?.bedrag, planMaandBedrag('maat', 60));
 
 /* ── 2 · NOOIT GOEDKOPER ──────────────────────────────────────────────────── */
@@ -145,7 +145,7 @@ console.log('\n2 · plan + bijkopen is nooit goedkoper dan een abonnement met ev
     }
   }
   ok(`${n} combinaties (3 plannen + elke stand op maat ${CUSTOM_CREDITS_MIN}–${CUSTOM_CREDITS_MAX}): 0 goedkoper`, mis, 0);
-  ok('  het krapste geval: Merk + 10 is 1 euro duurder dan 300 op maat', [krap.a, krap.c, krap.marge], ['brand', '10', 1]);
+  ok('  het krapste geval: Merk + 10 is 2 euro duurder dan 300 op maat', [krap.a, krap.c, krap.marge], ['brand', '10', 2]);
   /* Een jaar vooruit + pakketten (op het maandtarief) tegen het grotere jaar vooruit. */
   let jaarMis = 0;
   for (const van of PLAN_IDS) {
@@ -167,7 +167,7 @@ console.log('\n3 · de aankoop: een losse Mollie-betaling met de btw van het abo
 const a1 = await maakAankoop(env, { customerId: 1, sub: sub(1), pakket: 25, lang: 'nl', origin: 'https://visuails.com', verder: '/nl/start/catalog/' });
 ok('Pro, 25 credits: een betaallink van Mollie', [a1.ok, /^https:\/\/www\.mollie\.com\/checkout\//.test(a1.url)], [true, true]);
 const r1 = aankoop(a1.id);
-ok('  de rij: open, 157 excl., 21% btw, bruto 189,97', [r1.status, r1.net_cents, r1.vat_cents, r1.gross_cents, r1.maand], ['open', 15700, Math.round(15700 * VAT_RATE), Math.round(15700 * (1 + VAT_RATE)), vandaag.slice(0, 7)]);
+ok('  de rij: open, 160 excl., 21% btw, bruto 193,60', [r1.status, r1.net_cents, r1.vat_cents, r1.gross_cents, r1.maand], ['open', 16000, Math.round(16000 * VAT_RATE), Math.round(16000 * (1 + VAT_RATE)), vandaag.slice(0, 7)]);
 const v1 = mollieVerzoeken[0];
 ok('  Mollie: het bruto, eenmalig, iDEAL of kaart, en het nummer van de aankoop', [v1.amount.value, v1.sequenceType, v1.method, v1.metadata.bijkoop, 'customerId' in v1],
   [(r1.gross_cents / 100).toFixed(2), 'oneoff', ['ideal', 'creditcard'], String(a1.id), false]);
@@ -175,7 +175,7 @@ ok('  terug naar Studio, met de weg terug naar de bestelling', v1.redirectUrl, `
 ok('  en de webhook', v1.webhookUrl, 'https://visuails.com/api/webhook/mollie');
 const a2 = await maakAankoop(env, { customerId: 2, sub: sub(2), pakket: 10, lang: 'en', origin: 'https://visuails.com' });
 const r2 = aankoop(a2.id);
-ok('EU zakelijk (verlegd): bruto is netto, en geen iDEAL', [r2.net_cents, r2.gross_cents, r2.vat_treatment, mollieVerzoeken[1].method], [8700, 8700, VAT_TREATMENT.reverseCharge, ['creditcard', 'bancontact']]);
+ok('EU zakelijk (verlegd): bruto is netto, en geen iDEAL', [r2.net_cents, r2.gross_cents, r2.vat_treatment, mollieVerzoeken[1].method], [9000, 9000, VAT_TREATMENT.reverseCharge, ['creditcard', 'bancontact']]);
 ok('een gepauzeerd abonnement kan niet bijkopen', (await maakAankoop(env, { customerId: 3, sub: sub(3), pakket: 10, origin: 'https://visuails.com' })).reden, 'geen-abonnement');
 ok('een pakket van 30 bestaat niet', (await maakAankoop(env, { customerId: 1, sub: sub(1), pakket: 30, origin: 'https://visuails.com' })).reden, 'pakket');
 ok('een verder-adres buiten het bestelformulier valt weg', /verder=/.test((await maakAankoop(env, { customerId: 5, sub: sub(5), pakket: 10, origin: 'https://visuails.com', verder: 'https://kwaad.test/' })).ok && mollieVerzoeken.at(-1).redirectUrl), false);
@@ -214,7 +214,7 @@ const factuur = db.prepare('SELECT * FROM subscription_invoices WHERE subscripti
 const snap = JSON.parse(factuur.snapshot_json);
 ok('  een factuur uit dezelfde reeks, uitgereikt, met de pdf', [factuur.status, /^VIS-PROEF-\d{4}-\d{4}$|^VIS-\d{4}-\d{4}$/.test(factuur.number), !!factuur.pdf_key], ['issued', true, true]);
 ok('  factuurregel "Extra credits · 25 · Pro"', snap.lines.map((l) => l.description), ['Extra credits · 25 · Pro']);
-ok('  btw: 21% over 157, netto + btw = bruto', [snap.netCents, snap.vatRate, snap.vatCents + snap.netCents, snap.treatment, snap.kind], [15700, VAT_RATE, aankoop(a1.id).gross_cents, VAT_TREATMENT.standard, 'bijkoop']);
+ok('  btw: 21% over 160, netto + btw = bruto', [snap.netCents, snap.vatRate, snap.vatCents + snap.netCents, snap.treatment, snap.kind], [16000, VAT_RATE, aankoop(a1.id).gross_cents, VAT_TREATMENT.standard, 'bijkoop']);
 const m = mails.find((x) => x.to === 'pro@voorbeeld-bijkoop.test');
 ok('  één mail aan de klant, met de factuur erbij', [!!m, /^Je 25 extra credits staan klaar — VIS-/.test(m?.subject || ''), (m?.attachments || []).length], [true, true, 1]);
 ok('  die zegt: eerst op, niet in het plafond, tot en met …', /gaan als eerste op, tellen niet mee voor je spaarplafond en blijven 3 maanden geldig, tot en met/.test(m?.html || ''), true);
@@ -237,7 +237,7 @@ ok('de verlegde factuur (EU) heeft 0% en is netto', await (async () => {
   const s2 = db.prepare('SELECT id FROM subscription_payments WHERE external_id = ?').get(pid);
   const f = JSON.parse(db.prepare('SELECT snapshot_json FROM subscription_invoices WHERE subscription_payment_id = ?').get(s2.id).snapshot_json);
   return [f.vatRate, f.vatCents, f.grossCents, f.treatment, f.lines[0].description];
-})(), [0, 0, 20600, VAT_TREATMENT.reverseCharge, 'Extra credits · 25 · Starter']);
+})(), [0, 0, 21000, VAT_TREATMENT.reverseCharge, 'Extra credits · 25 · Starter']);
 
 /* ── 6 · EERST OP, BUITEN HET PLAFOND, EIGEN DATUM ────────────────────────── */
 console.log('\n6 · eerst op, buiten het plafond, eigen datum, terug als bijgekocht');
@@ -341,13 +341,13 @@ const scherm = async (pad, taal = 'nl') => studioScreen({ request: new Request(`
   const b = s.v.bijkoop;
   ok('het blok staat er bij een lopend abonnement', !!b, true);
   ok('  drie pakketten met prijs excl. btw, incl. btw en per credit', b.pakketten.map((p) => [p.credits, p.prijs, p.sub]),
-    [[10, '€ 66,00 excl. btw', '€ 79,86 incl. btw · € 6,60 per credit'], [25, '€ 157,00 excl. btw', '€ 189,97 incl. btw · € 6,28 per credit'], [50, '€ 297,00 excl. btw', '€ 359,37 incl. btw · € 5,94 per credit']]);
+    [[10, '€ 70,00 excl. btw', '€ 84,70 incl. btw · € 7,00 per credit'], [25, '€ 160,00 excl. btw', '€ 193,60 incl. btw · € 6,40 per credit'], [50, '€ 300,00 excl. btw', '€ 363,00 incl. btw · € 6,00 per credit']]);
   ok('  het gekozen pakket uit de link van stap 5', b.pakketten.find((p) => p.gekozen)?.credits, 10);
   ok('  wat er deze maand nog kan', b.ruimte, `Deze maand kun je nog ${BIJKOOP_MAX_PER_MAAND - 25} credits bijkopen (hoogstens ${BIJKOOP_MAX_PER_MAAND} per maand).`);
   ok('  de korting staat erbij', b.pakketten.map((p) => p.korting), ['', '5% korting', '10% korting']);
   ok('  het saldo noemt de bijgekochte', /^Waarvan 5 bijgekocht/.test(s.v.saldo.bijgekocht), true);
   const en = await scherm('/account/plan', 'en');
-  ok('EN: "Buy extra credits", "excl. VAT"', [en.v.bijkoop.h, en.v.bijkoop.pakketten[1].prijs], ['Buy extra credits', '€157.00 excl. VAT']);
+  ok('EN: "Buy extra credits", "excl. VAT"', [en.v.bijkoop.h, en.v.bijkoop.pakketten[1].prijs], ['Buy extra credits', '€160.00 excl. VAT']);
   const post = (velden, origin = 'https://visuails.com') => accountPost({ request: new Request('https://visuails.com/account/plan/bijkopen', {
     method: 'POST', headers: { cookie: `vis_account=${klantToken}`, 'content-type': 'application/x-www-form-urlencoded', ...(origin ? { origin } : {}) },
     body: new URLSearchParams(velden).toString(),
@@ -380,7 +380,7 @@ const scherm = async (pad, taal = 'nl') => studioScreen({ request: new Request(`
 console.log('\n10 · stap 5 (de gegevens) en /admin');
 {
   const f = await bijkoopVoorFormulier(env, 5, { lang: 'nl' });
-  ok('stap 5 krijgt de pakketten met prijs en de ruimte', [f.pakketten.map((p) => [p.credits, p.euros]), typeof f.ruimte], [[[10, 87], [25, 206], [50, 390]], 'number']);
+  ok('stap 5 krijgt de pakketten met prijs en de ruimte', [f.pakketten.map((p) => [p.credits, p.euros]), typeof f.ruimte], [[[10, 90], [25, 210], [50, 390]], 'number']);
   /* Klant 5 kocht twee maanden op rij bij (blok 8): dan geldt de hint bij elk
      pakket; bij 50 ook om het pakket zelf. */
   ok('  en de hint, met de reden waarom', f.pakketten.map((p) => [p.hint?.naam || null, p.hint?.reden || null]), [['Pro', 'twee-maanden'], ['Pro', 'twee-maanden'], ['Pro', 'pakket']]);

@@ -6,12 +6,12 @@
 // daar, ook voor waarom de beeldkaart bij het sjabloon hoort en niet bij de taal.
 import Layout from '../../layouts/Layout.astro';
 import VideoStyleHal from '../../components/VideoStyleHal.astro';
-import { videoStyles } from '../../data/videoStyles.js';
+import { videoOpPagina } from '../../data/videoStyles.js';  // lijst 109: alleen Motion en op maat
 import { reviewClaim } from '../../data/pricing.js';
 import { metaDescription } from '../../data/meta.js';
 
 export function getStaticPaths() {
-  return videoStyles.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
+  return videoOpPagina.map((s) => ({ params: { slug: s.slug }, props: { style: s } }));
 }
 
 const { style } = Astro.props;
@@ -21,7 +21,7 @@ const metaPrice = `${style.priceTrust}${style.priceUnit}`;
    Elke stijlpagina had precies één inkomende link — van de eigen hub — en
    verwees naar geen enkele andere look. Ongelokaliseerde paden: ServiceSwitch
    doet lp() zelf. */
-const zusters = videoStyles
+const zusters = videoOpPagina
   .filter((s) => s.slug !== style.slug)
   .map((s) => ({ href: `/video/${s.slug}`, naam: s.name }));
 

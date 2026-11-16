@@ -32,7 +32,7 @@ export function poster(root) {
   const kop = root.querySelector('[data-p9-kop]'), look = root.querySelector('[data-p9-look]');
   if (!baan || !podium || !svg || !doek) return () => {};
   let veld = null;
-  try { veld = maakVeld(doek, 'p2', { roze: '#F1B7AC', schaal: 0.75, korrelMaat: 1 }); } catch { veld = null; }
+  try { veld = maakVeld(doek, 'p2', { roze: '#9DF5D2', schaal: 0.75, korrelMaat: 1 }); } catch { veld = null; }
   if (!veld) return () => {};   /* geen WebGL: de poster blijft stil (het veld als beeld, de V, de kop) */
 
   let anim = null, T = null, p = 0, ps = 0, raf = 0, t0 = 0, dichtbij = false, laatst = '', weg = false;
@@ -105,7 +105,7 @@ export function poster(root) {
       const Z = D.zuig;
       anim = maakAnimatie(svg, D.merk, V_D, { id: 'p9', vorm: D.vorm, zuig: Z,
         T: Object.assign({}, Z.anim || {}, { SW: 1, KLIK: 'recht', VLAG: 'recht', naloop: 0, groei: [0, GROEI] }),
-        kleur: { grond: 'none', letters: '#FBFCFF', naGrond: null, naV: '#FBFCFF', naBeeld: foto } });
+        kleur: { grond: 'none', letters: '#FFFFFF', naGrond: null, naV: '#FFFFFF', naBeeld: foto } });
       T = anim.T;
       root.classList.add('p9-aan');
       maat(); p = ps = stand(); teken(ps);

@@ -169,7 +169,7 @@ try {
   await wacht(page, 800);
   const a = await stand();
   const fotoB = Number((/laptop-90-(\d+)\.webp/.exec(a.fotoSrc) || [])[1]);
-  ok('de laptop staat onder de balk (sticky), in rust, de video klaar, even breed als de foto', Math.abs(a.podium - 56) <= 2 && a.fase === 'rust' && a.kanSpelen && fotoB > 0 && a.breedte === fotoB, JSON.stringify({ podium: a.podium, fase: a.fase, kan: a.kanSpelen, foto: fotoB, video: a.breedte }));
+  ok('de laptop staat onder de zwevende balk (sticky, 60 + 12 px; levering 99), in rust, de video klaar, even breed als de foto', Math.abs(a.podium - 72) <= 2 && a.fase === 'rust' && a.kanSpelen && fotoB > 0 && a.breedte === fotoB, JSON.stringify({ podium: a.podium, fase: a.fase, kan: a.kanSpelen, foto: fotoB, video: a.breedte }));
   const vak = await page.evaluate(() => { const r = document.querySelector('[data-o8-foto]').getBoundingClientRect(); return [r.x, r.width, r.height]; });
   ok('het vak op hele pixels', vak.every((v) => Math.abs(v - Math.round(v)) < 0.02), JSON.stringify(vak));
   /* de foto tegen beeld 0 van de video: de winkel even weg, dan de foto weg */
@@ -305,6 +305,8 @@ try {
     const doel = (nu0 + 1) % k.length;
     const naam0 = await page.evaluate(() => document.querySelector('[data-o8-naam]')?.textContent.trim());
     await page.locator('.o8-kies').nth(doel).click(); await wacht(page, 500);
+    /* levering 100: met het kaartveld (WebGL, in de toets software) komt de naam soms net na 500 ms; wacht op de naam zelf */
+    await page.waitForFunction((n0) => document.querySelector('[data-o8-naam]')?.textContent.trim() !== n0, naam0, { timeout: 4000 }).catch(() => {});
     const na = await page.evaluate(() => ({ druk: [...document.querySelectorAll('.o8-kies')].map((e) => e.getAttribute('aria-pressed')), naam: document.querySelector('[data-o8-naam]')?.textContent.trim() }));
     ok('… een klik kiest die stand', na.druk[doel] === 'true' && na.naam !== naam0, JSON.stringify({ nu0, doel, naam0, ...na }));
     await page.locator('.o8-kies').nth(doel).focus(); await page.keyboard.press('ArrowRight'); await wacht(page, 500);

@@ -155,6 +155,7 @@ const KB_PLAN = 'studio';
 const KB_CR = PLAN_CREDITS[KB_PLAN];
 const BEELD = {
   soort: 'getal' as const,
+  kaart: true,   /* levering 108: op een kaart van het veld (lijst 105) */
   label: `${planName(KB_PLAN, lang)} · ${nl ? 'per maand' : 'per month'}`,
   href: '#plannen', linkNaam: nl ? 'Naar de abonnementen' : 'To the plans',
   getal: String(KB_CR), eenheid: 'credits',

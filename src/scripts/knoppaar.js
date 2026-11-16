@@ -54,8 +54,8 @@ function meet(rij) {
    als een knop of de rij van maat verandert (de letter, een knop die verschijnt of verdwijnt). */
 /* De lucht in de kier begint bij blauw uur en niet bij blauw diep: de inktknop links ervan loopt sinds
    levering 86 zelf naar blauw diep (K2), en dan viel de kier bovenaan weg (gemeten: de rechterrand van
-   de knop #193D70, blauw diep #1A4279). Van blauw uur naar #2D61A8 blijft hij van boven tot onder zichtbaar. */
-const LUCHT = 'linear-gradient(180deg, #25508B 0%, #2D61A8 100%)';
+   de knop #193D70, blauw diep #023D29). Van blauw uur naar #11976A blijft hij van boven tot onder zichtbaar. */
+const LUCHT = 'linear-gradient(180deg, #016645 0%, #11976A 100%)';
 function kier(rij) {
   const knoppen = [...rij.children].filter((k) => k.classList.contains('h-knop') && !k.hidden && k.getClientRects().length);
   const lagen = [];

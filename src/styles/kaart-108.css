@@ -1,0 +1,62 @@
+/* ═══ LEVERING 108 · KAARTVELD FASE 4 · DE KAARTEN OP DE ANDERE PAGINA'S (15 november 2026; lijst 105, lijst 115) ═══════════
+   De plekken uit lijst 105 die nog geen kaart waren (.kv-108, met data-kaart):
+     · /plans, /editions en /hooks: het getal in de kop (KopBeeld met kaart);
+     · /catalog en /lifestyle: de tegel Eigen look;
+     · /video: de drie clips die nog volgen;
+     · /start/custom-look (en de andere aanvraagpagina's): Hoe het ervoor staat;
+     · /start: Op maat, de drie in één brede kaart;
+     · /start/plan: de samenvatting, Jouw maand;
+     · /thank-you: Bedankt, we hebben je aanvraag.
+   Het vlak zelf komt van kaart-100.css en het veld (kaartveld.js). Hier staat alleen wat er op de kaart staat: wit op het
+   veld, de tweede tekst wit op 86 %, knoppen in mint of met een witte rand. Wit op het donkerste punt onder de tekst
+   haalt minstens 4,5 : 1 (gemeten in tests/kaartveld-100-browser.test.mjs).
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+html body.hal .kv-108[data-kaart] { color: #FFFFFF; box-shadow: none !important; border: 0 !important; }
+html body.hal .kv-108[data-kaart] :is(h1, h2, h3, h4, b, strong, dt, legend, .h-getal, .h-st-mk-naam, .h-st-naam, .hold-status-word, .ps-sum-naam, [class*="prijs"], [class*="bedrag"]):not(#k) { color: #FFFFFF !important; }
+html body.hal .kv-108[data-kaart] :is(p, li, dd, span, small, label):not(.h-pil):not(.h-pil *):not(.h-chip):not(.h-chip *):not(.h-cirkel):not(.h-cirkel *):not(.h-knop):not(.h-knop *):not(.knop):not(.knop *):not(.h-getal):not(b):not(strong):not(.hold-status-word):not(.ps-sum-naam):not([class*="prijs"]):not([class*="bedrag"]):not(#k) { color: rgb(255 255 255 / .86) !important; }
+html body.hal .kv-108[data-kaart] :is(hr, .ps-sum-hr) { border-color: rgb(255 255 255 / .22) !important; }
+html body.hal .kv-108[data-kaart] .h-korrel { display: none; }
+
+/* knoppen en links op de kaart */
+html body.hal .kv-108[data-kaart] :is(.k-lijn, .knop-lijn):not(#k) { background: transparent !important; color: #FFFFFF !important; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / .7) !important; border-color: transparent !important; }
+html body.hal .kv-108[data-kaart] :is(.k-lijn, .knop-lijn):is(:hover, :focus-visible):not(#k) { background: #FFFFFF !important; color: #090D0B !important; }
+html body.hal .kv-108[data-kaart] :is(.knop-inkt, .k-vol):not(#k) { background: #3DFFB0 !important; color: #090D0B !important; }
+html body.hal .kv-108[data-kaart] :is(a.h-link, a.h-st-meer, .h-st-meer, a:not([class])):not(#k) { color: #FFFFFF !important; text-decoration-color: rgb(255 255 255 / .5); }
+html body.hal .kv-108[data-kaart] :focus-visible { outline-color: #3DFFB0 !important; }
+
+/* het getal in de kop: het label wit met inkt, het getal groot in wit */
+html body.hal .h-kopbeeld-getal.kv-108 .h-kopbeeld-eenheid, html body.hal .h-kopbeeld-getal.kv-108 .h-kopbeeld-voor { color: #FFFFFF !important; }
+
+/* de tegel Eigen look: hetzelfde formaat als de andere tegels, de tekst wit */
+html body.hal .h-dienst-eigen.kv-108 { padding: clamp(24px, 2.4vw, 32px); }
+
+/* de clips op /video: het rondje met de pijl wit, de naam en de maat wit */
+html body.hal .h-vd-klip.kv-108 .h-vd-klip-t { color: #FFFFFF !important; }
+
+/* Op maat op /start: de drie naast elkaar in één kaart, met een dunne witte lijn ertussen */
+html body.hal .h-st-mk.kv-108 { padding: clamp(24px, 2.6vw, 40px); gap: 0; }
+html body.hal .h-st-mk.kv-108 > li { background: transparent !important; box-shadow: none !important; border: 0 !important; border-radius: 0 !important; padding: 4px clamp(16px, 2vw, 28px); }
+html body.hal .h-st-mk.kv-108 > li + li { box-shadow: inset 1px 0 0 rgb(255 255 255 / .22) !important; }
+@media (max-width: 700px) {
+  html body.hal .h-st-mk.kv-108 > li { padding: 18px 4px; }
+  html body.hal .h-st-mk.kv-108 > li + li { box-shadow: inset 0 1px 0 rgb(255 255 255 / .22) !important; }
+}
+
+/* de samenvatting op /start/plan: de schetsen op een wit tegeltje, zodat ze op de kaart te zien blijven */
+html body.hal .ps-sum.kv-108 .ps-tegel { background: #FFFFFF; border-radius: 12px; }
+html body.hal .ps-sum.kv-108 .ps-sum-i { color: #3DFFB0 !important; }
+
+/* bedankt: het vinkje in mint, de kop wit */
+html body.hal .ty-bar.kv-108 { padding: clamp(28px, 3vw, 44px) !important; margin-bottom: clamp(16px, 2vw, 24px) !important; }
+html body.hal .ty-bar.kv-108 .ty-check { color: #090D0B; background: #3DFFB0; }
+@media (max-width: 640px) {
+  /* op de telefoon past de kop in de kaart op twee regels; het vinkje erboven, alles in het midden */
+  html body.hal .h-form-bedankt .ty-bar.kv-108 .hoog.hoog-2 { font-size: 27px; line-height: 1.06; }
+  html body.hal .h-form-bedankt .ty-bar.kv-108 .ty-bar-in { align-items: center; text-align: center; }
+}
+
+/* /editions (lijst 115, Q3 a): de Studiobrief in de slotkaart zonder eigen vlak, onder een dunne witte lijn; geen kaart in een kaart */
+html body.hal .h-lk-slot .h-ed-brief:not(#k):not(#k) { background: none !important; border-radius: 0 !important; box-shadow: inset 0 1px 0 rgb(255 255 255 / .22) !important; padding: 28px 0 0 !important; margin-top: 28px !important; }
+html body.hal .h-lk-slot .h-ed-brief:not(#k):not(#k)::before { display: none !important; }
+
+@media (forced-colors: active) { html body.hal .kv-108[data-kaart] * { color: CanvasText !important; } }

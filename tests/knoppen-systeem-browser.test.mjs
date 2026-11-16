@@ -52,7 +52,10 @@ const MEET = (ROLLEN) => {
     if (!blok.dataset.kBlok) blok.dataset.kBlok = String(Math.random()).slice(2, 10);
     const bg = rgba(s.backgroundColor); const kl = rgba(s.color);
     const achter = bg && bg[3] > 0.9 ? bg : grond(el.parentElement || el);
-    const a = lum(kl), b = lum(achter); const contrast = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    const a = lum(kl), b = lum(achter); /* levering 100: een knop zonder eigen vlak op een kaart staat op het kaartveld (WebGL, geen css-kleur);
+       tests/kaartveld-100-browser.test.mjs meet die op de beeldpunten. Hier zou hij wit op wit lijken. */
+    const opKaart = !(bg && bg[3] > 0.9) && !!el.closest(':has(> canvas.kv-doek)');   /* de kaart (zijn doek staat erin, ook als hij nog niet in beeld is getekend) */
+    const contrast = opKaart ? 99 : (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
     const regel = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.2;
     uit.push({ rol, ikonen, tekst: tekst.slice(0, 50), cls: String(el.className).slice(0, 70), h: Math.round(r.height * 10) / 10, minH: parseFloat(s.minHeight) || 0, regel,
       rad: parseFloat(s.borderTopLeftRadius), radR: parseFloat(s.borderBottomRightRadius), paar: !!el.closest('.h-acties') && s.clipPath !== 'none', gewicht: s.fontWeight, letter: parseFloat(s.fontSize), vol, tekstlink, blok: blok.dataset.kBlok,
@@ -106,9 +109,9 @@ for (const breed of [1440, 390]) {
     const maat = echte.filter((k) => { const m = MATEN.find((x) => x === Math.round(k.minH)); if (!m) return true; const extra = k.h - m; const regels = (k.h - 12) / k.regel; /* op een telefoon breekt een lange tekst: n regels plus 6 px boven en onder */
       return !(Math.abs(extra) < 1 || (breed === 390 && Math.round(regels) >= 2 && Math.abs(regels - Math.round(regels)) < 0.1)); });
     ok(`${n}: elke knop 36, 44 of 52 hoog`, maat.length === 0, maat.slice(0, 5).map((k) => `${k.tekst} ${k.h}/${k.minH}`).join(' · '));
-    /* levering 97 (lijst 96, B1 a "strak"): elke knop scherp, hoeken 0 (was: elke knop een pil) */
-    const nietScherp = echte.filter((k) => k.rad > 0.5);
-    ok(`${n}: elke knop scherp (hoeken 0)`, nietScherp.length === 0, nietScherp.slice(0, 4).map((k) => `${k.tekst} ${k.rad}`).join(' · '));
+    /* levering 99 (lijst 100, D3 a): elke knop 8 px op alle hoeken (was levering 97: scherp) */
+    const nietScherp = echte.filter((k) => Math.abs(k.rad - 8) > 0.5);
+    ok(`${n}: elke knop 8 px (levering 99)`, nietScherp.length === 0, nietScherp.slice(0, 4).map((k) => `${k.tekst} ${k.rad}`).join(' · '));
     const gewicht = knoppen.filter((k) => /\b(k|btn|knop)\b/.test(k.cls) && k.gewicht !== '600');
     ok(`${n}: letter 600`, gewicht.length === 0, gewicht.slice(0, 4).map((k) => `${k.tekst} ${k.gewicht}`).join(' · '));
     const klein = knoppen.filter((k) => /\b(k|btn|knop)\b/.test(k.cls) && k.letter < 11.5);

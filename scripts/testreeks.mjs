@@ -25,8 +25,18 @@
  *      een melding: dan lag het aan de drukte, niet aan de site.
  *
  * Elke schakel draait hoogstens één keer, ook als hij twee keer in de keten staat.
+ *
+ * ── EEN TEST DIE BLIJFT HANGEN — 15 november 2026 ────────────────────────────
+ *
+ * Lucas: "Zorg ervoor dat de test niet blijft haken." Een browsertest die op iets
+ * wacht dat nooit komt (een tabblad na WebGL, een server die niet start), hield de
+ * hele reeks, en daarmee UITROLLEN.bat, voor altijd vast. Nu heeft elke test een
+ * plafond: hoogstens TESTREEKS_MAX_MIN minuten (standaard 10; de traagste test doet
+ * er rond de 4 over). Daarna stopt de reeks hem met zijn hele procesboom (op Windows
+ * taskkill /T /F) en telt hij als FOUT met "bleef hangen". Hij krijgt aan het eind
+ * gewoon zijn losse tweede kans, met hetzelfde plafond.
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -60,18 +70,39 @@ export function hoeveelTegelijk(env = process.env) {
   return Math.max(1, Math.min(4, (os.cpus()?.length || 2) - 1));
 }
 
-function draai(opdracht, wortel) {
+/** Het plafond per test, in milliseconden (TESTREEKS_MAX_MIN, standaard 10 minuten). */
+export function plafondMs(env = process.env) {
+  const m = Number(String(env.TESTREEKS_MAX_MIN || '').replace(',', '.'));
+  return (m > 0 ? m : 10) * 60000;
+}
+
+/** Stopt een proces met alles wat het startte (de shell, npm, node, de browser). */
+function stopBoom(k) {
+  try {
+    if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(k.pid), '/T', '/F'], { windowsHide: true });
+    else process.kill(-k.pid, 'SIGKILL');
+  } catch { try { k.kill('SIGKILL'); } catch { /* al weg */ } }
+}
+
+export function draai(opdracht, wortel, maxMs = plafondMs()) {
   return new Promise((resolve) => {
     const t0 = Date.now();
     const bin = path.join(wortel, 'node_modules', '.bin');
     const env = { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH || process.env.Path || ''}` };
     let uit = '';
-    const k = spawn(opdracht, { cwd: wortel, shell: true, env, windowsHide: true });
+    let klaar = false;
+    /* detached buiten Windows: dan is de test de leider van een eigen procesgroep en gaat de hele groep in één keer weg. */
+    const k = spawn(opdracht, { cwd: wortel, shell: true, env, windowsHide: true, detached: process.platform !== 'win32' });
     const neem = (b) => { uit += b.toString('utf8'); if (uit.length > 2e6) uit = uit.slice(-1e6); };
+    const eind = (r) => { if (klaar) return; klaar = true; clearTimeout(wacht); resolve(r); };
+    const wacht = setTimeout(() => {
+      stopBoom(k);
+      eind({ code: 124, uit: `${uit}\nFAIL bleef hangen: na ${Math.round(maxMs / 60000)} min gestopt (TESTREEKS_MAX_MIN)`, ms: Date.now() - t0, hing: true });
+    }, maxMs);
     k.stdout.on('data', neem);
     k.stderr.on('data', neem);
-    k.on('error', (e) => resolve({ code: 127, uit: `${uit}\n${e.message}`, ms: Date.now() - t0 }));
-    k.on('close', (code) => resolve({ code: code ?? 1, uit, ms: Date.now() - t0 }));
+    k.on('error', (e) => eind({ code: 127, uit: `${uit}\n${e.message}`, ms: Date.now() - t0 }));
+    k.on('close', (code) => eind({ code: code ?? 1, uit, ms: Date.now() - t0 }));
   });
 }
 
@@ -86,7 +117,7 @@ export async function testreeks({ wortel = WORTEL, tegelijk = hoeveelTegelijk(),
   const t0 = Date.now();
   const totaal = stappen.length;
   let n = 0;
-  const regel = (s, r) => zeg(`${String(++n).padStart(4)}/${totaal}  ${r.code === 0 ? 'goed' : 'FOUT'}  ${s.naam}  (${sec(r.ms)})`);
+  const regel = (s, r) => zeg(`${String(++n).padStart(4)}/${totaal}  ${r.code === 0 ? 'goed' : 'FOUT'}  ${s.naam}  (${sec(r.ms)}${r.hing ? ', bleef hangen' : ''})`);
 
   zeg(`De testreeks: ${totaal} stappen, eerst de build, daarna ${tegelijk} tegelijk.`);
   const [eerste, ...rest] = stappen;

@@ -29,34 +29,36 @@ body.hal {
      blauw a, logo a, tempo b, warm a, blok b, effecten a). Lucas: *"Ik denk dat deze kleur
      de kleur word, het voelt niet als een ai tool kleur en ook niet als een copy cat van
      een ander merk."* Puur wit als grond. Inkt en één blauw snijden erin, zoals het logo.
-     VIJF KLEUREN: wit, inkt #0F1217, blauw uur #25508B, grijs #636974, lijn #E6E8EC.
+     VIJF KLEUREN: wit, inkt #090D0B, blauw uur #016645, grijs #5E6461, lijn #E7EAE8.
      Blauw staat op één plek per scherm (Bestellen bovenin), bij het logo onder de muis,
      in een link in de tekst, in de focusrand en in geselecteerde tekst; een inktknop wordt
      blauw onder de muis. Wat je kiest is inkt. Eén inktblok per pagina, afgesneden op 53°.
      Geen verloop als vlak, geen glas, geen bewogen achtergrond, geen warme kleur.
-     Afgeleid (geen nieuwe kleuren, elk één rol): vlak #F4F5F7 (pil, lege plek, onder de
-     muis), lijn sterk #C5C8CF, veldlijn #858A94 (de rand van een invulveld, 3,47:1),
-     blauw diep #1A4279 (blauw onder de muis), blauw licht #80A7DD (alleen op inkt).
+     Afgeleid (geen nieuwe kleuren, elk één rol): vlak #F4F5F4 (pil, lege plek, onder de
+     muis), lijn sterk #C6CAC8, veldlijn #8A908D (de rand van een invulveld, 3,47:1),
+     blauw diep #023D29 (blauw onder de muis), blauw licht #3DFFB0 (alleen op inkt).
      De oude namen (nevel, vak, violet, lila, mist, waas, nacht, inkt-2/3) blijven als
      verwijzing bestaan, zodat een vergeten regel niet breekt. Zie docs/KLEURENSCHEMA.md. */
-  --h-wit: #FFFFFF; --h-inkt: #0F1217; --h-blauw: #25508B; --h-grijs: #636974; --h-lijn: #E6E8EC;
+  --h-wit: #FFFFFF; --h-inkt: #090D0B; --h-blauw: #016645; --h-grijs: #5E6461; --h-lijn: #E7EAE8;
   /* levering 89: roze, alleen als veldkleur (nooit in een logo, nooit tekst; docs/KLEURENSCHEMA.md, src/scripts/veld.js) */
-  --h-roze: #F1B7AC;
+  --h-gloed: #9DF5D2;  /* levering 99 (lijst 102, A1 b): de gloed in de velden, zacht mint; was roze #9DF5D2 */
   /* DE GROND — levering 79 (1 november 2026). Lucas: "Website achtergrond wil ik heel uniek licht grijs
      hebben die bij het kleurenschema past". #F4F7FD: de toon van de inkt (264,5°) met een vleugje
      blauw uur, OKLCH .976 / .0086. Wit is sindsdien de kaart, niet meer de grond; het vlak blijft
-     #F4F5F7 in een witte kaart, en wat op de grond oplicht (pil, chip, knopje, onder de muis) is wit.
+     #F4F5F4 in een witte kaart, en wat op de grond oplicht (pil, chip, knopje, onder de muis) is wit.
      docs/KLEURENSCHEMA.md, "De grond". */
-  /* levering 80 (lijst 64, B2 = b): de grond is Wit #FBFCFF, de lichtste van de vijf kleuren uit Lucas'
+  /* levering 80 (lijst 64, B2 = b): de grond is Wit #FFFFFF, de lichtste van de vijf kleuren uit Lucas'
      voorbeeld (#FCFCFC, heel licht naar Blue Hour gezet: OKLCH .991 / .0035 / 264°). Was #F4F7FD. */
-  --h-grond: #FBFCFF;
-  --h-vlak: #F4F5F7; --h-blauw-diep: #1A4279; --h-blauw-licht: #80A7DD;
-  --h-kaart: #FFFFFF; --h-kaart-rand: inset 0 0 0 1px #E6E8EC;
+  /* levering 107 (15 november 2026, 20:23): de grond is #FCFCFC. Lucas: "Dit wil ik als achtergrond kleur, deze wit (deze
+     past waarschijnlijk wel bij de andere kleuren)." Kaarten en vlakken op de grond blijven #FFFFFF. */
+  --h-grond: #FCFCFC;
+  --h-vlak: #F4F5F4; --h-blauw-diep: #023D29; --h-blauw-licht: #3DFFB0;
+  --h-kaart: #FFFFFF; --h-kaart-rand: inset 0 0 0 1px #E7EAE8;
   /* de oude namen, als letterlijke waarde (tests/hal-voorbeeld.test.mjs rekent ermee) */
-  --h-nevel: #F4F5F7; --h-vak: #E6E8EC;
-  --h-inkt-2: #0F1217; --h-inkt-3: #636974; --h-kop-licht: #636974;
-  --h-violet: #25508B; --h-violet-diep: #1A4279; --h-lila: #80A7DD;
-  --h-nacht: #0F1217; --h-waas: #E6E8EC; --h-mist: #F4F5F7;
+  --h-nevel: #F4F5F4; --h-vak: #E7EAE8;
+  --h-inkt-2: #090D0B; --h-inkt-3: #5E6461; --h-kop-licht: #5E6461;
+  --h-violet: #016645; --h-violet-diep: #023D29; --h-lila: #3DFFB0;
+  --h-nacht: #090D0B; --h-waas: #E7EAE8; --h-mist: #F4F5F4;
   /* De letters (levering 77, lijst 60): DM Sans voor de tekst, VISUAILS Display (DM Sans met drie
      details uit de V, docs/letter/) voor de grote koppen. Beide zelf gehost (public/fonts/dm-sans/,
      public/fonts/visuails-display/; de @font-face bij IBM Plex Mono hieronder). Urbanist blijft als
@@ -105,7 +107,7 @@ body.hal {
      --h-veldlijn (#8E8BA2, de rand van een invulveld: 3,3:1 op wit, boven de
      3:1 die een veldgrens nodig heeft). Allebei uit de lijn, in dezelfde toon.
      Zie KLEURENSCHEMA.md. */
-  --h-lijn-sterk: #C5C8CF; --h-veldlijn: #858A94; /* blauw uur: koel, dezelfde helderheid als in schema A; de veldlijn 3,47:1 op wit, 3,18:1 op vlak */
+  --h-lijn-sterk: #C6CAC8; --h-veldlijn: #8A908D; /* blauw uur: koel, dezelfde helderheid als in schema A; de veldlijn 3,47:1 op wit, 3,18:1 op vlak */
   --bg-0: var(--h-grond); --bg: var(--h-grond);   /* levering 79: de grond van de pagina (was #FFFFFF) */
   --surface: var(--h-nevel); --sunken: var(--h-vak); --surface-2: var(--h-vak); --bg-raise: var(--h-nevel);
   --paper-2: var(--h-nevel); --paper-lift: var(--h-nevel);
@@ -136,7 +138,7 @@ body.hal {
   --st-wait-fill: transparent; --st-wait-edge: var(--h-veldlijn); --st-wait-ink: var(--h-inkt);
   --st-work-fill: var(--h-nevel); --st-work-edge: var(--h-lijn); --st-work-ink: var(--h-inkt);
   --st-done-fill: var(--h-inkt); --st-done-edge: var(--h-inkt); --st-done-ink: #FFFFFF;
-  --st-rev-fill: var(--h-vlak); --st-rev-edge: rgb(37 80 139 / .40); --st-rev-ink: var(--h-blauw);
+  --st-rev-fill: var(--h-vlak); --st-rev-edge: rgb(1 102 69 / .40); --st-rev-ink: var(--h-blauw);
   --st-can-fill: var(--h-lijn); --st-can-edge: var(--h-veldlijn); --st-can-ink: var(--h-inkt);
   --signal: var(--h-nevel); --signal-ink: var(--h-inkt); --verify: var(--h-inkt); --verify-ink: #FFFFFF;
   --warn: var(--h-vlak); --warn-ink: var(--h-blauw); --flag: var(--h-vlak); --flag-ink: var(--h-blauw);
@@ -169,7 +171,7 @@ body.hal main { padding-top: 0; }
 
 /* label-pil met het dubbele rondje */
 .hal .h-pil { display: inline-flex; align-items: center; gap: 9px; height: 32px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt); font: 600 13.5px/1 var(--h-letter); white-space: nowrap; }
-.hal .h-pil::before { content: ""; width: 20px; height: 20px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 3.5px, transparent 4px), #fff; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .2); }
+.hal .h-pil::before { content: ""; width: 20px; height: 20px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 3.5px, transparent 4px), #fff; box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .2); }
 .hal .h-pil-glas { background: #FFFFFF; box-shadow: none; color: var(--h-inkt); }
 .hal .h-pil-wit { background: #fff; }
 .hal .h-pil-donker { background: var(--h-inkt); color: #fff; box-shadow: none; }
@@ -277,7 +279,7 @@ body.hal .site-header .nav { position: relative; isolation: isolate; height: 52p
 body.hal .site-header .nav::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
   background: rgba(255, 255, 255, .68);
   -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 0 0 1px rgba(15, 18, 23, .07), 0 12px 32px -18px rgba(15, 18, 23, .28); }
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 0 0 1px rgba(9, 13, 11, .07), 0 12px 32px -18px rgba(9, 13, 11, .28); }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   body.hal .site-header .nav::before { background: rgba(255, 255, 255, .96); }
 }
@@ -302,13 +304,13 @@ body.hal .site-header .nav-taal-klein .ls { display: inline-grid; place-items: c
 body.hal .site-header .nav-taal-klein .ls:hover { background: var(--h-vak); color: var(--h-inkt) !important; }
 /* Ingelogd: het rondje met je initiaal, en het menu erachter. */
 body.hal .site-header .nav-ik-knop { width: 36px; height: 36px; background: var(--h-nevel); color: var(--h-inkt); font: 600 15px/1 var(--h-letter); transition: background-color .2s, box-shadow .2s; }
-body.hal .site-header .nav-ik-knop:hover, body.hal .site-header .nav-ik-knop[aria-expanded="true"] { background: var(--h-vak); box-shadow: 0 0 0 3px rgba(15, 18, 23, .12); }
+body.hal .site-header .nav-ik-knop:hover, body.hal .site-header .nav-ik-knop[aria-expanded="true"] { background: var(--h-vak); box-shadow: 0 0 0 3px rgba(9, 13, 11, .12); }
 body.hal .site-header .nav-ik .nav-menu { min-width: 260px; padding: 10px !important; gap: 2px !important; display: flex; flex-direction: column; }
 body.hal .site-header .nav-ik-wie { margin: 0; padding: 8px 12px 10px; border-bottom: 1px solid var(--h-lijn); font: 500 var(--h-t-label)/1.3 var(--h-letter); color: var(--h-inkt-3); }
 body.hal .site-header .nav-ik-wie b { display: block; margin-top: 2px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 15px/1.3 var(--h-letter); color: var(--h-inkt); }
 body.hal .site-header .nav-ik-menu .nav-ik-item { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; text-decoration: none !important; width: 100%; min-height: 44px; padding: 0 12px !important; border: 0; border-radius: 999px !important; background: none; font: 500 15px/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--h-inkt) !important; text-align: left; cursor: pointer; }
 body.hal .site-header .nav-ik-menu .nav-ik-item::before { display: none !important; }
-body.hal .site-header .nav-ik-menu .nav-ik-item:hover { background: rgba(244, 245, 247, .9) !important; }
+body.hal .site-header .nav-ik-menu .nav-ik-item:hover { background: rgba(244, 245, 244, .9) !important; }
 body.hal .site-header .nav-ik-menu .nav-signout { display: block; width: 100%; margin: 0; }
 body.hal .site-header .nav-ik-taal { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 12px; background: none; border-radius: 999px; }
 body.hal .site-header .nav-ik-taal-l { margin-right: auto; font: 500 15px/1 var(--h-letter); color: var(--h-inkt); }
@@ -326,7 +328,7 @@ body.hal .site-header .nav-menu-1kol { min-width: 340px; }
 body.hal .site-header .nav-menu { transform: none; transition: opacity .16s steps(2, end), visibility .16s steps(2, end); }
 body.hal .site-header .nav-menu .mi-groep-kop { font: 600 var(--h-t-label)/1 var(--h-letter) !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--h-inkt-3) !important; padding: 10px 12px 4px; }
 body.hal .site-header .nav-menu a { display: grid !important; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; padding: 12px !important; border-radius: 14px !important; transition: background-color .2s; }
-body.hal .site-header .nav-menu a:hover, body.hal .site-header .nav-menu a[aria-current="page"] { background: rgba(244, 245, 247, .9) !important; }
+body.hal .site-header .nav-menu a:hover, body.hal .site-header .nav-menu a[aria-current="page"] { background: rgba(244, 245, 244, .9) !important; }
 body.hal .site-header .nav-menu a::before { content: ""; grid-row: span 2; width: 56px; height: 56px; border-radius: 14px; background: var(--h-vak) center / cover no-repeat; }
 body.hal .site-header .nav-menu-1kol a::before { display: none; }
 body.hal .site-header .nav-menu-1kol a { grid-template-columns: 1fr; }
@@ -475,7 +477,7 @@ body.hal .wa-launcher { width: 52px; height: 52px; border: 0; border-radius: 999
   box-shadow: inset 0 0 0 1px var(--h-lijn); }
 body.hal .wa-launcher:hover { background: #fff; }
 body.hal .wa-launcher-label { top: 0; bottom: 0; right: calc(100% - 26px); z-index: 0; padding: 0 36px 0 18px; border: 0; border-radius: 999px 0 0 999px; font: 600 var(--h-t-fijn)/1 var(--h-letter); color: var(--h-inkt);
-  background: #FFFFFF; box-shadow: 0 0 0 1px rgba(15, 18, 23, .06); }
+  background: #FFFFFF; box-shadow: 0 0 0 1px rgba(9, 13, 11, .06); }
 
 /* ── de cookiebalk: een glaskaart linksonder in plaats van een balk ─────── */
 body.hal .cc { left: 16px; right: auto; bottom: 16px; width: min(600px, calc(100vw - 32px)); padding: 20px 22px; border-radius: var(--r-kaart);
@@ -572,8 +574,8 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
    licht, de arm verdwijnt erin, zie DE LINKERARM: eerst 6 % niets, dan tot 24 %), boven over 60 px (zie DE BOVENKANT),
    onder vanaf de handen (de grijze vloer onderin de foto loopt zo weg). */
 .hal .hl-doos { position: relative; aspect-ratio: 2304 / 1296; width: 100%;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 6%, #0F1217 24%), linear-gradient(180deg, transparent 0, #0F1217 60px, #0F1217 72%, transparent 98%); -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(90deg, transparent 0, transparent 6%, #0F1217 24%), linear-gradient(180deg, transparent 0, #0F1217 60px, #0F1217 72%, transparent 98%); mask-composite: intersect; }
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 6%, #090D0B 24%), linear-gradient(180deg, transparent 0, #090D0B 60px, #090D0B 72%, transparent 98%); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, transparent 6%, #090D0B 24%), linear-gradient(180deg, transparent 0, #090D0B 60px, #090D0B 72%, transparent 98%); mask-composite: intersect; }
 /* De lichte helft van de kop staat in de opening op de schets van de foto. Gemeten (de
    tekst doorzichtig, de donkerste 2 % erachter): het lichte kopgrijs haalde op /catalog
    bij 1600 px 3,75:1 tegen een violette lijn. Daarom hier grijs 3, zoals op elk beeld
@@ -765,7 +767,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .hl-bel > span:last-child { display: flex; flex-direction: column; gap: 2px; }
 .hal .hl-bel em { font: 600 var(--h-t-label)/1.1 var(--h-letter); font-style: normal; color: var(--h-inkt-3); }
 .hal .hl-bel b { font: 600 var(--h-t-klein)/1.15 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
-.hal .hl-stip { width: 26px; height: 26px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 4px, transparent 4.5px), #fff; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .2); }
+.hal .hl-stip { width: 26px; height: 26px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 4px, transparent 4.5px), #fff; box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .2); }
 .hal .hl-bel-lap { right: calc((1 - var(--px)) * 100%); bottom: calc((1 - var(--py)) * 100% + 34px); border-radius: var(--hoek-knop); }
 .hal .hl-bel-fon { right: calc((1 - var(--px)) * 100%); bottom: calc((1 - var(--pyb, var(--py))) * 100% + 34px); border-radius: var(--hoek-knop); }
 .hal .hl-draad { position: absolute; z-index: 5; left: calc(var(--px) * 100%); top: calc(var(--py) * 100% - 31px); width: 1px; height: 31px; background: var(--h-inkt); transform: translateX(-.5px); }
@@ -803,7 +805,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .hl-naam { min-width: 0; }
 .hal .hl-naam b { font: 600 var(--h-t-fijn)/1.15 var(--h-letter); color: var(--h-inkt); white-space: nowrap; display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
 .hal .hl-teller { font: 600 var(--h-t-label)/1 var(--h-letter); color: var(--h-inkt-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hal .hl-streep { position: relative; width: 110px; height: 3px; border-radius: 999px; background: rgba(15, 18, 23, .14); overflow: hidden; }
+.hal .hl-streep { position: relative; width: 110px; height: 3px; border-radius: 999px; background: rgba(9, 13, 11, .14); overflow: hidden; }
 .hal .hl-streep i { position: absolute; inset: 0; border-radius: 3px; background: var(--h-inkt); transform-origin: 0 50%; transform: scaleX(0); }
 .hal .hl-streep i.is-aan { animation: h-streep linear both; animation-play-state: paused; }
 .hal .hl-loopt .hl-streep i.is-aan { animation-play-state: running; }
@@ -852,7 +854,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .h-vink svg { width: 12px; height: 12px; stroke-width: 2.2; }
 .hal .h-brug { position: absolute; z-index: 2; right: -25px; top: 30px; width: 34px; height: 34px; border-radius: 50%; background: var(--h-wit); display: grid; place-items: center; color: var(--h-inkt); font-size: var(--h-t-fijn); box-shadow: 0 0 0 6px var(--h-wit); }
 /* wij doen de rest */
-.hal .h-rest { position: relative; margin-top: 16px; display: grid; grid-template-columns: minmax(250px, 300px) 44px 1fr; align-items: stretch; gap: 16px; padding: 18px; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-rest { position: relative; margin-top: 16px; display: grid; grid-template-columns: minmax(250px, 300px) 44px 1fr; align-items: stretch; gap: 16px; padding: 18px; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-rest-jij { display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 20px; border-radius: var(--r-kaart); background: rgba(255, 255, 255, .62); }
 .hal .h-rest-kop { font: 450 22px/1.2 var(--h-letter); letter-spacing: -.01em; color: var(--h-inkt); }
 /* een paar telefoonfoto's, als een kleine waaier */
@@ -935,7 +937,7 @@ body.hal .hal-wm-reus { display: block; width: calc(100% - 48px); height: auto; 
 .hal .h-weten-rij > li > a:hover { box-shadow: none; }
 .hal .h-weten-rij > li > a:hover .h-cirkel { transform: rotate(45deg); }
 .hal .h-weten-rij .h-cirkel { transition: transform .45s var(--h-veer); }
-.hal .h-weten-rij > .h-groot > a { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-weten-rij > .h-groot > a { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-weten-boven { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; }
 .hal .h-weten-onder { position: relative; z-index: 2; display: flex; flex-direction: column; }
 .hal .h-weten-onder b { font: 450 30px/1.1 var(--h-letter); letter-spacing: -.02em; color: var(--h-inkt); }
@@ -1000,7 +1002,7 @@ body.hal .h-ab .ab-raam:focus-visible { outline-color: var(--focus-ring); }
 .hal .h-vier .h-well:hover { }
 .hal .h-vertrouwen { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 22px var(--h-rand) 0; }
 .hal .h-vertrouwen li { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px 10px 10px; border-radius: var(--hoek-knop); background: var(--h-nevel); font: 450 var(--h-t-klein)/1.2 var(--h-letter); color: var(--h-inkt-2); }
-.hal .h-vertrouwen a { text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-underline-offset: 3px; }
+.hal .h-vertrouwen a { text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-underline-offset: 3px; }
 .hal .h-vertrouwen i { width: 26px; height: 26px; border-radius: 50%; background: var(--h-nevel); color: var(--h-inkt); display: grid; place-items: center; font-style: normal; font-size: 12px; }
 
 /* ── binnenkomen en de rest van de beweging ─────────────────────────────── */
@@ -1075,7 +1077,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 /* Het witte doek: het beeld vóór de afwerking staat op wit (#FFFFFF, gemeten in
    ba2-na-front.webp), en het doek maakt de hele kaart even wit. Eindstand: weg. */
 .hal .h-maak-doek { background: #FFFFFF; opacity: 0; }
-.hal .h-maak-dam { background: repeating-conic-gradient(#E6E8EC 0% 25%, #FFFFFF 0% 50%) 50% / 16px 16px; }
+.hal .h-maak-dam { background: repeating-conic-gradient(#E7EAE8 0% 25%, #FFFFFF 0% 50%) 50% / 16px 16px; }
 /* inset(0 …) en niet `none` als eindstand: van inset() naar none valt niets te
    overvloeien, en dan sprong het wit er in één keer onder, nog vóór de broek er was. */
 /* De achtergrondlaag: dezelfde gemeten waarde als de geleverde set (GROND, #EFEFEF). */
@@ -1111,7 +1113,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 .hal .h-maak-bouwkwast { opacity: 0; offset-rotate: 0deg; offset-distance: 100%; }
 /* Het penseel: een ring zo groot als de kwast (zoals in een beeldbewerker). */
 .hal .h-maak-ring-wit { fill: none; stroke: rgba(255, 255, 255, .92); stroke-width: 9; }
-.hal .h-maak-ring { fill: rgba(15, 18, 23, .05); stroke: var(--h-inkt); stroke-width: 3.5; }
+.hal .h-maak-ring { fill: rgba(9, 13, 11, .05); stroke: var(--h-inkt); stroke-width: 3.5; }
 /* Het kader: een witte rand onder een violette lijn, dan blijft hij te zien op beton. */
 .hal .h-maak-kader { fill: none; stroke: var(--h-inkt); stroke-width: 3.5; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; opacity: 0; }
 .hal .h-maak-kader.is-wit { stroke: rgba(255, 255, 255, .9); stroke-width: 10; }
@@ -1130,7 +1132,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 .hal .h-maak-lp-steel { stroke: var(--h-inkt); stroke-width: 22; stroke-linecap: round; }
 .hal .h-maak-lp-deler { opacity: 0; }
 .hal .h-maak-lp-deler line { stroke: #FFFFFF; stroke-width: 5; }
-.hal .h-maak-lp-deler circle { fill: #FFFFFF; stroke: rgba(15, 18, 23, .16); stroke-width: 2; }
+.hal .h-maak-lp-deler circle { fill: #FFFFFF; stroke: rgba(9, 13, 11, .16); stroke-width: 2; }
 .hal .h-maak-lp-deler path { fill: none; stroke: var(--h-inkt); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
 .hal .h-maak-lp-vink { opacity: 0; transform-box: fill-box; transform-origin: center; }
 .hal .h-maak-lp-vink circle { fill: var(--h-inkt); stroke: #FFFFFF; stroke-width: 6; }
@@ -1138,7 +1140,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 /* Wat er gebeurt, op de plek van het bijschrift: Rechtzetten · Opbouwen · Nakijken. */
 .hal .h-maak-doe { position: absolute; left: 12px; bottom: 12px; display: grid; opacity: 0; pointer-events: none; }
 .hal .h-maak-doe > span { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; opacity: 0; }
-.hal .h-maak-doe > span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--h-inkt); box-shadow: 0 0 0 3px rgba(15, 18, 23, .16); }
+.hal .h-maak-doe > span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--h-inkt); box-shadow: 0 0 0 3px rgba(9, 13, 11, .16); }
 .hal .h-lagen-punten span + span::before { content: '·'; margin-right: 5px; color: var(--h-inkt-2); }
 /* Het gereedschap (pen, ankers, penseel, hulplijnen): alleen tijdens stap 2 te zien. */
 .hal .h-maak-werk { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
@@ -1146,7 +1148,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 .hal .h-maak-ankers rect { fill: #FFFFFF; stroke: var(--h-inkt); stroke-width: 3; opacity: 0; transform-box: fill-box; transform-origin: center; }
 .hal .h-maak-lijnen line { stroke: var(--h-inkt); stroke-width: 3; stroke-dasharray: 1; stroke-dashoffset: 0; opacity: 0; }
 .hal .h-maak-pen, .hal .h-maak-kwast { opacity: 0; offset-rotate: 0deg; offset-distance: 100%; }
-.hal .h-maak-pen > circle:first-child, .hal .h-maak-kwast > circle:first-child, .hal .h-maak-bel { fill: #FFFFFF; stroke: rgba(15, 18, 23, .28); stroke-width: 2; }
+.hal .h-maak-pen > circle:first-child, .hal .h-maak-kwast > circle:first-child, .hal .h-maak-bel { fill: #FFFFFF; stroke: rgba(9, 13, 11, .28); stroke-width: 2; }
 .hal .h-maak-pen path, .hal .h-maak-kwast path, .hal .h-maak-bouwkwast path { fill: none; stroke: var(--h-inkt); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .hal .h-maak-punt { fill: var(--h-inkt); }
 @supports not (offset-path: path('M0 0')) { .hal .h-maak-pen, .hal .h-maak-kwast, .hal .h-maak-bouwkwast { display: none; } }
@@ -1166,7 +1168,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
 .hal .h-lagen i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--h-inkt); color: #fff; }
 .hal .h-lagen i svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .hal .h-lagen b { grid-column: 2; display: inline-flex; align-items: center; gap: 5px; font: 600 12px/1 var(--h-letter); color: var(--h-inkt-2); font-variant-numeric: tabular-nums; }
-.hal .h-lagen b s { width: 11px; height: 11px; border-radius: 3px; background: #EFEFEF; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .25); }
+.hal .h-lagen b s { width: 11px; height: 11px; border-radius: 3px; background: #EFEFEF; box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .25); }
 /* Een smal vak (15 oktober 08:12, Lucas op zijn telefoon: *"Op telefoon word de roze
    broek bij 2 wat afgesneden."*). Onder 300 px breed (telefoons tot 375 px, en de drie
    kolommen op 1024) liep het lijstje over de rechterpijp: gemeten 4 tot 6 px overlap.
@@ -1264,7 +1266,7 @@ html.h-js body.hal .h-stap.is-in .h-keur figcaption { opacity: 1; transform: non
   82% { opacity: 1; transform: translate(0, 0); }
   100% { opacity: 0; transform: translate(6px, -10px); }
 }
-@keyframes h-maak-pols { 0% { box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .25), 0 0 0 0 rgba(15, 18, 23, .55); } 100% { box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .25), 0 0 0 8px rgba(15, 18, 23, 0); } }
+@keyframes h-maak-pols { 0% { box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .25), 0 0 0 0 rgba(9, 13, 11, .55); } 100% { box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .25), 0 0 0 8px rgba(9, 13, 11, 0); } }
 /* De schaduw in drie halen: bij elke haal een stap dekking, zoals een penseel op 7 %. */
 /* 23 % en 48 %: daar eindigen de eerste en de tweede haal (de lengtes van het kwastpad). */
 @keyframes h-maak-schaduw { 0% { opacity: 0; } 23% { opacity: .07; } 48% { opacity: .14; } 100% { opacity: .2; } }
@@ -1574,7 +1576,7 @@ body.hal .menu-toggle span, body.hal .menu-toggle span::before, body.hal .menu-t
 /* ── de lade op een telefoon, in de hal-vorm ─────────────────────────────── */
 body.hal { --bg: var(--h-grond); }   /* levering 79: de lade op de grond (was #FFFFFF) */
 body.hal .mobile-nav { background: var(--h-grond); }
-body.hal .mobile-nav .mobile-body { background: linear-gradient(to top, var(--h-grond), rgb(251 252 255 / 0)) bottom / 100% 32px no-repeat local, var(--h-grond); }
+body.hal .mobile-nav .mobile-body { background: linear-gradient(to top, var(--h-grond), rgb(255 255 255 / 0)) bottom / 100% 32px no-repeat local, var(--h-grond); }
 body.hal .mobile-nav .mobile-group { font: 600 var(--h-t-fijn)/1 var(--h-letter); text-transform: none; letter-spacing: 0; color: var(--h-inkt-3); }
 body.hal .mobile-nav .mobile-lijst > a, body.hal .mobile-nav .mobile-lijst > .mi-off { font-family: var(--h-letter); font-weight: 500; letter-spacing: -.01em; color: var(--h-inkt); box-shadow: inset 0 -1px 0 var(--h-lijn); }
 body.hal .mobile-nav .mobile-lijst-klein > a, body.hal .mobile-nav .mobile-lijst-klein > .mi-off { color: var(--h-inkt-2); }
@@ -1638,7 +1640,7 @@ body.hal .mobile-nav .mi-soon { font: 600 var(--h-t-label)/1 var(--h-letter); te
 .hal .h-st-wegen { margin-top: 6px; }
 .hal .h-st-wegen .h-knop { width: 100%; }
 .hal .h-st-ook-links { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 2px; font: 600 var(--h-t-fijn)/1.3 var(--h-letter); }
-.hal .h-st-proef { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.hal .h-st-proef { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .hal .h-st-meer { display: inline-flex; align-items: center; gap: 4px; color: var(--h-inkt-2); }
 .hal .h-st-meer svg { font-size: 12px; transition: transform .18s steps(2, end); }
 .hal .h-st-meer:hover svg { transform: translate(1.2px, -1.6px); }
@@ -1661,7 +1663,7 @@ body.hal .mobile-nav .mi-soon { font: 600 var(--h-t-label)/1 var(--h-letter); te
 .hal .h-st-onder { display: grid; gap: 10px; max-width: 980px; margin-top: 48px; }
 .hal .h-st-regel { display: flex; align-items: flex-start; gap: 12px; font: 450 15px/1.5 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-st-regel .h-cirkel { margin-top: -3px; }
-.hal .h-st-link { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.hal .h-st-link { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .hal .h-st-btw { padding-left: 42px; font-size: var(--h-t-fijn); line-height: 1.6; color: var(--h-inkt-3); }
 .hal .h-st-ook { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--h-lijn); }
 .hal .h-st-ook-l { font: 600 var(--h-t-fijn)/1 var(--h-letter); color: var(--h-inkt-3); }
@@ -1698,7 +1700,7 @@ body.hal .mobile-nav .mi-soon { font: 600 var(--h-t-label)/1 var(--h-letter); te
 .hal .h-st-mk .h-link { margin-top: 6px; }
 /* wat er daarna gebeurt: één licht verloop met korrel, de vijf stappen als maatlijn */
 .hal .h-st-daarna { padding-top: 96px; }
-.hal .h-st-band { position: relative; isolation: isolate; overflow: hidden; padding: 56px; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-st-band { position: relative; isolation: isolate; overflow: hidden; padding: 56px; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-st-band-kop { display: grid; gap: 18px; justify-items: start; max-width: 760px; }
 .hal .h-st-band-lead { font-size: 17px; line-height: 1.5; color: var(--h-inkt-2); }
 .hal .h-st-stappen { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin-top: 44px; }
@@ -1813,7 +1815,7 @@ html.h-js body.hal .h-st-set.is-in .h-st-set-beeld { opacity: 1; transform: none
 .hal .h-pr-tab tbody tr + tr > * { border-top: 1px solid var(--h-lijn); }
 .hal .h-pr-tab tbody td { font: 450 28px/1 var(--h-letter); letter-spacing: -.02em; color: var(--h-inkt); }
 .hal .h-pr-een { display: flex; align-items: center; gap: 10px; padding: 0 14px; font: 450 var(--h-t-fijn)/1.45 var(--h-letter); color: var(--h-inkt-2); }
-.hal .h-pr-som { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; gap: 22px; padding: 32px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-pr-som { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; gap: 22px; padding: 32px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-pr-som > :not(.h-korrel) { position: relative; z-index: 2; }
 .hal .h-pr-som-rij { display: grid; gap: 10px; margin-top: auto; }
 .hal .h-pr-som-rij li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 18px 20px; border-radius: var(--r-kaart); background: rgba(255, 255, 255, .8); }
@@ -1844,7 +1846,7 @@ html.h-js body.hal .h-st-set.is-in .h-st-set-beeld { opacity: 1; transform: none
 .hal .h-pr-regel { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 20px; padding: 20px 0; border-top: 1px solid var(--h-lijn); }
 .hal .h-pr-regel dt { line-height: 1.35; }
 .hal .h-pr-regel dt a { display: inline; font: 600 var(--h-t-klein)/1.35 var(--h-letter); color: var(--h-inkt); }
-.hal .h-pr-regel dt a:hover { text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.hal .h-pr-regel dt a:hover { text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .hal .h-pr-regel dt svg { display: inline-block; margin-left: 6px; font-size: 12px; vertical-align: 0; }
 .hal .h-pr-regel dd { margin: 0; display: grid; gap: 4px; align-content: start; }
 .hal .h-pr-regel dd b { font: 600 15px/1.4 var(--h-letter); color: var(--h-inkt); }
@@ -1863,7 +1865,7 @@ html.h-js body.hal .h-pr-som.is-in .h-pr-som-rij li { opacity: 1; transform: non
 /* ── /plans ─────────────────────────────────────────────────────────────── */
 .hal .h-pl-credit { padding-top: 88px; }
 .hal .h-pl-credit-raster { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
-.hal .h-pl-kern { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; padding: 36px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-pl-kern { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; padding: 36px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-pl-kern > :not(.h-korrel) { position: relative; z-index: 2; }
 .hal .h-pl-kern-zin { margin-top: auto; max-width: 520px; font: 450 30px/1.18 var(--h-letter); letter-spacing: -.02em; color: var(--h-inkt); }
 /* De creditkaart (CreditKaart.astro) in de hal-vorm. `body.hal` en niet `.hal`:
@@ -2145,16 +2147,16 @@ body.hal .h-lk-meer .lm-i { width: 20px; height: 20px; margin-top: 3px; color: v
 body.hal .h-lk-meer .lm-stappen b { color: var(--h-inkt); font-weight: 600; }
 body.hal .h-lk-meer .lm-nr { font: 600 var(--h-t-fijn)/1 var(--h-letter); color: var(--h-inkt-3); }
 body.hal .h-lk-meer .lm-noot { font-size: 15px; }
-body.hal .h-lk-meer .lm-noot a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+body.hal .h-lk-meer .lm-noot a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .hal .h-lk-slot-sec { padding-top: 72px; }
-.hal .h-lk-slot { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding: 56px; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-lk-slot { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding: 56px; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-lk-slot > :not(.h-korrel) { position: relative; z-index: 2; }
 .hal .h-lk-slot .h-feiten li { background: rgba(255, 255, 255, .82); height: auto; min-height: 38px; padding-block: 7px; line-height: 1.35; }
 .hal .h-lk-queue { max-width: 680px; font-size: var(--h-t-klein); line-height: 1.5; color: var(--h-inkt-2); }
 body.hal .h-lk-diensten { margin: 4px 0 0; font: 450 var(--h-t-klein)/1.5 var(--h-letter); color: var(--h-inkt-2); }
 body.hal .h-lk-diensten .svcsw-k { font: 600 var(--h-t-fijn)/1.5 var(--h-letter); text-transform: none; letter-spacing: 0; color: var(--h-inkt-2); }
 body.hal .h-lk-diensten .svcsw-dot { color: var(--h-inkt-3); }
-body.hal .h-lk-diensten .svcsw-a { font: 600 var(--h-t-klein)/1.5 var(--h-letter); color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+body.hal .h-lk-diensten .svcsw-a { font: 600 var(--h-t-klein)/1.5 var(--h-letter); color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .hal .h-lk-slot .h-kop .l { color: var(--h-kop-licht); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2232,7 +2234,7 @@ body.hal .h-lk-diensten .svcsw-a { font: 600 var(--h-t-klein)/1.5 var(--h-letter
 .hal .h-ts-open .h-een { font-size: 180px; margin: 12px 0 18px -6px; }
 .hal .h-ts-open .h-proef-zin { max-width: 560px; margin: 0 0 22px; }
 .hal .h-ts-feiten { display: flex; flex-wrap: wrap; gap: 8px; }
-.hal .h-ts-feiten li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px; border-radius: 999px; background: rgba(15, 18, 23, .3); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); font: 450 var(--h-t-fijn)/1 var(--h-letter); color: #fff; }
+.hal .h-ts-feiten li { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 8px; border-radius: 999px; background: rgba(9, 13, 11, .3); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); font: 450 var(--h-t-fijn)/1 var(--h-letter); color: #fff; }
 .hal .h-ts-feiten i { width: 24px; height: 24px; border-radius: 50%; background: #fff; color: var(--h-inkt); display: grid; place-items: center; font-style: normal; font-size: 12px; }
 .hal .h-ts-beelden { margin: 0; justify-self: end; width: 100%; max-width: 440px; display: grid; gap: 18px; }
 .hal .h-ts-bij { font: 450 var(--h-t-fijn)/1.4 var(--h-letter); color: #fff; }
@@ -2249,7 +2251,7 @@ body.hal .h-lk-diensten .svcsw-a { font: 600 var(--h-t-klein)/1.5 var(--h-letter
 .hal .h-ts-wacht-ok, .hal .h-ts-wacht-fout { font-size: 15px; line-height: 1.5; color: var(--h-inkt); }
 .hal .h-ts-wacht-fout { padding-left: 12px; box-shadow: inset 3px 0 0 var(--h-inkt); }
 .hal .h-ts-wacht-noot { font-size: 13.5px; line-height: 1.5; color: var(--h-inkt-2); }
-.hal .h-ts-wacht-noot a, .hal .h-ts-anders a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-underline-offset: 3px; }
+.hal .h-ts-wacht-noot a, .hal .h-ts-anders a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-underline-offset: 3px; }
 .hal .h-ts-hp { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 /* de weigeringen: alleen zichtbaar als er een open staat */
@@ -2312,9 +2314,9 @@ html body.hal .h-form .s22 .btn { font: 600 var(--h-t-klein)/1 var(--h-letter); 
 .hal .h-st-stappen.h-ts-stappen { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .hal .h-ts-stap-zin { font-size: 15px; line-height: 1.5; color: var(--h-inkt-2); }
 /* 4 · de kleine lettertjes, onder in dezelfde band */
-.hal .h-ts-fijn { display: grid; gap: 8px; margin-top: 28px; padding-top: 22px; border-top: 1px solid rgba(15, 18, 23, .1); font-size: 13.5px; line-height: 1.5; color: var(--h-inkt-2); }
+.hal .h-ts-fijn { display: grid; gap: 8px; margin-top: 28px; padding-top: 22px; border-top: 1px solid rgba(9, 13, 11, .1); font-size: 13.5px; line-height: 1.5; color: var(--h-inkt-2); }
 .hal .h-ts-gids { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 4px; }
-.hal .h-ts-gids a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-underline-offset: 3px; }
+.hal .h-ts-gids a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-underline-offset: 3px; }
 
 /* 5 · het slot: een nevelband, zonder violet */
 .hal .h-sec.h-ts-slot { padding-top: 24px; }
@@ -2400,14 +2402,14 @@ html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-2 { font-size: 44px; line-
 html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-3 { font-size: 28px; line-height: 1.12; letter-spacing: -.015em; }
 html body.hal .h-form:not(.h-ts-form) .s22 .lopend { font-size: 19px; line-height: 1.5;   /* lijst 93 B1 b: de inleiding 19 */ color: var(--h-inkt-2); }
 html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket { display: inline-flex; align-items: center; gap: 9px; width: max-content; height: 32px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--h-nevel); color: var(--h-inkt); font: 600 13.5px/1 var(--h-letter); }
-html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket::before { content: ""; width: 20px; height: 20px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 3.5px, transparent 4px), #fff; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .2); }
+html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket::before { content: ""; width: 20px; height: 20px; border-radius: 50%; flex: none; background: radial-gradient(circle, var(--h-inkt) 0 3.5px, transparent 4px), #fff; box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .2); }
 html body.hal .h-form:not(.h-ts-form) .s22 .knop-wit { background: var(--h-inkt); border-color: var(--h-inkt); color: #fff; }
 html body.hal .h-form:not(.h-ts-form) .s22 .knop-lijn { background: transparent; border-color: var(--h-inkt); color: var(--h-inkt); }
 /* de donkere prijsplaat (.lime-plate, .plaat-vol in global.css): in de hal het lichte verloop met inkt.
    inkt-3 haalt op de lichtste violet van het verloop (#DCD5FF) maar 3,8:1, dus --ink-3 is hier inkt-2. */
-html body.hal .h-form:not(.h-ts-form) .lime-plate { border: 0; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; color: var(--h-inkt);
+html body.hal .h-form:not(.h-ts-form) .lime-plate { border: 0; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; color: var(--h-inkt);
   --ink: var(--h-inkt); --ink-1: var(--h-inkt); --ink-2: var(--h-inkt-2); --ink-3: var(--h-inkt-2); --ink-4: var(--h-inkt-2);
-  --line: var(--h-lijn); --line-strong: var(--h-lijn-sterk); --line-ui: var(--h-veldlijn); --ghost: rgba(15, 18, 23, .06);
+  --line: var(--h-lijn); --line-strong: var(--h-lijn-sterk); --line-ui: var(--h-veldlijn); --ghost: rgba(9, 13, 11, .06);
   --accent: var(--h-inkt); --accent-text: var(--h-inkt); --accent-word: var(--h-inkt); --accent-dim: var(--h-inkt); --accent-bright: var(--h-inkt);
   --accent-ink: #FFFFFF; --accent-on: #FFFFFF; --fill-blue: var(--h-inkt); --focus-ring: var(--h-inkt); --on-panel: var(--h-inkt); --paper-on-dark: var(--h-inkt);
   --geel-letter: var(--h-inkt); --op-inkt: #FFFFFF; --inkt: var(--h-inkt); --vel: #FFFFFF; }
@@ -2532,7 +2534,7 @@ html.h-js body.hal .h-stap:not(.is-in) .h-hw-in-rij li { transform: translate(-5
 .hal .h-hw-dienst-kiest { font-size: var(--h-t-klein); line-height: 1.45; color: var(--h-inkt-2); }
 .hal .h-hw-dienst .h-cirkel { position: absolute; top: 22px; right: 22px; }
 .hal .h-hw-verder { margin-top: 22px; font-size: 15px; line-height: 1.5; color: var(--h-inkt-2); }
-.hal .h-hw-verder a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(37 80 139 / .38); }
+.hal .h-hw-verder a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(1 102 69 / .38); }
 /* de planning: één nevelvlak, de kop en de regels links, de agenda rechts, "reken terug" eronder */
 .hal .h-hw-plan { display: grid; grid-template-columns: minmax(0, .88fr) minmax(0, 1fr); gap: 40px 56px; align-items: start; padding: 56px; border-radius: var(--r-vlak); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 .hal .h-hw-plan-tekst { display: grid; gap: 18px; justify-items: start; align-content: start; }
@@ -2581,7 +2583,7 @@ html.h-js body.hal .h-hw-plan.is-in .h-st-stappen .h-nr i::after { transform: sc
 .hal .h-hw-details li { display: grid; gap: 6px; padding: 22px 0; border-top: 1px solid var(--h-lijn); }
 .hal .h-hw-details b { font: 600 18px/1.3 var(--h-letter); color: var(--h-inkt); }
 .hal .h-hw-details span { font-size: var(--h-t-klein); line-height: 1.6; color: var(--h-inkt-2); }
-.hal .h-hw-details a, .hal .h-hw-meer a:not(.h-link) { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(37 80 139 / .38); }
+.hal .h-hw-details a, .hal .h-hw-meer a:not(.h-link) { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(1 102 69 / .38); }
 .hal .h-hw-land { display: grid; gap: 12px; padding-top: 22px; border-top: 1px solid var(--h-lijn); }
 .hal .h-hw-land-rij { display: grid; margin-top: 8px; }
 .hal .h-hw-land-rij li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 16px; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--h-lijn); }
@@ -2682,7 +2684,7 @@ html.h-js body.hal .h-hw-plan.is-in .h-st-stappen .h-nr i::after { transform: sc
 .hal .h-bm-vink li strong { color: var(--h-inkt); font-weight: 600; }
 .hal .h-bm-vink i { flex: none; width: 24px; height: 24px; margin-top: -1px; border-radius: 50%; background: #fff; color: var(--h-inkt); display: grid; place-items: center; font-size: 12px; }
 .hal .h-bm-klein { font-size: var(--h-t-klein); }
-.hal .h-bm-a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(37 80 139 / .38); }
+.hal .h-bm-a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(1 102 69 / .38); }
 /* de vijf stappen en wat je stuurt en terugkrijgt, in de band van /start */
 .hal .h-bm-stap-zin { font-size: var(--h-t-klein); line-height: 1.5; color: var(--h-inkt-2); }
 .hal .h-bm-ruil { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
@@ -2857,7 +2859,7 @@ html body.hal .h-cmp-fig .cv * { text-transform: none; letter-spacing: normal; f
 .hal .h-faq-groep-kop { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
 .hal .h-faq-groep-n { font: 600 var(--h-t-fijn)/1 var(--h-letter); color: var(--h-inkt-2); }
 body.hal .h-faq-lijst .dc-body > * + * { margin-top: 14px; }
-body.hal .h-faq-lijst .dc-body a:not(.h-link) { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+body.hal .h-faq-lijst .dc-body a:not(.h-link) { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 body.hal .h-faq-lijst .dc-body strong { color: var(--h-inkt); font-weight: 600; }
 /* twee kleine voorbeelden naast elkaar, even hoog, en niet de hele kaart breed */
 .hal .h-faq-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 520px; }
@@ -2875,7 +2877,7 @@ body.hal .h-faq-lijst .dc-body strong { color: var(--h-inkt); font-weight: 600; 
 .hal .h-faq-nog .h-acties { margin: 0; }
 /* ── /upload-guidelines ── */
 .hal .h-ug-hub { font-size: var(--h-t-klein); line-height: 1.5; color: var(--h-inkt-2); }
-.hal .h-ug-hub a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.hal .h-ug-hub a { color: var(--h-blauw); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .hal .h-ug-hub a:hover { text-decoration-color: currentColor; }
 .hal .h-ug-pdf { margin-top: 2px; }
 .hal .h-ug-kopzin { max-width: 420px; font-size: var(--h-t-klein); line-height: 1.5; color: var(--h-inkt-2); }
@@ -2993,7 +2995,7 @@ html.h-js body.hal .h-ab-drie li.is-in .h-nr i::after { transform: scaleX(1); }
 /* de band: schermbreed, met aan beide randen een zachte vervaging; twee gelijke
    rijen achter elkaar die elk hun eigen breedte opschuiven, zodat de lus naadloos is */
 .hal .h-ab-band { --hb: 420px; display: flex; width: 100vw; margin-left: calc(50% - 50vw); overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #0F1217 7%, #0F1217 93%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #0F1217 7%, #0F1217 93%, transparent 100%); }
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #090D0B 7%, #090D0B 93%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #090D0B 7%, #090D0B 93%, transparent 100%); }
 .hal .h-ab-band-rij { flex: none; display: flex; gap: 16px; padding-right: 16px; animation: h-band 90s linear infinite; }
 .hal .h-ab-band-rij li { flex: none; height: var(--hb); aspect-ratio: var(--r); border-radius: var(--r-kaart); overflow: hidden; background: var(--h-vak); }
 .hal .h-ab-band-rij img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -3007,14 +3009,14 @@ html.h-js body.hal .h-ab-drie li.is-in .h-nr i::after { transform: scaleX(1); }
 .hal .h-ct-kanalen-kop { margin-bottom: 4px; font: 600 18px/1.3 var(--h-letter); color: var(--h-inkt); }
 .hal .h-ct-vak { display: grid; gap: 8px; align-content: start; padding: 26px 28px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 /* WhatsApp is het snelste kanaal: het enige lichte verloop op het scherm */
-.hal .h-ct-wa { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-ct-wa { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-ct-wa .h-acties { margin-top: 10px; }
 .hal .h-ct-vak-kop { font: 600 var(--h-t-fijn)/1.3 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-ct-groot { font: 450 26px/1.2 var(--h-letter); letter-spacing: -.015em; color: var(--h-inkt); overflow-wrap: anywhere; }
 .hal .h-ct-klein { font-size: 15px; line-height: 1.55; color: var(--h-inkt-2); }
 .hal .h-ct-twee { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 /* :not(.h-knop): anders wint deze regel (0,3,1) van .h-knop-inkt (0,2,0) en staat er inkt op inkt */
-.hal .h-ct-vak a:not(.h-knop), .hal .h-ct-vorm .ct-privacy a, .hal .h-ct-vorm .ct-faq a, .hal .h-ct-vorm .ct-weigering a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.hal .h-ct-vak a:not(.h-knop), .hal .h-ct-vorm .ct-privacy a, .hal .h-ct-vorm .ct-faq a, .hal .h-ct-vorm .ct-weigering a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 /* een WhatsApp-knop zonder pijlrondje: het teken (global.css, op href) en het woord
    samen links, en niet het woord weggedrukt naar de rechterkant (space-between) */
 .hal .h-knop[href*="wa.me"]:not(:has(.o)) { justify-content: flex-start; gap: 10px; }
@@ -3090,7 +3092,7 @@ body.hal .h-vd-wacht .dc-label { font: 600 var(--h-t-klein)/1.35 var(--h-letter)
 body.hal .h-vd-wacht .dc-body { padding-bottom: 8px; font-size: var(--h-t-klein); line-height: 1.55; color: var(--h-inkt-2); }
 /* de soorten: drie kaarten, en zolang er geen clip is een eerlijk "clip volgt"-vlak */
 .hal .h-st-looks.h-vd-looks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.hal .h-vd-klip { display: grid; place-items: center; background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-vd-klip { display: grid; place-items: center; background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 /* (0,4,0): .h-st-beeld > :first-child zet het eerste kind op blok, volle hoogte */
 .hal .h-st-beeld.h-vd-klip > .h-vd-klip-in { display: grid; align-content: center; justify-items: center; gap: 10px; height: 100%; text-align: center; }
 .hal .h-vd-klip .h-cirkel { width: 64px; height: 64px; color: var(--h-inkt); font-size: 20px; cursor: default; }
@@ -3107,7 +3109,7 @@ body.hal .h-vd-wacht .dc-body { padding-bottom: 8px; font-size: var(--h-t-klein)
 .hal .h-vd-kopen .h-acties { margin-top: 8px; }
 .hal .h-vd-vast { padding-top: 12px; border-top: 1px solid var(--h-lijn); }
 .hal .h-vd-noot { font-size: var(--h-t-klein); line-height: 1.55; color: var(--h-inkt-2); }
-.hal .h-vd-noot a, .hal .h-vs-model a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.hal .h-vd-noot a, .hal .h-vs-model a { color: var(--h-blauw); text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 body.hal .h-vd-kopen .dc-sum { padding-block: 8px; }
 body.hal .h-vd-kopen .dc-label { font: 600 15px/1.35 var(--h-letter); color: var(--h-inkt); }
 body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-height: 1.55; color: var(--h-inkt-2); }
@@ -3128,7 +3130,7 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
 /* editions: de twee sets naast elkaar; de eigen set in het lichte verloop */
 .hal .h-ed-vgl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .hal .h-ed-vgl li { display: grid; gap: 18px; align-content: start; justify-items: start; padding: 32px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
-.hal .h-ed-vgl li.is-eigen { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-ed-vgl li.is-eigen { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-ed-vgl-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font: 600 22px/1.2 var(--h-letter); color: var(--h-inkt); }
 .hal .h-ed-rijen { width: 100%; display: grid; }
 .hal .h-ed-rijen > div { display: grid; grid-template-columns: minmax(120px, .45fr) minmax(0, 1fr); gap: 4px 20px; padding: 12px 0; border-top: 1px solid var(--h-lijn); }
@@ -3237,7 +3239,7 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
 .hal .h-gl-pil:hover { background: var(--h-vak); }
 .hal .h-gl-pil[aria-pressed="true"] { background: var(--h-inkt); color: #fff; }
 .hal .h-gl-pil:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.hal .h-gl-soort select { height: 44px; padding: 0 40px 0 18px; border: 1px solid var(--h-lijn); border-radius: var(--hoek-knop); background: var(--h-wit) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230F1217' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") right 16px center / 14px no-repeat; -webkit-appearance: none; appearance: none; font: 600 var(--h-t-fijn)/1 var(--h-letter); color: var(--h-inkt); cursor: pointer; }
+.hal .h-gl-soort select { height: 44px; padding: 0 40px 0 18px; border: 1px solid var(--h-lijn); border-radius: var(--hoek-knop); background: var(--h-wit) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23090D0B' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") right 16px center / 14px no-repeat; -webkit-appearance: none; appearance: none; font: 600 var(--h-t-fijn)/1 var(--h-letter); color: var(--h-inkt); cursor: pointer; }
 .hal .h-gl-soort select:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 .hal .h-gl-lijst { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -3299,7 +3301,7 @@ body.hal .h-vd-kopen .dc-body { padding-bottom: 8px; font-size: 15px; line-heigh
    "Deze aanmerken" in plaats van een tweede knop. */
 .hal .h-lv-knop.is-ja { background: var(--h-inkt); border-color: var(--h-inkt); color: #fff; }
 .hal .h-lv-pick { display: inline-flex; align-items: center; gap: 7px; height: 38px; font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt-2); }
-.hal .h-lv-box { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px rgba(15, 18, 23, .35); }
+.hal .h-lv-box { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px rgba(9, 13, 11, .35); }
 .hal .h-lv-in, .hal .h-lv-uit { display: grid; gap: 10px; }
 .hal .h-lv-in { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .hal .h-lv-uit { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -3444,12 +3446,12 @@ html body.hal .h-lv .h-lv-noot { --h-maat: 26em; }
 .hal .h-sd-kop .h-h1 > span { display: block; }
 /* het scherm: FigDash zelf, licht in de kleuren van de hal (zoals de agenda op /how-it-works) */
 .hal .h-sec.h-sd-scherm-sec { padding-top: 56px; }
-.hal .h-sd-scherm { position: relative; overflow: hidden; border-radius: var(--r-vlak); padding: 56px; background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-sd-scherm { position: relative; overflow: hidden; border-radius: var(--r-vlak); padding: 56px; background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-sd-scherm .h-sd-fig { position: relative; z-index: 2; }
 body.hal .h-sd-fig { min-width: 0; max-width: 1080px; margin: 0 auto;
   --paper: #FFFFFF; --paper-2: #FFFFFF; --surface: #FFFFFF; --surface-2: var(--h-nevel); --ink: var(--h-inkt); --ink-1: var(--h-inkt); --ink-2: var(--h-inkt-2); --ink-3: var(--h-inkt-3);
   --line: var(--h-lijn); --line-strong: var(--h-lijn-sterk); --accent: var(--h-inkt); --accent-on: #FFFFFF; --accent-text: var(--h-inkt);
-  --ghost: var(--h-nevel); --focus-ring: var(--h-inkt); --st-work-ink: var(--h-inkt); --warn-ink: #25508B; --flag-ink: #25508B;
+  --ghost: var(--h-nevel); --focus-ring: var(--h-inkt); --st-work-ink: var(--h-inkt); --warn-ink: #016645; --flag-ink: #016645;
   --font-display: var(--h-letter); --r-sm: 8px; --r-md: 14px; --r-lg: 28px; --r-pill: 999px; }
 html body.hal .h-sd-fig .fd *, html body.hal .h-sd-fig .fg * { font-family: var(--h-letter); text-transform: none; letter-spacing: normal; }
 html body.hal .h-sd-fig .fd { border: 0; box-shadow: none; }
@@ -3527,7 +3529,7 @@ html.h-js body.hal .h-sd-staat.is-in .h-st-stappen .h-nr i::after { transform: s
 .hal .h-sd-logboek-r { display: grid; grid-template-columns: 44px 26px minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 0; border-top: 1px solid var(--h-lijn); }
 .hal .h-sd-logboek-t { padding-top: 3px; font: 600 13.5px/1.2 var(--h-letter); font-variant-numeric: tabular-nums; color: var(--h-inkt-3); }
 .hal .h-sd-logboek-i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--h-nevel); color: var(--h-inkt); }
-.hal .h-sd-logboek-r.is-terug .h-sd-logboek-i { background: #F4F5F7; color: #25508B; }
+.hal .h-sd-logboek-r.is-terug .h-sd-logboek-i { background: #F4F5F4; color: #016645; }
 .hal .h-sd-logboek-i svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .hal .h-sd-logboek-w { display: grid; gap: 3px; }
 .hal .h-sd-logboek-w b { font: 600 15px/1.25 var(--h-letter); color: var(--h-inkt); }
@@ -3537,7 +3539,7 @@ html.h-js body.hal .h-sd-staat.is-in .h-st-stappen .h-nr i::after { transform: s
 /* de sleutel: een bento met de twee echte getallen */
 .hal .h-sd-sleutel { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); grid-auto-rows: minmax(260px, auto); gap: 16px; }
 .hal .h-sd-sl { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; gap: 28px; padding: 28px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
-.hal .h-sd-sl-groot { grid-row: span 2; background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-sd-sl-groot { grid-row: span 2; background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-sd-sl-onder { display: grid; gap: 8px; }
 .hal .h-sd-sl-onder b { font: 450 24px/1.15 var(--h-letter); letter-spacing: -.015em; color: var(--h-inkt); }
 .hal .h-sd-sl-getal { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
@@ -3675,7 +3677,7 @@ html body.hal .h-jur-tekst .legal-folds .dc-label { font: 600 17px/1.35 var(--h-
 html body.hal .h-jur-tekst .legal-folds .dc-body { padding: 0 0 18px; }
 /* het slot van het document: een adres, geen aanbieding — het enige lichte violette vlak */
 .hal .h-jur-staart { margin-top: 24px; }
-html body.hal .h-jur-tekst .jur-uit { margin: 0; padding: 44px 48px; border: 0; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+html body.hal .h-jur-tekst .jur-uit { margin: 0; padding: 44px 48px; border: 0; border-radius: var(--r-vlak); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 html body.hal .h-jur-tekst .jur-uit h2 { margin: 0; font: 700 32px/1.1 var(--h-kopletter); letter-spacing: -.02em;  /* levering 77: VISUAILS Display Bold */ color: var(--h-inkt); text-wrap: balance; }
 html body.hal .h-jur-tekst .jur-uit .h-acties { margin-top: 24px; max-width: none !important; }
 html body.hal .h-jur-tekst .jur-uit .h-knop { text-decoration: none; }
@@ -3685,7 +3687,7 @@ html body.hal .h-jur-tekst .jur-uit .h-knop-inkt { color: #fff; }
 .hal .h-nf-kop { max-width: var(--h-kolom); margin: 0 auto; padding: 172px var(--h-rand) 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px 56px; align-items: center; }
 .hal .h-nf-tekst { display: grid; gap: 22px; justify-items: start; }
 .hal .h-nf-tekst .h-h1 > span { display: block; }
-.hal .h-nf-getal { position: relative; overflow: hidden; display: grid; place-items: center; min-height: 420px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-nf-getal { position: relative; overflow: hidden; display: grid; place-items: center; min-height: 420px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-nf-getal .h-getal { position: relative; z-index: 2; font-size: 220px; }
 .hal .h-nf-verder { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .hal .h-nf-verder a { display: flex; flex-direction: column; justify-content: space-between; gap: 40px; min-height: 200px; padding: 26px; border-radius: var(--r-kaart); background: var(--h-kaart); transition: transform .45s var(--h-zacht), box-shadow .45s var(--h-zacht); box-shadow: var(--h-kaart-rand); }
@@ -3866,7 +3868,7 @@ html body.hal .h-form .s22 .knop { justify-content: space-between; }
 .hal .h-paginakop.met-kopbeeld .h-paginakop-tekst { display: grid; gap: 22px; justify-items: start; align-content: start; }
 .hal .h-kopbeeld { position: relative; margin: 0; }
 /* de getalkaart: label en ↗ boven, het getal, één zin; op het lichte violette vlak */
-.hal .h-kopbeeld-getal { overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; gap: 20px; min-height: 440px; padding: 30px 32px 32px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-kopbeeld-getal { overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; gap: 20px; min-height: 440px; padding: 30px 32px 32px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-kopbeeld-getal > :not(.h-korrel) { position: relative; z-index: 2; }
 .hal .h-kopbeeld-boven { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hal .h-kopbeeld-boven .h-cirkel:hover { transform: rotate(45deg); }
@@ -3877,7 +3879,7 @@ html body.hal .h-form .s22 .knop { justify-content: space-between; }
 .hal .h-kopbeeld-voet { margin: 0; max-width: 30em; font-size: var(--h-t-klein); line-height: 1.5; color: var(--h-inkt-2); }
 /* korte regels onder het getal (over ons: de momenten waarop je het aanspreekpunt merkt), met haarlijnen */
 .hal .h-kopbeeld-regels { margin: 0; padding: 0; list-style: none; display: grid; }
-.hal .h-kopbeeld-regels li { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 4px 18px; padding: 12px 0; border-top: 1px solid rgba(15, 18, 23, .1); }
+.hal .h-kopbeeld-regels li { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 4px 18px; padding: 12px 0; border-top: 1px solid rgba(9, 13, 11, .1); }
 .hal .h-kopbeeld-regels b { font: 600 15px/1.35 var(--h-letter); color: var(--h-inkt); }
 .hal .h-kopbeeld-regels span { font-size: 15px; line-height: 1.45; color: var(--h-inkt-2); }
 .hal .h-kopbeeld-getal:has(.h-kopbeeld-regels) { grid-template-rows: auto 1fr auto auto; }
@@ -3888,7 +3890,7 @@ html body.hal .h-form .s22 .knop { justify-content: space-between; }
 .hal .h-kopbeeld-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .hal .h-kopbeeld-paar figure { position: relative; margin: 0; overflow: hidden; border-radius: var(--r-kaart); background: var(--h-wit); }
 /* een haarlijn om de foto: een packshot op wit verdwijnt anders in de witte pagina */
-.hal .h-kopbeeld-foto::after, .hal .h-kopbeeld-paar figure::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .07); pointer-events: none; }
+.hal .h-kopbeeld-foto::after, .hal .h-kopbeeld-paar figure::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .07); pointer-events: none; }
 @media (max-width: 900px) {
   .hal .h-paginakop.met-kopbeeld { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .hal .h-paginakop.met-kopbeeld .h-paginakop-tekst { gap: 16px; }
@@ -3911,7 +3913,7 @@ html body.hal .h-form .s22 .knop { justify-content: space-between; }
 .hal .h-ov-cijfers { display: grid; grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 .hal .h-ov-cijfer { position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; min-height: 340px; padding: 26px 26px 28px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 .hal .h-ov-cijfer > :not(.h-korrel) { position: relative; z-index: 2; }
-.hal .h-ov-cijfer-licht { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-ov-cijfer-licht { background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-ov-cijfer-boven { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hal .h-ov-cijfer-boven .h-cirkel:hover { transform: rotate(45deg); }
 .hal .h-ov-cijfer-onder { display: grid; gap: 12px; }
@@ -3937,7 +3939,7 @@ html body.hal .h-form .s22 .knop { justify-content: space-between; }
 .hal .h-ov-drie { padding: 28px 32px 14px; border-radius: var(--r-kaart); background: var(--h-kaart); box-shadow: var(--h-kaart-rand); }
 .hal .h-ov-drie-kop { margin: 0 0 10px; font: 600 15px/1.3 var(--h-letter); color: var(--h-inkt); }
 .hal .h-ov-drie-lijst { margin: 0; padding: 0; list-style: none; }
-.hal .h-ov-drie-lijst li { padding: 18px 0; border-top: 1px solid rgba(15, 18, 23, .1); }
+.hal .h-ov-drie-lijst li { padding: 18px 0; border-top: 1px solid rgba(9, 13, 11, .1); }
 .hal .h-ov-drie-lijst li > div { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 6px 22px; align-items: start; }
 .hal .h-ov-drie-lijst b { font: 450 19px/1.25 var(--h-letter); letter-spacing: -.01em; color: var(--h-inkt); text-wrap: balance; }
 .hal .h-ov-drie-lijst span { max-width: var(--h-maat); font-size: var(--h-t-klein); line-height: 1.5; color: var(--h-inkt-2); }
@@ -3946,7 +3948,7 @@ html[lang="nl"] body.hal .h-ov-lucas-zin, html[lang="nl"] body.hal .h-ov .h-vd-s
 /* de controle in de opening (Lucas, afvinklijst 22: "een hoopgevende mockup van hoe wij omgaan met
    bestellingen"): één licht violet vlak met jouw foto naast ons beeld (glas alleen op de foto's) en een
    witte kaart met waar we op letten. Breedte 600 px op 1440; de twee beelden 4:5. */
-.hal .h-ov-ctrl { position: relative; overflow: hidden; isolation: isolate; display: grid; gap: 14px; align-content: start; padding: 22px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E6E8EC; }
+.hal .h-ov-ctrl { position: relative; overflow: hidden; isolation: isolate; display: grid; gap: 14px; align-content: start; padding: 22px; border-radius: var(--r-kaart); background: var(--h-verloop-licht); box-shadow: inset 0 0 0 1px #E7EAE8; }
 .hal .h-ov-ctrl > :not(.h-korrel) { position: relative; z-index: 2; }
 .hal .h-ov-ctrl-balk { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hal .h-ov-ctrl-stand { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px 0 6px; border-radius: 999px; background: #fff; font: 600 13.5px/1 var(--h-letter); color: var(--h-inkt); white-space: nowrap; }
@@ -3954,7 +3956,7 @@ html[lang="nl"] body.hal .h-ov-lucas-zin, html[lang="nl"] body.hal .h-ov .h-vd-s
 .hal .h-ov-ctrl svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .hal .h-ov-ctrl-paar { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .hal .h-ov-ctrl-paar figure { position: relative; margin: 0; aspect-ratio: 4 / 5; overflow: hidden; border-radius: var(--r-kaart); background: #fff; }
-.hal .h-ov-ctrl-paar figure::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .07); pointer-events: none; }
+.hal .h-ov-ctrl-paar figure::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .07); pointer-events: none; }
 .hal .h-ov-ctrl-paar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .hal .h-ov-ctrl-paar figcaption.h-pil { position: absolute; left: 12px; bottom: 12px; z-index: 2; }
 .hal .h-ov-ctrl-pijl { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); box-shadow: none; }
@@ -3979,12 +3981,12 @@ html[lang="nl"] body.hal .h-ov-lucas-zin, html[lang="nl"] body.hal .h-ov .h-vd-s
 .hal .h-ctrl-maat::after { bottom: 0; }
 .hal .h-ov-ctrl-rij { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .hal .h-ov-ctrl-rij li { display: grid; grid-template-columns: 44px minmax(0, 1fr) 22px; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; border-radius: var(--r-klein); background: #fff; }
-.hal .h-ov-ctrl-rij img { display: block; align-self: start; width: 44px; height: 44px; border-radius: var(--r-klein); object-fit: cover; background: var(--h-wit); box-shadow: inset 0 0 0 1px rgba(15, 18, 23, .07); }
+.hal .h-ov-ctrl-rij img { display: block; align-self: start; width: 44px; height: 44px; border-radius: var(--r-klein); object-fit: cover; background: var(--h-wit); box-shadow: inset 0 0 0 1px rgba(9, 13, 11, .07); }
 .hal .h-ov-ctrl-rij-tekst { display: grid; gap: 2px; min-width: 0; }
 .hal .h-ov-ctrl-rij-tekst b { font: 600 13.5px/1.2 var(--h-letter); color: var(--h-inkt); }
 .hal .h-ov-ctrl-rij-tekst span { font: 450 var(--h-t-label)/1.25 var(--h-letter); color: var(--h-inkt-2); }
 .hal .h-ov-ctrl-vink { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--h-inkt); color: #fff; }
-.hal .h-ov-ctrl-voet { display: flex; align-items: center; gap: 8px; margin: 0; padding-top: 12px; border-top: 1px solid rgba(15, 18, 23, .1); font: 450 var(--h-t-fijn)/1.35 var(--h-letter); color: var(--h-inkt-2); }
+.hal .h-ov-ctrl-voet { display: flex; align-items: center; gap: 8px; margin: 0; padding-top: 12px; border-top: 1px solid rgba(9, 13, 11, .1); font: 450 var(--h-t-fijn)/1.35 var(--h-letter); color: var(--h-inkt-2); }
 /* ── DE CONTROLE IN BEWEGING (HalControle `uitleg`) ──────────────────────
    Stap 1 het paar van de voorkant (jouw foto, dan ons beeld) en de pipet; stap 2, 3 en 4 de
    achterkant, het detail en het model, elk met zijn markering na 0,7 s; bij elk beeld licht
@@ -4125,7 +4127,7 @@ body.hal:has(.h-melding.is-open) .u-balk { bottom: calc(var(--h-melding-h, 80px)
    inkt-3 (5,3:1); de gedane en de huidige in inkt. Geen stap (een aanvraag): de rij blijft
    weg en de melding is zoals hij was. */
 .hal .h-melding-label { display: flex; align-items: center; gap: 10px; font: 600 12px/1.35 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt-2); }
-.hal .h-melding-label i { flex: none; width: 16px; height: 16px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230F1217' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat; }
+.hal .h-melding-label i { flex: none; width: 16px; height: 16px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23090D0B' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat; }
 .hal .h-melding-label span { min-width: 0; }
 .hal .h-melding:has(> .h-melding-stap:not([hidden])):not([hidden]) { grid-template-areas: "tekst sluit" "stap stap" "knop knop"; }
 .hal .h-melding-stap { grid-area: stap; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 2px 0 0; padding: 0; list-style: none; } /* drie stappen sinds 9 nov 2026 (ronde 91, w4) */
@@ -4199,7 +4201,7 @@ html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd { font-size
 html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row [data-ty-ref] { font: 600 17px/1.4 var(--h-letter); font-stretch: normal; letter-spacing: .02em; font-variant-numeric: tabular-nums; color: var(--h-inkt); }
 html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 [data-ty-mail]:not(:empty) { font-size: 15px; }
 html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-mailnote { margin-top: 2px; font-size: 15px; line-height: 1.5; }
-html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd a { color: var(--h-blauw); text-decoration-color: rgb(37 80 139 / .38); text-underline-offset: 4px; }
+html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd a { color: var(--h-blauw); text-decoration-color: rgb(1 102 69 / .38); text-underline-offset: 4px; }
 html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row-ask dd { line-height: 1.75; }
 /* onderaan: de vraag als kleine kop, de bronnen als kleine knoppen van de hal */
 html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-extra { gap: 22px; }
@@ -4370,8 +4372,9 @@ body.hal .btn { border-radius: var(--hoek-knop); }
    of in een kaart (<span class="h-pil">) blijft een pil. */
 body.hal main { counter-reset: h-sectie; }
 .hal p.h-pil { counter-increment: h-sectie; height: auto; padding: 0; gap: 10px; background: none; box-shadow: none; border-radius: 0; -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--h-inkt); font: 600 12px/1.3 var(--h-mono); letter-spacing: .1em; text-transform: uppercase; white-space: normal; }
-.hal p.h-pil::before { order: -2; width: 16px; height: 16px; border-radius: 0; box-shadow: none; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230F1217' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat; }
-.hal p.h-pil::after { order: -1; content: counter(h-sectie, decimal-leading-zero); color: var(--h-inkt); }
+.hal p.h-pil::before { order: -2; width: 16px; height: 16px; border-radius: 0; box-shadow: none; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23090D0B' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat; }
+/* lijst 114 (15 november 2026): "bij alle wenkbrauwen de cijfers weghalen" — geen 01, 02 … meer voor het label */
+.hal p.h-pil::after { content: none; }
 .hal p.h-pil-donker { color: #fff; }
 .hal p.h-pil-donker::after { color: #fff; }
 /* op een donkere of violette band: het nummer en de streep wit (schema A: lila alleen als echo bij het logo) */
@@ -4440,7 +4443,7 @@ body.hal .hal-wm-reus { color: var(--h-inkt); }
    De vorm en de binnenruimte komen uit src/styles/knoppen.css; een paar zet daar alleen wat de snede er extra bij vraagt
    (--k-paar-l, --k-paar-r) en de hoek aan de kant van de snede. Met :not(#k), zoals in knoppen.css, anders wint de pil. */
 .hal .h-knop.k-klein { --h-snede: 27px; --h-kier: 3.42px; }
-.hal .h-knop.k-lijn { --h-rand: var(--h-lijn-sterk, #C5C8CF); }
+.hal .h-knop.k-lijn { --h-rand: var(--h-lijn-sterk, #C6CAC8); }
 .hal .h-knop.k-lijn.k-wit { --h-rand: rgba(255, 255, 255, .45); }
 @media (min-width: 901px) {
   /* Elke zichtbare knop die door een zichtbare knop gevolgd wordt, krijgt rechts de
@@ -4540,7 +4543,7 @@ body.hal .site-footer .foot-social a:focus-visible { clip-path: none !important;
 body.hal .sb .sb-veld button:disabled::after {
   content: ""; flex: none; width: 24px; height: 28px; border-radius: 0; transform: none;
   background:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 702 813.25'><path fill='%2380A7DD' d='M701.75 0L543.25 366.25L507.25 453.75L652 259.25L702 338.25Z'/></svg>") 50% 50% / 18px 21px no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 702 813.25'><path fill='%233DFFB0' d='M701.75 0L543.25 366.25L507.25 453.75L652 259.25L702 338.25Z'/></svg>") 50% 50% / 18px 21px no-repeat,
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 702 813.25'><path fill='%23fff' d='M0 16L144.25 266.75L463.25 813.25L662.75 354.75L619.25 408.25L515.5 546.25L264.5 119A201.21 201.21 0 0 0 101 15.75Z'/></svg>") 50% 50% / 18px 21px no-repeat;
   animation: h-laad 1.1s steps(1, end) infinite;
 }
@@ -4569,7 +4572,7 @@ html body.hal .h-form .s22 .knop-inkt { padding: 0 18px 0 26px; border-radius: 9
 html body.hal .h-form .s22 .knop-inkt:hover { background: var(--h-blauw); border-color: var(--h-blauw); transform: none; box-shadow: none; }
 /* 2. Het keuzevak "soort beeld" in de galerij (telefoon) had een lijnpijltje; nu het
       gevulde uitklap-icoon uit het kit, 16 px. */
-.hal .h-gl-soort select { background: var(--h-wit) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230F1217' d='M17.45 10.56L13.96 9.04L12.16 13.19L9.05 7.8L6.86 7.8L5.21 8.75L12.64 21.61Z'/></svg>") right 14px center / 16px no-repeat; }
+.hal .h-gl-soort select { background: var(--h-wit) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23090D0B' d='M17.45 10.56L13.96 9.04L12.16 13.19L9.05 7.8L6.86 7.8L5.21 8.75L12.64 21.61Z'/></svg>") right 14px center / 16px no-repeat; }
 
 /* ══ UIT AFVINKLIJST 35 — 17 oktober 2026 ════════════════════════════════════════
    g-focus, Lucas: "mag wel een stuk subtieler en iets unieker en meer VISUAILS style
@@ -5141,7 +5144,7 @@ html body.hal .h-knop-klein .o { font-size: 15px; }
    inkt en op blauw uur haalt allebei ruim 4,5 : 1 (19,18 en 8,08), dus elke tussenstand
    ook. Op een witte of lichte knop is de gloed zwak (16 %), de letters blijven inkt. */
 html body.hal .h-knop::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: 0;
-  background: radial-gradient(95% 140% at 50% 130%, var(--h-gloed, rgba(37, 80, 139, .95)) 0%, rgba(37, 80, 139, 0) 74%);
+  background: radial-gradient(95% 140% at 50% 130%, var(--h-gloed, rgba(1, 102, 69, .95)) 0%, rgba(1, 102, 69, 0) 74%);
   transition: opacity .32s cubic-bezier(.22, .8, .2, 1); }
 html body.hal .h-knop:hover::before, html body.hal .h-knop:focus-visible::before { opacity: 1; }
 /* inkt: een dunne lichtrand bovenaan (het glas van een knop, geen schaduw eronder) */
@@ -5149,16 +5152,16 @@ html body.hal .h-knop-inkt { background-color: var(--h-inkt); box-shadow: inset 
 html body.hal .h-knop-inkt:hover { background-color: var(--h-inkt); color: #FFFFFF; }
 /* de lijnknop: een haarlijn in plaats van de dikke inktrand; onder de muis wordt de lijn
    inkt en komt er een zweem blauw uur op (niet meer vol inkt) */
-html body.hal .h-knop-lijn { --h-rand: var(--h-lijn-sterk); --h-gloed: rgba(37, 80, 139, .16); background-color: #FFFFFF; box-shadow: inset 0 0 0 1px var(--h-lijn-sterk); color: var(--h-inkt); }
+html body.hal .h-knop-lijn { --h-rand: var(--h-lijn-sterk); --h-gloed: rgba(1, 102, 69, .16); background-color: #FFFFFF; box-shadow: inset 0 0 0 1px var(--h-lijn-sterk); color: var(--h-inkt); }
 html body.hal .h-knop-lijn:hover { --h-rand: var(--h-inkt); background-color: #FFFFFF; color: var(--h-inkt); box-shadow: inset 0 0 0 1px var(--h-inkt); }
-html body.hal .h-knop-wit { --h-gloed: rgba(37, 80, 139, .2); }
+html body.hal .h-knop-wit { --h-gloed: rgba(1, 102, 69, .2); }
 html body.hal .h-knop-wit:hover { background: #FFFFFF; color: var(--h-inkt); }
 html body.hal .h-knop-wit:hover .o { color: var(--h-inkt); }
 /* op inkt (het inktblok, het €1-blok): de witte knop krijgt de gloed in blauw licht */
-html body.hal .h-lk-slot .h-knop-inkt, html body.hal .h-proef .h-knop-inkt { --h-gloed: rgba(128, 167, 221, .6); box-shadow: none; }
+html body.hal .h-lk-slot .h-knop-inkt, html body.hal .h-proef .h-knop-inkt { --h-gloed: rgba(61, 255, 176, .6); box-shadow: none; }
 html body.hal .h-lk-slot .h-knop-inkt:hover, html body.hal .h-proef .h-knop-inkt:hover { background: #FFFFFF; color: var(--h-inkt); }
 html body.hal .h-lk-slot .h-knop-inkt:hover .o, html body.hal .h-proef .h-knop-inkt:hover .o { color: var(--h-inkt); }
-html body.hal .h-knop-lijnwit { --h-rand: rgba(255, 255, 255, .45); --h-gloed: rgba(128, 167, 221, .35); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45); }
+html body.hal .h-knop-lijnwit { --h-rand: rgba(255, 255, 255, .45); --h-gloed: rgba(61, 255, 176, .35); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45); }
 html body.hal .h-knop-lijnwit:hover, html body.hal .h-lk-slot .h-knop-lijn:hover { --h-rand: #FFFFFF; background: rgba(255, 255, 255, .08); color: #FFFFFF; box-shadow: inset 0 0 0 1px #FFFFFF; }
 @media (prefers-reduced-motion: reduce) { html body.hal .h-knop, html body.hal .h-knop::before { transition: none; } }
 @media (forced-colors: active) { html body.hal .h-knop::before { display: none; } }
@@ -5170,16 +5173,16 @@ html body.hal .h-knop-lijnwit:hover, html body.hal .h-lk-slot .h-knop-lijn:hover
    menu's (de kleine grijze kopjes halen boven inkt dan nog 4,5 : 1), 72 % op de knop en
    de balk (alleen letters in inkt, minstens 10 : 1). Zonder backdrop-filter: vol. */
 body.hal .site-header .nav-menu { background: rgba(255, 255, 255, .9) !important; -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 0 0 1px rgba(15, 18, 23, .07), 0 18px 40px -22px rgba(15, 18, 23, .32) !important; border-radius: 20px !important; }
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 0 0 1px rgba(9, 13, 11, .07), 0 18px 40px -22px rgba(9, 13, 11, .32) !important; border-radius: 20px !important; }
 body.hal .wa-launcher { background: rgba(255, 255, 255, .72); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 0 0 1px rgba(15, 18, 23, .07), 0 10px 26px -14px rgba(15, 18, 23, .3); }
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72), 0 0 0 1px rgba(9, 13, 11, .07), 0 10px 26px -14px rgba(9, 13, 11, .3); }
 body.hal .wa-launcher:hover { background: rgba(255, 255, 255, .9); }
-body.hal [data-uitleg-staat="speelt"] .u-balk, body.hal [data-uitleg-staat="pauze"][data-uitleg-hand] .u-balk { background: rgba(244, 245, 247, .78); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), 0 0 0 1px rgba(15, 18, 23, .05); }
-body.hal.o-aan .o-hoe .u-balk { background: #F4F5F7; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+body.hal [data-uitleg-staat="speelt"] .u-balk, body.hal [data-uitleg-staat="pauze"][data-uitleg-hand] .u-balk { background: rgba(244, 245, 244, .78); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), 0 0 0 1px rgba(9, 13, 11, .05); }
+body.hal.o-aan .o-hoe .u-balk { background: #F4F5F4; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   body.hal .site-header .nav-menu { background: #FFFFFF !important; }
   body.hal .wa-launcher { background: #FFFFFF; }
-  body.hal [data-uitleg-staat="speelt"] .u-balk, body.hal [data-uitleg-staat="pauze"][data-uitleg-hand] .u-balk { background: #F4F5F7; }
+  body.hal [data-uitleg-staat="speelt"] .u-balk, body.hal [data-uitleg-staat="pauze"][data-uitleg-hand] .u-balk { background: #F4F5F4; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -5210,7 +5213,7 @@ html body.hal.hal .h-lv-checks i, html body.hal.hal .h-pl-feiten i, html body.ha
 html body.hal.hal .h-bm-check-i, html body.hal.hal .h-sd-manifest-i, html body.hal.hal .h-sd-logboek-i, html body.hal.hal .h-pp-plus,
 html body.hal.hal .h-ctrl-pipet i, html body.hal.hal .h-cirkel-mini { background: none !important; box-shadow: none !important; border-radius: 0 !important; color: var(--h-inkt); }
 html body.hal.hal .h-link .h-cirkel-mini { color: inherit; }
-html body.hal.hal .h-sd-logboek-r.is-terug .h-sd-logboek-i { color: var(--h-blauw, #25508B); }
+html body.hal.hal .h-sd-logboek-r.is-terug .h-sd-logboek-i { color: var(--h-blauw, #016645); }
 html body.hal.hal .h-lv-checks svg { width: 17px; height: 17px; stroke-width: 2.4; }
 html body.hal.hal .h-pl-feiten i, html body.hal.hal .h-pr-vinken i, html body.hal.hal .h-pk-lijst i { width: 22px; height: 22px; font-size: 18px; }
 html body.hal.hal .h-pl-feiten i svg, html body.hal.hal .h-pr-vinken i svg, html body.hal.hal .h-pk-lijst i svg { width: 18px; height: 18px; }
@@ -5225,7 +5228,7 @@ html body.hal.hal .h-ctrl-pipet i svg { width: 16px; height: 16px; }
 html body.hal.hal .h-onderregel .h-cirkel-mini { width: 18px; height: 18px; font-size: var(--h-t-lopend); }
 /* de leverlijst die zich afvinkt: lijn sterk zolang het nog moet, inkt als het af is */
 html body.hal.hal .h-lv[data-uitleg-staat] .h-lv-checks i { transition: transform .45s var(--h-veer), color .3s; }
-html body.hal.hal .h-lv[data-uitleg-staat]:not(.u-s2) .h-lv-checks i { color: var(--h-lijn-sterk, #C5C8CF); }
+html body.hal.hal .h-lv[data-uitleg-staat]:not(.u-s2) .h-lv-checks i { color: var(--h-lijn-sterk, #C6CAC8); }
 
 /* 2 · een pijl naast tekst of in de hoek van een lichte kaart: zonder plaatje */
 html body.hal.hal .h-dk-knop .h-cirkel, html body.hal.hal .h-st-vk-meer .h-cirkel, html body.hal.hal .h-weten-boven .h-cirkel,
@@ -5293,10 +5296,10 @@ html body.hal .site-header .nav::before {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .95),
     inset 0 0 0 1px rgba(255, 255, 255, .5),
-    0 0 0 1px rgba(15, 18, 23, .06),
-    0 2px 6px -2px rgba(15, 18, 23, .08),
-    0 14px 32px -12px rgba(15, 18, 23, .2),
-    0 34px 70px -36px rgba(15, 18, 23, .3);
+    0 0 0 1px rgba(9, 13, 11, .06),
+    0 2px 6px -2px rgba(9, 13, 11, .08),
+    0 14px 32px -12px rgba(9, 13, 11, .2),
+    0 34px 70px -36px rgba(9, 13, 11, .3);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   html body.hal .site-header .nav::before { background: rgba(255, 255, 255, .97); }
@@ -5311,11 +5314,11 @@ html body.hal .site-header .nav-ik-knop { width: 40px; height: 40px; }
    één familie is */
 html body.hal .site-header .nav-menu { border-radius: 24px !important; background: rgba(255, 255, 255, .88) !important;
   -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .5), 0 0 0 1px rgba(15, 18, 23, .06),
-    0 2px 6px -2px rgba(15, 18, 23, .08), 0 18px 40px -16px rgba(15, 18, 23, .22), 0 40px 80px -40px rgba(15, 18, 23, .3) !important; }
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .5), 0 0 0 1px rgba(9, 13, 11, .06),
+    0 2px 6px -2px rgba(9, 13, 11, .08), 0 18px 40px -16px rgba(9, 13, 11, .22), 0 40px 80px -40px rgba(9, 13, 11, .3) !important; }
 html body.hal .wa-launcher { background: rgba(255, 255, 255, .7); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .5), 0 0 0 1px rgba(15, 18, 23, .06),
-    0 2px 6px -2px rgba(15, 18, 23, .08), 0 14px 30px -12px rgba(15, 18, 23, .22); }
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .5), 0 0 0 1px rgba(9, 13, 11, .06),
+    0 2px 6px -2px rgba(9, 13, 11, .08), 0 14px 30px -12px rgba(9, 13, 11, .22); }
 @media (max-width: 900px) {
   html body.hal .site-header { top: 10px; }
   html body.hal .site-header .nav, html body.hal .site-header .container.nav { height: 54px; padding: 0 7px 0 20px; }
@@ -5327,7 +5330,7 @@ html body.hal .wa-launcher { background: rgba(255, 255, 255, .7); -webkit-backdr
    outlining eromheen, dus zorg dat hij door de zichtbaarheid te verlagen hij ook een licht
    andere kleur krijgt maar wel duidelijk zichtbaar blijft."
    Dus: geen haarlijn, geen witte binnenrand en geen lichtrand bovenin meer, één zachte schaduw
-   in plaats van drie. Het glas is de lijnkleur (#E6E8EC) op 56 % in plaats van wit op 64 %: op
+   in plaats van drie. Het glas is de lijnkleur (#E7EAE8) op 56 % in plaats van wit op 64 %: op
    wit wordt dat #F1F2F4, een licht grijze pil in de toon van de inkt, die zonder rand toch
    zichtbaar is; over een beeld zie je meer van wat eronder ligt. Gemeten: boven het donkerste
    vlak (inkt) blijft de grond minstens #86898E, de menuletters halen daar 5,5 : 1, op wit
@@ -5336,9 +5339,9 @@ html body.hal .wa-launcher { background: rgba(255, 255, 255, .7); -webkit-backdr
    WhatsApp-knop.
    ═══════════════════════════════════════════════════════════════════════════════ */
 html body.hal .site-header .nav::before {
-  background: rgba(230, 232, 236, .56);
+  background: rgba(231, 234, 232, .56);
   -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
-  box-shadow: 0 10px 30px -16px rgba(15, 18, 23, .22);
+  box-shadow: 0 10px 30px -16px rgba(9, 13, 11, .22);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   html body.hal .site-header .nav::before { background: rgba(241, 242, 244, .97); }
@@ -5348,9 +5351,9 @@ html body.hal .site-header .lang-switch { background: rgba(255, 255, 255, .7); }
 html body.hal .site-header .nav-taal-klein .ls:hover, html body.hal .site-header .nav-ik-knop:hover,
 html body.hal .site-header .nav-ik-knop[aria-expanded="true"] { background: var(--h-wit); box-shadow: none; }
 html body.hal .site-header .nav-menu { background: rgba(241, 242, 244, .94) !important;
-  box-shadow: 0 18px 44px -18px rgba(15, 18, 23, .26) !important; }
-html body.hal .wa-launcher { background: rgba(230, 232, 236, .56); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
-  box-shadow: 0 10px 28px -14px rgba(15, 18, 23, .26); }
+  box-shadow: 0 18px 44px -18px rgba(9, 13, 11, .26) !important; }
+html body.hal .wa-launcher { background: rgba(231, 234, 232, .56); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow: 0 10px 28px -14px rgba(9, 13, 11, .26); }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    LEVERING 76 · DE LETTER: INSTRUMENT SANS IN DRIE STEMMEN
@@ -5398,7 +5401,7 @@ html body.hal .h-proef:not(.h-ts-open) > .h-vier > li:nth-child(-n+3) { grid-col
    LEVERING 77 · DE EIGEN KOPLETTER: VISUAILS DISPLAY BOLD, EN DM SANS VOOR DE TEKST
    27 oktober 2026, lijst 60 (alle vijf volgens advies) en lijst 59 (vet, beide tonen).
    - Elke grote kop (.h-kop: h-h1, h-h2, h-h3, h-proef-kop, en .o-kop in opening.css) staat in
-     VISUAILS Display Bold 700, ook de tweede, grijze toon (.l, #636974, 5,52 : 1). Het verschil
+     VISUAILS Display Bold 700, ook de tweede, grijze toon (.l, #5E6461, 5,52 : 1). Het verschil
      tussen de tonen zit nu alleen in de kleur, niet meer in het gewicht.
    - Al het andere is DM Sans op volle breedte: de smalle stem van levering 76 (font-stretch 80 %)
      vervalt, want DM Sans heeft geen breedte-as. Namen en grote cijfers houden hun gewicht.
@@ -5445,14 +5448,14 @@ body.hal { --h-smal: normal; }
    LEVERING 78 · DE BALK: RECHTHOEKIG OVER DE HELE BREEDTE
    27 oktober 2026. Lucas, 16:50: "Ik wil de topbar niet meer als pilvormige balk maar gewoon een
    moderne die de hele bovenkant bedekt en rechthoekig is zoals gebruikelijk."
-   72 px hoog (telefoon 60), wit, onderaan een haarlijn #E6E8EC; geen glas, geen schaduw, geen
+   72 px hoog (telefoon 60), wit, onderaan een haarlijn #E7EAE8; geen glas, geen schaduw, geen
    ronding. De inhoud staat op het raster van de pagina (hoogstens 1440 px, dezelfde marge als de
    secties). Links het V-merk met de menu's ernaast, rechts Inloggen, de taal en Bestellen, de
    enige blauwe knop. Een knop heeft zijn ene zachte hoek linksboven (de hoekregel).
    docs/RUIMTE-EN-RUST.md §7. Vervangt de pil van 75 – 77 (hierboven).
    ═══════════════════════════════════════════════════════════════════════════════ */
 html body.hal .site-header { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-sticky, 40);
-  background: var(--h-grond, #FBFCFF) !important; box-shadow: inset 0 -1px 0 #E6E8EC !important; border-radius: 0; }   /* levering 79: de grond, met de haarlijn (was wit) */
+  background: var(--h-grond, #FFFFFF) !important; box-shadow: inset 0 -1px 0 #E7EAE8 !important; border-radius: 0; }   /* levering 79: de grond, met de haarlijn (was wit) */
 html body.hal .site-header .nav, html body.hal .site-header .container.nav {
   height: 72px; max-width: none; margin: 0; border-radius: 0; gap: 8px;
   padding: 0 max(20px, 5.2vw, calc((100vw - 1440px) / 2)) !important; }
@@ -5471,7 +5474,7 @@ html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .
 html body.hal .site-header .nav-cta:hover { box-shadow: none !important; }
 /* de uitklapmenu's: wit met een haarlijn, de ene zachte hoek linksboven, net onder de balk */
 html body.hal .site-header .nav-menu { background: #FFFFFF !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
-  border-radius: var(--r-kaart) !important; box-shadow: 0 0 0 1px #E6E8EC !important; }
+  border-radius: var(--r-kaart) !important; box-shadow: 0 0 0 1px #E7EAE8 !important; }
 /* 8 px onder de haarlijn (niet erdoorheen), met een onzichtbare brug zodat de muis erheen kan */
 @media (min-width: 901px) {
   html body.hal .site-header .has-menu > .nav-menu { top: calc(100% + 24px) !important; }   /* !important: de basisregel staat buiten de laag (Layout.astro) */
@@ -5490,7 +5493,7 @@ html body.hal .site-header .nav-menu { background: #FFFFFF !important; -webkit-b
    die komt en weer verdwijnt. Wanneer de gloed weg is is de tekst … de normale donkere tekst kleur
    en af en toe komt een hele langzame maar intense 'blue hour' gloed om het woord te citeren, maar
    het moet de lezer niet afleiden."
-   - De tweede toon (.l) staat in inkt, net als de eerste (was grijs #636974).
+   - De tweede toon (.l) staat in inkt, net als de eerste (was grijs #5E6461).
    - src/scripts/gloed.js zet af en toe .is-gloeit op één tweede toon in beeld (de kop die het
      dichtst bij het midden van het scherm staat), nooit op twee tegelijk, elke kop hoogstens één
      keer per bezoek, pas na de eerste beweging van de bezoeker.
@@ -5501,13 +5504,13 @@ html body.hal .site-header .nav-menu { background: #FFFFFF !important; -webkit-b
      zachte rand van links het woord in (1,9 s), staat even helemaal (0,5 s) en trekt langzaam naar
      rechts weg (2,4 s). 4,8 s, één keer, dus onder de 5 s van WCAG 2.2.2.
    - In de golf de lucht uit hero-dunes (rechtsboven, de wolkenstrepen bij de horizon), omgekleurd
-     naar het schema: het donkerste deel blauw diep #1A4279 (10 : 1), het midden blauw uur #25508B
-     (8,08 : 1), het lichtste #2D61A8, de toon van blauw uur die na het opslaan nog 6,15 : 1 haalt (img/hal/lucht-blauw-uur.webp,
+     naar het schema: het donkerste deel blauw diep #023D29 (10 : 1), het midden blauw uur #016645
+     (8,08 : 1), het lichtste #11976A, de toon van blauw uur die na het opslaan nog 6,15 : 1 haalt (img/hal/lucht-blauw-uur.webp,
      2,3 kB). Hij schuift langzaam door het woord. Zo lang hij laadt: blauw uur.
    - Daarop een fijne korrel (img/hal/korrel.webp, 112 × 112, 10 %), die als film twaalf keer per
      seconde verspringt; het lichtste korreltje haalt in de browser nog minstens 4,7 : 1.
    - Alles als achtergrond op de letters (background-clip: text), alleen zolang de golf loopt; in rust
-     is het gewoon inkt. Op inkt: van wit naar blauw licht #80A7DD (7,75 : 1), zonder lucht en korrel,
+     is het gewoon inkt. Op inkt: van wit naar blauw licht #3DFFB0 (7,75 : 1), zonder lucht en korrel,
      zoals het logo op inkt. Elk moment haalt 4,5 : 1.
    - Minder beweging of hoog contrast: geen gloed, alleen inkt (of wit).
    Bewust anders dan KLEURENSCHEMA.md ("geen blauw kopwoord"): Lucas vroeg het (27 oktober).
@@ -5540,7 +5543,7 @@ html body.hal.hal .h-lk-slot .h-kop .l, html body.hal.hal .h-proef-kop .l, html 
 }
 html body.hal.hal .h-kop .l.is-gloeit, html body.hal.hal .h-kop .l.is-gloeit * { color: transparent; }
 html body.hal.hal .h-kop .l.is-gloeit {
-  --gl-a: var(--h-inkt); --gl-b: #25508B;
+  --gl-a: var(--h-inkt); --gl-b: #016645;
   --gl-korrel: url('/img/hal/korrel.webp'); --gl-lucht: url('/img/hal/lucht-blauw-uur.webp');
   -webkit-background-clip: text; background-clip: text; -webkit-box-decoration-break: slice; box-decoration-break: slice;
   background-color: var(--gl-b);
@@ -5551,7 +5554,7 @@ html body.hal.hal .h-kop .l.is-gloeit {
   animation: h-gloed 4.8s 1 both, h-korrel .5s steps(1, end) infinite;
 }
 /* op inkt (het €1-blok, het slot): van wit naar blauw licht, zonder lucht en korrel, zoals het logo op inkt */
-html body.hal.hal .h-lk-slot .h-kop .l.is-gloeit, html body.hal.hal .h-proef-kop .l.is-gloeit { --gl-a: #FFFFFF; --gl-b: #80A7DD; --gl-korrel: none; --gl-lucht: none; }
+html body.hal.hal .h-lk-slot .h-kop .l.is-gloeit, html body.hal.hal .h-proef-kop .l.is-gloeit { --gl-a: #FFFFFF; --gl-b: #3DFFB0; --gl-korrel: none; --gl-lucht: none; }
 @media (prefers-reduced-motion: reduce) { html body.hal .h-kop .l.is-gloeit { animation: none; } }
 @media (forced-colors: active) { html body.hal .h-kop .l.is-gloeit { animation: none; } }
 
@@ -5562,8 +5565,8 @@ html body.hal.hal .h-lk-slot .h-kop .l.is-gloeit, html body.hal.hal .h-proef-kop
    past en ik wil dat de achtergrond van de laptop dit dus ook heeft, exact die kleur." Gekozen: B,
    #F4F7FD (de toon van de inkt, 264,5°, met een vleugje blauw uur), en "Wit" voor het vlak op de
    grond. De regel: alleen de grond wordt grijs; alles met een eigen vorm (kaart, kader, venster,
-   veld, het menu) blijft wit, en wat als vlak (#F4F5F7) op de grond stond, wordt wit: op een grijze
-   grond is wit het lichte vlakje. Binnen een witte kaart blijft het vlak #F4F5F7.
+   veld, het menu) blijft wit, en wat als vlak (#F4F5F4) op de grond stond, wordt wit: op een grijze
+   grond is wit het lichte vlakje. Binnen een witte kaart blijft het vlak #F4F5F4.
    Gevonden met een meting op 40 pagina's (kladblok/levering-79/LEESMIJ.md): elk element met een
    eigen achtergrond, zijn rand, schaduw en wat eronder ligt. docs/KLEURENSCHEMA.md, "De grond".
    ═══════════════════════════════════════════════════════════════════════════════ */
@@ -5614,11 +5617,11 @@ html body.hal main strong > code,
 html body.hal main span > code,
 html body.hal main td > code,
 html body.hal .wk-trap > li.is-nu {
-  --h-vlak: #F0F1F6; --h-nevel: #F0F1F6; --h-mist: #F0F1F6; --surface: #F0F1F6; --paper-2: #F0F1F6; --accent-soft: #F0F1F6; --accent-tint: #F0F1F6;
-  /* levering 80: op de grond Wit #FBFCFF zou een wit vlak verdwijnen; het vlak is daar de Wit-fade
-     halverwege, #F0F1F6 (docs/RUST-80.md §4). Was wit (79, op de grond #F4F7FD). */
+  --h-vlak: #F4F5F4; --h-nevel: #F4F5F4; --h-mist: #F4F5F4; --surface: #F4F5F4; --paper-2: #F4F5F4; --accent-soft: #F4F5F4; --accent-tint: #F4F5F4;
+  /* levering 80: op de grond Wit #FFFFFF zou een wit vlak verdwijnen; het vlak is daar de Wit-fade
+     halverwege, #F4F5F4 (docs/RUST-80.md §4). Was wit (79, op de grond #F4F7FD). */
 }
-/* 3b · binnen een witte kaart (of venster) blijft het vlak #F4F5F7: dezelfde onderdelen staan ook in kaarten */
+/* 3b · binnen een witte kaart (of venster) blijft het vlak #F4F5F4: dezelfde onderdelen staan ook in kaarten */
 html body.hal .h-lk-blok .h-pil,
 html body.hal .h-lk-blok .h-chip,
 html body.hal .h-lk-blok .h-chip-nevel,
@@ -5736,7 +5739,7 @@ html body.hal .h-pk .h-cirkel,
 html body.hal .h-pk .etiket,
 html body.hal .h-pk .h-pl-tag,
 html body.hal .h-pk .h-st-chip {
-  --h-vlak: #F4F5F7; --h-nevel: #F4F5F7; --h-mist: #F4F5F7; --surface: #F4F5F7; --paper-2: #F4F5F7; --accent-soft: #F4F5F7; --accent-tint: #F4F5F7;
+  --h-vlak: #F4F5F4; --h-nevel: #F4F5F4; --h-mist: #F4F5F4; --surface: #F4F5F4; --paper-2: #F4F5F4; --accent-soft: #F4F5F4; --accent-tint: #F4F5F4;
 }
 /* 4 · de taalknop in de balk: geen vlakje meer (op de witte balk viel het wit weg; op de grond zou het
    een wit blokje worden); onder de muis wit, zoals de andere knoppen in de balk */
@@ -5756,9 +5759,9 @@ html body.hal .site-header .lang-switch .ls:hover, html body.hal .site-header .n
    het scrollen in het glas maar heel subtiel houden en smooth, ook wat modernere look geven en iets
    smaller maken van boven naar onder niet in de breedte."
    - 56 px hoog (was 72; telefoon 52, was 60): 42,67 × 4/3, een stap op de schaal (docs/RUST-80.md §3).
-   - Glas: de grond #FBFCFF op 72 %, vervaging 20 px, verzadiging 160 %. 72 % omdat de inkt op het glas
+   - Glas: de grond #FFFFFF op 72 %, vervaging 20 px, verzadiging 160 %. 72 % omdat de inkt op het glas
      4,5 : 1 moet halen, ook boven het zwartste beeld: boven zwart 9,17 : 1 (50 % gaf 4,63).
-   - Bovenaan een lichtlijn (Wit #FBFCFF op 70 %), onderaan Mist #E4E7ED op 70 % (was de haarlijn).
+   - Bovenaan een lichtlijn (Wit #FFFFFF op 70 %), onderaan Mist #E4E7ED op 70 % (was de haarlijn).
    - In het glas een zachte lichtvlek (de Wit-fade) die met het scrollen meeschuift en na-ijlt
      (src/scripts/glasbalk.js zet --lx). Bij minder beweging staat hij stil; bij hoog contrast geen glas.
    - De knoppen in de balk blijven 40 px hoog (Bestellen 38): 8 px lucht boven en onder.
@@ -5771,9 +5774,9 @@ html body.hal .site-header .lang-switch .ls:hover, html body.hal .site-header .n
    onder de letters. */
 @property --lx { syntax: '<percentage>'; inherits: false; initial-value: 30%; }
 html body.hal .site-header {
-  background: radial-gradient(40% 140% at var(--lx, 30%) 0%, rgba(251, 252, 255, .55), rgba(251, 252, 255, 0) 70%), rgba(251, 252, 255, .72) !important;
+  background: radial-gradient(40% 140% at var(--lx, 30%) 0%, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 70%), rgba(255, 255, 255, .72) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
-  box-shadow: inset 0 1px 0 rgba(251, 252, 255, .7), inset 0 -1px 0 rgba(228, 231, 237, .7) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 -1px 0 rgba(228, 231, 237, .7) !important;
   isolation: isolate;
 }
 /* (de lichtvlek stond hier op ::before; zie hierboven) */
@@ -5789,11 +5792,11 @@ html body.hal .site-header .nav, html body.hal .site-header .container.nav { hei
   html body.hal .site-header .nav, html body.hal .site-header .container.nav { height: 52px; }
 }
 @media (prefers-contrast: more) {
-  html body.hal .site-header { background: var(--h-grond, #FBFCFF) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html body.hal .site-header { background: var(--h-grond, #FFFFFF) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
   html body.hal .site-header::before { display: none; }
 }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  html body.hal .site-header { background: rgba(251, 252, 255, .94) !important; }
+  html body.hal .site-header { background: rgba(255, 255, 255, .94) !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -6010,11 +6013,11 @@ html body.hal .h-knop::before { content: none; display: none; }
    een heel aantal pixels breed, en dan bleef onder de muis rechts een haarlijn van de grondkleur
    (inkt) staan (gemeten op 208,27 px breed). */
 html body.hal .h-knop-inkt {
-  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #090D0B linear-gradient(126.87deg, #090D0B 0%, #172945 17.5%, #023D29 50%, #016645 77.5%, #11976A 100%) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
   transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .22s cubic-bezier(.22, .8, .2, 1), box-shadow .22s cubic-bezier(.22, .8, .2, 1);
 }
 html body.hal .h-knop-inkt:hover, html body.hal .h-knop-inkt:focus-visible {
-  background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #090D0B linear-gradient(126.87deg, #090D0B 0%, #172945 17.5%, #023D29 50%, #016645 77.5%, #11976A 100%) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
   color: #FFFFFF;
 }
 
@@ -6023,21 +6026,21 @@ html body.hal .h-knop-inkt:hover, html body.hal .h-knop-inkt:focus-visible {
    blauw licht wel. Hier drie keer de knop: het eerste derde is wit (rust), het laatste derde de
    fade (onder de muis), het middelste derde de overgang die voorbij schuift. */
 html body.hal .h-knop-wit {
-  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat;
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #3DFFB0 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat;
   transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .22s cubic-bezier(.22, .8, .2, 1);
 }
 html body.hal .h-knop-wit:hover, html body.hal .h-knop-wit:focus-visible {
-  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat;
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #3DFFB0 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat;
   color: var(--h-inkt);
 }
 html body.hal .h-knop-wit:hover .o, html body.hal .h-knop-wit:focus-visible .o { color: var(--h-inkt); }
 /* de inktknop op het inktblok is wit (levering 68): hij vult zich als de witte knop */
 html body.hal .h-lk-slot .h-knop-inkt, html body.hal .h-proef-woord .h-knop-inkt {
-  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat; color: var(--h-inkt);
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #3DFFB0 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat; color: var(--h-inkt);
   transition: background-position .36s cubic-bezier(.22, .8, .2, 1), color .22s cubic-bezier(.22, .8, .2, 1);
 }
 html body.hal .h-lk-slot .h-knop-inkt:hover, html body.hal .h-lk-slot .h-knop-inkt:focus-visible, html body.hal .h-proef-woord .h-knop-inkt:hover, html body.hal .h-proef-woord .h-knop-inkt:focus-visible {
-  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat; color: var(--h-inkt);
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #3DFFB0 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat; color: var(--h-inkt);
 }
 html body.hal .h-lk-slot .h-knop-inkt:hover .o, html body.hal .h-lk-slot .h-knop-inkt:focus-visible .o, html body.hal .h-proef-woord .h-knop-inkt:hover .o, html body.hal .h-proef-woord .h-knop-inkt:focus-visible .o { color: var(--h-inkt); }
 
@@ -6045,24 +6048,24 @@ html body.hal .h-lk-slot .h-knop-inkt:hover .o, html body.hal .h-lk-slot .h-knop
    In rust zoals nu (een haarlijn in lijn sterk). Onder de muis een rand van 1 px in de snede, als
    ring (een masker laat alleen de rand staan), en de schuine kant van een knoppenpaar in blauw uur. */
 html body.hal .h-knop-lijn::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0;
-  background: linear-gradient(126.87deg, #1A4279 0%, #25508B 55%, #2D61A8 100%);
+  background: linear-gradient(126.87deg, #023D29 0%, #016645 55%, #11976A 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   transition: opacity .32s cubic-bezier(.22, .8, .2, 1); }
 html body.hal .h-knop-lijn:hover::after { opacity: 1; }
-html body.hal .h-knop-lijn:hover { --h-rand: #25508B; box-shadow: inset 0 0 0 1px var(--h-lijn-sterk); }
+html body.hal .h-knop-lijn:hover { --h-rand: #016645; box-shadow: inset 0 0 0 1px var(--h-lijn-sterk); }
 /* op het inktblok blijft de lijnknop wit */
 html body.hal .h-lk-slot .h-knop-lijn::after, html body.hal .h-proef .h-knop-lijn::after { content: none; }
 
 /* ── K1 · Bestellen ────────────────────────────────────────────────────────────────────────
-   Levering 98 (lijst 99, A4): hier stond de snede die schuin door de knop schoof. Sinds levering 97 zet
-   src/styles/knoppen.css (sectie I) Bestellen: blauw uur, onder de muis schuift blauw diep van links naar rechts.
-   Wat hier nog geldt: wit erop en geen schaduw, ook onder de muis en met de toets. */
+   Levering 99 (lijst 100, D2 a en D4): Bestellen bovenin is een witte knop op de inktbalk (src/styles/balk-99.css);
+   Bestellen onderaan het menu op de telefoon heeft de actiekleur (src/styles/knoppen.css, sectie J). Hier alleen nog:
+   geen schaduw, ook onder de muis en met de toets. */
 html body.hal .site-header .nav-cta, html body.hal .site-header .container.nav .nav-cta, html body.hal .mobile-nav .mobile-cta .btn-primary,
 html body.hal .site-header .nav-cta:hover, html body.hal .site-header .nav-cta:focus-visible, html body.hal .site-header .container.nav .nav-cta:hover,
 html body.hal .site-header .container.nav .nav-cta:focus-visible,
 html body.hal .mobile-nav .mobile-cta .btn-primary:hover, html body.hal .mobile-nav .mobile-cta .btn-primary:focus-visible {
-  color: #FFFFFF !important; box-shadow: none !important;
+  box-shadow: none !important;
 }
 
 /* ── D3 · de focusrand van een knop in de snede ─────────────────────────────────────────
@@ -6072,7 +6075,7 @@ html body.hal .mobile-nav .mobile-cta .btn-primary:hover, html body.hal .mobile-
    systeemkleur, het verloop valt weg). */
 html body.hal .h-knop:focus-visible { outline: 2px solid transparent; outline-offset: 2px; }
 html body.hal .h-knop:focus-visible::after { content: ""; position: absolute; inset: -4px; border-radius: inherit; padding: 2px; pointer-events: none; opacity: 1;
-  background: linear-gradient(126.87deg, #1A4279 0%, #25508B 55%, #2D61A8 100%);
+  background: linear-gradient(126.87deg, #023D29 0%, #016645 55%, #11976A 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); transition: none; }
 html body.hal .h-lk-slot .h-knop:focus-visible, html body.hal .h-proef .h-knop:focus-visible { outline: 2px solid var(--h-blauw-licht); }
@@ -6093,10 +6096,10 @@ html body.hal .h-acties[data-h-kier] { background-repeat: no-repeat; }
    snede, zodat de schuine uiteinden de lijnen van gelijke kleur zijn. Op het inktblok en op een
    donkere band (h-pil-donker) blijft hij wit. Het streepje in de werkplaats (bestellen) krijgt dezelfde fade. */
 html body.hal p.h-pil:not(.h-pil-donker)::before {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><linearGradient id='s' gradientUnits='userSpaceOnUse' x1='5.98' y1='11.5' x2='14.17' y2='17.64'><stop offset='0' stop-color='%231A4279'/><stop offset='.55' stop-color='%2325508B'/><stop offset='1' stop-color='%232D61A8'/></linearGradient><path fill='url(%23s)' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><linearGradient id='s' gradientUnits='userSpaceOnUse' x1='5.98' y1='11.5' x2='14.17' y2='17.64'><stop offset='0' stop-color='%23023D29'/><stop offset='.55' stop-color='%23016645'/><stop offset='1' stop-color='%2311976A'/></linearGradient><path fill='url(%23s)' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>");
 }
 html body.hal .h-lk-slot p.h-pil::before { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23FFFFFF' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>"); }
-html body.hal.hal.werkplaats .of-werk .wk-label i { background: linear-gradient(126.87deg, #1A4279 0%, #25508B 55%, #2D61A8 100%); }
+html body.hal.hal.werkplaats .of-werk .wk-label i { background: linear-gradient(126.87deg, #023D29 0%, #016645 55%, #11976A 100%); }
 
 /* ── D2 · de streep onder een link loopt het wit in ─────────────────────────────────────
    Een link in de tekst blijft blauw uur (8,08 : 1); alleen de streep krijgt licht: 2 px, van
@@ -6125,7 +6128,7 @@ body.hal .h-faq-lijst .dc-body a:not(.h-link),
 html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd a,
 html body.hal.hal .h-voor .h-gezicht-zin a {
   text-decoration: none;
-  background-image: linear-gradient(90deg, #25508B, rgb(37 80 139 / .5) 45%, rgb(37 80 139 / 0));
+  background-image: linear-gradient(90deg, #016645, rgb(1 102 69 / .5) 45%, rgb(1 102 69 / 0));
   background-position: 0 100%; background-size: 100% 2px; background-repeat: no-repeat;
 }
 .hal .h-vertrouwen a:hover,
@@ -6151,7 +6154,7 @@ body.hal .h-faq-lijst .dc-body a:not(.h-link):hover,
 .hal .h-pr-tarief-zin a:hover,
 html body.hal .h-form.h-form-bedankt:not(.h-ts-form) .s22 .ty-row dd a:hover,
 html body.hal.hal .h-voor .h-gezicht-zin a:hover {
-  background-image: linear-gradient(90deg, #25508B, #25508B);
+  background-image: linear-gradient(90deg, #016645, #016645);
 }
 /* op het inktblok: wit, van 60 % naar niets (zwaar genoeg voor elke kiezer in de lijst hierboven).
    Geen :is() in dit bestand: tests/hal-voorbeeld leest de kiezers per komma en tests/live-qa-51
@@ -6187,7 +6190,9 @@ html body.hal.hal .h-voor .h-gezicht-zin a { text-decoration: underline; }
 /* ── D4 · voortgang en de stand-streep ──────────────────────────────────────────────────
    Het balkje met de schuine kop en de streep onder de laptop die de stand telt: van blauw diep
    naar het licht, de kop is het lichtst. */
-html body.hal .h-lijntje i { background: linear-gradient(90deg, #1A4279 0%, #25508B 60%, #2D61A8 100%); }
+/* levering 111 (lijst 123, KL): zwart, zoals de balk van de carrousel op de voorpagina; mint staat alleen op de knop die een
+   bestelling begint en in de kaarten (KLEURENSCHEMA.md, levering 100). Was een verloop in mint en daaronder een blauw stukje. */
+html body.hal .h-lijntje i { background: var(--h-inkt, #090D0B); }
 
 /* ── D5 · een kaart onder de muis: de haarlijn vangt het licht ─────────────────────────
    De haarlijn van een kaart die je kunt aanklikken wordt onder de muis een fade vanuit de hoek
@@ -6197,7 +6202,7 @@ html body.hal .h-dk-a, html body.hal .h-st-vk-a, html body.hal .h-hw-dienst, htm
 html body.hal .h-dk-a::after, html body.hal .h-st-vk-a::after, html body.hal .h-hw-dienst::after, html body.hal .h-gd-kaart::after, html body.hal .h-weten-rij > li > a::after,
 html body.hal.hal.werkplaats .of-werk .wk-stijl:not(.is-gekozen)::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0; z-index: 2;
-  background: linear-gradient(126.87deg, #25508B 0%, #6283AF 30%, #E6E8EC 62%);
+  background: linear-gradient(126.87deg, #016645 0%, #6283AF 30%, #E7EAE8 62%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   transition: opacity .35s cubic-bezier(.22, .8, .2, 1);
@@ -6214,7 +6219,7 @@ html body.hal.hal.werkplaats .of-werk .wk-stijl:not(.is-gekozen):hover::after, h
    Het inktblok (het slot onderaan, het €1-blok): inkt, en naar zijn eigen snede van 53°
    rechtsonder komt het blauwe uur op (de Inkt-fade uit levering 80: inkt → blauw diep). De tekst
    staat linksboven, waar het inkt is; wit erop haalt overal 10 : 1 of meer. */
-html body.hal .h-lk-slot, html body.hal .h-proef > .h-proef-woord { background: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #0F1217 38%, #172945 72%, #1A4279 100%); }
+html body.hal .h-lk-slot, html body.hal .h-proef > .h-proef-woord { background: #090D0B linear-gradient(126.87deg, #090D0B 0%, #090D0B 38%, #172945 72%, #023D29 100%); }
 
 @media (prefers-reduced-motion: reduce) {
   html body.hal .h-knop-inkt, html body.hal .h-knop-wit, html body.hal .h-knop-lijn::after,
@@ -6266,7 +6271,7 @@ html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket {
 }
 html body.hal .h-form:not(.h-ts-form) .s22 > .paneel:first-child .etiket::before {
   width: 16px; height: 16px; border-radius: 0; box-shadow: none;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><linearGradient id='s' gradientUnits='userSpaceOnUse' x1='5.98' y1='11.5' x2='14.17' y2='17.64'><stop offset='0' stop-color='%231A4279'/><stop offset='.55' stop-color='%2325508B'/><stop offset='1' stop-color='%232D61A8'/></linearGradient><path fill='url(%23s)' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><linearGradient id='s' gradientUnits='userSpaceOnUse' x1='5.98' y1='11.5' x2='14.17' y2='17.64'><stop offset='0' stop-color='%23023D29'/><stop offset='.55' stop-color='%23016645'/><stop offset='1' stop-color='%2311976A'/></linearGradient><path fill='url(%23s)' d='M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z'/></svg>") center / 16px no-repeat;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -6324,16 +6329,16 @@ html body.hal.hal .h-pl-kaarten > .h-pk:last-child { border-top-right-radius: va
    Studio. Bovenaan deed hij dat wel. Nu alle drie hetzelfde, uit één token: wat Lucas in lijst 84 (A2) kiest, is
    dan één regel (`--knop-inkt`). */
 html body.hal {
-  --knop-inkt: linear-gradient(126.87deg, #0F1217 0%, #172945 17.5%, #1A4279 50%, #25508B 77.5%, #2D61A8 100%);
+  --knop-inkt: linear-gradient(126.87deg, #090D0B 0%, #172945 17.5%, #023D29 50%, #016645 77.5%, #11976A 100%);
 }
 html body.hal .site-footer .btn-primary, html body.hal .sb.sb-licht .sb-veld button {
-  background: #0F1217 var(--knop-inkt) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #090D0B var(--knop-inkt) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
   color: #FFFFFF;
   transition: background-position .36s cubic-bezier(.22, .8, .2, 1);
 }
 html body.hal .site-footer .btn-primary:hover, html body.hal .site-footer .btn-primary:focus-visible,
 html body.hal .sb.sb-licht .sb-veld button:hover, html body.hal .sb.sb-licht .sb-veld button:focus-visible {
-  background: #0F1217 var(--knop-inkt) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #090D0B var(--knop-inkt) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
   color: #FFFFFF;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -6376,19 +6381,19 @@ html body.hal .site-footer .foot-cc:hover, html body.hal .site-footer .foot-cc:f
    A2 b · De inktknop: in rust gewoon inkt, zoals de koppen; onder de muis vult hij zich vanuit de hoek
           rechtsonder met de snede (0,36 s). Overal dezelfde: bovenaan, in de voet, bij de Studiobrief en in
           Studio (studio-hal.css). Eén verloop van twee keer de knop: de eerste helft inkt, de tweede de snede;
-          alleen de plek schuift. Wit erop: inkt 18,8, blauw diep 10,0, blauw uur 8,08, #2D61A8 6,2 : 1.
+          alleen de plek schuift. Wit erop: inkt 18,8, blauw diep 10,0, blauw uur 8,08, #11976A 6,2 : 1.
    A5 b · De vinkjes onder het €1-blok zonder vlakje: alleen het vinkje in inkt (een icoon in een zin of lijst
           krijgt geen vlak; de ontwerptaal).
    A3 en A4 blijven zoals ze waren. A4 kreeg een notitie (foto's met glas en bewogen licht achter de blokken):
    dat wordt eerst een schetslijst (lijst 86). */
 html body.hal {
-  --knop-inkt: linear-gradient(126.87deg, #0F1217 0%, #0F1217 50%, #1A4279 62%, #25508B 80%, #2D61A8 100%);
+  --knop-inkt: linear-gradient(126.87deg, #090D0B 0%, #090D0B 50%, #023D29 62%, #016645 80%, #11976A 100%);
 }
 html body.hal .h-knop-inkt {
-  background: #0F1217 var(--knop-inkt) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #090D0B var(--knop-inkt) -2px -2px / calc(200% + 4px) calc(200% + 4px) no-repeat;
 }
 html body.hal .h-knop-inkt:hover, html body.hal .h-knop-inkt:focus-visible {
-  background: #0F1217 var(--knop-inkt) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
+  background: #090D0B var(--knop-inkt) calc(100% + 2px) calc(100% + 2px) / calc(200% + 4px) calc(200% + 4px) no-repeat;
 }
 /* de inktknop op het inktblok blijft wit (levering 68): die regels hierboven zijn specifieker en gaan voor */
 html body.hal.hal .h-voor > .h-vertrouwen > li > i, html body.hal .h-vertrouwen > li > i { background: none; }  /* hal.hal: voorpagina-rust.css zet het vlak met body.hal.hal */
@@ -6413,7 +6418,7 @@ html body.hal .site-footer .foot-social li:has(~ li) a, html body.hal .site-foot
   background: var(--h-wit); background-image: none; box-shadow: var(--h-kaart-rand); color: var(--h-inkt);
 }
 html body.hal .site-footer .foot-social a:hover { background: var(--h-vlak); }
-html body.hal .site-footer .foot-social a:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
+html body.hal .site-footer .foot-social a:focus-visible { outline: 2px solid var(--h-blauw, #016645); outline-offset: 2px; }
 /* Op één lijn (ronde 92, gemeten met 92/uitlijn-site.mjs op alle pagina's, 1440 en 390):
    · de voet onderaan: "© 2026 VISUAILS · KVK …" stond 5 px lager dan "Privacy" (elke pagina);
    · de beelden in de galerij: "Voorkant" en het plaatje "Goedgekeurd" 3 px uit elkaar;
@@ -6461,3 +6466,11 @@ html body.hal .sb .sb-veld { align-items: center; }
    (2px outset), ook waar ze als <button> met .sk-k staan. /voorbeeld/uitleg bestaat niet meer; de regel blijft voor de component. */
 .hal button.h-fmt-knop, .hal button.h-gl-pil, .hal button.sk-k { border: 0; }
 
+
+/* ── GEEN AFGEKNIPTE HOEKEN — 14 november 2026 ────────────────────────────────────────────────────────────────────────
+   Lucas (03:36): "Die afgeknipte hoeken mogen overal helemaal weg." Het €1-blok, het slot onderaan (ook op de telefoon) en
+   de laatste plankaart waren rechtsonder afgesneden op 53° (een 3-4-5-driehoek). De snede gaat eraf; elk blok houdt zijn eigen
+   ronde hoeken (het slot 32, de plaat erin 22 = 32 − 10, het €1-paneel en de plankaart die van een kaart). */
+html body.hal .h-lk-slot:not(#k), html body.hal .h-proef > .h-proef-woord:not(#k), .hal .h-pl-kaarten > .h-pk:last-child:not(#k) {
+  clip-path: none !important;
+}

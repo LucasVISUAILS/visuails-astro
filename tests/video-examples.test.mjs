@@ -40,7 +40,7 @@ import {
   videoExamples, examplesFor, isReady,
   VIDEO_RATIOS, VIDEO_FORMAT, videoFilename,
 } from '../src/data/videoExamples.js';
-import { videoStyles } from '../src/data/videoStyles.js';
+import { videoStyles, videoOpPagina } from '../src/data/videoStyles.js';
 import { videoStyles as videoStylesNl } from '../src/data/videoStyles.nl.js';
 
 let pass = 0;
@@ -195,13 +195,13 @@ console.log('\nhet component laadt niets tot er geklikt wordt');
   ok('de lege staat leent geen bestaande foto', /\/img\//.test(vx), false);
 }
 
-console.log('\nen het staat op alle acht de stijlpagina\'s');
+console.log('\nen het staat op elke stijlpagina die gebouwd wordt (sinds lijst 109 alleen Motion en op maat)');
 {
   const staat = buildStaat(new URL('../dist/video/motion/index.html', import.meta.url));
   if (!staat.er || staat.oud) {
     console.log(`      (overgeslagen — ${staat.uitleg})`);
   } else {
-    for (const slug of videoStyles.map((s) => s.slug)) {
+    for (const slug of videoOpPagina.map((s) => s.slug)) {
       for (const pre of ['', 'nl/']) {
         const html = alleenMarkup(read(`dist/${pre}video/${slug}/index.html`));
         const leeg = (html.match(/vx-soon-label/g) || []).length;

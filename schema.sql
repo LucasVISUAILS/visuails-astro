@@ -1825,3 +1825,83 @@ CREATE TABLE IF NOT EXISTS studiobrieven (
   bijgewerkt_op  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_studiobrieven_status ON studiobrieven(status, gepland_op);
+
+-- Op maat: de intake van custom catalog, lifestyle, hooks en video — migratie 0071,
+-- 14 november 2026 (lijst 107). Zie de kop van migrations/0071-op-maat.sql.
+CREATE TABLE IF NOT EXISTS merkprofielen (
+  customer_id    INTEGER PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
+  inhoud_json    TEXT    NOT NULL DEFAULT '{}',
+  bijgewerkt_op  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS maat_aanvragen (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id    INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  dienst         TEXT    NOT NULL CHECK (dienst IN ('catalog', 'lifestyle', 'hooks', 'video')),
+  stand          TEXT    NOT NULL DEFAULT 'concept'
+                   CHECK (stand IN ('concept', 'verstuurd', 'voorstel', 'akkoord', 'offerte', 'vastgelegd', 'gesloten')),
+  inhoud_json    TEXT    NOT NULL DEFAULT '{}',
+  versie         INTEGER NOT NULL DEFAULT 1,
+  taal           TEXT    NOT NULL DEFAULT 'nl' CHECK (taal IN ('nl', 'en')),
+  gemaakt_op     TEXT    NOT NULL DEFAULT (datetime('now')),
+  bijgewerkt_op  TEXT    NOT NULL DEFAULT (datetime('now')),
+  verstuurd_op   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_maat_aanvragen_klant ON maat_aanvragen(customer_id, stand);
+CREATE INDEX IF NOT EXISTS idx_maat_aanvragen_stand ON maat_aanvragen(stand, verstuurd_op);
+
+CREATE TABLE IF NOT EXISTS maat_referenties (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  aanvraag_id    INTEGER NOT NULL REFERENCES maat_aanvragen(id) ON DELETE CASCADE,
+  r2_key         TEXT    NOT NULL,
+  bestandsnaam   TEXT,
+  bytes          INTEGER,
+  wat_json       TEXT    NOT NULL DEFAULT '[]',
+  notitie        TEXT    NOT NULL DEFAULT '',
+  gemaakt_op     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_maat_referenties_aanvraag ON maat_referenties(aanvraag_id);
+
+CREATE TABLE IF NOT EXISTS maat_besluiten (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  aanvraag_id    INTEGER NOT NULL REFERENCES maat_aanvragen(id) ON DELETE CASCADE,
+  onderwerp      TEXT    NOT NULL,
+  besluit        TEXT    NOT NULL CHECK (besluit IN ('goed', 'aanpassen')),
+  notitie        TEXT    NOT NULL DEFAULT '',
+  door           TEXT    NOT NULL DEFAULT 'klant' CHECK (door IN ('klant', 'studio')),
+  op             TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_maat_besluiten_aanvraag ON maat_besluiten(aanvraag_id, onderwerp);
+
+-- 0072 · de voorbeeldrondes en de offerte (lijst 112, schermen 9 en 10)
+CREATE TABLE IF NOT EXISTS maat_voorbeelden (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  aanvraag_id    INTEGER NOT NULL REFERENCES maat_aanvragen(id) ON DELETE CASCADE,
+  ronde          INTEGER NOT NULL CHECK (ronde BETWEEN 1 AND 9),
+  r2_key         TEXT    NOT NULL,
+  bestandsnaam   TEXT,
+  gemaakt_op     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_maat_voorbeelden_aanvraag ON maat_voorbeelden(aanvraag_id, ronde);
+
+CREATE TABLE IF NOT EXISTS maat_offertes (
+  aanvraag_id        INTEGER PRIMARY KEY REFERENCES maat_aanvragen(id) ON DELETE CASCADE,
+  regels_json        TEXT    NOT NULL DEFAULT '[]',
+  totaal_cents       INTEGER NOT NULL CHECK (totaal_cents >= 0),
+  aanbetaling_cents  INTEGER NOT NULL CHECK (aanbetaling_cents >= 0),
+  gemaakt_op         TEXT    NOT NULL DEFAULT (datetime('now')),
+  akkoord_op         TEXT
+);
+
+-- 0073 · op maat: de offerte met betaallink (zie migrations/0073-op-maat-offerte.sql)
+ALTER TABLE maat_offertes ADD COLUMN email TEXT;
+ALTER TABLE maat_offertes ADD COLUMN land TEXT;
+ALTER TABLE maat_offertes ADD COLUMN btw_nummer TEXT;
+ALTER TABLE maat_offertes ADD COLUMN btw_behandeling TEXT;
+ALTER TABLE maat_offertes ADD COLUMN btw_tarief REAL;
+ALTER TABLE maat_offertes ADD COLUMN vies_raadpleging TEXT;
+ALTER TABLE maat_offertes ADD COLUMN verstuurd_op TEXT;
+ALTER TABLE maat_offertes ADD COLUMN order_id INTEGER;
+ALTER TABLE maat_offertes ADD COLUMN aanpassing TEXT;
+ALTER TABLE maat_offertes ADD COLUMN aanpassing_op TEXT;
+ALTER TABLE maat_offertes ADD COLUMN link_op TEXT;

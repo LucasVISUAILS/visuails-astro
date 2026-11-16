@@ -59,7 +59,7 @@ ok("het testexemplaar niet — dat heeft zijn eigen pad", isPayableService('test
  */
 ok("'video' is te prijzen — maar alleen de juiste soort", isPayableService('video'));
 ok('motion levert een bedrag op',
-  quoteVideo({ style: 'motion', clips: 2, vatRate: 0.21 })?.netCents, 13800);
+  quoteVideo({ style: 'motion', clips: 2, vatRate: 0.21 })?.netCents, 20000);  // lijst 111: Motion € 100 (was 13800 bij € 69)
 ok('een lifestyle-clip niet — die wordt geoffreerd',
   quoteVideo({ style: 'lifestyle', clips: 2, vatRate: 0.21 }), null);
 ok('een campagne niet', quoteVideo({ style: 'campaign', clips: 2, vatRate: 0.21 }), null);

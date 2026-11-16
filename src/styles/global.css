@@ -129,16 +129,16 @@
      de kleur op één plek in plaats van op duizend, en houdt de geschiedenis
      leesbaar. Wat NIET blijft is een oude WAARDE: elke alias hieronder wijst
      naar een token uit het schema. */
-  --paper:       #F4F5F7;
+  --paper:       #F4F5F4;
   --surface:     #E6E7EA;
   --sunken:      #DCDFE3;
-  --ink:         #0F1217;
-  --ink-2:       rgb(11 15 23 / .66);   /* lopende tekst · 6,95:1 */
-  --ink-3:       rgb(11 15 23 / .56);   /* labels en microcopy · 4,81:1 — de laatste trede die letter mag zijn */
-  --line:        rgb(11 15 23 / .20);
-  --line-soft:   rgb(11 15 23 / .10);
-  --panel:       #0F1217;
-  --on-panel:    #F4F5F7;
+  --ink:         #090D0B;
+  --ink-2:       rgb(9 13 11 / .66);   /* lopende tekst · 6,95:1 */
+  --ink-3:       rgb(9 13 11 / .56);   /* labels en microcopy · 4,81:1 — de laatste trede die letter mag zijn */
+  --line:        rgb(9 13 11 / .20);
+  --line-soft:   rgb(9 13 11 / .10);
+  --panel:       #090D0B;
+  --on-panel:    #F4F5F4;
 
   /* ── DRIE AANVULLINGEN OP HET SCHEMA, EN WAAROM ZE ER ZIJN ───────────────
      Het schema kent twee lijnen en drie gronden. Deze codebase heeft er op
@@ -156,7 +156,7 @@
        --menu-surface een paneel dat over ONBEKENDE inhoud zweeft en dus
                       ondoorzichtig MOET zijn — zie de noot die hier stond. Geen
                       alfa, geen scope die hem kan herschrijven. */
-  --line-strong: rgb(11 15 23 / .34);
+  --line-strong: rgb(9 13 11 / .34);
   --bg-raise:    var(--surface);
   --menu-surface: #FFFFFF;
 
@@ -168,7 +168,7 @@
   --glass-3:     #14161B;
   --ink-1:       var(--ink);
   --ink-4:       var(--line-strong);
-  --line-ui:     rgb(11 15 23 / .45);
+  --line-ui:     rgb(9 13 11 / .45);
 
   /* ---- the accent — #C6F100 -------------------------------------------
      Was #90BEFF, a light blue, until August 2026. Lucas: "ik wil denk ik af
@@ -230,20 +230,20 @@
   /* HET SCHEMA BLAUW UUR (levering 68, 24 oktober 2026, docs/KLEURENSCHEMA.md): de vijf
      kleuren en de afgeleide, als vaste waarden voor alles wat geen hal-tokens leest. */
   --merk-wit:        #FFFFFF;
-  --merk-inkt:       #0F1217;   /* 19,18:1 op wit */
-  --merk-blauw:      #25508B;   /* blauw uur · 8,08:1 op wit, wit erop 8,08:1 */
-  --merk-grijs:      #636974;   /* alleen kleine tekst · 5,52:1 */
-  --merk-lijn:       #E6E8EC;   /* alleen scheiding */
-  --merk-vlak:       #F4F5F7;
-  --merk-lijn-sterk: #C5C8CF;
-  --merk-veldlijn:   #858A94;   /* 3,47:1 */
-  --merk-blauw-diep: #1A4279;   /* wit erop 10,00:1 */
-  --merk-blauw-licht: #80A7DD;  /* alleen op inkt · 7,75:1 */
-  --accent:          #0F1217;
+  --merk-inkt:       #090D0B;   /* 19,18:1 op wit */
+  --merk-blauw:      #016645;   /* blauw uur · 8,08:1 op wit, wit erop 8,08:1 */
+  --merk-grijs:      #5E6461;   /* alleen kleine tekst · 5,52:1 */
+  --merk-lijn:       #E7EAE8;   /* alleen scheiding */
+  --merk-vlak:       #F4F5F4;
+  --merk-lijn-sterk: #C6CAC8;
+  --merk-veldlijn:   #8A908D;   /* 3,47:1 */
+  --merk-blauw-diep: #023D29;   /* wit erop 10,00:1 */
+  --merk-blauw-licht: #3DFFB0;  /* alleen op inkt · 7,75:1 */
+  --accent:          #090D0B;
   --on-accent:       #FFFFFF;
-  --accent-text:     #0F1217;   /* het violet als LETTER op de grond · 8,25:1 */
+  --accent-text:     #090D0B;   /* het violet als LETTER op de grond · 8,25:1 */
   --accent-tint:     #ECEDEF;   /* zacht accentvlak — hoogstens één per scherm */
-  --on-accent-tint:  #0F1217;   /* · 10,46:1 */
+  --on-accent-tint:  #090D0B;   /* · 10,46:1 */
   /* Eén trede donkerder voor hover en ingedrukt. Staat niet in het schema
      omdat het schema over kleuren gaat en niet over toestanden; hij is de
      lettervariant, zodat er geen zesde violet bij komt. */
@@ -271,7 +271,7 @@
      the near-black that .on-bright writes over an inverted ramp, it has eleven
      readers, and renaming it is churn. Read it as "the ink a bright surface
      uses". */
-  --grad-ink: #0F1217;
+  --grad-ink: #090D0B;
 
   /* ---- the bright tile fills --------------------------------------------
      Lucas: *"de tegels (met bijvoorbeeld headers en uitleg) vellere kleuren"*,
@@ -540,9 +540,9 @@
      in admin kloppen — zie de tabel in KLEURENSCHEMA.md voor welke waarde waar
      op slaat. */
   --st-wait-fill: transparent;  --st-wait-edge: #7C818B;              --st-wait-ink: #4B515A;
-  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(11 15 23 / .30);  --st-work-ink: #0F1217;
-  --st-done-fill: #0F1217;      --st-done-edge: #0F1217;               --st-done-ink: #FFFFFF;
-  --st-rev-fill:  #F4F5F7;      --st-rev-edge:  rgb(37 80 139 / .30);   --st-rev-ink:  #25508B;
+  --st-work-fill: #ECEDEF;      --st-work-edge: rgb(9 13 11 / .30);  --st-work-ink: #090D0B;
+  --st-done-fill: #090D0B;      --st-done-edge: #090D0B;               --st-done-ink: #FFFFFF;
+  --st-rev-fill:  #F4F5F4;      --st-rev-edge:  rgb(1 102 69 / .30);   --st-rev-ink:  #016645;
   --st-can-fill:  #E6E7EA;      --st-can-edge:  #818790;               --st-can-ink:  #3D414A;
 
   /* THE LOGOTYPE IS THE ACCENT NOW, August 2026. It was --ink-1 (flat white)
@@ -582,7 +582,7 @@
   --btn-2nd-fill-hover:    #EFF1F2;
   --btn-2nd-ink:           var(--ink-1);
   --btn-2nd-border:        #BFC2C9;
-  --btn-2nd-border-hover:  #0F1217;
+  --btn-2nd-border-hover:  #090D0B;
 
   --select-caret: url("/img/ui/keuzepijl-0a0a0a.svg");
 
@@ -1331,9 +1331,9 @@ body.studio.on-ink {
      mee in deze scope — zie het blok eronder. De val blijft dezelfde: elke rol
      die naar een andere rol wijst, moet hier OPNIEUW gezet worden. */
   --st-wait-fill: transparent;  --st-wait-edge: #5B606A;               --st-wait-ink: #A8ADB5;
-  --st-work-fill: #1B1E24;      --st-work-edge: rgb(197 200 207 / .34);  --st-work-ink: #C5C8CF;
-  --st-done-fill: #C5C8CF;      --st-done-edge: #C5C8CF;                --st-done-ink: #0F1217;
-  --st-rev-fill:  #122039;      --st-rev-edge:  rgb(128 167 221 / .34);   --st-rev-ink:  #80A7DD;
+  --st-work-fill: #1B1E24;      --st-work-edge: rgb(198 202 200 / .34);  --st-work-ink: #C6CAC8;
+  --st-done-fill: #C6CAC8;      --st-done-edge: #C6CAC8;                --st-done-ink: #090D0B;
+  --st-rev-fill:  #122039;      --st-rev-edge:  rgb(61 255 176 / .34);   --st-rev-ink:  #3DFFB0;
   --st-can-fill:  #1B1E24;      --st-can-edge:  #5B606A;                --st-can-ink:  #A0A4AD;
 
   --clay:        var(--st-rev-ink);
@@ -1366,15 +1366,15 @@ body.studio.on-ink {
 
      Als LETTER is het op donker dezelfde #A694FF — één violet per modus, geen
      aparte tekstvariant zoals op licht. */
-  --accent:        #C5C8CF;
-  --on-accent:     #0F1217;
+  --accent:        #C6CAC8;
+  --on-accent:     #090D0B;
   --accent-ink:    var(--on-accent);
   --accent-dim:    #B9BCC4;
   --accent-tint:   #1B1E24;
-  --on-accent-tint: #C5C8CF;
-  --accent-text:   #C5C8CF;
-  --accent-word:   #C5C8CF;
-  --accent-bright: #C5C8CF;
+  --on-accent-tint: #C6CAC8;
+  --accent-text:   #C6CAC8;
+  --accent-word:   #C6CAC8;
+  --accent-bright: #C6CAC8;
   --accent-soft:   rgb(255 255 255 / 0.10);
   --accent-line:   rgb(255 255 255 / 0.28);
 
@@ -2234,18 +2234,18 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
    assumed near-black". It sets no background of its own — what colour the
    bright thing is, is the caller's business. */
 .on-bright {
-  color: rgb(11 15 23 / 0.82);
+  color: rgb(9 13 11 / 0.82);
 
   --bg:          transparent;
   --ink:         var(--grad-ink);
   --ink-1:       var(--grad-ink);
-  --ink-2:       rgb(11 15 23 / 0.82);
-  --ink-3:       rgb(11 15 23 / 0.68);
-  --ink-4:       rgb(11 15 23 / 0.55);
-  --ink-faint:   rgb(11 15 23 / 0.68);
+  --ink-2:       rgb(9 13 11 / 0.82);
+  --ink-3:       rgb(9 13 11 / 0.68);
+  --ink-4:       rgb(9 13 11 / 0.55);
+  --ink-faint:   rgb(9 13 11 / 0.68);
   --paper-on-dark:       var(--grad-ink);
-  --paper-soft-on-dark:  rgb(11 15 23 / 0.82);
-  --paper-muted-on-dark: rgb(11 15 23 / 0.68);
+  --paper-soft-on-dark:  rgb(9 13 11 / 0.82);
+  --paper-muted-on-dark: rgb(9 13 11 / 0.68);
   /* The logotype does NOT follow the accent here. :root moved --brand to
      #C6F100, which is 15.16:1 on the near-black ground and 1.31:1 on a bright
      one — the green and white are within a hair of the same luminance. This
@@ -2256,9 +2256,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
      contrast checker reads text and this is an <svg>. */
   --brand:       var(--grad-ink);
 
-  --line:        rgb(11 15 23 / 0.16);
-  --line-strong: rgb(11 15 23 / 0.30);
-  --line-ui:     rgb(11 15 23 / 0.55);
+  --line:        rgb(9 13 11 / 0.16);
+  --line-strong: rgb(9 13 11 / 0.30);
+  --line-ui:     rgb(9 13 11 / 0.55);
 
   /* The accent cannot be itself here: #90BEFF on this plate is 1.6:1. The
      panel's own accent is the ink, and the CTA carries the colour by being
@@ -2267,20 +2267,20 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --accent-text: var(--grad-ink);
   --accent-ink:  #FFFFFF;
   --accent-on:   #FFFFFF;
-  --accent-dim:  rgb(11 15 23 / 0.84);
+  --accent-dim:  rgb(9 13 11 / 0.84);
   --accent-word: var(--grad-ink);
   --accent-bright: var(--grad-ink);
-  --accent-soft: rgb(11 15 23 / 0.10);
-  --accent-line: rgb(11 15 23 / 0.30);
+  --accent-soft: rgb(9 13 11 / 0.10);
+  --accent-line: rgb(9 13 11 / 0.30);
   --focus-ring:  var(--grad-ink);
 
-  --btn-ghost-fill:        rgb(11 15 23 / 0.08);
-  --btn-ghost-fill-hover:  rgb(11 15 23 / 0.16);
+  --btn-ghost-fill:        rgb(9 13 11 / 0.08);
+  --btn-ghost-fill-hover:  rgb(9 13 11 / 0.16);
   --btn-2nd-fill:          transparent;
-  --btn-2nd-fill-hover:    rgb(11 15 23 / 0.10);
+  --btn-2nd-fill-hover:    rgb(9 13 11 / 0.10);
   --btn-2nd-ink:           var(--grad-ink);
-  --btn-2nd-border:        rgb(11 15 23 / 0.42);
-  --btn-2nd-border-hover:  rgb(11 15 23 / 0.70);
+  --btn-2nd-border:        rgb(9 13 11 / 0.42);
+  --btn-2nd-border-hover:  rgb(9 13 11 / 0.70);
 }
 
 /* ---- .panel-tonal — the closing plate, August 2026 --------------------------
@@ -2630,19 +2630,19 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
 .rand-los {
   --los: clamp(4rem, 9vw, 9rem);
   -webkit-mask-image: linear-gradient(to bottom,
-    transparent 0, #0F1217 var(--los-boven, var(--los)),
-    #0F1217 calc(100% - var(--los-onder, var(--los))), transparent 100%);
+    transparent 0, #090D0B var(--los-boven, var(--los)),
+    #090D0B calc(100% - var(--los-onder, var(--los))), transparent 100%);
   mask-image: linear-gradient(to bottom,
-    transparent 0, #0F1217 var(--los-boven, var(--los)),
-    #0F1217 calc(100% - var(--los-onder, var(--los))), transparent 100%);
+    transparent 0, #090D0B var(--los-boven, var(--los)),
+    #090D0B calc(100% - var(--los-onder, var(--los))), transparent 100%);
 }
 /* Alleen de onderrand. Een hero schuift onder de plakkende kop door en raakt
    bovenaan niets; daar uitdoven zou de lucht uit elke hero halen om een naad op
    te lossen die er niet is. */
 .rand-los-voet {
   --los: clamp(5rem, 14vh, 11rem);
-  -webkit-mask-image: linear-gradient(to top, transparent 0, #0F1217 var(--los));
-  mask-image: linear-gradient(to top, transparent 0, #0F1217 var(--los));
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #090D0B var(--los));
+  mask-image: linear-gradient(to top, transparent 0, #090D0B var(--los));
 }
 
 /* ---- the heroes, bottom edge only -----------------------------------------
@@ -2710,9 +2710,9 @@ section { padding-block: clamp(4.5rem, 9vw, 9rem); position: relative; }
   --los: clamp(4rem, 9vw, 9rem);
   --los-onder: clamp(3rem, 6vw, 5rem);
   -webkit-mask-image: linear-gradient(to bottom,
-    transparent 0, #0F1217 var(--los), #0F1217 calc(100% - var(--los-onder)), transparent 100%);
+    transparent 0, #090D0B var(--los), #090D0B calc(100% - var(--los-onder)), transparent 100%);
   mask-image: linear-gradient(to bottom,
-    transparent 0, #0F1217 var(--los), #0F1217 calc(100% - var(--los-onder)), transparent 100%);
+    transparent 0, #090D0B var(--los), #090D0B calc(100% - var(--los-onder)), transparent 100%);
 }
 
 /* ---- the coloured tiles ----------------------------------------------------
@@ -3601,7 +3601,7 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
 /* Op een heldere grond keert het licht om: daar is de bovenrand de donkere kant
    en zou een witte lichtlijn een streep zijn die nergens vandaan komt. */
 .on-bright .card, .on-bright .tile, .on-paper .card, .on-paper .tile {
-  box-shadow: inset 0 1px 0 rgb(11 15 23 / 0.06);
+  box-shadow: inset 0 1px 0 rgb(9 13 11 / 0.06);
 }
 .card { background: var(--surface); border: 1px solid var(--line); padding: clamp(1.4rem, 2.5vw, 2rem); transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease); }
 .card-hover:hover { border-color: var(--line-strong); }
@@ -4263,7 +4263,7 @@ svg.ik path { fill: inherit !important; stroke: none !important; }
 .cmp .cmp-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; background: var(--accent); color: var(--accent-on); display: grid; place-items: center; box-shadow: 3px 3px 0 0 rgb(var(--scrim) / 0.35); cursor: ew-resize; touch-action: none; }
 .cmp .cmp-knob svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; }
 .cmp .cmp-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: var(--h-t-label); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgb(var(--scrim) / 0.78); color: #F4F5F7; pointer-events: none; }
+.cmp .cmp-tag { position: absolute; bottom: 14px; z-index: 4; padding: .32rem .75rem; font-size: var(--h-t-label); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: rgb(var(--scrim) / 0.78); color: #F4F5F4; pointer-events: none; }
 /* Each label fades out as its own side shrinks — i.e. as the divider (driven
    by --cmp-pos, from both the auto-animation and manual drag) sweeps toward it.
    opacity accepts a percentage; calc(...*6) means fully opaque until ~value
@@ -5176,7 +5176,7 @@ body::before {
     /* 1 · material — ground only, never over an image */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E") 0 0 / 170px repeat,
     /* 2 · the falloff — the far corners sit back */
-    radial-gradient(150% 110% at 50% 50%, transparent 38%, rgb(11 15 23 / 0.45) 100%);
+    radial-gradient(150% 110% at 50% 50%, transparent 38%, rgb(9 13 11 / 0.45) 100%);
 }
 
 /* ── DE LAMP HOORT BIJ DE PAGINA EN NIET BIJ HET VENSTER ────────────────────
@@ -5270,8 +5270,8 @@ body { position: relative; }
     rgb(255 255 255 / 0.030) 46%,
     rgb(255 255 255 / 0.008) 78%,
     transparent 100%);
-  -webkit-mask-image: linear-gradient(255deg, #0F1217 0%, #0F1217 62%, transparent 100%);
-  mask-image: linear-gradient(255deg, #0F1217 0%, #0F1217 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(255deg, #090D0B 0%, #090D0B 62%, transparent 100%);
+  mask-image: linear-gradient(255deg, #090D0B 0%, #090D0B 62%, transparent 100%);
 }
 .beam-left::before {
   clip-path: polygon(0% 2%, 0% 30%, 100% 92%, 100% 58%);
@@ -5281,8 +5281,8 @@ body { position: relative; }
     rgb(255 255 255 / 0.030) 46%,
     rgb(255 255 255 / 0.008) 78%,
     transparent 100%);
-  -webkit-mask-image: linear-gradient(105deg, #0F1217 0%, #0F1217 62%, transparent 100%);
-  mask-image: linear-gradient(105deg, #0F1217 0%, #0F1217 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(105deg, #090D0B 0%, #090D0B 62%, transparent 100%);
+  mask-image: linear-gradient(105deg, #090D0B 0%, #090D0B 62%, transparent 100%);
 }
 /* Op een telefoon staat de band rechtop in plaats van breed, en dan snijdt een
    wig van 28 procent hoogte er als een streepje doorheen. Steiler en breder,
@@ -5607,7 +5607,7 @@ body { position: relative; }
 .mk { --vs-amp: 0; animation: vs-schommel 3.6s linear infinite paused; transition: --vs-amp .7s cubic-bezier(.3, 0, .2, 1); }
 :is(.mk:hover, a:hover > .mk, a:focus-visible > .mk, button:hover > .mk, button:focus-visible > .mk) { --vs-amp: 1; animation-play-state: running; transition-duration: .45s; }
 .mk .mk-line { display: none; }
-.mk .mk-kleur { fill: var(--mk-kleur, #25508B); stroke: none; opacity: calc(var(--vs-amp) * (1 - cos(var(--vs-fase) * 360deg)) / 2); pointer-events: none; }
+.mk .mk-kleur { fill: var(--mk-kleur, #016645); stroke: none; opacity: calc(var(--vs-amp) * (1 - cos(var(--vs-fase) * 360deg)) / 2); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .mk { animation: none; transition: none; }
   .mk .mk-kleur { opacity: var(--vs-amp); }
@@ -5871,7 +5871,7 @@ body { position: relative; }
      En het kost geen tweede download: dezelfde URL, dus dezelfde cache. */
   background-color: #2A3412;
   background-image:
-    radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(11 15 23 / 0.28) 62%, rgb(11 15 23 / 0.70) 100%),
+    radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(9 13 11 / 0.28) 62%, rgb(9 13 11 / 0.70) 100%),
     image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp')),
     image-set(url('/img/sub-beam-2400.avif') type('image/avif'), url('/img/sub-beam-2400.webp') type('image/webp'));
   background-size: cover, cover, cover;
@@ -5891,7 +5891,7 @@ body { position: relative; }
      geen merkkleur — zie de noot bij de lichtplas hierboven. */
   border: 1px solid rgb(255 255 255 / 0.30);
   padding: clamp(1.5rem, 3.2vw, 2.8rem);
-  box-shadow: 0 30px 70px -34px rgb(11 15 23 / 0.55);
+  box-shadow: 0 30px 70px -34px rgb(9 13 11 / 0.55);
 }
 /* ── DE KLEINE VARIANT OP EEN TELEFOON — 22 augustus 2026 ─────────────────
    `background-image` kent geen `sizes`, dus een telefoon van 390 px breed
@@ -5907,7 +5907,7 @@ body { position: relative; }
 @media (max-width: 900px) {
   .lime-panel {
     background-image:
-      radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(11 15 23 / 0.28) 62%, rgb(11 15 23 / 0.70) 100%),
+      radial-gradient(120% 108% at 50% 42%, transparent 26%, rgb(9 13 11 / 0.28) 62%, rgb(9 13 11 / 0.70) 100%),
       image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp')),
       image-set(url('/img/sub-beam-1400.avif') type('image/avif'), url('/img/sub-beam-1400.webp') type('image/webp'));
   }
@@ -6008,9 +6008,9 @@ body { position: relative; }
   /* 20 september 2026: dezelfde rol, het nieuwe accent. Op een donkere plaat
      is dat het LICHTE violet (#A694FF, 8,30:1); het violet van de vulling
      haalt daar 2,93:1 — zie de afgekeurde combinaties in KLEURENSCHEMA.md. */
-  --accent: #C5C8CF;
-  --accent-text: #C5C8CF;
-  --accent-word: #C5C8CF;
+  --accent: #C6CAC8;
+  --accent-text: #C6CAC8;
+  --accent-word: #C6CAC8;
   /* --accent-dim STOND HIER NIET, en dat was een knop die op hover verdween.
      `.btn-primary:hover` schildert `var(--accent-dim)`, en die kwam uit de
      .on-bright-scope van het paneel eromheen: daar is hij bijna zwart, want
@@ -6018,9 +6018,9 @@ body { position: relative; }
      limoenknop dus zwart-op-zwart zodra je hem aanwees. Elke plek die --accent
      terugdraait, moet zijn hele familie terugdraaien. */
   --accent-dim: #B9BCC4;
-  --accent-ink: #0F1217;
-  --accent-on: #0F1217;
-  --accent-bright: #C5C8CF;
+  --accent-ink: #090D0B;
+  --accent-on: #090D0B;
+  --accent-bright: #C6CAC8;
   /* ── SECTIE 22 LEEST ZIJN EIGEN NAMEN — 20 september 2026 ────────────────
      stijl22.css zet `--inkt`, `--lijn` en `--geel-letter` op de LICHTE waarden,
      want een .s22-pagina is licht papier met donkere panelen. Een component op
@@ -6034,8 +6034,8 @@ body { position: relative; }
   --inkt-3: rgb(255 255 255 / 0.66);
   --lijn: rgb(255 255 255 / 0.16);
   --lijn-sterk: rgb(255 255 255 / 0.28);
-  --geel-letter: #C5C8CF;
-  --op-inkt: #0F1217;
+  --geel-letter: #C6CAC8;
+  --op-inkt: #090D0B;
   --btn-ghost-fill: rgb(255 255 255 / 0.08);
   --btn-ghost-fill-hover: rgb(255 255 255 / 0.16);
 }
@@ -6166,39 +6166,39 @@ body { position: relative; }
    tweede vlak, nooit uit een schaduw); wat overblijft is de lijn. */
 .plaat-vol.lime-plate {
   background: var(--panel);
-  border: 1px solid rgb(244 245 247 / 0.18);
+  border: 1px solid rgb(244 245 244 / 0.18);
   box-shadow: none;
   color: var(--on-panel);
-  --ink: #F4F5F7;
-  --ink-1: #F4F5F7;
-  --ink-2: rgb(244 245 247 / 0.72);
-  --ink-3: rgb(244 245 247 / 0.55);
-  --ink-4: rgb(244 245 247 / 0.34);
-  --line: rgb(244 245 247 / 0.20);
-  --line-strong: rgb(244 245 247 / 0.34);
-  --line-ui: rgb(244 245 247 / 0.55);
+  --ink: #F4F5F4;
+  --ink-1: #F4F5F4;
+  --ink-2: rgb(244 245 244 / 0.72);
+  --ink-3: rgb(244 245 244 / 0.55);
+  --ink-4: rgb(244 245 244 / 0.34);
+  --line: rgb(244 245 244 / 0.20);
+  --line-strong: rgb(244 245 244 / 0.34);
+  --line-ui: rgb(244 245 244 / 0.55);
   /* De hele accentfamilie draait om, niet alleen --accent — zie de noot bij
      .lime-plate hierboven: wie er één vergeet, krijgt een knop die op hover
      verdwijnt. */
-  --accent: #C5C8CF;
+  --accent: #C6CAC8;
   --accent-dim: #B9BCC4;
-  --accent-ink: #0F1217;
-  --accent-on: #0F1217;
-  --accent-bright: #C5C8CF;
-  --accent-word: #C5C8CF;
-  --fill-blue: #C5C8CF;
-  --focus-ring: #F4F5F7;
-  --btn-ghost-fill: rgb(244 245 247 / 0.10);
-  --btn-ghost-fill-hover: rgb(244 245 247 / 0.20);
-  --btn-2nd-fill: rgb(244 245 247 / 0.08);
-  --btn-2nd-fill-hover: rgb(244 245 247 / 0.16);
-  --btn-2nd-ink: #F4F5F7;
+  --accent-ink: #090D0B;
+  --accent-on: #090D0B;
+  --accent-bright: #C6CAC8;
+  --accent-word: #C6CAC8;
+  --fill-blue: #C6CAC8;
+  --focus-ring: #F4F5F4;
+  --btn-ghost-fill: rgb(244 245 244 / 0.10);
+  --btn-ghost-fill-hover: rgb(244 245 244 / 0.20);
+  --btn-2nd-fill: rgb(244 245 244 / 0.08);
+  --btn-2nd-fill-hover: rgb(244 245 244 / 0.16);
+  --btn-2nd-ink: #F4F5F4;
   /* De rand van de tweede knop stond in ZWART op 42%. Op een limoen plaat was
      dat een zichtbare rand; op een zwarte plaat is het niets. Licht dus, in
      dezelfde twee stappen. */
-  --btn-2nd-border: rgb(244 245 247 / 0.42);
-  --btn-2nd-border-hover: rgb(244 245 247 / 0.70);
-  --accent-text: #C5C8CF;
+  --btn-2nd-border: rgb(244 245 244 / 0.42);
+  --btn-2nd-border-hover: rgb(244 245 244 / 0.70);
+  --accent-text: #C6CAC8;
   /* ── SECTIE 22 LEEST ZIJN EIGEN NAMEN — 20 september 2026 ────────────────
      stijl22.css zet `--inkt`, `--lijn` en `--geel-letter` op de LICHTE waarden,
      want een .s22-pagina is licht papier met donkere panelen. Een component op
@@ -6207,13 +6207,13 @@ body { position: relative; }
      kladblok/leesbaar-alles.mjs op de twee akkoordregels van /start/plan.
      Zolang de plaat LIMOEN was, klopte de zwarte inkt hier — dit is dezelfde
      omkering als bij de voet en de deurtegel. */
-  --inkt: #F4F5F7;
-  --inkt-2: rgb(244 245 247 / 0.72);
-  --inkt-3: rgb(244 245 247 / 0.55);
-  --lijn: rgb(244 245 247 / 0.20);
-  --lijn-sterk: rgb(244 245 247 / 0.34);
-  --geel-letter: #C5C8CF;
-  --op-inkt: #0F1217;
+  --inkt: #F4F5F4;
+  --inkt-2: rgb(244 245 244 / 0.72);
+  --inkt-3: rgb(244 245 244 / 0.55);
+  --lijn: rgb(244 245 244 / 0.20);
+  --lijn-sterk: rgb(244 245 244 / 0.34);
+  --geel-letter: #C6CAC8;
+  --op-inkt: #090D0B;
 }
 
 /* ═══ SECTIE 21 · GLAS ══════════════════════════════════════════════════════
@@ -6274,26 +6274,26 @@ body { position: relative; }
   --bg:          var(--panel);
   --ink:         var(--on-panel);
   --ink-1:       var(--on-panel);
-  --ink-2:       rgb(244 245 247 / .82);
-  --ink-3:       rgb(244 245 247 / .70);
-  --ink-4:       rgb(244 245 247 / .60);
-  --ink-faint:   rgb(244 245 247 / .56);
+  --ink-2:       rgb(244 245 244 / .82);
+  --ink-3:       rgb(244 245 244 / .70);
+  --ink-4:       rgb(244 245 244 / .60);
+  --ink-faint:   rgb(244 245 244 / .56);
   --paper:              var(--on-panel);
   --paper-on-dark:      var(--on-panel);
-  --paper-soft-on-dark: rgb(244 245 247 / .82);
-  --paper-muted-on-dark: rgb(244 245 247 / .70);
-  --line:        rgb(244 245 247 / .18);
-  --line-strong: rgb(244 245 247 / .32);
-  --line-ui:     rgb(244 245 247 / .45);
+  --paper-soft-on-dark: rgb(244 245 244 / .82);
+  --paper-muted-on-dark: rgb(244 245 244 / .70);
+  --line:        rgb(244 245 244 / .18);
+  --line-strong: rgb(244 245 244 / .32);
+  --line-ui:     rgb(244 245 244 / .45);
   --brand:       var(--on-panel);
   --mk-ink:      var(--on-panel);
   /* Het accent als LETTER kan op zwart niet het violet van papier zijn
      (#3D17D6 op zwart is 2,4:1). Dit is dezelfde waarde als de donkere stand
      van de site gebruikt — zie de donkere tokenblok hierboven. */
-  --accent-text: #C5C8CF;
-  --ghost:       rgb(244 245 247 / .08);
-  --surface:     rgb(244 245 247 / .06);
-  --surface-2:   rgb(244 245 247 / .10);
+  --accent-text: #C6CAC8;
+  --ghost:       rgb(244 245 244 / .08);
+  --surface:     rgb(244 245 244 / .06);
+  --surface-2:   rgb(244 245 244 / .10);
 }
 .site-footer a { color: inherit; }
 .site-footer :is(.brand-word, .brand-mark, .mk) { fill: var(--on-panel); }
@@ -6365,8 +6365,8 @@ section { padding-block: clamp(5rem, 11vw, 11rem); }
 .eyebrow-page { gap: .7em; }
 .eyebrow-page::after {
   content: ""; order: -1; width: 2.2em; height: .9em; background-color: var(--ink-3);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%230F1217' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%230F1217' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%23090D0B' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 813'%3E%3Cg fill='none' stroke='%23090D0B' stroke-width='28'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3Cg transform='translate(640 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3Cg transform='translate(1280 0)'%3E%3Cpath d='M0 16L144.25 266.75 463.25 813.25 662.75 354.75 619.25 408.25 515.5 546.25 264.5 119A201.21 201.21 0 0 0 101 15.75L0 16Z'/%3E%3Cpath d='M701.75 0 543.25 366.25 507.25 453.75 652 259.25 702 338.25 701.75 0Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 /* 5 · Harde randen. De voorpagina-banner is een vlak met een rand, geen
@@ -6420,10 +6420,10 @@ body::before { display: none; }
    tests/poppetje-css.test.mjs houdt de twee gelijk. Drie tinten inkt, geen
    kleur — zie de kop van Poppetje.astro. */
 .pop { display: block; width: 100%; height: auto; }
-.pop .r { fill: rgb(11 15 23 / .06); stroke: var(--line-strong, rgb(11 15 23 / .34)); stroke-width: 2; stroke-linejoin: round; }
-.pop .r-head { fill: var(--paper, #F4F5F7); }
+.pop .r { fill: rgb(9 13 11 / .06); stroke: var(--line-strong, rgb(9 13 11 / .34)); stroke-width: 2; stroke-linejoin: round; }
+.pop .r-head { fill: var(--paper, #F4F5F4); }
 .pop .r-arms, .pop .r-legs { fill: none; }
-.pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(11 15 23 / .13); stroke-width: 1.5; }
+.pop .r-shoes, .pop .r-bottom, .pop .r-top, .pop .r-underlayer { fill: rgb(9 13 11 / .13); stroke-width: 1.5; }
 .pop[data-product="top"] .r-top,
 .pop[data-product="outerwear"] .r-top,
 .pop[data-product="underwear"] .r-top,
@@ -6433,15 +6433,15 @@ body::before { display: none; }
 .pop[data-product="dress"] .r-top,
 .pop[data-product="dress"] .r-bottom,
 .pop[data-product="shoes"] .r-shoes,
-.pop[data-product="socks"] .r-shoes { fill: var(--ink, #0F1217); stroke: var(--ink, #0F1217); }
+.pop[data-product="socks"] .r-shoes { fill: var(--ink, #090D0B); stroke: var(--ink, #090D0B); }
 .pop[data-own*="shoes"] .r-shoes,
 .pop[data-own*="bottom"] .r-bottom,
 .pop[data-own*="top"] .r-top,
-.pop[data-own*="underlayer"] .r-underlayer { fill: rgb(11 15 23 / .45); stroke: none; }
-.pop .pop-buiten { fill: var(--paper, #F4F5F7); fill-opacity: .8; }
-.pop .pop-kader { fill: none; stroke: var(--ink, #0F1217); stroke-width: 2; }
+.pop[data-own*="underlayer"] .r-underlayer { fill: rgb(9 13 11 / .45); stroke: none; }
+.pop .pop-buiten { fill: var(--paper, #F4F5F4); fill-opacity: .8; }
+.pop .pop-kader { fill: none; stroke: var(--ink, #090D0B); stroke-width: 2; }
 .pop.pop-klein .pop-buiten { display: none; }
-.pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(11 15 23 / .2)); }
+.pop.pop-klein .r-arms, .pop.pop-klein .r-legs { stroke: var(--line, rgb(9 13 11 / .2)); }
 .pop.pop-klein .pop-kader { stroke-width: 3; }
 
 /* Terug van de server met ?error= (ronde 9, F45): één zin boven het formulier,

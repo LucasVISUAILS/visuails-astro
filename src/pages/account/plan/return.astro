@@ -26,7 +26,7 @@ const { t, lang, customer, thema, navDicht } = st;
   chip={v.staat === 'gelukt' ? { tekst: t.planStatusActive, toon: 'signal' } : v.staat === 'wacht' ? { tekst: t.planStatusPending, toon: 'warn' } : null}
 >
   <section class="st-blok" aria-label={t.planHeading}>
-    <div class="st-kaart-vlak st-terug">
+    <div class={`st-kaart-vlak st-terug${v.staat === 'gelukt' ? ' k-inkt st-veldkaart st-vk-5' : ''}`}>
       <a class="btn btn-primary" data-rol="doorgaan" href={v.ctaHref} set:html={knopInhoud('doorgaan', v.cta)} />
     </div>
   </section>

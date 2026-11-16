@@ -242,13 +242,13 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
         is de onderste trede (tests/vanaf-bedragen.test.mjs). */}
     <ul class="h-dienst-extra" role="list">
       {eigen && (
-        <li class="h-dienst-eigen h-in">
+        <li class="h-dienst-eigen kv-108 h-in" data-kaart>
           <span class="h-cirkel h-cirkel-wit" aria-hidden="true" set:html={ik('plus')} />
-          <div>
+          <div data-tekstvlak>
             <p class="h-dienst-extra-kop">{c.eigenKop} <span class="l">{eigen.name}.</span></p>
             <p class="h-dienst-extra-zin">{eigen.tagline} <span class="h-dienst-extra-prijs">{c.opAanvraag}</span></p>
           </div>
-          <p class="h-dienst-extra-wegen">
+          <p class="h-dienst-extra-wegen" data-tekstvlak>
             <a class="h-knop k k-lijn k-klein" data-rol="doorgaan" href={lp(String(eigen.orderHref).replace(/^\/nl(?=\/)/, ''))}>{c.eigenCta}<Fragment set:html={rolIkoon('doorgaan')} /></a>
             <a class="h-st-meer" href={lp(`${basis}/catalog/custom`)}>{c.eigenMeer}<span set:html={ik('pijl')} /></a>
           </p>

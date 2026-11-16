@@ -36,10 +36,10 @@
 /* ── 1 · de foto's ──────────────────────────────────────────────────────────────────────────────────────
    Eerst webp voor elke browser; waar image-set met type() bestaat, avif (de helft kleiner). Twee aparte regels:
    in één regel voegt de minifier ze samen en valt de webp-terugval weg (gemeten in dist, 9 november 2026). */
-html body.hal .h-proef > .h-proef-woord { background: #0F1217 url("../assets/fotoblok/proef-1600.webp") 50% 50% / cover no-repeat !important; }
-html body.hal .h-lk-slot { background: #0F1217 url("../assets/fotoblok/slot-1600.webp") 50% 50% / cover no-repeat !important; box-shadow: none !important; }
-html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { background: #0F1217 url("../assets/fotoblok/brief-1600.webp") 50% 50% / cover no-repeat !important; box-shadow: none !important; }
-html body.hal .h-nf-getal { background: #0F1217 url("../assets/fotoblok/nf-1600.webp") 50% 50% / cover no-repeat !important; }
+html body.hal .h-proef > .h-proef-woord { background: #090D0B url("../assets/fotoblok/proef-1600.webp") 50% 50% / cover no-repeat !important; }
+html body.hal .h-lk-slot { background: #090D0B url("../assets/fotoblok/slot-1600.webp") 50% 50% / cover no-repeat !important; box-shadow: none !important; }
+html body.hal .site-footer .sb, html body.hal .h-gd-brief, html body.hal .h-ed-brief { background: #090D0B url("../assets/fotoblok/brief-1600.webp") 50% 50% / cover no-repeat !important; box-shadow: none !important; }
+html body.hal .h-nf-getal { background: #090D0B url("../assets/fotoblok/nf-1600.webp") 50% 50% / cover no-repeat !important; }
 /* de telefoon: de helft zo breed (een bewogen beeld heeft geen detail om te verliezen) */
 @media (max-width: 760px) {
   html body.hal .h-proef > .h-proef-woord { background-image: url("../assets/fotoblok/proef-800.webp") !important; }
@@ -64,10 +64,10 @@ html body.hal .h-nf-getal { background: #0F1217 url("../assets/fotoblok/nf-1600.
 html body.hal .h-proef > .h-proef-woord::before,
 html body.hal .fb-glas,
 html body.hal .site-footer .sb::before, html body.hal .h-gd-brief::before, html body.hal .h-ed-brief::before {
-  background: linear-gradient(126.87deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, 0) 38%), rgba(11, 15, 23, .58);
+  background: linear-gradient(126.87deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, 0) 38%), rgba(9, 13, 11, .58);
   -webkit-backdrop-filter: blur(22px) saturate(150%) brightness(.82);
   backdrop-filter: blur(22px) saturate(150%) brightness(.82);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .38), inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 -18px 36px -24px rgba(128, 167, 221, .45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .38), inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 -18px 36px -24px rgba(61, 255, 176, .45);
 }
 /* de plaat als vlak achter de inhoud: het blok is een eigen stapel (isolation), de plaat ligt er onderin */
 html body.hal .h-proef > .h-proef-woord::before,
@@ -126,18 +126,18 @@ html body.hal .site-footer .sb .sb-hp, html body.hal .h-gd-brief .sb-hp, html bo
 html body.hal .site-footer .sb .sb-zin, html body.hal .h-gd-brief .sb-zin, html body.hal .h-ed-brief .sb-zin,
 html body.hal .site-footer .sb .sb-noot, html body.hal .h-gd-brief .sb-noot, html body.hal .h-ed-brief .sb-noot { color: rgba(255, 255, 255, .9) !important; }
 /* het veld blijft wit met inkt; Aanmelden wordt wit met inkt en vult zich als de witte knop (hal.css) */
-html body.hal .site-footer .sb .sb-veld input, html body.hal .h-gd-brief .sb-veld input, html body.hal .h-ed-brief .sb-veld input { background: #FFFFFF !important; border-color: #FFFFFF !important; color: #0F1217 !important; }
+html body.hal .site-footer .sb .sb-veld input, html body.hal .h-gd-brief .sb-veld input, html body.hal .h-ed-brief .sb-veld input { background: #FFFFFF !important; border-color: #FFFFFF !important; color: #090D0B !important; }
 html body.hal .site-footer .sb .sb-veld button, html body.hal .h-gd-brief .sb-veld button, html body.hal .h-ed-brief .sb-veld button {
-  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat !important;
-  color: #0F1217 !important;
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #3DFFB0 66.66%, #A2B7D2 100%) -2px -2px / calc(300% + 4px) calc(300% + 4px) no-repeat !important;
+  color: #090D0B !important;
   transition: background-position .36s cubic-bezier(.22, .8, .2, 1);
 }
 html body.hal .site-footer .sb .sb-veld button:hover, html body.hal .h-gd-brief .sb-veld button:hover, html body.hal .h-ed-brief .sb-veld button:hover,
 html body.hal .site-footer .sb .sb-veld button:focus-visible, html body.hal .h-gd-brief .sb-veld button:focus-visible, html body.hal .h-ed-brief .sb-veld button:focus-visible {
-  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #80A7DD 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat !important;
+  background: #FFFFFF linear-gradient(126.87deg, #FFFFFF 0%, #FFFFFF 33.34%, #3DFFB0 66.66%, #A2B7D2 100%) calc(100% + 2px) calc(100% + 2px) / calc(300% + 4px) calc(300% + 4px) no-repeat !important;
 }
 /* focus op een donker vlak: blauw licht */
-html body.hal .site-footer .sb :focus-visible, html body.hal .h-gd-brief :focus-visible, html body.hal .h-ed-brief :focus-visible { outline-color: #80A7DD !important; }
+html body.hal .site-footer .sb :focus-visible, html body.hal .h-gd-brief :focus-visible, html body.hal .h-ed-brief :focus-visible { outline-color: #3DFFB0 !important; }
 @media (prefers-reduced-motion: reduce) {
   html body.hal .site-footer .sb .sb-veld button, html body.hal .h-gd-brief .sb-veld button, html body.hal .h-ed-brief .sb-veld button { transition: none; }
 }
@@ -145,7 +145,7 @@ html body.hal .site-footer .sb :focus-visible, html body.hal .h-gd-brief :focus-
 /* ── 3 · zonder glas, en met hoog contrast ────────────────────────────────────────────────────────────── */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   html body.hal .h-proef > .h-proef-woord::before, html body.hal .fb-glas,
-  html body.hal .site-footer .sb::before, html body.hal .h-gd-brief::before, html body.hal .h-ed-brief::before { background: rgba(11, 15, 23, .8); }
+  html body.hal .site-footer .sb::before, html body.hal .h-gd-brief::before, html body.hal .h-ed-brief::before { background: rgba(9, 13, 11, .8); }
 }
 @media (forced-colors: active) {
   html body.hal .h-proef > .h-proef-woord, html body.hal .h-lk-slot, html body.hal .h-nf-getal,

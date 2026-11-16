@@ -155,8 +155,11 @@ function htmlToText(html) {
 /* 8 november 2026 (doorloop 90, F3): hier stond "built from a single product photo", terwijl het formulier per
    product een voorkant, een achterkant en een detail vraagt (REQUIRED_SHOT_IDS in src/data/shots.js) en de FAQ
    zegt dat één foto niet genoeg is. Zoekmachines en AI-tools citeren juist deze zin. */
+/* 16 november 2026 (levering 110, lijst 121, G1): niet meer "catalog, lifestyle and video visuals" (Lucas: "Houd het
+   algemeen, het gebeurt te vaak dat alleen catalog en lifestyle als producten worden neergezet") en niet meer "phone
+   photos" (lijst 94: het maakt niet uit hoe de foto's gemaakt zijn). */
 const ORG_DESCRIPTION =
-  'Product-visual studio for clothing brands and modern e-commerce: catalog, lifestyle and video visuals made from a few phone photos of each product — a whole collection in one order, or one product at a time.';
+  'Visual studio for fashion brands and modern e-commerce: every visual your brand needs, made from a few photos of each product — a whole collection in one order, or one product at a time.';
 
 /*
  * ── DE WEBSITE ZELF, ALS KNOOP — 2 september 2026 ──────────────────────────

@@ -65,13 +65,33 @@ import { heeftVoorrang, voorrangDeadline } from '../data/pricing.js';
    zeggen "dan betalen we de toeslag terug"; dat moet je niet hoeven onthouden. Geld, dus vooraan. De regel gaat weg
    zodra er op de bestelling iets is terugbetaald (refunded_cents, gemeld door Mollie). Het terugbetalen zelf blijft
    jouw klik. */
-export const NU_DOEN_SOORTEN = Object.freeze(['btw', 'abonnement', 'toeslag', 'leveren', 'revisie', 'oppakken', 'productie', 'fotos', 'formaten', 'offerte', 'maandset', 'review']);
+/* 'opmaat' (15 november 2026, levering 103 en 104): een aanvraag op maat waar wij aan zet zijn. Verstuurd of
+   gereageerd (een voorbeeld maken), "dit is goed" of een gevraagde aanpassing (de offerte maken of aanpassen), of een
+   akkoord waarbij de betaallink niet wegging. Na de offertes van bestellingen: het is dezelfde soort werk. Alleen op
+   het dashboard en in het nachtrapport. */
+export const NU_DOEN_SOORTEN = Object.freeze(['btw', 'abonnement', 'toeslag', 'leveren', 'revisie', 'oppakken', 'productie', 'fotos', 'formaten', 'offerte', 'opmaat', 'maandset', 'review']);
 
 /* De soorten die bij één bestelling horen (één regel per bestelling); 'abonnement' en 'maandset' niet. */
 const PER_BESTELLING = new Set(['btw', 'toeslag', 'leveren', 'revisie', 'oppakken', 'productie', 'fotos', 'formaten', 'offerte', 'review']);
 /* Oppakken en In productie zijn hetzelfde werk in twee standen: één plek in de volgorde, op de dag waarop het af
    moet. */
 const WERK = new Set(['oppakken', 'productie']);
+/* De aanvragen op maat waar wij aan zet zijn (mee in de batch van nuDoen, met een terugval zonder als de tabellen er
+   nog niet zijn). */
+/* De offerte met betaallink (15 november 2026, migratie 0073): een gevraagde aanpassing is "offerte aanpassen", en
+   een akkoord waarbij de betaallink niet wegging is "betaallink". Na het akkoord loopt de rest via de bestelling. */
+export const OPMAAT_SQL = `SELECT 'opmaat' AS soort, a.id AS id, ('#' || a.id) AS ref, c.brand AS brand, c.name AS name, c.email AS email,
+       a.dienst AS service,
+       CASE WHEN a.stand = 'akkoord' AND o.aanpassing IS NOT NULL THEN 'aanpassing'
+            WHEN a.stand = 'vastgelegd' THEN 'link' ELSE a.stand END AS extra,
+       COALESCE(o.akkoord_op, o.aanpassing_op, a.bijgewerkt_op) AS datum, COALESCE(o.akkoord_op, o.aanpassing_op, a.bijgewerkt_op) AS sleutel
+  FROM maat_aanvragen a JOIN customers c ON c.id = a.customer_id
+  LEFT JOIN maat_offertes o ON o.aanvraag_id = a.id
+  LEFT JOIN orders b ON b.id = o.order_id
+ WHERE a.stand IN ('verstuurd', 'akkoord')
+    OR (a.stand = 'vastgelegd' AND o.akkoord_op IS NOT NULL AND o.link_op IS NULL AND COALESCE(b.payment_status, 'unpaid') != 'paid' AND COALESCE(b.status, '') != 'cancelled')
+ LIMIT 50`;
+const OPMAAT_DIENST = { catalog: 'Catalogus', lifestyle: 'Lifestyle', hooks: 'Hooks', video: 'Video' };
 /* Vanaf welke dag van de maand de set van volgende maand in de lijst komt (w11). */
 export const MAANDSET_VANAF_DAG = 25;
 
@@ -280,7 +300,18 @@ export async function nuDoen(db, { nu = Date.now(), orderId = null } = {}) {
       stmts.push(db.prepare(ABO_SQL).bind(sqlStempel(t - ZONDER_INCASSO_NA_DAGEN * 864e5)));
       stmts.push(db.prepare(MAANDSET_SQL).bind(vandaag.slice(0, 7), plusMaand(vandaag.slice(0, 7))));
     }
-    const delen = typeof db.batch === 'function' ? await db.batch(stmts) : await Promise.all(stmts.map((s) => s.all()));
+    const lees = (lijst) => (typeof db.batch === 'function' ? db.batch(lijst) : Promise.all(lijst.map((s) => s.all())));
+    /* De aanvragen op maat gaan mee in hetzelfde verzoek. Mislukt dat (de tabellen van 0071/0072 zijn er nog niet),
+       dan nog één keer zonder: de rest van de lijst mag daar niet op omvallen. */
+    let delen;
+    let opmaat = [];
+    if (id === null) {
+      let mee = true;
+      try { delen = await lees([...stmts, db.prepare(OPMAAT_SQL)]); } catch { mee = false; delen = await lees(stmts); }
+      if (mee) opmaat = (delen[delen.length - 1]?.results || []).filter((r) => r && r.soort === 'opmaat' && r.id != null);
+    } else {
+      delen = await lees(stmts);
+    }
     const n = NU_DOEN_SQL_DELEN.length;
     blackouts = new Set((delen[n]?.results || []).map((r) => r && r.day).filter(Boolean));
     if (id === null) maandset = (delen[n + 2]?.results || [])[0] || null;
@@ -288,7 +319,7 @@ export async function nuDoen(db, { nu = Date.now(), orderId = null } = {}) {
       .flatMap((d) => d?.results || []).slice(0, 400);
     /* Alleen rijen die deze query zelf maakt: een nepdatabase in een test (of
        een kapotte rij) mag de bestelpagina niet laten omvallen. */
-    rijen = (results || []).filter((r) => r && NU_DOEN_SOORTEN.includes(r.soort) && r.id != null);
+    rijen = [...(results || []).filter((r) => r && NU_DOEN_SOORTEN.includes(r.soort) && r.soort !== 'opmaat' && r.id != null), ...opmaat];
   } catch (err) {
     return { regels: [], fout: String(err?.message || err) };
   }
@@ -485,6 +516,7 @@ export function soortLabel(r) {
     case 'fotos': return 'Foto’s ontbreken';
     case 'formaten': return 'PNG/WebP gevraagd';
     case 'offerte': return 'Aanvraag zonder offerte';
+    case 'opmaat': return ({ akkoord: 'Op maat: offerte', aanpassing: 'Op maat: offerte', link: 'Op maat: betaallink' })[r.extra] || 'Op maat: voorbeeld';
     case 'maandset': return 'Maandset';
     case 'review': return 'Afgerond';
     case 'abonnement': return ({ terugboeking: 'Terugboeking', mislukt: 'Incasso mislukt' })[r.extra] || 'Geen incasso';
@@ -519,6 +551,13 @@ export function watTekst(r, nu = Date.now()) {
     }
     case 'offerte': return `${serviceLabel(r.service, 'nl') || r.service}${g ? `, aangevraagd ${g}` : ''}`;
     case 'review': return g ? `afgerond ${g}` : 'afgerond';
+    case 'opmaat': {
+      const d = OPMAAT_DIENST[r.service] || r.service || 'op maat';
+      if (r.extra === 'akkoord') return `${d}, de stijl is goed${g ? ` (${g})` : ''}; de offerte nog maken`;
+      if (r.extra === 'aanpassing') return `${d}, de klant vraagt een aanpassing aan de offerte${g ? ` (${g})` : ''}`;
+      if (r.extra === 'link') return `${d}, akkoord op de offerte${g ? ` ${g}` : ''}, maar de betaallink ging niet weg`;
+      return `${d}, de klant wacht op een voorbeeld${g ? ` (${g})` : ''}`;
+    }
     case 'abonnement':
       if (r.extra === 'terugboeking') return `abonnement stilgezet${g ? ` ${g}` : ''}, de incasso is gestopt`;
       if (r.extra === 'mislukt') return `abonnement stilgezet${g ? ` ${g}` : ''}: Mollie kreeg de incasso niet rond`;
@@ -587,6 +626,7 @@ export function knopVoor(r, plek = 'dashboard', origin = '') {
     case 'formaten': return { label: 'Formaten', href: `${origin}/admin/formaten` };
     case 'maandset': return { label: 'Maandset maken', href: `${origin}/admin/maandset` };
     case 'offerte': return { label: 'Offerte maken', href: pad('offerte') };
+    case 'opmaat': return { label: ({ akkoord: 'Offerte maken', aanpassing: 'Offerte aanpassen', link: 'Betaallink sturen' })[r.extra] || 'Voorbeeld maken', href: `${origin}/admin/op-maat/${r.id}` };
     case 'abonnement': return { label: 'Bekijken', href: `${origin}/admin/customers/${r.id}#abonnement` };
     case 'review': {
       if (plek === 'dashboard' && waLink('review', r).wa) {

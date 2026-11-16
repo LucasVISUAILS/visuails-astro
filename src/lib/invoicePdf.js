@@ -360,12 +360,13 @@ const LABEL_RIGHT = COL.unitRight;   // totals labels end where unit prices do
    dus op de factuur nergens: de titel, "Factuur aan" en het totaal zijn zwart (NADRUK),
    het vlak is nevel. MUTED #5B5B5B haalt 6,8:1 op wit en 6,1:1 op nevel. */
 const hex = (h) => rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
-const INK = hex('#0F1217');
-const MUTED = hex('#565C65');
-const RULE = hex('#E6E8EC');
-const NADRUK = hex('#0F1217');
-const VLAK = hex('#F4F5F7');
-const NEVEL = hex('#F4F5F7');
+/* levering 111 (16 november 2026, lijst 123, FA): de grijzen en het zwart van de site (KLEURENSCHEMA.md, levering 100) */
+const INK = hex('#090D0B');
+const MUTED = hex('#5E6461');
+const RULE = hex('#E7EAE8');
+const NADRUK = hex('#090D0B');
+const VLAK = hex('#F4F5F4');
+const NEVEL = hex('#F4F5F4');
 
 /* ── HET TEKSTLOGO, ALS VECTOR ─────────────────────────────────────────────────
    Letterlijk het pad uit src/data/woordmerk.js (sinds levering 89 het tekstlogo K5), hier
@@ -384,8 +385,9 @@ const WOORDMERK_KAP = 700;      /* de kaphoogte: de schaal van het tekstlogo is 
    hoog (schaal 1,72149 op zijn tekening van 702 × 813,25), zijn zwaartepunt op het midden van de kaphoogte (zijn
    bovenkant 967,6 boven de basislijn), de tekst één arm verder (vanaf x 1515,49). */
 const LOCKUP_L2 = { s: 1.72149, vy: -967.60, tx: 1515.49 };
-/* de snede (levering 86): blauw diep #1A4279, blauw uur #25508B, #2D61A8 op 0, 55 en 100 %; zie svgSnede() */
-const SNEDE = [[0, [26 / 255, 66 / 255, 121 / 255]], [0.55, [37 / 255, 80 / 255, 139 / 255]], [1, [45 / 255, 97 / 255, 168 / 255]]];
+/* het logo (levering 111, lijst 123): zwart #090D0B, op alle drie de punten van de verloop-functie, zodat svgSnede()
+   blijft werken. Was (levering 86) blauw diep #1A4279, blauw uur #25508B en #2D61A8. */
+const SNEDE = [[0, [9 / 255, 13 / 255, 11 / 255]], [0.55, [9 / 255, 13 / 255, 11 / 255]], [1, [9 / 255, 13 / 255, 11 / 255]]];
 
 /** Een rechthoek met ronde hoeken als SVG-pad, vanaf de linkerbovenhoek (y omlaag). */
 function rondPad(w, h, r) {

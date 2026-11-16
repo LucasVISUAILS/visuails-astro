@@ -69,6 +69,15 @@ export const TAGLINE = {
   },
 };
 
+/* ── DE ZIN ONDER ELKE MAIL — levering 111 (16 november 2026, lijst 123, Q2 a) ─────────
+   Was TAGLINE.plain ("Al je productbeelden. Zonder shoot."). Lucas (16 november, 02:59): "het gebeurt te vaak dat
+   alleen catalog en lifestyle als producten worden neergezet". Nu de zin van het blok onder de video op de
+   voorpagina (banner94.js, onder.kop), met de belofte van de oude zin erachter. */
+export const MAIL_ZIN = {
+  en: 'Every visual your brand needs. Without a shoot.',
+  nl: 'Elk beeld dat je merk nodig heeft. Zonder shoot.',
+};
+
 /** @param {'en'|'nl'} lang */
 export function tagline(lang) {
   return TAGLINE[lang] || TAGLINE.en;

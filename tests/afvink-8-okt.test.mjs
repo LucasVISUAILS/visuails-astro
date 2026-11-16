@@ -308,10 +308,13 @@ console.log('\no05 · de klant ziet bij de daggrens één uitleg met WhatsApp en
     await new Promise((r) => srv.listen(0, r));
     const base = `http://localhost:${srv.address().port}`;
     const EXE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-    const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } : {});
+    /* levering 100: met de software-GL-vlaggen van de andere browsertoetsen; zonder bleef de oude Chromium na een pagina met
+       het kaartveld (WebGL) hangen bij het openen van een nieuw tabblad */
+    const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+    const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE, args: GL } : { args: GL });
     try {
       for (const [pad, woord] of [['/start/catalog/', /WhatsApp/], ['/nl/start/catalog/', /WhatsApp/]]) {
-        const pg = await browser.newPage();
+        const pg = await browser.newPage(); await pg.addInitScript(() => { window.__kvUit = true; });   /* deze toets gaat over de formulieren, niet over het kaartveld */
         let verzoeken = 0;
         await pg.route('**/api/upload', (route) => {
           if (route.request().method() !== 'POST') return route.fulfill({ status: 200, body: '{"ok":true}' });
@@ -530,9 +533,12 @@ console.log('\no03 · de botcheck in de browser: onzichtbaar, laat, en nooit een
       execute(el) { const o = this._w[this._w.length - 1]; setTimeout(() => o.callback('NEP-TOKEN-123'), 50); },
       reset() {}, remove() {}, getResponse() { return ''; } };`;
     const EXE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-    const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } : {});
+    /* levering 100: met de software-GL-vlaggen van de andere browsertoetsen; zonder bleef de oude Chromium na een pagina met
+       het kaartveld (WebGL) hangen bij het openen van een nieuw tabblad */
+    const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+    const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE, args: GL } : { args: GL });
     const pagina = async ({ sleutel = '0x4AAAAAAAverzonnen', scriptKapot = false } = {}) => {
-      const pg = await browser.newPage();
+      const pg = await browser.newPage(); await pg.addInitScript(() => { window.__kvUit = true; });   /* deze toets gaat over de formulieren, niet over het kaartveld */
       const log = { cloudflare: 0, posts: [] };
       await pg.route('**/api/botcheck', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sleutel }) }));
       await pg.route('https://challenges.cloudflare.com/**', (r) => {

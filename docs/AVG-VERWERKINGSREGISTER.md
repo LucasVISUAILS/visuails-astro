@@ -163,6 +163,18 @@ uit. Dat onderscheid is de hele reden dat er een verwerkersovereenkomst is.
 | **Waar** | D1, tabellen `customer_style_locks`, `custom_models`, `customer_styles`; het voorbeeldbeeld in R2 (`models/`, `styles/`) |
 | **Bewaartermijn** | zolang de klantrelatie loopt; de klant kan een merkmodel zelf laten verbergen en een voorkeur zelf wijzigen; een eigen look wordt door de studio gearchiveerd of verwijderd op verzoek. De gedeelde maandset (`shared_sets`, `shared_files`) bevat geen persoonsgegevens: geen product, geen klant, geen gezicht |
 
+### 3.10 De intake op maat (sinds 14 november 2026, lijst 107)
+
+| Veld | Inhoud |
+|---|---|
+| **Doel** | een stijl op maat (catalog, lifestyle, hooks of video) samen met de klant uitdenken: wat hij wil, zijn merk, zijn referentiebeelden en zijn oordeel per voorstel, zodat wij een concept en een offerte kunnen maken |
+| **Grondslag** | art. 6 lid 1 sub b — de klant vraagt de dienst zelf aan in VISUAILS Studio; zonder deze gegevens kunnen we de stijl niet maken |
+| **Betrokkenen** | de klant |
+| **Gegevens** | het merkprofiel (merknaam, site, Instagram, wie zijn klant is, merkwoorden, kleuren, prijsklasse); per aanvraag de dienst, de stand en de antwoorden op de intakevragen; de referentiebeelden die hij uploadt, met bestandsnaam, grootte, waar hij op let en een notitie; per voorstel zijn besluit (goed of aanpassen) met een notitie; bij de offerte (sinds 15 november 2026) het mailadres waar offerte en betaallink heen gaan, zijn land, btw-nummer en het raadplegingsnummer van VIES, zijn akkoord of zijn gevraagde aanpassing |
+| **Let op** | een referentiebeeld kan een foto van een bestaand mens zijn (een campagnebeeld, een foto die hij mooi vindt). We gebruiken het alleen om de stijl te begrijpen, nooit als bron voor een gezicht; dat staat bij de upload |
+| **Waar** | D1, tabellen `merkprofielen`, `maat_aanvragen`, `maat_referenties`, `maat_besluiten`, en sinds 15 november 2026 `maat_voorbeelden` (de voorbeeldbeelden van de studio, zonder persoonsgegevens) en `maat_offertes` (de regels en bedragen van de offerte, en sinds migratie 0073 mailadres, land, btw-nummer en VIES-nummer); de referentie- en voorbeeldbeelden in R2 onder `maat/<klant>/<aanvraag>/` |
+| **Bewaartermijn** | zolang de klantrelatie loopt; een concept dat hij weggooit, gaat met zijn referenties direct weg; bij het verwijderen van het account gaan alle zes de tabellen en de beelden in R2 mee (src/lib/admin.js, de AVG-verwijdering). Na een akkoord ontstaat een gewone bestelling met factuur; die valt onder de fiscale bewaarplicht van de bestellingen (3.1), niet onder deze regel |
+
 ---
 
 ## 4 · DEEL B — waar VISUAILS verwerker is

@@ -50,6 +50,7 @@ import '../styles/studio-hal.css';
 import '../styles/posterkleur.css';
 /* het knoppensysteem (lijst 88 + 89): dezelfde knoppen als op de site, uit src/styles/knoppen.css */
 import '../styles/knoppen.css';
+import '../styles/studio-kaart-105.css';  /* levering 105: de kaarten van het veld in Studio, als stilstaand beeld */
 import { kies, pkKlasse } from '../data/stukken.js';
 /* Sectie 22: Anybody voor de koppen, Figtree voor de tekst, Martian
    Mono voor de labels — alle drie variabel, open source en zelf gehost. Zie de
@@ -86,14 +87,18 @@ interface Props {
   actie?: { href: string; label: string } | null;
   /** Een uitleg-tip (studioTip() in account.js), of null. */
   tip?: { id: string; weg: string; begrepen: string; sluit: string; h: string; tekst: string; punten: string[] } | null;
+  /** Alleen /account/op-maat (lijst 112): het pad van één scriptbestand van onze eigen site. Zie studioKoppen.js. */
+  script?: string | null;
 }
 
 const {
   lang, title, t, thema = 'licht', vorm = 'schil', navDicht = false, actief = '',
-  customer = null, kop = '', lede = '', chip = null, actie = null, tip = null,
+  customer = null, kop = '', lede = '', chip = null, actie = null, tip = null, script = null,
 } = Astro.props;
 
-for (const [k, v] of Object.entries(studioHeaders())) Astro.response.headers.set(k, v);
+/* De uitzondering op "geen script" (lijst 112): alleen een pad onder /js/ op onze eigen site. */
+const scriptPad = script && /^\/js\/[a-z0-9-]+\.js$/.test(script) ? script : null;
+for (const [k, v] of Object.entries(studioHeaders({ script: !!scriptPad }))) Astro.response.headers.set(k, v);
 /* vis_in (v31-me = a, src/data/cookies.js): de site vraagt /account/me alleen als
    dit cookie er staat. Elke Studio-pagina zet hem opnieuw, zodat hij zo lang leeft
    als de sessie (die schuift mee bij gebruik); een sessie van vóór 15 oktober 2026
@@ -256,5 +261,6 @@ const metParam = (k, v) => {
       </div>
     </div>
   )}
+  {scriptPad && <script is:inline src={scriptPad} defer></script>}
 </body>
 </html>

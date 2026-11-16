@@ -13,35 +13,62 @@
    2,6 – 3,4 s  de hoodie schuift naar zijn vak in de catalogus; 3,3 – 4,4 s de andere vijf, een voor een, met naam en prijs
    4,7 – 5,8 s  de catalogus scrollt omhoog tot de balk "Bekijk alles"; 6,2 – 6,9 s terug; 6,9 – 7,6 s de hoodie komt weer groot
    7,6 – 11,6 s de pijl; de cursor klikt twee keer (8,4 en 10,0 s): achterkant, dan detail
-   Alles met transform en opacity. Speelt alleen als de kaart gekozen is en in beeld staat (HalMaken80.astro); bij minder
-   beweging speelt hij niet (dan staat de hoodie er, zoals zonder script).
+   Alles met transform en opacity. Bij minder beweging speelt hij niet (dan staat de hoodie er, zoals zonder script).
+
+   LEVERING 99 (13 november 2026, lijst 100 A2 met Lucas' notitie: "Eventueel handig om de telefoon video te gebruiken voor
+   het telefoon shot bij catalog, hooks en lifestyle, en dat de animatie pas afspeelt als je op de kaart hovert"):
+   - het begin is nu de telefoonclip met de hoodie (public/img/hal/telefoon/clip-hoodie.mp4, gemaakt met
+     kladblok/levering-95/telefoonclip/maak.py uit dezelfde clip als de jeans en de sokken). De tijdlijn hierboven begint
+     2,75 s in de clip, zodat de flits (1,55 s) valt op het moment dat de sluiter in de clip gaat (4,3 s). Zonder clip
+     (of als afspelen niet mag) begint hij met de telefoonfoto, zoals in levering 96;
+   - wanneer hij speelt beslist HalMaken80.astro: met een muis alleen onder de muis, op een telefoon als de kaart gekozen is.
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 const T = 12000;
 const E = 'cubic-bezier(.22, 1, .36, 1)';
 const PIJL = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="m5 2 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
-const MUIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2l15 11-6.5 1.2L16 21l-3 1.4-3.4-6.7L4 20z" fill="#0F1217" stroke="#fff" stroke-width="1.4"/></svg>';
+const MUIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2l15 11-6.5 1.2L16 21l-3 1.4-3.4-6.7L4 20z" fill="#090D0B" stroke="#fff" stroke-width="1.4"/></svg>';
 
-/** @param {HTMLElement} laag  @param {{v?:string, foto:string, voor:string, achter:string, detail:string, zes:{src:string,naam:string,prijs:string}[], woorden:{voor:string,cat:string,achter:string,detail:string,alles:string}}} d */
+/** @param {HTMLElement} laag  @param {{v?:string, clip?:string, foto:string, voor:string, achter:string, detail:string, zes:{src:string,naam:string,prijs:string}[], woorden:{voor:string,cat:string,achter:string,detail:string,alles:string}}} d */
 export function catalogKaart(laag, d) {
   let klok = 0, gebouwd = false, aan = false;
   const v = d.v ? `?v=${d.v}` : '';
   const pic = (src, klasse = '') => `<picture${klasse ? ` class="${klasse}"` : ''}><source type="image/avif" srcset="${src}.avif${v}"><img src="${src}.webp${v}" alt="" decoding="async"></picture>`;
+  const INTRO = 2750;
+  let clip = null;
   function bouw() {
-    laag.innerHTML = `${pic(d.foto, 'c96-foto')}<span class="c96-zoeker"><i></i><i></i><i></i><i></i></span><span class="c96-sluiter"></span>`
+    laag.innerHTML = (d.clip ? `<video class="c96-clip" muted playsinline preload="none" poster="${d.clip}.webp${v}"></video>` : `${pic(d.foto, 'c96-foto')}<span class="c96-zoeker"><i></i><i></i><i></i><i></i></span><span class="c96-sluiter"></span>`)
       + `<div class="c96-vel"><div class="c96-raster">${d.zes.map((p, i) => `<div class="c96-p" data-i="${i}"><div class="c96-b">${pic(p.src)}</div><p class="c96-n">${p.naam}</p><p class="c96-e">${p.prijs}</p></div>`).join('')}</div>`
       + `<p class="c96-alles">${d.woorden.alles}</p></div>`
       + `<div class="c96-groot">${pic(d.voor, 'c96-g0')}${pic(d.achter, 'c96-g1')}${pic(d.detail, 'c96-g2')}</div>`
       + `<span class="c96-pijl">${PIJL}</span><span class="c96-lbl"></span><span class="c96-flits"></span><span class="c96-muis">${MUIS}</span>`;
+    clip = laag.querySelector('.c96-clip');
     gebouwd = true;
   }
   function stop() {
     aan = false; clearTimeout(klok);
     laag.getAnimations({ subtree: true }).forEach((a) => a.cancel());
     laag.classList.remove('c96-aan');
+    if (clip) { clip.pause(); }
   }
   function speel() {
     if (aan) return;
-    aan = true; ronde();
+    aan = true; intro();
+  }
+  /* de telefoonclip tot net voor de sluiter, dan de tijdlijn */
+  function intro() {
+    if (!aan) return;
+    laag.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    if (!gebouwd) bouw();
+    if (!clip) { ronde(); return; }
+    laag.classList.add('c96-aan');
+    laag.querySelectorAll('.c96-vel, .c96-groot, .c96-pijl, .c96-lbl, .c96-flits, .c96-muis').forEach((e) => { e.style.opacity = '0'; });
+    clip.style.opacity = '1';
+    if (!clip.src) clip.src = `${d.clip}.mp4${v}`;
+    try { clip.currentTime = 0; } catch { /* nog niet geladen */ }
+    let begonnen = false;
+    const ga = () => { if (begonnen || !aan) return; begonnen = true; klok = setTimeout(() => { laag.querySelectorAll('[style*="opacity"]').forEach((e) => { e.style.opacity = ''; }); ronde(); }, INTRO); };
+    clip.addEventListener('playing', ga, { once: true });
+    clip.play().catch(() => { begonnen = true; laag.querySelectorAll('[style*="opacity"]').forEach((e) => { e.style.opacity = ''; }); ronde(); });
   }
   function ronde() {
     laag.getAnimations({ subtree: true }).forEach((a) => a.cancel());
@@ -59,8 +86,8 @@ export function catalogKaart(laag, d) {
     const vak = `translate(${x0}px, ${y0}px) scale(${s0})`;
     const scroll = Math.max(0, vel.scrollHeight - H);
     /* de telefoonfoto, de zoeker en de sluiter: weg in de flits */
-    for (const s of ['.c96-foto', '.c96-zoeker', '.c96-sluiter']) anim(q(s), [{ opacity: 1, offset: 0 }, { opacity: 1, offset: f(1700) }, { opacity: 0, offset: f(1720) }, { opacity: 0, offset: 1 }]);
-    q('.c96-sluiter').animate([{ transform: 'scale(1)' }, { transform: 'scale(.86)' }, { transform: 'scale(1)' }], { duration: 200, delay: 1450, fill: 'none' });
+    for (const s of ['.c96-foto', '.c96-zoeker', '.c96-sluiter', '.c96-clip']) if (q(s)) anim(q(s), [{ opacity: 1, offset: 0 }, { opacity: 1, offset: f(1700) }, { opacity: 0, offset: f(1720) }, { opacity: 0, offset: 1 }]);
+    if (q('.c96-sluiter')) q('.c96-sluiter').animate([{ transform: 'scale(1)' }, { transform: 'scale(.86)' }, { transform: 'scale(1)' }], { duration: 200, delay: 1450, fill: 'none' });
     anim(q('.c96-flits'), [{ opacity: 0, offset: 0 }, { opacity: 0, offset: f(1550) }, { opacity: 1, offset: f(1720), easing: 'ease-out' }, { opacity: 0, offset: f(2300) }, { opacity: 0, offset: 1 }]);
     /* de hoodie groot (de laag .c96-groot, beeld 0), dan naar zijn vak; na de catalogus uit zijn vak weer groot */
     const groot = q('.c96-groot');
@@ -93,7 +120,7 @@ export function catalogKaart(laag, d) {
     const tekst = [[1750, w.voor], [7300, w.voor], [8500, w.achter], [10100, w.detail]];
     tekst.forEach(([t, s]) => setTimeout(() => { if (aan) lbl.textContent = s; }, t));
     lbl.textContent = '';
-    klok = setTimeout(() => { if (aan) ronde(); }, T);
+    klok = setTimeout(() => { if (aan) intro(); }, T);
   }
   return { speel, stop };
 }

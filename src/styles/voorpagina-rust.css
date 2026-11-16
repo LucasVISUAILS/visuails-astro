@@ -58,7 +58,7 @@ html body.hal.hal .h-voor .h-pv-kop .h-h2 { margin: 0; text-wrap: balance; }
 /* de naam en zijn tweede toon onder elkaar, zoals de naam en de prijs op het scherm (niet bij Meer weten: daar is de lichte toon het eerste woord) */
 html body.hal.hal .h-voor .h-pv:not(.h-pv-tekst) .h-pv-kop .h-h2 .l { display: block; }
 html body.hal.hal .h-voor .h-pv-beeld { grid-area: beeld; position: relative; display: block; height: var(--pv-hoog); aspect-ratio: 4 / 5; margin: 0;
-  border-radius: var(--r-kaart, 24px); overflow: hidden; background: var(--h-vlak, #F4F5F7); isolation: isolate; }
+  border-radius: var(--r-kaart, 24px); overflow: hidden; background: var(--h-vlak, #F4F5F4); isolation: isolate; }
 html body.hal.hal .h-voor .h-pv-rest { grid-area: rest; display: flex; flex-direction: column; align-items: flex-start; gap: 22px; min-width: 0; margin: 0; }
 /* het mes: dezelfde witte kier op de snijrand als in de opening en bij de looks */
 html body.hal.hal .h-voor .h-pv-mes { position: absolute; left: 0; top: 0; height: 100%; z-index: 3; pointer-events: none; background: var(--h-wit);
@@ -75,27 +75,27 @@ html body.hal.hal .h-voor .h-pv-laag img { display: block; width: 100%; height: 
 html body.hal.hal .h-voor .h-pv-catalog { background: var(--grond, #EFEFEF); }
 html body.hal.hal .h-voor .h-pv-catalog img { object-fit: contain; }
 /* video: een staande clip (9 : 16) midden op het vlak */
-html body.hal.hal .h-voor .h-pv-video { display: grid; place-items: center; background: var(--h-vlak, #F4F5F7); }
+html body.hal.hal .h-voor .h-pv-video { display: grid; place-items: center; background: var(--h-vlak, #F4F5F4); }
 html body.hal.hal .h-voor .h-pv-klip { position: relative; display: block; height: 84%; aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; }
 html body.hal.hal .h-voor .h-pv-klip img { object-position: 71% 50%; }
 html body.hal.hal .h-voor .h-pv-klip .h-speel { top: 50%; width: 64px; height: 64px; }
 html body.hal.hal .h-voor .h-pv-klip .h-speel::after { content: none; }
 /* de knopjes: dezelfde vorm als de tabs van Hoe het werkt (opening.css .o-tabs), met de snede ertussen */
 html body.hal.hal .h-voor .h-pv-keus { display: flex; flex: none; --h: 40px; --loop: 30px; --kier: 3.6px; }
-html body.hal.hal .h-voor .h-pv-keus button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F7); color: var(--h-inkt); font: 600 var(--h-t-klein)/1 var(--h-letter); cursor: pointer;
+html body.hal.hal .h-voor .h-pv-keus button { height: var(--h); border: 0; background: var(--h-vlak, #F4F5F4); color: var(--h-inkt); font: 600 var(--h-t-klein)/1 var(--h-letter); cursor: pointer;
   padding: 0 calc(var(--loop) * .55 + 14px); white-space: nowrap; transition: background-color .16s steps(2, end); }
 html body.hal.hal .h-voor .h-pv-keus button:first-child { border-radius: 999px; padding-left: 18px; clip-path: polygon(0 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 html body.hal.hal .h-voor .h-pv-keus button:not(:first-child) { margin-left: calc(var(--kier) - var(--loop)); clip-path: polygon(var(--loop) 0, 100% 0, calc(100% - var(--loop)) 100%, 0 100%); }
 html body.hal.hal .h-voor .h-pv-keus button:last-child { padding-right: 18px; border-radius: 999px; clip-path: polygon(var(--loop) 0, 100% 0, 100% 100%, 0 100%); }
-html body.hal.hal .h-voor .h-pv-keus button:hover { background: var(--h-lijn, #E6E8EC); }
+html body.hal.hal .h-voor .h-pv-keus button:hover { background: var(--h-lijn, #E7EAE8); }
 /* wat je kiest is inkt (de ontwerptaal) */
 html body.hal.hal .h-voor .h-pv-keus button[aria-pressed="true"] { background: var(--h-inkt); color: #FFFFFF; }
-html body.hal.hal .h-voor .h-pv-keus button:focus-visible { clip-path: none; position: relative; z-index: 1; outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
+html body.hal.hal .h-voor .h-pv-keus button:focus-visible { clip-path: none; position: relative; z-index: 1; outline: 2px solid var(--h-blauw, #016645); outline-offset: 2px; }
 html body.hal.hal .h-voor .h-pv-per { display: grid; gap: 18px; justify-items: start; }
 html body.hal.hal .h-voor .h-pv-per[hidden] { display: none; }
 html body.hal.hal .h-voor .h-pv-prijs { margin: 0; font: 500 18px/1.3 var(--h-letter); color: var(--h-inkt); }
 html body.hal.hal .h-voor .h-pv-per .h-acties { margin: 0; }
-html body.hal.hal .h-voor .h-pv .h-onderregel { margin: 0; max-width: 34ch; font-size: var(--v-klein); line-height: 1.5; color: var(--h-grijs, #636974); }
+html body.hal.hal .h-voor .h-pv .h-onderregel { margin: 0; max-width: 34ch; font-size: var(--v-klein); line-height: 1.5; color: var(--h-grijs, #5E6461); }
 
 /* ── 03 · looks: het beeld rechts, de kolom links ────────────────────────────────
    De vijf looks zijn de knopjes (kleine beelden), de gezichten de kleurbolletjes. */
@@ -107,16 +107,16 @@ html body.hal.hal .h-voor .h-lp-mes { position: absolute; left: 0; top: 0; heigh
 html body.hal.hal .h-voor .h-lp-info { padding: 0; }
 html body.hal.hal .h-voor .h-lp-boven { display: flex; align-items: center; gap: 14px; margin: 0; }
 html body.hal.hal .h-voor .h-lp-soort { position: static; }
-html body.hal.hal .h-voor .h-lp-van { font: 500 13.5px/1 var(--h-letter); color: var(--h-grijs, #636974); }
+html body.hal.hal .h-voor .h-lp-van { font: 500 13.5px/1 var(--h-letter); color: var(--h-grijs, #5E6461); }
 html body.hal.hal .h-voor .h-lp-naam { margin: -8px 0 0; font: 500 var(--v-kop)/1 var(--h-letter); font-stretch: var(--h-smal, 80%); letter-spacing: -.01em; color: var(--h-inkt); overflow-wrap: anywhere; }
 html body.hal.hal .h-voor .h-lp-naam[hidden], html body.hal.hal .h-voor .h-lp-acties[hidden] { display: none; }
 html body.hal.hal .h-voor .h-lp-acties { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin: 4px 0 0; }
 html body.hal.hal .h-voor .h-lp-keus { display: flex; flex-wrap: wrap; align-self: stretch; gap: 10px; margin: 0; padding: 0; list-style: none; }
 html body.hal.hal .h-voor .h-lp-keus > li { flex: 0 1 56px; min-width: 0; }
-html body.hal.hal .h-voor .h-lp-mini { position: relative; display: block; width: 100%; aspect-ratio: 4 / 5; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--h-vlak, #F4F5F7); cursor: pointer;
+html body.hal.hal .h-voor .h-lp-mini { position: relative; display: block; width: 100%; aspect-ratio: 4 / 5; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--h-vlak, #F4F5F4); cursor: pointer;
   outline: 2px solid transparent; outline-offset: 3px; transition: outline-color .16s steps(2, end); }
 html body.hal.hal .h-voor .h-lp-mini img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; max-width: none; }
-html body.hal.hal .h-voor .h-lp-mini:hover { outline-color: var(--h-lijn-sterk, #C5C8CF); }
+html body.hal.hal .h-voor .h-lp-mini:hover { outline-color: var(--h-lijn-sterk, #C6CAC8); }
 html body.hal.hal .h-voor .h-lp-mini[aria-pressed="true"] { outline-color: var(--h-inkt); }
 html body.hal.hal .h-voor .h-lp-mini:focus-visible { outline-color: var(--h-blauw); }
 /* het gezicht: de kleurbolletjes van de productpagina, met één regel ernaast */
@@ -125,9 +125,9 @@ html body.hal.hal .h-voor .h-pv .h-koppen { flex: none; }
 html body.hal.hal .h-voor .h-pv .h-koppen img { width: 34px; height: 34px; box-shadow: 0 0 0 2px var(--h-wit); }
 html body.hal.hal .h-voor .h-pv .h-koppen a + a { margin-left: -9px; }
 html body.hal.hal .h-voor .h-pv .h-koppen:hover a + a { margin-left: -9px; }
-html body.hal.hal .h-voor .h-gezicht-zin { margin: 0; font: 500 var(--v-klein)/1.45 var(--h-letter); color: var(--h-grijs, #636974); }
+html body.hal.hal .h-voor .h-gezicht-zin { margin: 0; font: 500 var(--v-klein)/1.45 var(--h-letter); color: var(--h-grijs, #5E6461); }
 html body.hal.hal .h-voor .h-gezicht-zin b { font-weight: 600; color: var(--h-inkt); }
-html body.hal.hal .h-voor .h-gezicht-zin a { color: var(--h-inkt); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(37 80 139 / .38); text-underline-offset: 3px; }
+html body.hal.hal .h-voor .h-gezicht-zin a { color: var(--h-inkt); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(1 102 69 / .38); text-underline-offset: 3px; }
 html body.hal.hal .h-voor .h-gezicht-zin a:hover { color: var(--h-blauw); text-decoration-color: currentColor; }
 
 /* ── 04 · meer weten: de kop groot, de drie onderwerpen als regels ──────────────── */
@@ -140,13 +140,13 @@ html body.hal.hal .h-voor .h-wt-rijen > li { box-shadow: inset 0 1px 0 var(--h-l
 html body.hal.hal .h-voor .h-wt-rijen > li:last-child { box-shadow: inset 0 1px 0 var(--h-lijn), inset 0 -1px 0 var(--h-lijn); }
 html body.hal.hal .h-voor .h-wt-rijen a { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; align-items: center; gap: 28px; padding: 28px 0; color: var(--h-inkt); text-decoration: none; }
 html body.hal.hal .h-voor .h-wt-rijen b { font: 500 var(--v-naam)/1.1 var(--h-letter); font-stretch: var(--h-smal, 80%); letter-spacing: -.01em; }
-html body.hal.hal .h-voor .h-wt-detail { font: 500 var(--v-klein)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+html body.hal.hal .h-voor .h-wt-detail { font: 500 var(--v-klein)/1.5 var(--h-letter); color: var(--h-grijs, #5E6461); }
 html body.hal.hal .h-voor .h-wt-getal { font-weight: 600; color: var(--h-inkt); white-space: nowrap; }
-html body.hal.hal .h-voor .h-wt-detail i { display: inline-block; margin-right: 8px; padding: 4px 6px; border-radius: 999px; background: var(--h-vlak, #F4F5F7); font: 600 var(--h-t-label)/1 var(--h-mono, 'IBM Plex Mono', monospace); font-style: normal; letter-spacing: .04em; color: var(--h-inkt); vertical-align: 1px; }
-html body.hal.hal .h-voor .h-wt-rijen .h-cirkel { flex: none; background: var(--h-vlak, #F4F5F7); transition: transform .24s steps(2, end); }
+html body.hal.hal .h-voor .h-wt-detail i { display: inline-block; margin-right: 8px; padding: 4px 6px; border-radius: 999px; background: var(--h-vlak, #F4F5F4); font: 600 var(--h-t-label)/1 var(--h-mono, 'IBM Plex Mono', monospace); font-style: normal; letter-spacing: .04em; color: var(--h-inkt); vertical-align: 1px; }
+html body.hal.hal .h-voor .h-wt-rijen .h-cirkel { flex: none; background: var(--h-vlak, #F4F5F4); transition: transform .24s steps(2, end); }
 /* onder de muis: de regel erboven wordt sterker en het pijltje springt (het merk springt, het glijdt niet) */
-html body.hal.hal .h-voor .h-wt-rijen > li:hover { box-shadow: inset 0 1px 0 var(--h-lijn-sterk, #C5C8CF); }
-html body.hal.hal .h-voor .h-wt-rijen > li:last-child:hover { box-shadow: inset 0 1px 0 var(--h-lijn-sterk, #C5C8CF), inset 0 -1px 0 var(--h-lijn); }
+html body.hal.hal .h-voor .h-wt-rijen > li:hover { box-shadow: inset 0 1px 0 var(--h-lijn-sterk, #C6CAC8); }
+html body.hal.hal .h-voor .h-wt-rijen > li:last-child:hover { box-shadow: inset 0 1px 0 var(--h-lijn-sterk, #C6CAC8), inset 0 -1px 0 var(--h-lijn); }
 html body.hal.hal .h-voor .h-wt-rijen a:hover .h-cirkel { transform: translate(1.2px, -1.6px); }
 
 /* ── 05 · de proef, in dezelfde kolom ────────────────────────────────────────── */
@@ -160,7 +160,7 @@ html body.hal.hal .h-voor > .h-proef .h-een { font-size: clamp(134.8px, 13vw, 17
 /* de regel eronder: tekst met een vinkje, zonder vlak erachter (in een rij geen vlak, de ontwerptaal) */
 html body.hal.hal .h-voor > .h-vertrouwen { gap: 10px 30px; margin-top: 40px; }
 html body.hal.hal .h-voor > .h-vertrouwen li { padding: 0; background: none; font-size: var(--h-t-fijn); }
-html body.hal.hal .h-voor > .h-vertrouwen i { width: 22px; height: 22px; background: var(--h-vlak, #F4F5F7); }
+html body.hal.hal .h-voor > .h-vertrouwen i { width: 22px; height: 22px; background: var(--h-vlak, #F4F5F4); }
 
 /* ── tablet en telefoon ─────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {

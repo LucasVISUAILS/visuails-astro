@@ -27,7 +27,7 @@
      maken ligt. Zie HalOpening80.astro.
    ═══════════════════════════════════════════════════════════════════════════════ */
 .o8 {
-  --o8-balk: 56px;
+  --o8-balk: 72px;   /* levering 99: de zwevende bovenbalk (12 + 60, balk-99.css); was 56 */
   --o8-m: max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2));
   --o8-w: 8.94;
   position: relative;
@@ -43,7 +43,7 @@ html.o8-aan { --o8-Z: 48px; --o8-R: calc(100svh - 56px); --o8-mist: clamp(96px, 
 .o8-kop .o8-r { display: block; }
 .o8 .o8-zin { --h-maat: 20em; margin: 26px 0 0; max-width: 20em; font: 370 clamp(17px, 1.32vw, 19px)/1.5 var(--h-letter); color: var(--h-inkt); text-wrap: pretty; }
 /* de feiten onder de knoppen: klein, grijs (5,15 : 1 op de grond), met een schuine streep ertussen */
-.o8 .o8-feiten { margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 0; font: 500 var(--h-t-fijn)/1.4 var(--h-letter); color: var(--h-grijs, #636974); }
+.o8 .o8-feiten { margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 0; font: 500 var(--h-t-fijn)/1.4 var(--h-letter); color: var(--h-grijs, #5E6461); }
 .o8 .o8-feiten li { display: inline; max-width: none !important; }
 .o8 .o8-feiten li + li::before { content: ""; display: inline-block; vertical-align: -1px; width: 1.5px; height: 12px; margin: 0 12px; background: currentColor; opacity: .55; transform: skewX(-37deg); }
 .o8 .o8-feiten b { font-weight: 600; color: var(--h-inkt); }
@@ -55,16 +55,16 @@ html.o8-aan { --o8-Z: 48px; --o8-R: calc(100svh - 56px); --o8-mist: clamp(96px, 
 .o8-baan { position: relative; }
 .o8-podium { position: relative; z-index: 2; overflow-x: clip; }
 /* F2 (lijst 74): wit → nevel → blauw uur, schermvullend en recht */
-.o8-vlak { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); }
+.o8-vlak { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 20%, #A2B7D2 52%, #6283AF 76%, #016645 100%); }
 /* LEVERING 89 (lijst 78 C1, lijst 81 V3): het veld B1 Horizon in plaats van de fade: de lucht na zonsondergang, wit boven,
    het blauwe uur onder, de laatste roze streep op de horizon, met korrel. Een vast beeld uit src/scripts/veld.js (zaad
    0,37, kladblok/levering-89/b1.mjs), liggend en staand; vanaf 70 % van de hoogte gaat het voor 80 % naar blauw uur
-   #25508B (de naam van de stand onder de laptop haalt dan wit op 4,9 : 1), en de onderste 12 % helemaal, zodat het
+   #016645 (de naam van de stand onder de laptop haalt dan wit op 4,9 : 1), en de onderste 12 % helemaal, zodat het
    podium zonder rand overgaat in de uitloop eronder. Met het effect (levering 90) zit dit veld in de video zelf
    (scripts/laptop-video-90.py) en is het vlak het wit van zijn bovenkant. De fade hierboven blijft staan voor als het beeld
    er (nog) niet is. */
-.o8-vlak { background: url(/img/hal/veld-b1.webp) 50% 50% / 100% 100% no-repeat, linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); }
-@media (orientation: portrait) { .o8-vlak { background-image: url(/img/hal/veld-b1-staand.webp), linear-gradient(180deg, #FBFCFF 0%, #FBFCFF 20%, #A2B7D2 52%, #6283AF 76%, #25508B 100%); } }
+.o8-vlak { background: url(/img/hal/veld-b1.webp) 50% 50% / 100% 100% no-repeat, linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 20%, #A2B7D2 52%, #6283AF 76%, #016645 100%); }
+@media (orientation: portrait) { .o8-vlak { background-image: url(/img/hal/veld-b1-staand.webp), linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 20%, #A2B7D2 52%, #6283AF 76%, #016645 100%); } }
 /* geen korrel meer op het veld (8 november 21:44, Lucas: "De grain op de achtergrond achter de laptop maakt de overloop
    tussen secties niet smooth. Los dit op door het smooth te laten faden of te verwijderen."): het veld loopt nu glad over in
    de uitloop eronder en in Wat we maken. Ook de video heeft hem niet meer (scripts/laptop-video-90.py, KORREL=0). */
@@ -75,7 +75,7 @@ html.o8-aan { --o8-Z: 48px; --o8-R: calc(100svh - 56px); --o8-mist: clamp(96px, 
    Met het effect staat de onderkant van het podium altijd op de onderkant van het scherm en is alles wit voor je verder
    scrolt: daar hoeft het niet. */
 .o8 { --o8-uit: clamp(96px, 16svh, 180px); }
-html:not(.o8-aan) .o8-baan::after { content: ""; display: block; height: var(--o8-uit); background: linear-gradient(180deg, #25508B 0%, #25508B 14%, #6283AF 36%, #A2B7D2 58%, var(--h-grond, #FBFCFF) 86%, var(--h-grond, #FBFCFF) 100%); }
+html:not(.o8-aan) .o8-baan::after { content: ""; display: block; height: var(--o8-uit); background: linear-gradient(180deg, #016645 0%, #016645 14%, #6283AF 36%, #A2B7D2 58%, var(--h-grond, #FFFFFF) 86%, var(--h-grond, #FFFFFF) 100%); }
 .o8-foto { position: relative; z-index: 2; width: 100%; aspect-ratio: 2944 / 1248; }
 .o8-foto > picture { display: contents; }
 .o8-beeld { position: absolute; inset: 0; z-index: 2; display: block; width: 100%; height: 100%; max-width: none; pointer-events: none; }
@@ -193,14 +193,14 @@ html body.hal .o8-pauze:focus-visible { outline: 2px solid var(--o8-c); outline-
      achtergrond secties"): de bovenste --o8-mist van de sectie loopt van doorzichtig naar de grond; de inhoud zakt evenveel */
   html.o8-aan .o8 ~ .m8 { position: relative; z-index: 3; margin-top: calc(-1 * var(--o8-R));
     padding-top: calc(var(--o8-mist) + clamp(72px, 8.3vw, 120px));
-    background: linear-gradient(180deg, rgb(251 252 255 / 0) 0, var(--h-grond, #FBFCFF) var(--o8-mist)); }
+    background: linear-gradient(180deg, rgb(255 255 255 / 0) 0, var(--h-grond, #FFFFFF) var(--o8-mist)); }
   /* de sectie erna ligt ook boven het podium (het podium staat aan het eind nog een stuk achter Wat we maken) */
   html.o8-aan .o8 ~ .m8 ~ * { position: relative; z-index: 3; }
 }
 
 /* ── tot 1100 px: alles onder elkaar, geen scrolleffect ──────────────────── */
 @media (max-width: 1099.98px) {
-  .o8 { --o8-balk: 52px; --o8-m: 20px; }
+  .o8 { --o8-balk: 66px; --o8-m: 20px; }
   .o8-held { padding: calc(var(--o8-balk) + 32px) var(--o8-m) 40px; display: grid; }
   .o8 .o8-kop.h-kop { --o8-f: clamp(30px, calc((100vw - 40px) / var(--o8-w)), 76px); }
   .o8 .o8-zin { font-size: 17px; }
@@ -245,7 +245,7 @@ html.o8-aan .o8.o8-weg :is(.o8-vlak, .o8-foto) { opacity: 0; }
 
 /* levering 94 (Lucas, 12 november 07:50: "Verwijder de kleuren achter de laptop"): onder Wat we maken staat de laptop op de
    grond van de site, zonder het veld (de video: laptop-video-90.py met VELD=puur, zie hieronder) */
-.o8.o8-alleen .o8-vlak { background: var(--h-grond, #FBFCFF); }
+.o8.o8-alleen .o8-vlak { background: var(--h-grond, #FFFFFF); }
 /* levering 95 (Lucas, 12 november 20:50: "hier zie ik dat de laptop achtergrond grijzig is"): (250, 252, 255) in de video
    tekende in zijn Chrome op Windows als #F9FAFE. Nu is het veld zuiver wit (VELD=puur, Y 235: in elke decoder 255) en ligt
    de laptop met multiply op de grond: wit maal de grond is precies de grond. De laptop wordt hoogstens 1,6 % donkerder. */
@@ -257,13 +257,13 @@ html.o8-aan .o8.o8-weg :is(.o8-vlak, .o8-foto) { opacity: 0; }
 .o8-klik { position: absolute; z-index: 3; }
 .o8.o8-speelt .o8-klik, .o8.o8-winkel-uit .o8-klik, .o8:not([data-stand="catalog"]) .o8-klik > * { display: none; }
 .o8-klik-knop { position: absolute; appearance: none; border: 0; padding: 0; margin: 0; background: none; cursor: pointer; border-radius: 4px; }
-.o8-klik-knop:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; }
+.o8-klik-knop:focus-visible { outline: 2px solid var(--h-blauw, #016645); outline-offset: 2px; }
 /* (en zonder het effect, op de telefoon en bij minder beweging: geen uitloop van het blauwe uur onder de laptop) */
 html:not(.o8-aan) .o8.o8-alleen .o8-baan::after { content: none; display: none; }
 /* (de streepjes, de naam van de stand en de pauzeknop stonden wit op het blauwe veld; op de grond zijn ze inkt, het
-   ingedrukte streepje grijs met de klok in inkt: inkt 18,6 : 1, grijs #636974 5,52 : 1 op #FBFCFF) */
-.o8.o8-alleen .o8-stand { --o8-c: var(--h-inkt, #0F1217); --o8-c2: #636974; }
-.o8.o8-alleen .o8-kies[aria-pressed="true"] .o8-k-streep { background: rgba(15, 18, 23, .22); }
+   ingedrukte streepje grijs met de klok in inkt: inkt 18,6 : 1, grijs #5E6461 5,52 : 1 op #FFFFFF) */
+.o8.o8-alleen .o8-stand { --o8-c: var(--h-inkt, #090D0B); --o8-c2: #5E6461; }
+.o8.o8-alleen .o8-kies[aria-pressed="true"] .o8-k-streep { background: rgba(9, 13, 11, .22); }
 
 /* ── levering 96 (lijst 97, A4): de galerij in het laptopscherm (HalOpening80.astro). Hij ligt in het scherm, dus in zijn
    perspectief, op de plek van de foto; de strook schuift per foto (0,6 s, uitlopend). Het beeldje van de foto die er staat
@@ -276,4 +276,19 @@ html:not(.o8-aan) .o8.o8-alleen .o8-baan::after { content: none; display: none; 
 .o8-klik-knop[data-beeld][aria-pressed="true"] { box-shadow: 0 0 0 1.5px #121218; border-radius: 0; }
 @media (prefers-reduced-motion: reduce) { .o8-sc .o8-gal-strook { transition: none; } }
 /* het conceptmerk (lijst 97, A5 c): als tekst die je echt leest onder de laptop */
-.o8-concept { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 8px; width: max-content; max-width: calc(100vw - 40px); text-align: center; font: 400 var(--h-t-fijn, 13.5px)/1.5 var(--h-letter); color: var(--h-grijs, #636974); }
+.o8-concept { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 8px; width: max-content; max-width: calc(100vw - 40px); text-align: center; font: 400 var(--h-t-fijn, 13.5px)/1.5 var(--h-letter); color: var(--h-grijs, #5E6461); }
+
+/* ── levering 99 (lijst 100, C1 en C2 a) ─────────────────────────────────────────────────────────────────────────────
+   C1 · de witte strook boven de laptop: de foto (met multiply op de grond, zie hierboven) is hoger dan het podium en steekt
+   er bovenuit. Daar lag geen grond onder in dezelfde laag, dus wit maal niets = wit (#FFFFFF, ± 130 px op 1920 × 960). Het
+   vlak loopt nu precies zo ver omhoog als de foto uitsteekt (de foto is 1248 / 2944 = 0,42391 × fw hoog), zodat er overal
+   grond onder de foto ligt en niets erboven (de drie woorden van Hoe het werkt) wordt bedekt.
+   C2 · na het dichtklappen meteen de volgende sectie (zoals Setless Productions: de opening blijft vastgepind zolang hij
+   speelt, daarna schuift de rest er meteen onder vandaan). Het podium bleef nog --o8-R (een scherm) staan met alleen het
+   knopje; nu schuift de sectie na de laptop over die zone heen, met dezelfde zachte bovenrand als Wat we maken vroeger. */
+html.o8-aan .o8.o8-alleen .o8-vlak { top: min(0px, calc(var(--o8-Hp, 100svh) - .42391 * var(--o8-fw, 100vw) - 12px)); }
+@media (min-width: 1100px) {
+  :is(html.o8-aan .o8.o8-alleen + section, html.o8-aan .o8.o8-alleen + script + section, html.o8-aan .o8.o8-alleen + script + script + section) { position: relative; z-index: 3; margin-top: calc(-1 * var(--o8-R));
+    padding-top: calc(var(--o8-mist) + clamp(72px, 8.3vw, 120px)) !important;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0) 0, var(--h-grond, #FFFFFF) var(--o8-mist)); }
+}

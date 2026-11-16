@@ -17,6 +17,12 @@
 > Wat historie is, is als historie gemarkeerd: "Twee ingetrokken paletten" en
 > "Section 21" staan er om de REDENERING, niet om de waarden.
 >
+> **Knoppen en bovenbalk: 13 november 2026 (levering 99, lijst 100 D2 a, D3 a, D4).** Elke knop en alles wat je aanklikt
+> heeft hoeken van 8 px (`--k-r`), alle vier; wat iets aangeeft of kiest blijft een pil. De knop die tot bestellen leidt
+> heeft de actiekleur (`docs/KLEURENSCHEMA.md`, knoppen.css sectie J); inkt is "kijk verder". De bovenbalk is een zwevende
+> balk in inkt (14 px hoeken, 12 px van de rand, de kolom breed) met het woordmerk links, de menu-items in één groepje en
+> een witte Bestellen (`src/styles/balk-99.css`). Wat hieronder over scherpe knoppen staat, is geschiedenis.
+>
 > **Knoppen: 13 november 2026 (levering 97, lijst 96 B1 a en B2 a).** Alles wat je aanklikt is SCHERP (hoeken 0):
 > elke knop, de icoonknoppen (pijlen, pauze, sluiten), het taal- en menuknopje, WhatsApp, Bestellen. Onder de muis
 > schuift blauw uur van links naar rechts door een volle knop (Bestellen: blauw diep), de pijl schuift 3 px; de
@@ -155,7 +161,68 @@ paginakop 20 px. In `hal.css`: "LEVERING 86 · RUIMTE EN EENHEID". Gemeten met `
 pagina, NL en EN, op 1440 en 390. Het oude etiket met een stip boven de kop van een bestelpagina (`.s22 .etiket`)
 is nu het sectielabel.
 
-## Het palet van nu: Blauw uur — 24 oktober 2026 (levering 68)
+## Links en rechts, de labels en de telefoon — 15 november 2026 (levering 106, lijst 113 en 114)
+
+- **De voorpagina in rijen van 12 kolommen**, om en om tekst en beeld (`src/styles/voorpagina-105.css`).
+  - De banner bovenaan blijft zoals hij is.
+  - Wat we maken: de kaarten links (8 kolommen), de tekst rechts (4).
+  - Hoe het werkt: de tekst links (5), het verhaal rechts (6).
+  - Het €1-blok: de kaart links (6), de beelden rechts (5).
+  - De galerij staat over de hele breedte.
+  - Het slot: de tekst links (5), een kaart van het veld rechts (6).
+  - De poster is weg (lijst 114, V4).
+- **Labels zonder cijfers.** Lucas: *"Ik wil bij alle wenkbrauwen de cijfers weghalen: "01", "02", "03" enzovoort mogen allemaal weg."* Het label boven een kop is alleen het streepje en het woord, op de site (`.sk-nr`, `p.h-pil`) en in Studio (de intake op maat). Nummers in een rij stappen (01 / 04, de stappen van de banner en van Hoe het werkt) blijven: dat zijn geen labels.
+- **De telefoon: alles in het midden.** Lucas: *"Telefoon content centreren geldt overigens voor alles, behalve hele specifieke uitzonderingen (maar komen nauwelijks voor alleen als het echt beter is)."*
+  - Gecentreerd: koppen, labels, tekst, knoppen en kaarten. Een kaart is 88 % breed en staat in het midden.
+  - Uitzonderingen: een lijst die als tabel leest, zoals de stappen in de banner en de rijen van Meer weten.
+  - Op de voorpagina en bij de Studio-kaarten is dit gedaan (levering 106); de rest van de site en de voet in levering 108
+    (`src/styles/telefoon-115.css`, tot 700 px).
+  - Uitzonderingen op de andere pagina's (lijst 115): de velden van een formulier, de vragen met een plus, de regels van een
+    lijst met vinkjes (de lijst zelf staat als groep in het midden) en tabellen. Een rij met een nummer of icoon voor de
+    tekst zet het nummer erboven. Een kaart met de kop van de pagina erop (/test-sample) houdt de volle breedte.
+- **Fase 4, de kaarten op de andere pagina's (levering 108, lijst 105, `src/styles/kaart-108.css`):** het getal in de kop
+  van /plans, /editions en /hooks; de tegel Eigen look op /catalog en /lifestyle; de drie clips op /video; Hoe het ervoor
+  staat op de aanvraagpagina's; Op maat op /start (de drie in één kaart); Jouw maand op /start/plan; Bedankt op /thank-you.
+- **Licht onder het doek (levering 109, lijst 117 a en 118):** een net van licht onder de grond dat de kaarten verbindt
+  (`src/scripts/lichtnet.js`). Een baan zoekt zijn route om tekst en knoppen heen (A* op een raster van 24 px, daarna
+  afgerond); de lijn in een kaart ligt zo ver mogelijk van tekst (`lijnVoor` in `kaartveld.js`). Zie `docs/KLEURENSCHEMA.md`.
+- **De hoofdkop en het blok onder de video (levering 110, lijst 119 tot 122):**
+  - De titel van de voorpagina is *We make your brand impossible to ignore* (NL: *Wij maken je merk niet te negeren*). Er staat geen leesteken in de titel; de andere koppen houden hun punt.
+  - De titel heeft twee delen: een kleine aanloop (42 % van de grote regel) en één grote regel die de kolom vult. De grote regel is hoogstens 200 px, op de telefoon hoogstens 80 px. De kop bedekt hoogstens 15 % van de video.
+  - De titel staat in **VISUAILS Display Blok**, alleen deze ene kop. Het is een blokletter uit het systeem van het V-merk: de stam is 21,8 % van de kaphoogte, de binnenvormen zijn vierkant, er is één snede op 53,13° en één zachte hoek linksboven (R = 24,7 %). De bron staat in `docs/letter/bron/blok.py`.
+  - Onder de video staat een blok (`HalOnderVideo110.astro`). Links de kop, hoogstens 48 px en altijd 2 regels. Rechts een label en twee zinnen: wat we doen in inkt, wat de klant eraan heeft in grijs (5,9 : 1). De rechterkolom is even breed als het witte vlak erboven.
+  - Getoetst in `tests/banner-kop-110-browser.test.mjs`.
+- **Fase 6 (levering 111, lijst 123):**
+  - De mails (`src/lib/mailTemplate.js`, de beelden uit `scripts/make-mail-assets.mjs`) en de factuur (`src/lib/invoicePdf.js`) zijn zwart, wit en grijs.
+  - De zin onder elke mail is *Every visual your brand needs. Without a shoot.* (`MAIL_ZIN` in `src/data/brand.js`).
+  - /admin is standaard donker.
+  - De lijst met bestellingen in /admin past op 1280 (61rem).
+- **De banner** heeft het negatief in het donkere groen (`src/data/banner94.js`): zwart, mint 950, 800, 700, 600 en mint 300. De video wordt in hetzelfde moment getekend als de letters, zodat ze nooit uit de pas lopen.
+
+## Het palet van nu: zwart, wit en mint — 14 november 2026 (levering 100)
+
+`docs/KLEURENSCHEMA.md` ("Levering 100") is leidend. Puur wit als grond, zwart voor tekst, de balk en de voet, en mint
+alleen op de knop die een bestelling begint. De kleur en de beweging zitten in de kaarten (het kaartveld,
+`kladblok/PLAN-KAARTVELD-100.md`). De tokennamen bleven staan; hun waarden zijn omgezet.
+
+| Token | Waarde | Rol |
+|---|---|---|
+| `--h-wit`, `--h-grond` | `#FFFFFF` | de grond, overal |
+| `--h-inkt`, `--accent` | `#090D0B` | zwart: alle tekst, de balk, de voet, het logo, een knop die geen bestelling begint (19,6 : 1) |
+| `--h-blauw` | `#016645` | mint 700 (de naam bleef): het logo onder de muis, "aandacht", een zwarte knop onder de muis (7,0 : 1) |
+| `--h-blauw-diep` | `#023D29` | mint 800 |
+| `--h-blauw-licht` | `#3DFFB0` | mint, alleen op zwart: de focusrand, het logo |
+| `--h-grijs` | `#5E6461` | kleine tekst (6,1 : 1) |
+| `--h-lijn` | `#E7EAE8` | scheiding |
+| `--h-vlak` | `#F4F5F4` | onder een pil of chip, de lege fotoplek |
+| `--h-lijn-sterk` | `#C6CAC8` | de rand van een knop of kaart onder de muis |
+| `--h-veldlijn` | `#8A908D` | de rand van een invulveld (3,25 : 1) |
+
+De knop die een bestelling begint is mint `#3DFFB0` met zwart (`--k-actie` in `knoppen.css`, sectie J); Bestellen in de
+balk ook (`src/styles/kleur-100.css`). Geselecteerde tekst is mint 300 met zwart. Wat hieronder over blauw uur staat, is
+geschiedenis.
+
+## Het palet: Blauw uur — 24 oktober 2026 (levering 68) · INGETROKKEN 14 november 2026 (levering 100)
 
 `docs/KLEURENSCHEMA.md` is leidend. Puur wit als grond, en inkt en één blauw die erin
 snijden, zoals het logo (lijst 55). Vijf kleuren:
@@ -657,7 +724,7 @@ breedte-as, en lijst 60 koos DM Sans op volle breedte.
 
 | Rol | Letter | Waar | Hoe |
 |---|---|---|---|
-| **Kop** | VISUAILS Display Bold 700 (`--h-kopletter`) | elke `.h-kop` (h1, h2, h3, de €1-kop), de kop van de opening, de paginakop van het bestelformulier (`.pl-h`, `.wk-opening-h`), de koppen van de bedankpagina (`.hoog`) en de slotkop van de juridische pagina's (`.jur-uit h2`) | beide tonen 700 (lijst 59: vet, beide tonen); de tweede toon alleen in grijs (#636974, 5,52 : 1). Spatiëring −0,03 em op h1, h2, de €1-kop en de kop van de opening; −0,02 em op h3 en kleinere koppen. Nooit strakker dan −0,035 em |
+| **Kop** | VISUAILS Display Bold 700 (`--h-kopletter`) | elke `.h-kop` (h1, h2, h3, de €1-kop), de kop van de opening, de paginakop van het bestelformulier (`.pl-h`, `.wk-opening-h`), de koppen van de bedankpagina (`.hoog`) en de slotkop van de juridische pagina's (`.jur-uit h2`) | beide tonen 700 (lijst 59: vet, beide tonen); de tweede toon alleen in grijs (#5E6461, 6,1 : 1; levering 100). Spatiëring −0,03 em op h1, h2, de €1-kop en de kop van de opening; −0,02 em op h3 en kleinere koppen. Nooit strakker dan −0,035 em |
 | **Tekst** | DM Sans 400 – 700 (`--h-letter`) | alles wat je leest en bedient: tekst, knoppen, de balk, en ook namen in kaarten en stappen, vragen in een formulier, grote cijfers | volle breedte; de optische grootte (9 – 40) kiest de browser zelf bij de lettergrootte; wat 300 vraagt, wordt 400 |
 | **Mono** | IBM Plex Mono 500 / 600 | labels, nummers, kenmerken (de studiotaal) | hoofdletters, +0,04 tot +0,14 em, zoals het was |
 

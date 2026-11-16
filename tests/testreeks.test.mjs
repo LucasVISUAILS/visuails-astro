@@ -67,6 +67,16 @@ const r2 = await testreeks({ wortel: w, tegelijk: 3, zeg: () => {}, run: async (
 ok('faalt de build, dan draait de rest niet', [r2.goed, r2.rood, gedraaid], [false, ['test:bouw'], ['bouw']]);
 fs.rmSync(w, { recursive: true, force: true });
 
+/* 15 november 2026: een test die blijft hangen, houdt de reeks niet meer vast. */
+{
+  const { draai, plafondMs } = await import('../scripts/testreeks.mjs');
+  ok('het plafond: standaard 10 minuten, of wat TESTREEKS_MAX_MIN zegt', [plafondMs({}), plafondMs({ TESTREEKS_MAX_MIN: '0,05' })], [600000, 3000]);
+  const t0 = Date.now();
+  const hang = await draai(`"${process.execPath}" -e "setInterval(() => {}, 1000)"`, ECHT, 1500);
+  ok('een test die blijft hangen, wordt na het plafond gestopt en is FOUT', [hang.code, hang.hing, /bleef hangen/.test(hang.uit), Date.now() - t0 < 6000], [124, true, true, true]);
+  const goed = await draai(`"${process.execPath}" -e "console.log('klaar')"`, ECHT, 5000);
+  ok('een gewone test merkt er niets van', [goed.code, !!goed.hing, /klaar/.test(goed.uit)], [0, false, true]);
+}
 ok('UITROLLEN.bat draait deze reeks', fs.readFileSync(path.join(ECHT, 'scripts/uitrol.mjs'), 'utf8').includes("path.join('scripts', 'testreeks.mjs')"), true);
 ok('npm run test:reeks bestaat', pkg.scripts['test:reeks'], 'node scripts/testreeks.mjs');
 

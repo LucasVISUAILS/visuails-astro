@@ -43,7 +43,8 @@ console.log('A · video noemt geen bedrag zolang hij op aanvraag is');
       ok(`  en geen "vaste prijs"`, /fixed price|vaste prijs/i.test(velden), false);
     }
   }
-  for (const pad of ['video/motion/index.html', 'video/lifestyle/index.html', 'nl/video/motion/index.html', 'nl/video/lifestyle/index.html']) {
+  /* Sinds lijst 109 (15 november 2026) bestaat /video/lifestyle niet meer als pagina; hij stuurt door naar /video/custom. */
+  for (const pad of ['video/motion/index.html', 'nl/video/motion/index.html']) {
     const html = dist(pad);
     ok(`${pad} is gebouwd`, !!html);
     if (!html) continue;
@@ -51,7 +52,7 @@ console.log('A · video noemt geen bedrag zolang hij op aanvraag is');
     ok(`  de meta-omschrijving noemt geen clipprijs`, m.replace(/\s/g, '').includes(pad.startsWith('nl/') ? clipNl : clip), false);
     ok(`  en zegt dat het op aanvraag is`, /On request|Op aanvraag/.test(m), true);
     /* De feitenrij bovenaan de pagina. */
-    ok(`  de feitenrij noemt geen clipprijs`, /vs-feiten[\s\S]*?<\/ul>/.exec(html)?.[0].includes('69') ?? null, false);
+    ok(`  de feitenrij noemt geen clipprijs`, /vs-feiten[\s\S]*?<\/ul>/.exec(html)?.[0].includes(String(P.AMOUNT.video)) ?? null, false);
   }
   /* §17.17: het proefbedrag kwam getypt in VideoStyleDetail.astro te staan. */
   const detail = lees('src/components/VideoStyleHal.astro');

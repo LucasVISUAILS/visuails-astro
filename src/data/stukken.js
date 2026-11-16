@@ -27,7 +27,8 @@
 
 export const STUK_MAP = '/img/stuk/';
 export const STUKKEN = {
-  vk: ['n-vk-0', 'n-vk-1', 'n-vk-2', 'n-vk-3', 't-vk-0', 't-vk-1', 't-vk-2', 't-vk-3'],
+  /* levering 99: met de gloed in zacht mint haalden n-vk-3 (4,12 : 1) en t-vk-3 (4,53) het niet of net; die twee vallen af */
+  vk: ['n-vk-0', 'n-vk-1', 'n-vk-2', 't-vk-0', 't-vk-1', 't-vk-2'],
   knop: ['t-knop-0', 't-knop-5', 't-knop-6'],
   pil: ['n-knop-1', 'n-knop-2', 'n-knop-6', 'n-knop-8'],
   blok: ['n-blok-0', 'n-blok-1', 'n-blok-2', 't-blok-0', 't-blok-1', 't-blok-2'],

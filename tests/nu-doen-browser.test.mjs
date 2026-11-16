@@ -76,7 +76,7 @@ async function maakEnv(vul) {
   const token = await mintToken();
   db.prepare(`INSERT INTO admin_sessions (id, admin_id, token_hash, expires_at) VALUES (1, 1, ?, '2099-01-01T00:00:00Z')`).run(await hashToken(token));
   return async (pad, donker) => {
-    const res = await adminGet({ request: new Request(`https://visuails.com${pad}`, { headers: { cookie: `vis_admin=${token}${donker ? '; vis_thema=donker' : ''}` } }), env, waitUntil() {} });
+    const res = await adminGet({ request: new Request(`https://visuails.com${pad}`, { headers: { cookie: `vis_admin=${token}; vis_thema=${donker ? 'donker' : 'licht'}` }   /* levering 111: zonder cookie is /admin donker, dus licht moet gekozen worden */ }), env, waitUntil() {} });
     return res.text();
   };
 }

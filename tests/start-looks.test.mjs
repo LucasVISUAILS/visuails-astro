@@ -70,7 +70,9 @@ for (const [taal, pre, ls, cat] of [['en', '', lsEn, catEn], ['nl', '/nl', lsNl,
      alleen de proef en App ons. */
   const band = (id) => html.slice(html.indexOf(`id="${id}"`), html.indexOf('</section>', html.indexOf(`id="${id}"`)));
   const video = band('video');
-  for (const slug of ['motion', 'lifestyle', 'campaign', 'custom']) ok(`${taal}: de band Video heeft ${slug} → ${pre}/video/${slug}/`, video.includes(`href="${pre}/video/${slug}/"`));
+  /* Lijst 109 (15 november 2026): op de videopagina alleen Motion en video op maat. */
+  for (const slug of ['motion', 'campaign', 'lifestyle']) ok(`${taal}: de band Video heeft geen ${slug === 'motion' ? 'dode link' : slug}`, slug === 'motion' || !video.includes(`href="${pre}/video/${slug}/"`));
+  for (const slug of ['motion', 'custom']) ok(`${taal}: de band Video heeft ${slug} → ${pre}/video/${slug}/`, video.includes(`href="${pre}/video/${slug}/"`));
   ok(`${taal}: en de aanvraag → ${pre}/start/video/`, video.includes(`href="${pre}/start/video/"`));
   const maat = band('op-maat');
   for (const doel of ['/start/custom-look/', '/custom-models/', '/plans/']) ok(`${taal}: de band Op maat linkt naar ${pre}${doel}`, maat.includes(`href="${pre}${doel}"`));

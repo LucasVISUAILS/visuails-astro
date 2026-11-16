@@ -233,7 +233,8 @@ console.log('\n4 · vanaf-bedragen: de uitlegregel leesbaar, geen horizontale sc
 /* De voorpagina is sinds 12 oktober 2026 de hal: daar staat de korte vorm van
    dezelfde regel (afvinklijst 5, akkoord), onder de drie dienstbeelden in
    `.h-onderregel`. Zie ook tests/vanaf-bedragen.test.mjs. */
-const KORT_NL = `Eén product: ${euro(ladderRate('catalog', 1), 'nl')} (catalog) of ${euro(ladderRate('lifestyle', 1), 'nl')} (lifestyle). Meer producten, lager tarief.`;
+/* levering 110 (lijst 121, G3): de voorpagina noemt geen twee prijzen meer, alleen hoe de prijs werkt */
+const KORT_NL = 'Geprijsd per product: hoe meer je bestelt, hoe lager het tarief.';
 const VIER = [
   ['/nl/', '.h-onderregel', KORT_NL, 'voorpagina'],
   /* Start, catalog en lifestyle staan sinds 12 oktober 2026 (avond) ook in de

@@ -30,6 +30,7 @@
  */
 
 /* Levering 60: de regel per complete look op de factuur. */
+import { DIENST_NAAM as OP_MAAT_NAAM } from '../data/opMaat.js';
 import { lookRegels } from '../data/looks.js';
 import { tegoedOpBestelling } from './tegoedVerrekening.js';
 import { renderInvoicePdf } from './invoicePdf.js';
@@ -344,6 +345,8 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
       : `Video${videoSoort ? ` (${videoSoort})` : ''} — as quoted`)
     : order.service === 'custom' && d.request === 'custom-look'
       ? (lang === 'nl' ? 'Eigen look — ontwerp volgens offerte' : 'Custom look — design as quoted')
+    : order.service === 'custom' && d.request === 'op-maat' && OP_MAAT_NAAM[lang][d.opmaat_dienst]
+      ? (lang === 'nl' ? `${OP_MAAT_NAAM.nl[d.opmaat_dienst]} — volgens offerte` : `${OP_MAAT_NAAM.en[d.opmaat_dienst]} — as quoted`)
       : lang === 'nl'
         ? `${svc} — ${n} product${n === 1 ? '' : 'en'}`
         : `${svc} — ${n} product${n === 1 ? '' : 's'}`;

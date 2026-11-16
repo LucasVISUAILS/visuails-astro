@@ -64,10 +64,15 @@ console.log('\nde tip verspilt zo min mogelijk');
 {
   /* Negen credits: twee catalogsets (8, rest 1) hoort vóór één carrousel
      (5, rest 4) te staan. Dat is de hele reden dat deze toets bestaat. */
+  /* Lijst 111 (15 november 2026): Motion kost nu 8 credits en laat bij negen ook één credit over; bij gelijke
+     rest gaat de grotere dienst voor (de regel in cron/index.js), dus Motion staat nu vóór de catalogsets. Wat deze
+     toets bewaakt blijft: twee catalogsets (rest 1) staan vóór één carrousel (rest 4). */
   const negen = creditTips(9, 'nl');
-  ok('bij negen credits staat de zuinigste optie vooraan',
-    negen[0].includes('catalogset'), true);
-  ok('en het aantal klopt', negen[0].startsWith('2 ×'), true);
+  const cat = negen.findIndex((t) => t.includes('catalogset'));
+  const car = negen.findIndex((t) => t.includes('carrousel'));
+  ok('bij negen credits staan de catalogsets vóór de carrousel',
+    cat >= 0 && (car < 0 || cat < car), true);
+  ok('en het aantal klopt', negen[cat].startsWith('2 ×'), true);
 
   /* Precies genoeg voor één catalogset: één regel, geen rest. */
   ok('vier credits geeft precies één catalogset', creditTips(4, 'nl'), [`1 × ${kindLabel('catalog', 'nl').toLowerCase()}`]);

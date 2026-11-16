@@ -16,11 +16,15 @@
   --b94-tussen: max(24px, 4vw);
   position: relative; isolation: isolate; overflow: hidden;
   height: 100svh; min-height: 600px; max-height: 1200px;
-  background: var(--h-grond, #FBFCFF);
+  background: var(--h-grond, #FFFFFF);
 }
 .b94-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
-.b94-beeld { position: absolute; inset: 0; overflow: hidden; isolation: isolate; background: var(--h-grond, #FBFCFF); }
+.b94-beeld { position: absolute; inset: 0; overflow: hidden; isolation: isolate; background: var(--h-grond, #FFFFFF); }
 .b94-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; z-index: 0; }
+/* lijst 114 (V1): het basisvlak tekent de video in hetzelfde moment als de letters; de video-tag speelt dan onzichtbaar */
+.b94-basis { position: absolute; inset: 0; width: 100%; height: 100%; display: none; z-index: 0; }
+.b94.b94-aan.b94-sync:not(.b94-geen) .b94-basis { display: block; }
+.b94.b94-aan.b94-sync:not(.b94-geen) .b94-video { opacity: 0; }
 
 /* de twee lagen van de kop: het gat en de vulling (zie de kop van HalBanner94.astro) */
 .b94-laag { position: absolute; inset: 0; z-index: 1; isolation: isolate; pointer-events: none; }
@@ -33,36 +37,41 @@
 /* zonder script (of zonder video): de kop gewoon in inkt, geen vulling */
 .b94:not(.b94-aan) .b94-vul, .b94.b94-geen .b94-vul { display: none; }
 .b94:not(.b94-aan) .b94-gat, .b94.b94-geen .b94-gat { mix-blend-mode: normal; }
-.b94:not(.b94-aan) .b94-gat .b94-tekst, .b94.b94-geen .b94-gat .b94-tekst { background: none; color: var(--h-inkt, #0F1217); }
+.b94:not(.b94-aan) .b94-gat .b94-tekst, .b94.b94-geen .b94-gat .b94-tekst { background: none; color: var(--h-inkt, #090D0B); }
 
 .b94-tekst { position: absolute; inset: 0; }
-/* De kop vult zijn kolom precies: de langste regel is --b94-em breed (gemeten in Chromium op 13 november 2026, zie
-   tests/_kopmaat95.mjs; met 1 % speling). Zo is hij zo groot als past, nooit groter dan 96 px, en altijd twee regels. */
-.b94 { --b94-em: 11.06; }
-html[lang="en"] .b94 { --b94-em: 11.33; }
+/* Levering 110 (lijst 119 tot 122): de kop in VISUAILS Display Blok (docs/letter/bron/blok.py). Opbouw b: een kleine
+   aanloop ("We make your brand") en één grote regel ("impossible to ignore") die de kolom precies vult: de grote regel is
+   --b94-em breed (gemeten in Chromium op 16 november 2026, met 1 % speling). Hoogstens 200 px (telefoon 80 px) in plaats
+   van 96, zodat de kop groot is; de kop bedekt hoogstens 15 % van de video (tests/banner-kop-110-browser.test.mjs).
+   Geen interpunctie in de titel (lijst 122, Q3 a). Was (13 november) de langste van twee gelijke regels, 11,06 / 11,33. */
+@font-face { font-family: 'VISUAILS Display Blok'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplayBlok-Bold.woff2) format('woff2'); }
+.b94 { --b94-em: 8.23; --b94-max: 200px; }
+html[lang="en"] .b94 { --b94-em: 10.69; }
 .b94-kopvak {
   position: absolute; left: var(--b94-rand); bottom: var(--b94-onder);
   width: calc(100% - 2 * var(--b94-rand) - var(--b94-paneel) - var(--b94-tussen));
   container-type: inline-size; min-width: 0;
 }
 .b94-kop {
-  margin: 0; font: 700 min(96px, calc(100cqw / var(--b94-em)))/.9 var(--h-kopletter); text-transform: uppercase; letter-spacing: -.012em;
+  margin: 0; font: 700 min(var(--b94-max), calc(100cqw / var(--b94-em)))/.92 'VISUAILS Display Blok', var(--h-kopletter); text-transform: uppercase; letter-spacing: 0;
 }
 .b94-kop span { display: block; white-space: nowrap; width: max-content; }
+.b94-kop .b94-aanloop { font-size: .42em; margin-bottom: .12em; }   /* de aanloop: 42 % van de grote regel */
 
 /* ── het witte vlak (lijst 94, A2 a): alles wat je moet lezen, in inkt ── */
 .b94-paneel {
   position: absolute; z-index: 3; right: var(--b94-rand); bottom: var(--b94-onder); width: var(--b94-paneel); box-sizing: border-box;
   display: grid; gap: 16px; padding: 20px 22px 22px;
-  background: var(--h-wit, #FFFFFF); color: var(--h-inkt, #0F1217); border-radius: 18px; box-shadow: 0 0 0 1px var(--h-lijn, #E6E8EC);
+  background: var(--h-wit, #FFFFFF); color: var(--h-inkt, #090D0B); border-radius: 18px; box-shadow: 0 0 0 1px var(--h-lijn, #E7EAE8);
 }
 .b94-paneel-kop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .b94-hoek { margin: 0; font: 600 var(--h-t-label)/1.3 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-inkt-2, #3A3F49); }
 .b94-pauze {
   flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin: -8px -8px -8px 0; padding: 0; border: 0; border-radius: 999px;
-  background: none; color: var(--h-inkt, #0F1217); cursor: pointer; transition: background-color .2s;
+  background: none; color: var(--h-inkt, #090D0B); cursor: pointer; transition: background-color .2s;
 }
-.b94-pauze:hover { background: var(--h-vak, #F4F5F7); }
+.b94-pauze:hover { background: var(--h-vak, #F4F5F4); }
 .b94-pauze svg { width: 18px; height: 18px; fill: currentColor; }
 .b94-p-aan { display: none; }
 .b94.b94-stil .b94-p-uit { display: none; }
@@ -70,23 +79,23 @@ html[lang="en"] .b94 { --b94-em: 11.33; }
 
 /* de vijf stappen (lijst 94, A3 a): de namen altijd; de huidige in inkt, met zijn zin en een balkje */
 .b94-stappen { list-style: none; margin: 0; padding: 0; display: grid; }
-.b94-st { display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 6px; border-top: 1px solid var(--h-lijn, #E6E8EC); }
+.b94-st { display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 6px; border-top: 1px solid var(--h-lijn, #E7EAE8); }
 .b94-st:first-child { border-top: 0; }
 .b94-ga {
   grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: baseline; width: 100%; min-height: 36px; padding: 8px 0; margin: 0;
-  border: 0; background: none; text-align: left; cursor: pointer; color: var(--h-inkt-3, #636974); transition: color .25s;
+  border: 0; background: none; text-align: left; cursor: pointer; color: var(--h-inkt-3, #5E6461); transition: color .25s;
 }
-.b94-ga:hover { color: var(--h-inkt, #0F1217); }
+.b94-ga:hover { color: var(--h-inkt, #090D0B); }
 .b94-nr { font: 600 var(--h-t-label)/1.5 var(--h-mono); letter-spacing: .06em; }
 .b94-naam { font: 600 var(--h-t-klein)/1.4 var(--h-letter); }
-.b94-tx { display: none; grid-column: 2; margin: -4px 0 0; font: 400 var(--h-t-fijn)/1.5 var(--h-letter); color: var(--h-inkt, #0F1217); text-wrap: pretty; }
-.b94-bj { display: none; grid-column: 2; position: relative; height: 2px; margin: 8px 0 10px; background: var(--h-lijn, #E6E8EC); overflow: hidden; }
-.b94-bj b { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: var(--h-inkt, #0F1217); }
-.b94-st.b94-nu .b94-ga { color: var(--h-inkt, #0F1217); }
+.b94-tx { display: none; grid-column: 2; margin: -4px 0 0; font: 400 var(--h-t-fijn)/1.5 var(--h-letter); color: var(--h-inkt, #090D0B); text-wrap: pretty; }
+.b94-bj { display: none; grid-column: 2; position: relative; height: 2px; margin: 8px 0 10px; background: var(--h-lijn, #E7EAE8); overflow: hidden; }
+.b94-bj b { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: var(--h-inkt, #090D0B); }
+.b94-st.b94-nu .b94-ga { color: var(--h-inkt, #090D0B); }
 .b94-st.b94-nu .b94-tx, .b94-st.b94-nu .b94-bj { display: block; }
-.b94-ga:focus-visible, .b94-pauze:focus-visible { outline: 2px solid var(--h-blauw, #25508B); outline-offset: 2px; border-radius: 6px; }
+.b94-ga:focus-visible, .b94-pauze:focus-visible { outline: 2px solid var(--h-blauw, #016645); outline-offset: 2px; border-radius: 6px; }
 
-.b94-zin { margin: 0; padding-top: 14px; border-top: 1px solid var(--h-lijn, #E6E8EC); font: 400 var(--h-t-klein)/1.5 var(--h-letter); text-wrap: pretty; }
+.b94-zin { margin: 0; padding-top: 14px; border-top: 1px solid var(--h-lijn, #E7EAE8); font: 400 var(--h-t-klein)/1.5 var(--h-letter); text-wrap: pretty; }
 /* Bestellen: altijd zwart (lijst 94, A4) */
 .b94-knop { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
 
@@ -105,15 +114,24 @@ html.b94-boven body.hal .site-header { background: transparent !important; box-s
   .b94 { height: auto; min-height: 0; max-height: none; }
   .b94-beeld { position: relative; inset: auto; height: max(380px, 62svh); }
   .b94-kopvak { width: calc(100% - 2 * var(--b94-rand)); bottom: 22px; }
-  .b94-kop { font-size: min(56px, calc(100cqw / var(--b94-em))); }
+  .b94 { --b94-max: 80px; }
   .b94-paneel {
     position: static; width: auto; padding: 22px var(--b94-rand) 40px; padding-left: max(var(--b94-rand), env(safe-area-inset-left, 0px)); padding-right: max(var(--b94-rand), env(safe-area-inset-right, 0px));
     background: none; box-shadow: none; border-radius: 0;
   }
 }
+/* de telefoon: de kop, de zin en de knoppen in het midden (lijst 114: "Telefoon content centreren geldt overigens voor
+   alles"); de vijf stappen blijven een lijst, met het nummer links (de uitzondering) */
+@media (max-width: 700px) {
+  .b94-kop { text-align: center; }
+  .b94-kop span { margin-inline: auto; }
+  .b94-paneel-kop { justify-content: center; gap: 12px; }
+  .b94-zin { text-align: center; }
+  .b94-knop { justify-content: center; }
+}
 /* de kop in 700: de algemene regel voor h1 in de hal (gewicht 450) won van het font hierboven (letter-77 mat 450) */
 html body.hal .b94 .b94-kop { font-weight: 700; }
 /* hoog contrast: geen glas, ook bovenaan niet (zoals hal.css) */
 @media (prefers-contrast: more) {
-  html.b94-boven body.hal .site-header { background: var(--h-grond, #FBFCFF) !important; }
+  html.b94-boven body.hal .site-header { background: var(--h-grond, #FFFFFF) !important; }
 }

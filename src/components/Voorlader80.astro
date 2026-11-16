@@ -31,15 +31,15 @@ const VLAG = 'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.
         <g data-vl8-gat transform="scale(0)"><path d={LIJF} fill="#000" /><path d={VLAG} fill="#000" /></g>
       </mask>
     </defs>
-    <rect x="0" y="0" width="100%" height="100%" fill="#FBFCFF" mask="url(#vl8-masker)" />
+    <rect x="0" y="0" width="100%" height="100%" fill="#FFFFFF" mask="url(#vl8-masker)" />
   </svg>
   <svg class="vl8-v" viewBox="0 0 702 813.25" focusable="false">
-    <path d={LIJF} fill="#0F1217" opacity=".18" /><path d={VLAG} fill="#0F1217" opacity=".18" />
+    <path d={LIJF} fill="#090D0B" opacity=".18" /><path d={VLAG} fill="#090D0B" opacity=".18" />
     <clipPath id="vl8-vlag"><rect data-vl8-vul x="0" y="813.25" width="702" height="0" /></clipPath>
     {/* Levering 86 (lijst 72, D8: goed): het vlagje vult zich met het blauwe uur, de snede van het
-        logo (blauw diep → blauw uur → #2D61A8, langs de snede: dezelfde fade als #vs-v-snede in
+        logo (blauw diep → blauw uur → #11976A, langs de snede: dezelfde fade als #vs-v-snede in
         Layout.astro, hier eigen, want het scherm staat vóór de sprite). */}
-    <linearGradient id="vl8-snede" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#1A4279" /><stop offset=".55" stop-color="#25508B" /><stop offset="1" stop-color="#2D61A8" /></linearGradient>
+    <linearGradient id="vl8-snede" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="839.64" y2="629.73"><stop offset="0" stop-color="#023D29" /><stop offset=".55" stop-color="#016645" /><stop offset="1" stop-color="#11976A" /></linearGradient>
     <path d={VLAG} fill="url(#vl8-snede)" clip-path="url(#vl8-vlag)" />
   </svg>
 </div>

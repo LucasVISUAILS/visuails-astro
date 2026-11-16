@@ -95,6 +95,9 @@ const METING = `(() => {
   const uit = { gemeten: 0, klein: [], laag: [] };
   for (const el of document.querySelectorAll('.h-lk h1, .h-lk .h-lk-tagline, .h-lk .h-pil, .h-lk .h-lk-regel, .h-lk .h-lk-bewijs-tekst *, .h-lk .dc-label, .h-lk .h-lk-slot h2, .h-lk .h-lk-slot .h-feiten li, .h-lk .h-lk-queue, .h-lk .h-lk-slot .h-knop')) {
     if (el.closest('[hidden]') || !el.getClientRects().length) continue;
+    /* levering 100: het slot is een kaart uit het kaartveld (WebGL, geen css-achtergrond). Zijn tekst meet
+       tests/kaartveld-100-browser.test.mjs op de beeldpunten zelf, ook op een lookpagina; hier zou hij wit op wit lijken. */
+    if (el.closest('.h-lk-slot:has(> canvas.kv-doek)')) { uit.gemeten++; continue; }
     const t = (el.innerText || '').trim(); if (!t) continue;
     let bg = [255, 255, 255, 1];
     for (let n = el; n; n = n.parentElement) { const b = rgba(getComputedStyle(n).backgroundColor); if (b[3] > 0.99) { bg = b; break; } }

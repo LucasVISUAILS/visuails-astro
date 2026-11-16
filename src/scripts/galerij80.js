@@ -11,7 +11,11 @@
    - de veeg (de foto horizontaal onscherp) komt erover vanaf 10 px per beeld en dekt bij 40 px 92 %.
    Een rij opzij slepen neemt hem mee; loslaten gooit hem door met de vaart van de laatste beelden.
 
-   Nooit vanzelf: zonder scrollen of slepen staan de rijen stil. Minder beweging: geen script (de rijen
+   VANZELF (levering 99, 13 november 2026, lijst 100 A5 a, met Lucas' notitie: "Bewegings onscherpte gebeurt alleen met
+   scrollen. Dus scroll los laten gaan de foto's weer bewegen."): staat de galerij in beeld, dan glijden de rijen rustig
+   door, 0,35 px per beeld (21 px per seconde), elk in zijn eigen richting. Tijdens het slepen, met de focus erin en als het
+   tabblad verborgen is (niet onder de muis: de rijen zijn de hele breedte, de muis staat er bijna altijd op), komt de drift in ± 0,5 s tot stilstand; daarna loopt hij weer aan. De veeg
+   hoort alleen bij de vaart van het scrollen (v), nooit bij de drift. Minder beweging: geen script (de rijen
    zijn dan om zelf opzij te scrollen, galerij-80.css).
 
    ANTI-GRAVITY (levering 89, lijst 81 D2: goed). De foto's hangen in de lucht: scrol je snel, dan blijven ze
@@ -25,6 +29,7 @@ const K = 0.6, B = 30, MAX = 140, NAIJL = 0.12;
 const VEEG_VAN = 10, VEEG_TOT = 40, VEEG_MAX = 0.92;
 const golfUit = (t) => 1 - Math.pow(1 - t, 4);   /* zo goed als cubic-bezier(.16, 1, .3, 1) */
 const ZWAAR = [1.0, 0.7, 1.25, 0.85], KRACHT = 0.16, HOOGST = 8, TRAAG = 7, KANTEL = 0.15;
+const DRIFT = 0.35, DRIFT_NAIJL = 0.05;
 
 export function galerij(root) {
   if (!root || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
@@ -35,6 +40,8 @@ export function galerij(root) {
   root.classList.add('g8-aan');
 
   let off = 0, v = 0, y = scrollY, raf = 0, t0 = 0, dichtbij = false, vaart = false;
+  let dr = 0, zicht = false;
+  const driftDoel = () => (zicht && !sleep && !tween && !document.hidden && !root.contains(document.activeElement) ? DRIFT : 0);
 
   let veegNu = '';
   /* de foto's die hangen: per tegel zijn stand (px) en zijn gewicht */
@@ -101,6 +108,11 @@ export function galerij(root) {
       v += (doel - v) * (1 - Math.pow(1 - NAIJL, dt));
       off += v * dt;
     }
+    /* de drift: los van de vaart, dus zonder veeg */
+    const dd = driftDoel();
+    dr += (dd - dr) * (1 - Math.pow(1 - DRIFT_NAIJL, dt));
+    if (Math.abs(dr) < 0.002 && dd === 0) dr = 0;
+    if (!tween && !sleep) off += dr * dt;
     zet();
     /* de foto's blijven achter en kantelen (alleen met de scroll van de pagina, niet bij slepen) */
     const s0 = sleep || tween ? 0 : dy / dt;
@@ -113,7 +125,7 @@ export function galerij(root) {
       const w = `${h.y.toFixed(2)}px ${(h.y * KANTEL * (h.m > 0.9 ? 1 : -1)).toFixed(3)}deg`;
       if (w !== h.nu) { h.nu = w; h.el.style.setProperty('--g8-hang', `${h.y.toFixed(2)}px`); h.el.style.setProperty('--g8-kantel', `${(h.y * KANTEL * (h.m > 0.9 ? 1 : -1)).toFixed(3)}deg`); }
     }
-    if (tween || sleep || dy !== 0 || Math.abs(v) > 0.02 || hangt) raf = requestAnimationFrame(tik);
+    if (tween || sleep || dy !== 0 || Math.abs(v) > 0.02 || hangt || dr !== 0 || driftDoel() !== 0) raf = requestAnimationFrame(tik);
     else { t0 = 0; v = 0; zet(); }
   }
   const wek = () => { if (!raf) raf = requestAnimationFrame(tik); };
@@ -186,6 +198,10 @@ export function galerij(root) {
     }
   }, { rootMargin: '600px 0px' });
   io.observe(root);
+  const io2 = new IntersectionObserver(([it]) => { zicht = it.isIntersecting; if (zicht) { t0 = 0; wek(); } }, { threshold: 0.05 });
+  io2.observe(root);
+  root.addEventListener('focusout', () => setTimeout(wek, 0));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { t0 = 0; wek(); } });
 
   const ro = new ResizeObserver(() => meet());
   ro.observe(root);
@@ -203,7 +219,7 @@ export function galerij(root) {
 
   return () => {
     cancelAnimationFrame(raf); raf = 0;
-    io.disconnect(); ro.disconnect();
+    io.disconnect(); io2.disconnect(); ro.disconnect();
     af.forEach((f) => f());
     root.removeEventListener('click', opKlik, true);
     root.removeEventListener('focusin', opFocus);

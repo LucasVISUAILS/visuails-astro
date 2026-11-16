@@ -13,6 +13,12 @@
    notitie): "Het maakt niet uit hoe klanten foto's maken dus haal telefoonfoto's weg en maak er gewoon "foto's" van. Hoe
    beter de camera is hoe beter de resultaten zullen zijn."
 
+   Levering 110 (16 november 2026, lijst 119 tot 122). De kop: "We make your brand impossible to ignore" (Lucas, 03:13 en
+   03:17: done for you erin, "zorg ervoor dat het niet corny klinkt"), zonder interpunctie (lijst 122, Q3 a: alleen de titel).
+   Opbouw b: de eerste regel is een kleine aanloop, de tweede vult de kolom (banner-94.css). De letter: VISUAILS Display Blok.
+   De zin in het vlak zegt niet meer alleen productfoto's, lifestyle en video (03:00: "Houd het algemeen"). Onder de video
+   een kort blok (onder): wat VISUAILS doet en wat de klant eraan heeft (Lucas, 03:29, de tekst letterlijk van hem).
+
    De hoofdstukken: de knippen in de video, gemeten met ffmpeg (scene > 0,2): 4,25 · 6,75 · 9,33 · 14,42 s. */
 
 export const HOOFDSTUKKEN = [0, 4.25, 6.75, 9.33, 14.42];
@@ -20,8 +26,14 @@ export const DUUR = 26.75;
 
 export const BANNER = {
   nl: {
-    kop: ['Jij maakt de kleding.', 'Wij maken de beelden.'],
-    zin: 'Stuur een paar foto’s van je product. Je krijgt productfoto’s, lifestyle en video terug, klaar voor je winkel en je advertenties.',
+    kop: ['Wij maken je merk', 'niet te negeren'],
+    zin: 'Stuur een paar foto’s van je product. Je krijgt elk beeld terug dat je merk nodig heeft, klaar voor je winkel, je feed en je advertenties.',
+    onder: {
+      kop: 'Elk beeld dat je merk nodig heeft, zonder moeite.',
+      label: 'Wat VISUAILS doet',
+      wat: 'Wij nemen het hele beeldproces van je over.',
+      waarom: 'Zo gaat je tijd naar wat je merk laat groeien: verkopen. En je hebt altijd iets nieuws om te posten.',
+    },
     hoek: 'Voorbeeld · van foto tot campagne',
     stappen: [
       ['Jouw foto', 'Je fotografeert je product. Hoe beter de camera, hoe beter het resultaat.'],
@@ -36,8 +48,14 @@ export const BANNER = {
     video: 'Video: een foto van een jas wordt productfoto’s, details, on-model en een campagne bij een waterval',
   },
   en: {
-    kop: ['You make the clothes.', 'We make the visuals.'],
-    zin: 'Send a few photos of your product. You get product photos, lifestyle and video back, ready for your shop and your ads.',
+    kop: ['We make your brand', 'impossible to ignore'],
+    zin: 'Send a few photos of your product. You get back every visual your brand needs, ready for your shop, your feed and your ads.',
+    onder: {
+      kop: 'Every visual your brand needs, without the effort.',
+      label: 'What VISUAILS does',
+      wat: 'We take the whole visual process off your hands.',
+      waarom: 'Your time goes to what grows your brand: selling. And you always have something new to post.',
+    },
     hoek: 'Example · from photo to campaign',
     stappen: [
       ['Your photo', 'You photograph your product. The better the camera, the better the result.'],
@@ -53,11 +71,13 @@ export const BANNER = {
   },
 };
 
-/* Het negatief in blauw uur (lijst 92, A3 b met zijn notitie). In de letters: de video omgekeerd, en dat voor 85 % door deze
+/* Het negatief in het donkere groen (lijst 114, V1, 15 november 2026: "Deze tekst mag nu de mint groen kleurenschema krijgen,
+   dus ik denk dat het beste dan de donkere groene kleuren is"): zwart #090D0B, mint 950, 800, 700, 600 en als lichtste mint 300.
+   Was (lijst 92, A3 b met zijn notitie) het negatief in blauw uur. In de letters: de video omgekeerd, en dat voor 85 % door deze
    kaart gekleurd (de helderheid van het negatief, 0 = wat licht was). Licht wordt inkt (op wit gewoon de normale kop), daarna
    blauw uur en Nevel naar bijna wit; rond het midden steil, zodat de letters op grijs zo kort mogelijk grijs zijn. Geen geel,
    geen warme kleuren. Alle kleuren uit docs/KLEURENSCHEMA.md (inkt, Blauw uur, Nevel, Wit) en hun fades. */
-export const KAART = [[0, '0F1217'], [0.3, '1A2E52'], [0.45, '25508B'], [0.55, 'A2B7D2'], [0.75, 'DCE5F2'], [1, 'FBFCFF']];
+export const KAART = [[0, '090D0B'], [0.3, '01140B'], [0.45, '023D29'], [0.55, '016645'], [0.75, '11976A'], [1, '9DF5D2']];
 export const KAART_DEEL = 0.85;
 
 /** 256 kleuren (r, g, b) voor de kaart: de opzoektabel van de videokaart. */

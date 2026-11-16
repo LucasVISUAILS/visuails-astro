@@ -1,0 +1,35 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+   GEEN SNEDE MEER, NERGENS — 14 november 2026
+   Lucas (03:36): "Die afgeknipte hoeken mogen overal helemaal weg." (03:48): "Die hoeken hoeven op geen enkele manier
+   behouden te worden." Dus ook de snede van 53° tussen knoppen die naast elkaar staan (levering 55 – 97: "twee knoppen
+   worden één vorm"): de knoppen staan los naast elkaar, 10 px ertussen, elk met de hoeken van een knop (8 px, --k-r).
+   Rijen die iets kiezen (de juridische documenten, de formaten, de soort beeld, de stappen in het bestelformulier, de
+   keuzes in de werkplaats) en de sociale knoppen idem: los, met ruimte ertussen, zonder snede.
+   Dit bestand komt als laatste (Layout.astro), dus het wint zonder lange ketens; :not(#k) voor de regels met !important.
+   Het blok-snede (het €1-blok, het slot, de laatste plankaart) staat aan het eind van hal.css.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* knoppen in een rij */
+.hal .h-acties:not(#k) { gap: 10px !important; flex-wrap: wrap !important; }
+.hal .h-acties > .h-knop:not(#k):not(#k) { clip-path: none !important; margin-left: 0 !important; --k-paar-l: 0px; --k-paar-r: 0px; border-radius: var(--k-r, 8px) !important; }
+.hal .h-acties > .h-knop.k-lijn:not(#k):not(#k) { background-image: none !important; }
+/* de pijlknoppen (vorige, volgende): twee rondjes met ruimte */
+.hal .h-paar:not(#k) { gap: 8px; }
+.hal .h-paar .h-cirkel:not(#k):not(#k) { clip-path: none !important; margin-left: 0 !important; width: 44px; padding: 0 !important; justify-items: center; border-radius: 50% !important; }
+.hal .h-paar .h-cirkel-klein:not(#k):not(#k) { width: 36px; }
+/* rijen die iets kiezen: pillen met ruimte */
+.hal :is(.h-jur-docs, .h-fmt-knoppen, .h-gl-pillen):not(#k) { gap: 8px !important; flex-wrap: wrap !important; }
+.hal :is(.h-jur-docs > .h-jur-doc, .h-fmt-knoppen > .h-fmt-knop, .h-gl-pillen > .h-gl-pil):not(#k):not(#k) {
+  clip-path: none !important; margin-left: 0 !important; padding-inline: 16px !important; border-radius: 999px !important; background-image: none !important;
+}
+/* de sociale knoppen in de voet: drie rondjes */
+body.hal .site-footer ul.foot-social:not(#k) { gap: 8px !important; }
+body.hal .site-footer .foot-social li:not(#k) { margin-left: 0 !important; }
+body.hal .site-footer .foot-social li a:not(#k):not(#k) { clip-path: none !important; width: 44px !important; padding: 0 !important; justify-content: center !important; border-radius: 50% !important; background-image: none !important; }
+/* de werkplaats (bestelformulier) */
+html body.werkplaats.hal .of-werk .wk-drie:not(#k) { gap: 8px; }
+html body.werkplaats.hal .of-werk .wk-drie button:not(#k):not(#k) { clip-path: none !important; margin-left: 0 !important; padding: 0 16px !important; border-radius: 999px !important; }
+html body.werkplaats.hal .of-werk .wk-paartje:not(#k) { gap: 3px; }
+html body.werkplaats.hal .of-werk .wk-paartje i:not(#k):not(#k) { clip-path: none !important; margin-left: 0 !important; width: 16px; border-radius: 999px !important; }
+html body.werkplaats.hal .of-werk .pu-rail li[data-wk-look-pos]:not(#k) { margin-left: 0 !important; }
+html body.werkplaats.hal .of-werk .pu-rail li[data-wk-look-pos] .pu-rail-knop:not(#k):not(#k) { clip-path: none !important; padding: 0 18px !important; border-radius: 999px !important; }
+html body.werkplaats.hal .of-werk .pu-rail:has(li[data-wk-look-pos]):not(#k) { gap: 6px; }

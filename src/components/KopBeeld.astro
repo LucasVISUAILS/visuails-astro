@@ -36,10 +36,12 @@ interface Props {
   foto?: Foto;
   fotos?: Foto[];
   verhouding?: string;
+  /* levering 108 (lijst 105, fase 4): het getal op een kaart van het veld in plaats van op wit */
+  kaart?: boolean;
 }
 import { beeldMaat } from '../lib/beeldAanwezig.js';
 import { ikoon, IKOON } from '../data/iconen.js';
-const { soort, label, href, linkNaam, voor, getal, eenheid, voet, regels = [], foto, fotos = [], verhouding = '4 / 3' } = Astro.props;
+const { soort, label, href, linkNaam, voor, getal, eenheid, voet, regels = [], foto, fotos = [], verhouding = '4 / 3', kaart = false } = Astro.props;
 /* width/height van het echte bestand, zodat de browser de ruimte vooraf reserveert. */
 const maat = async (f?: Foto) => (f ? (await beeldMaat(f.src)) || { w: 1200, h: 1500 } : { w: 1200, h: 1500 });
 const fotoMaat = await maat(foto);
@@ -47,20 +49,20 @@ const parenMaat = await Promise.all(fotos.map((f) => maat(f)));
 const PIJL = ikoon('pijl-schuin');
 ---
 {soort === 'getal' && (
-  <div class="h-kopbeeld h-kopbeeld-getal h-groot h-in">
-    <span class="h-korrel" aria-hidden="true"></span>
-    <div class="h-kopbeeld-boven">
+  <div class:list={['h-kopbeeld h-kopbeeld-getal h-groot h-in', kaart && 'kv-108']} data-kaart={kaart ? '' : undefined}>
+    {!kaart && <span class="h-korrel" aria-hidden="true"></span>}
+    <div class="h-kopbeeld-boven" data-tekstvlak={kaart ? '' : undefined}>
       {label && <span class="h-pil h-pil-wit"><span>{label}</span></span>}
       {href && <a class="h-cirkel h-cirkel-wit" href={href} aria-label={linkNaam} set:html={PIJL} />}
     </div>
     {/* Een div en geen p: de tekstmaat van de hal (16,5em) geldt voor alinea's, niet voor het getal. */}
-    <div class="h-kopbeeld-rij">{voor && <span class="h-kopbeeld-voor">{voor}</span>}<span class="h-getal">{getal}</span>{eenheid && <span class="h-kopbeeld-eenheid">{eenheid}</span>}</div>
+    <div class="h-kopbeeld-rij" data-tekstvlak={kaart ? '' : undefined}>{voor && <span class="h-kopbeeld-voor">{voor}</span>}<span class="h-getal">{getal}</span>{eenheid && <span class="h-kopbeeld-eenheid">{eenheid}</span>}</div>
     {regels.length > 0 && (
-      <ul class="h-kopbeeld-regels" role="list">
+      <ul class="h-kopbeeld-regels" role="list" data-tekstvlak={kaart ? '' : undefined}>
         {regels.map(([kop, zin]) => <li><b>{kop}</b><span>{zin}</span></li>)}
       </ul>
     )}
-    {voet && <p class="h-kopbeeld-voet">{voet}</p>}
+    {voet && <p class="h-kopbeeld-voet" data-tekstvlak={kaart ? '' : undefined}>{voet}</p>}
   </div>
 )}
 {soort === 'foto' && foto && (

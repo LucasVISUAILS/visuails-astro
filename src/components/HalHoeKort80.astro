@@ -9,31 +9,54 @@
    De drie stappen staan als één regel in hoofdletters, met de snede van het merk ertussen (53°), elk met
    een klein nummer erboven. Daaronder de levertijd (levertijdDelen() in pricing.js) en de link naar de
    hele uitleg. Op de telefoon staan de stappen onder elkaar.
+
+   LEVERING 99 (13 november 2026, lijst 100 B1 a): boven de drie woorden staat een podium met het hele verhaal, van de
+   telefoonfoto tot de campagne (src/scripts/hoeverhaal99.js); het woord van de scène is inkt. Zonder script en bij
+   "minder beweging" staat er de telefoonclip met de hoodie, en zijn de woorden inkt (of kleuren ze mee met het scrollen,
+   zoals sinds levering 83).
    ═══════════════════════════════════════════════════════════════════════════════ */
 import '../styles/hoe-80.css';
 import { localizedPath } from '../i18n/ui.js';
 import TelefoonClip from './TelefoonClip.astro';
 import SectieKop from './SectieKop.astro';
+import { laptopSlides } from '../data/laptopSlides.js';
+import { openingVersie } from '../data/openingStanden.js';
 
-interface Props { lang: 'nl' | 'en'; titel: string; stappen: string[]; levertijd: string; link: string; kop?: string; }
-const { lang, titel, stappen, levertijd, link, kop } = Astro.props;
+interface Props { lang: 'nl' | 'en'; titel: string; stappen: string[]; levertijd: string; link: string; kop?: string; rij105?: boolean; }
+const { lang, titel, stappen, levertijd, link, kop, rij105 } = Astro.props;
 const lp = (p: string) => localizedPath(lang, p);
+const nl = lang === 'nl';
+const NS: any[] = (laptopSlides(lang, { product: 'nonstd' }).catalog as any).producten || [];
+const hoodie = NS.find((p) => p.naam === 'hoodie') || { titel: 'Zip hoodie', prijs: '' };
+const G = '/img/hal/opening/galerij/', L = '/img/hal/maken/lifestyle99/';
+const VERHAAL = {
+  v: openingVersie(), clip: '/img/hal/telefoon/clip-hoodie', account: 'nonstd',
+  telefoon: ['/img/hoodie-voor.webp', '/img/nonstd-broek-voor.webp', '/img/nonstd-sokken-voor.webp'],
+  beelden: (nl ? ['Voorkant', 'Achterkant', 'Detail', 'Op model'] : ['Front', 'Back', 'Detail', 'On model']).map((naam, i) => ({ naam, src: [`${G}hoodie-0`, `${G}hoodie-1`, `${G}hoodie-3`, `${L}hoodie`][i] })),
+  shop: `${G}hoodie-0`, shopNaam: `${String(hoodie.titel).toUpperCase()} · ${hoodie.prijs}`, post: `${L}hoodie`, story: `${L}jeans`,
+  tekst: nl
+    ? { mand: 'Je bestelling', verstuurd: '3 foto’s verstuurd', noot: 'Iets dichterbij?', knop: 'Goedkeuren', goed: 'Goedgekeurd', plekken: ['Webshop', 'Feed', 'Advertentie'], shop: 'Shop nu' }
+    : { mand: 'Your order', verstuurd: '3 photos sent', noot: 'A bit closer?', knop: 'Approve', goed: 'Approved', plekken: ['Shop', 'Feed', 'Ad'], shop: 'Shop now' },
+};
 ---
-<section class:list={['w8', kop && 'sk-s']} aria-labelledby="w8-kop" data-w8>
+<section class:list={['w8', rij105 && 'r105', kop && 'sk-s']} aria-labelledby="w8-kop" data-w8>
   {kop ? <SectieKop id="w8-kop" label={titel} kop={kop} /> : <h2 id="w8-kop" class="sr-only">{titel}</h2>}
   {/* levering 95 (lijst 94 C1 a): de telefoonclip boven de drie stappen, zodat je ziet hoe weinig "jij stuurt" is */}
-  <TelefoonClip lang={lang} product="jeans" class="w8-clip" />
+  <TelefoonClip lang={lang} product="hoodie" class="w8-clip" />
+  {/* levering 99 (lijst 100 B1 a): het hele verhaal; het script zet het aan (dan verdwijnt de clip hierboven) */}
+  <div class="w8-podium" data-w8-podium data-d={JSON.stringify(VERHAAL)} aria-hidden="true" hidden><div class="w8v"></div></div>
   <ol class="w8-regel" role="list">
     {stappen.map((s, i) => (
-      <li class="w8-stap"><span class="w8-nr" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span><span class="w8-woord">{`${s}${i === stappen.length - 1 ? '.' : ''}`.split(' ').map((w, j, a) => <><span class="w8-w">{w}</span>{j < a.length - 1 ? ' ' : ''}</>)}</span></li>
+      <li class="w8-stap" data-w8-stap={i}><span class="w8-nr" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span><span class="w8-woord">{`${s}${i === stappen.length - 1 ? '.' : ''}`.split(' ').map((w, j, a) => <><span class="w8-w">{w}</span>{j < a.length - 1 ? ' ' : ''}</>)}</span></li>
     ))}
   </ol>
   <p class="w8-onder"><span>{levertijd}.</span> <a class="w8-link" href={lp('/how-it-works')}>{link}</a></p>
 </section>
 
 <script>
+  import { hoeVerhaal } from '../scripts/hoeverhaal99.js';
   /* GRIJS NAAR INKT (levering 83, lijst 68: grijs = a). Alleen hier, op deze ene zin: terwijl je scrolt kleurt
-     hij woord voor woord van grijs (#636974, 5,4 : 1, dus ook vóór het kleuren te lezen) naar inkt, in de
+     hij woord voor woord van grijs (#5E6461, 5,4 : 1, dus ook vóór het kleuren te lezen) naar inkt, in de
      volgorde van het werk. De regel begint te kleuren als hij op 80 % van het scherm staat en is helemaal inkt
      op 45 %; woord k (van n) is inkt vanaf (k + ½) / n. De snede tussen twee stappen kleurt mee met het eerste
      woord erna. Zonder script of bij minder beweging: meteen inkt.
@@ -46,6 +69,17 @@ const lp = (p: string) => localizedPath(lang, p);
     const regel = w8.querySelector<HTMLElement>('.w8-regel');
     const woorden = [...w8.querySelectorAll<HTMLElement>('.w8-w')];
     if (!regel || !woorden.length) return;
+    /* levering 99: het verhaal. Zolang het speelt, kleuren de woorden mee met de scène, niet met het scrollen */
+    const podium = w8.querySelector<HTMLElement>('[data-w8-podium]');
+    let verhaal: { speel: () => void; stop: () => void } | null = null, ioP: IntersectionObserver | null = null, roP: ResizeObserver | null = null;
+    if (podium) {
+      podium.hidden = false; w8.classList.add('w8-verhaal');
+      const perStap = [...w8.querySelectorAll<HTMLElement>('[data-w8-stap]')].map((st) => [...st.querySelectorAll<HTMLElement>('.w8-w')]);
+      verhaal = hoeVerhaal(podium, perStap, JSON.parse(podium.dataset.d || '{}'));
+      roP = new ResizeObserver(() => podium.style.setProperty('--w8v-s', String(podium.clientWidth / 720))); roP.observe(podium);
+      ioP = new IntersectionObserver(([e]) => { if (e.isIntersecting) verhaal!.speel(); else verhaal!.stop(); }, { threshold: 0.35 });
+      ioP.observe(podium);
+    }
     w8.classList.add('w8-grijs');
     /* levering 89 (lijst 81 D3): de stappen trekken één keer naar elkaar toe als de regel op 80 % staat */
     w8.classList.add('w8-ag');
@@ -56,15 +90,18 @@ const lp = (p: string) => localizedPath(lang, p);
       const top = regel.getBoundingClientRect().top, h = innerHeight;
       const p = Math.max(0, Math.min(1, (h * 0.8 - top) / (h * 0.35)));
       if (!getrokken && top < h * 0.8) { getrokken = true; w8.classList.add('w8-trek'); }
-      woorden.forEach((w, k) => w.classList.toggle('aan', p >= (k + 0.5) / woorden.length));
+      if (!verhaal) woorden.forEach((w, k) => w.classList.toggle('aan', p >= (k + 0.5) / woorden.length));
       for (const st of w8.querySelectorAll<HTMLElement>('.w8-stap')) st.classList.toggle('aan', !!st.querySelector('.w8-w.aan'));
     };
+    /* de snede tussen de stappen volgt de woorden ook als het verhaal ze kleurt */
+    const mo = new MutationObserver(() => { for (const st of w8.querySelectorAll<HTMLElement>('.w8-stap')) st.classList.toggle('aan', !!st.querySelector('.w8-w.aan')); });
+    mo.observe(regel, { subtree: true, attributes: true, attributeFilter: ['class'] });
     const opScroll = () => { if (dichtbij && !raf) raf = requestAnimationFrame(kijk); };
     const io = new IntersectionObserver((r) => { dichtbij = r[0].isIntersecting; if (dichtbij) kijk(); }, { rootMargin: '20% 0px' });
     io.observe(w8);
     addEventListener('scroll', opScroll, { passive: true });
     kijk();
-    stop = () => { io.disconnect(); removeEventListener('scroll', opScroll); cancelAnimationFrame(raf); w8.classList.remove('w8-grijs', 'w8-ag', 'w8-trek'); };
+    stop = () => { io.disconnect(); ioP?.disconnect(); roP?.disconnect(); mo.disconnect(); verhaal?.stop(); removeEventListener('scroll', opScroll); cancelAnimationFrame(raf); w8.classList.remove('w8-grijs', 'w8-ag', 'w8-trek', 'w8-verhaal'); };
   }
   start();
   document.addEventListener('astro:page-load', start);

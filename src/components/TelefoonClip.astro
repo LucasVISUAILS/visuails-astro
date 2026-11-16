@@ -12,11 +12,11 @@
  * wordt hij even zwart, daarna staat hij in het rondje linksonder). Het wit is zuiver wit: de clip ligt met multiply op de grond.
  * Hij speelt alleen in beeld en niet bij "minder beweging" (dan de foto).
  */
-interface Props { lang: 'nl' | 'en'; product: 'jeans' | 'sokken'; class?: string }
+interface Props { lang: 'nl' | 'en'; product: 'jeans' | 'sokken' | 'hoodie'; class?: string }
 const { lang, product, class: klasse } = Astro.props as Props;
 const ALT = {
-  nl: { jeans: 'Een hand houdt een telefoon omhoog en maakt een foto van een jeans op de vloer', sokken: 'Een hand houdt een telefoon omhoog en maakt een foto van een paar sokken op de vloer' },
-  en: { jeans: 'A hand holds up a phone and takes a photo of a pair of jeans on the floor', sokken: 'A hand holds up a phone and takes a photo of a pair of socks on the floor' },
+  nl: { hoodie: 'Een hand houdt een telefoon omhoog en maakt een foto van een hoodie op de vloer', jeans: 'Een hand houdt een telefoon omhoog en maakt een foto van een jeans op de vloer', sokken: 'Een hand houdt een telefoon omhoog en maakt een foto van een paar sokken op de vloer' },
+  en: { hoodie: 'A hand holds up a phone and takes a photo of a hoodie on the floor', jeans: 'A hand holds up a phone and takes a photo of a pair of jeans on the floor', sokken: 'A hand holds up a phone and takes a photo of a pair of socks on the floor' },
 };
 ---
 <figure class:list={['tclip', klasse]} data-tclip>

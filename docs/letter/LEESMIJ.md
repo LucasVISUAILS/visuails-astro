@@ -106,3 +106,23 @@ De maten en waar welke letter staat: `docs/DESIGN.md`, "De letters van de hal".
 
 De `.ttf` die je op je computer installeert, is alleen voor je eigen programma's (Figma, Word, Photoshop).
 De site haalt zijn letters zelf mee, als `.woff2`; een bezoeker hoeft niets te installeren.
+
+## VISUAILS Display Blok (levering 110, 16 november 2026)
+
+Een tweede kopletter, alleen voor de ene hoofdkop op de voorpagina. Lucas, lijst 119: *"een wat meer hoekerige variant
+maar wel met hetzelfde systeem"*. Hij is niet afgeleid van DM Sans, maar opgebouwd uit de maten van het V-merk:
+- de stam is 21,8 % van de kaphoogte;
+- de binnenvormen zijn vierkant en de uiteinden plat;
+- één zachte hoek linksboven (R = 24,7 %);
+- één snede op 53,13° aan een recht open uiteinde (E, F, L, T, Z, C, G, S);
+- de punten zijn vierkant, met de hoek rechtsboven eraf.
+
+Er zijn 44 tekens: A tot Z, de leestekens van de kop en de accenten voor het Nederlands. Kleine letters wijzen naar
+dezelfde hoofdletters. Cijfers zijn er nog niet.
+
+- **De richtingen.** Gekozen in lijst 119 en 120: richting D, iets breder dan de smalle C.
+- **Bron en bestanden.** De bron is `bron/blok.py`: `python3 blok.py D uitmap` (fonttools, shapely, brotli). De site
+  gebruikt `public/fonts/visuails-display/VISUAILSDisplayBlok-Bold.woff2` (1,7 kB). De `.ttf` staat in `fonts/`.
+- **Licentie.** De letter is van VISUAILS zelf; er zit geen andere letter in.
+- **Geen woordmerk.** Schrijf nooit VISUAILS in deze letter: dat is het woordmerk, en dat blijft zoals het is.
+

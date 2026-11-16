@@ -49,8 +49,8 @@
  * met de rij "01 —— / 04" erboven; Nodig en Optioneel als statusplaatje (sinds levering 87 een pil, zoals op de site) en
  * geen pil met een stip meer; een vinkje uit de iconenkit in plaats van een bolletje. De hoekregel van
  * 25 oktober: kaarten 24 rondom, de twee brede vlakken 32, de foto in de hoek van zijn kaart concentrisch (8).
- * Het vlak met de vijf vragen is het ene inktblok: de Inkt-fade uit de nacht (#0F1217 tot 38 %, #172945,
- * #1A4279) langs de snede, rechtsonder zijn eigen snede op 53° (30 × 40). Ruimte: een kop en zijn zin 8 px,
+ * Het vlak met de vijf vragen is het ene inktblok: de fade van zwart (#090D0B tot 38 %, mint 800 #023D29,
+ * mint 700 #016645; levering 112) langs de snede, rechtsonder zijn eigen snede op 53° (30 × 40). Ruimte: een kop en zijn zin 8 px,
  * twee alinea's 12 px, regels in een lijst 8 px uit elkaar; niets staat tegen elkaar aan.
  */
 import { createHash } from 'node:crypto';
@@ -85,15 +85,18 @@ const VEL = {
 /* Het woordmerk, letterlijk uit src/data/woordmerk.js. Nooit natekenen — alleen de
    kleur mag anders zijn. De verschuiving staat in een <g> en niet in de viewBox:
    zie de kop van woordmerk.js. Sinds levering 86 (3 november 2026, lijst 72, logo a) in de snede: de
-   fade van blauw diep via blauw uur naar #2D61A8 langs de snede, in de maten van de tekening (de
+   fade langs de snede (sinds levering 112 drie stops in zwart #090D0B), in de maten van de tekening (de
    <g> zet het pad terug op zijn eigen maten, dus dezelfde coördinaten als #vs-w-snede op de site). */
 const MERK = `<svg class="woordmerk" viewBox="0 0 ${WOORDMERK.breed} ${WOORDMERK.hoog}" role="img" aria-label="VISUAILS">
-  <defs><linearGradient id="vs-fg-snede" ${snedeAttr()}><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient></defs>
+  <defs><linearGradient id="vs-fg-snede" ${snedeAttr()}><stop offset="0" stop-color="#090D0B"/><stop offset=".55" stop-color="#090D0B"/><stop offset="1" stop-color="#090D0B"/></linearGradient></defs>
   <g transform="translate(0 ${(WOORDMERK.hoog * (1 - WOORDMERK.onder)).toFixed(2)})"><path fill="url(#vs-fg-snede)" fill-rule="evenodd" d="${WOORDMERK.d}" /></g>
 </svg>`;
 
-/* De streep van het sectielabel (D1, levering 86): het vlagje van de V in de snede, zoals op de site. */
-const STREEP = `<svg class="streep" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="vs-fg-streep" gradientUnits="userSpaceOnUse" x1="5.98" y1="11.5" x2="14.17" y2="17.64"><stop offset="0" stop-color="#1A4279"/><stop offset=".55" stop-color="#25508B"/><stop offset="1" stop-color="#2D61A8"/></linearGradient></defs><path fill="url(#vs-fg-streep)" d="M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z"/></svg>`;
+/* De streep van het sectielabel (D1, levering 86): het vlagje van de V, zoals op de site.
+   Levering 112 (fase 5 van levering 100): het woordmerk en de streep zijn zwart #090D0B (de snede houdt drie stops, alle
+   drie zwart, zoals de factuur in levering 111); de grijzen die van de site; het inktblok gaat van zwart via mint 800 naar
+   mint 700 (wit erop minstens 7,0 : 1, op het zwart 19,6 : 1). Alleen herkleurd: de indeling blijft. */
+const STREEP = `<svg class="streep" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="vs-fg-streep" gradientUnits="userSpaceOnUse" x1="5.98" y1="11.5" x2="14.17" y2="17.64"><stop offset="0" stop-color="#090D0B"/><stop offset=".55" stop-color="#090D0B"/><stop offset="1" stop-color="#090D0B"/></linearGradient></defs><path fill="url(#vs-fg-streep)" d="M19.75 10.2L17.05 13.8L4.25 13.8L6.95 10.2Z"/></svg>`;
 /* Het vinkje uit de iconenkit (src/data/iconen.js), in de kleur van de tekst. */
 const VINK = `<svg class="vink" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${IKOON.vink}"/></svg>`;
 
@@ -136,12 +139,12 @@ function css(fonts) {
   return `
 ${fonts}
 :root {
-  --inkt: #0F1217; --inkt-3: #636974; --lijn: #E6E8EC; --wit: #FFFFFF;
+  --inkt: #090D0B; --inkt-3: #5E6461; --lijn: #E7EAE8; --wit: #FFFFFF;
   --kop: "VISUAILS Display", "DM Sans", system-ui, sans-serif;
   --letter: "DM Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
   --r-kaart: 24px; --r-vlak: 32px;
-  --nacht: #0F1217 linear-gradient(126.87deg, #0F1217 0%, #0F1217 38%, #172945 72%, #1A4279 100%);
+  --nacht: #090D0B linear-gradient(126.87deg, #090D0B 0%, #090D0B 38%, #023D29 72%, #016645 100%);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }

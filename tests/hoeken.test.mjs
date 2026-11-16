@@ -95,11 +95,12 @@ console.log('\nde copy is compleet in beide talen');
 
 console.log('\nde ladder is de ladder die Lucas opgaf');
 {
-  ok('bij 1 product', extraPhotoRate(1), 39);
-  ok('bij 4', extraPhotoRate(4), 39);
-  ok('bij 10', extraPhotoRate(10), 29);
-  ok('bij 20', extraPhotoRate(20), 19);
-  ok('en boven de twintig blijft hij daar', extraPhotoRate(200), 19);
+  /* Lijst 111 (15 november 2026): ronde bedragen, 40 / 35 / 30 / 20 (Lucas gaf 39 / 29 / 19). */
+  ok('bij 1 product', extraPhotoRate(1), 40);
+  ok('bij 4', extraPhotoRate(4), 40);
+  ok('bij 10', extraPhotoRate(10), 30);
+  ok('bij 20', extraPhotoRate(20), 20);
+  ok('en boven de twintig blijft hij daar', extraPhotoRate(200), 20);
   /* Dezelfde treden als de catalogladder: de korting op een extra foto hoort te
      schuiven op hetzelfde moment als de korting op de set zelf. */
   ok('evenveel treden als de catalogladder', EXTRA_PHOTO_LADDER.length, LADDER.catalog.length);
@@ -119,8 +120,8 @@ console.log('\néén hoek is één foto per product, en dat is de hele rekensom'
   ok('twee hoeken op tien producten', net({ service: 'catalog', products: 10, extras: 2 * 10 }),
     basis(10) + 20 * extraPhotoRate(10));
   /* Het getal uit Lucas' eigen voorbeeld: twintig producten, vier hoeken. */
-  ok('vier hoeken op twintig producten kost 20 × 4 × €19',
-    net({ service: 'catalog', products: 20, extras: 4 * 20 }), basis(20) + 1520);
+  ok('vier hoeken op twintig producten kost 20 × 4 × €20',
+    net({ service: 'catalog', products: 20, extras: 4 * 20 }), basis(20) + 1600);
   ok('geen hoeken kost niets erbij', net({ service: 'catalog', products: 10, extras: 0 }), basis(10));
 }
 

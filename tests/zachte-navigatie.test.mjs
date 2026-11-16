@@ -152,11 +152,16 @@ console.log('\nde zwevende notitie overleeft een zachte navigatie');
   ok('en bij de knop', vers && vers.bijDeKnop, true);
 
   /* Weg en terug: dat is het moment waarop <html> zijn klasse verliest. */
+  /* Op de pagina wachten in plaats van een vaste tijd (levering 100): met het kaartveld (WebGL, in de toets
+     software) duurt een zachte sprong soms langer dan een seconde, en dan klikte de toets al op de volgende link
+     terwijl de vorige sprong nog liep; de knop die hij vond, werd daarna weggewisseld. */
   await page.$eval('a[href="/pricing/"]', (e) => e.click());
-  await page.waitForTimeout(1000);
+  await page.waitForURL(/\/pricing\/?$/, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(600);
   await page.$eval('a[href="/how-it-works/"]', (e) => e.click()).catch(async () => {
     await page.goto(`${BASE}/how-it-works`, { waitUntil: 'load' });
   });
+  await page.waitForURL(/\/how-it-works\/?$/, { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(1100);
   const knop2 = await page.$('[data-note-btn]');
   if (knop2) {

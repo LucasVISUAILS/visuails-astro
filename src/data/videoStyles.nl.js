@@ -252,6 +252,14 @@ export const videoStyles = [
   },
 ];
 
+/* ── OP DE VIDEOPAGINA: ALLEEN MOTION EN VIDEO OP MAAT — 15 november 2026 ──────────────────────────────────────
+   Lucas (lijst 109): "lifestylevideo is alleen maar custom omdat dit per merk/klant verschilt en mag dus voor nu
+   uit de stylen gehaald worden en houd voor nu alleen custom video en motion als producten op de video pagina".
+   De andere soorten blijven in deze lijst staan, want lopende bestellingen en /admin lezen ze nog; de publieke
+   pagina's lezen videoOpPagina. /video/lifestyle en /video/campaign verwijzen in public/_redirects naar /video/custom. */
+export const VIDEO_OP_PAGINA = ['motion', 'custom'];
+export const videoOpPagina = videoStyles.filter((s) => VIDEO_OP_PAGINA.includes(s.slug));
+
 export function getVideoStyle(slug) {
   return videoStyles.find((s) => s.slug === slug);
 }

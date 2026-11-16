@@ -1,0 +1,518 @@
+<title>Lijst 104 · Kaartveld</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+@font-face { font-family: 'VISUAILS Display'; src: url(f/display.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+/* DRIE KLEUREN VOOR DE SITE: zwart, wit, mint. De mint-trap is alleen voor de kaarten. */
+:root {
+  --zwart: #090D0B; --wit: #FFFFFF; --mint: #3DFFB0; --mint-muis: #1FEA9C;
+  --grijs: #5E6461; --lijn: #E7EAE8;
+  --m950: #01140B; --m900: #002416; --m800: #023D29; --m700: #016645; --m600: #11976A; --m300: #9DF5D2; --m100: #E4FCEF;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--wit); color: var(--zwart); font: 16px/1.55 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+#veld { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+.inhoud { position: relative; z-index: 1; }
+.mono { font: 500 12px/1.3 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.k1 { font: 700 clamp(34px, 5.4vw, 76px)/.98 'VISUAILS Display', 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: -.005em; margin: 0; text-wrap: balance; }
+.k2 { font: 700 clamp(26px, 3.4vw, 44px)/1.02 'VISUAILS Display', 'DM Sans', sans-serif; text-transform: uppercase; margin: 0; text-wrap: balance; }
+.zin { font-size: 18px; line-height: 1.5; color: var(--grijs); max-width: 40ch; margin: 18px 0 0; }
+.zin b { color: var(--zwart); font-weight: 500; }
+/* de balk: wit, zwart, één mint knop */
+.balk { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 0; right: 0; z-index: 5; display: flex; justify-content: center; padding-inline: max(12px, env(safe-area-inset-left, 0px)); pointer-events: none; }
+.balk nav { pointer-events: auto; display: flex; align-items: center; gap: 14px; width: min(1180px, 100%); height: 56px; padding: 0 6px 0 20px; border-radius: 14px; background: var(--zwart); color: var(--wit); }
+.balk .wm { display: block; width: 78px; height: 15px; flex: none; color: var(--wit); }
+.balk ul { display: flex; gap: 2px; margin: 0 auto; padding: 0; list-style: none; }
+.balk ul a { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 8px; color: rgb(255 255 255 / .82); text-decoration: none; font-size: 14px; font-weight: 500; }
+.balk ul a:hover { color: #fff; background: rgb(255 255 255 / .08); }
+.knop { display: inline-flex; align-items: center; gap: 10px; height: 46px; padding: 0 20px; border-radius: 8px; font: 600 15px/1 'DM Sans', sans-serif; text-decoration: none; cursor: pointer; border: 0; }
+.knop svg { width: 14px; height: 14px; fill: currentColor; }
+.knop.mint { color: var(--zwart); background: var(--mint) linear-gradient(90deg, var(--mint-muis) 0 50%, var(--mint) 50% 100%) 100% 0 / 200% 100% no-repeat; transition: background-position .32s cubic-bezier(.22,.8,.2,1); }
+.knop.mint:hover { background-position: 0 0; }
+.knop.lijn { color: var(--zwart); box-shadow: inset 0 0 0 1.5px var(--zwart); background: transparent; }
+.knop.lijn:hover { background: #F2F4F3; }
+.knop:focus-visible, .balk a:focus-visible { outline: 2px solid var(--zwart); outline-offset: 3px; }
+.balk .knop:focus-visible, .kaart .knop:focus-visible { outline-color: var(--mint); }
+.balk .knop { height: 44px; }
+.link { color: var(--zwart); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+/* DE SECTIES: links-rechts. Elke sectie is een rij; de kaart neemt 58 % aan één kant, de tekst staat aan de andere kant.
+   De kaarten raken elkaar boven en onder en overlappen in het midden 16 %, zodat ze één lint vormen. */
+.rij { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); min-height: 640px; padding-inline: max(20px, env(safe-area-inset-left, 0px)); }
+.rij .tekst { grid-row: 1; align-self: center; padding-block: 72px; min-width: 0; }
+.rij .kaart { grid-row: 1; position: relative; margin-block: 64px; border-radius: 18px; min-width: 0; color: var(--wit); padding: clamp(24px, 3vw, 44px); display: flex; flex-direction: column; justify-content: space-between; gap: 24px; }
+.rij.r .tekst { grid-column: 2 / 6; }
+.rij.r .kaart { grid-column: 7 / 13; }
+.rij.l .tekst { grid-column: 8 / 12; }
+.rij.l .kaart { grid-column: 1 / 7; }
+.held { min-height: 100svh; padding-top: 80px; }
+.held .tekst { padding-top: 120px; }
+.kaart .mono { color: var(--m300); }
+.kaart h3 { margin: 0; font: 600 20px/1.25 'DM Sans', sans-serif; color: #fff; }
+.kaart p { margin: 6px 0 0; color: rgb(255 255 255 / .78); font-size: 15px; }
+.kaart .regels { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-width: 520px; }
+.kaart .regels li { display: grid; grid-template-columns: 1fr auto; gap: 16px; padding: 18px 0; border-top: 1px solid rgb(157 245 210 / .22); }
+.kaart .regels li:last-child { border-bottom: 1px solid rgb(157 245 210 / .22); }
+.kaart .regels span { color: var(--m300); font-size: 15px; white-space: nowrap; }
+.kaart .stappen { display: grid; gap: 28px; max-width: 460px; }
+.kaart .stap { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: baseline; }
+.kaart .nr { font: 700 40px/1 'VISUAILS Display', 'DM Sans', sans-serif; color: var(--mint); }
+.kaart .groot { display: block; margin-top: 6px; font: 700 clamp(96px, 13vw, 180px)/.9 'VISUAILS Display', 'DM Sans', sans-serif; color: #fff; }
+.kaart figure { margin: 0; align-self: flex-end; width: min(46%, 300px); }
+.kaart figure img { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 6px; }
+.kaart figure figcaption { margin-top: 10px; }
+.knoppen { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.rij.r.held .kaart { justify-content: flex-end; }
+.voet { position: relative; z-index: 1; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 40px max(20px, env(safe-area-inset-left, 0px)) 48px; color: rgb(255 255 255 / .78); font-size: 14px; background: var(--zwart); } /* de voet zwart (Lucas, 04:55) */
+/* foto's op wit, kaarten alleen hier en daar */
+.rij .foto { grid-row: 1; margin: 0; align-self: center; min-width: 0; }
+.rij.r .foto { grid-column: 7 / 12; }
+.rij.l .foto { grid-column: 2 / 7; }
+.rij.r .foto.smal, .rij.l .foto.smal { grid-column: 9 / 12; }
+.foto img { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 8px; }
+.foto figcaption { margin-top: 12px; color: var(--grijs); }
+.lijstje { list-style: none; margin: 24px 0 0; padding: 0; max-width: 460px; }
+.lijstje li { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--lijn); font-weight: 500; }
+.lijstje li:last-child { border-bottom: 1px solid var(--lijn); }
+.lijstje li span + span { color: var(--grijs); font-weight: 400; }
+.kaartrij { min-height: 600px; }
+.kaartrij .kaart { justify-content: center; }
+.kaart .proefblok { max-width: 460px; }
+.kaart .proefblok p { color: rgb(255 255 255 / .82); margin-top: 8px; }
+.kaart.klein { justify-content: center; align-items: center; margin-block: 96px; }
+.wmgroot { width: min(70%, 420px); height: auto; aspect-ratio: 3763.74 / 724; color: #fff; }
+.held .foto { padding-top: 60px; }
+/* zonder WebGL: elke kaart een eigen stuk van dezelfde nacht */
+.geen-gl .kaart { background: radial-gradient(80% 70% at 100% 100%, var(--m600), var(--m800) 35%, var(--zwart) 80%); }
+html.heel .rij .tekst, html.heel .kaart > * { opacity: .12; transition: opacity .3s; }
+/* het besturingspaneel van de proef */
+.paneel { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 6; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: calc(100% - 24px); }
+.paneel button { height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--lijn); background: #fff; color: var(--zwart); font: 600 13px/1 'DM Sans', sans-serif; cursor: pointer; }
+.paneel button[aria-pressed="true"] { background: var(--zwart); color: #fff; border-color: var(--zwart); }
+@media (max-width: 860px) {
+  .balk ul, .balk .inl { display: none; }
+  .balk nav { justify-content: space-between; }
+  .rij { display: block; min-height: 0; padding-inline: 0; }
+  .rij .tekst { padding: 56px max(20px, env(safe-area-inset-left, 0px)) 36px; }
+  .rij .kaart { min-height: 420px; margin: 28px 0 !important; width: 88%; }
+  .rij.r .kaart { margin-left: 12% !important; }
+  .held .tekst { padding-top: 100px; }
+  .kaart figure { width: 56%; }
+  .rij .foto { padding: 0 max(20px, env(safe-area-inset-left, 0px)); }
+  .rij .tekst { padding-bottom: 28px; }
+  .kaart.klein { margin-block: 0; min-height: 260px; }
+}
+@media (prefers-reduced-motion: reduce) { .knop.mint { transition: none; } }
+
+/* de keuzes */
+.lijst { position: relative; z-index: 1; background: var(--wit); border-top: 1px solid var(--lijn); }
+.lijst .in { max-width: 920px; margin: 0 auto; padding: 64px max(20px, env(safe-area-inset-left, 0px)) 120px; }
+.lijst h2 { font: 700 30px/1.1 'VISUAILS Display', 'DM Sans', sans-serif; text-transform: uppercase; margin: 8px 0 14px; }
+.lijst .uitleg { color: var(--grijs); max-width: 66ch; }
+.trap { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 22px 0 8px; }
+.trap div { border-radius: 8px; padding: 64px 10px 10px; font-size: 12px; line-height: 1.35; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .1); min-width: 0; }
+.trap b { display: block; font-weight: 600; }
+.vraag { border: 1px solid var(--lijn); border-radius: 12px; padding: 18px; margin-top: 16px; }
+.vraag h3 { margin: 0 0 4px; font: 600 17px/1.3 'DM Sans', sans-serif; }
+.vraag .adv { color: var(--grijs); font-size: 14.5px; margin: 0 0 14px; max-width: 72ch; }
+.opties { display: flex; flex-wrap: wrap; gap: 8px; }
+.opties label { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--lijn); border-radius: 8px; cursor: pointer; font-weight: 500; }
+.opties input { accent-color: var(--zwart); }
+.opties label:has(input:checked) { border-color: var(--zwart); background: #F2F4F3; }
+.opties small { font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--grijs); }
+textarea { width: 100%; min-height: 60px; margin-top: 12px; padding: 10px 12px; border: 1px solid #8A908D; border-radius: 8px; font: 15px/1.45 'DM Sans', sans-serif; color: var(--zwart); background: #fff; resize: vertical; }
+.bewaar { margin-top: 24px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+#stand { color: var(--grijs); font-size: 14px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="wm" viewBox="0.00 -712.00 3763.74 724.00"><path fill="currentColor" fill-rule="evenodd" d="M31.3 -700.0L32.3 -700.0L33.4 -700.0L34.4 -700.0L35.5 -699.9L36.6 -699.9L37.6 -699.9L38.7 -699.8L39.7 -699.8L40.8 -699.7L41.9 -699.7L42.9 -699.6L44.0 -699.5L45.0 -699.5L46.1 -699.4L47.1 -699.3L48.2 -699.2L49.3 -699.1L50.3 -698.9L51.4 -698.8L52.4 -698.7L53.5 -698.6L54.5 -698.4L55.6 -698.3L56.6 -698.1L57.7 -698.0L58.7 -697.8L59.8 -697.6L60.8 -697.5L61.9 -697.3L62.9 -697.1L63.9 -696.9L65.0 -696.7L66.0 -696.5L67.1 -696.3L68.1 -696.0L69.1 -695.8L70.2 -695.6L71.2 -695.3L72.2 -695.1L73.3 -694.8L74.3 -694.6L75.3 -694.3L76.3 -694.0L77.4 -693.7L78.4 -693.5L79.4 -693.2L80.4 -692.9L81.4 -692.6L82.5 -692.2L83.5 -691.9L84.5 -691.6L85.5 -691.3L86.5 -690.9L87.5 -690.6L88.5 -690.2L89.5 -689.9L90.5 -689.5L91.5 -689.2L92.5 -688.8L93.5 -688.4L94.5 -688.0L95.5 -687.6L96.4 -687.2L97.4 -686.8L98.4 -686.4L99.4 -686.0L100.3 -685.6L101.3 -685.2L102.3 -684.7L103.3 -684.3L104.2 -683.9L105.2 -683.4L106.1 -682.9L107.1 -682.5L108.0 -682.0L109.0 -681.5L109.9 -681.1L110.9 -680.6L111.8 -680.1L112.8 -679.6L113.7 -679.1L114.6 -678.6L115.6 -678.1L116.5 -677.5L117.4 -677.0L118.3 -676.5L119.2 -675.9L120.1 -675.4L121.0 -674.9L122.0 -674.3L122.9 -673.7L123.8 -673.2L124.6 -672.6L125.5 -672.0L126.4 -671.4L127.3 -670.9L128.2 -670.3L129.1 -669.7L129.9 -669.1L130.8 -668.5L131.7 -667.8L132.5 -667.2L133.4 -666.6L134.2 -666.0L135.1 -665.3L135.9 -664.7L136.8 -664.1L137.6 -663.4L138.5 -662.7L139.3 -662.1L140.1 -661.4L140.9 -660.8L141.8 -660.1L142.6 -659.4L143.4 -658.7L144.2 -658.0L145.0 -657.3L145.8 -656.6L146.6 -655.9L147.4 -655.2L148.1 -654.5L148.9 -653.8L149.7 -653.1L150.5 -652.3L151.2 -651.6L152.0 -650.8L152.8 -650.1L153.5 -649.4L154.3 -648.6L155.0 -647.8L155.7 -647.1L156.5 -646.3L157.2 -645.6L157.9 -644.8L158.6 -644.0L159.4 -643.2L160.1 -642.4L160.8 -641.6L161.5 -640.8L162.2 -640.0L162.9 -639.2L163.6 -638.4L164.2 -637.6L164.9 -636.8L165.6 -636.0L166.2 -635.1L166.9 -634.3L167.6 -633.5L168.2 -632.6L168.9 -631.8L169.5 -630.9L170.1 -630.1L170.8 -629.2L171.4 -628.4L172.0 -627.5L172.6 -626.7L173.2 -625.8L173.8 -624.9L174.4 -624.0L175.0 -623.2L175.6 -622.3L176.2 -621.4L176.8 -620.5L177.3 -619.6L177.9 -618.7L178.5 -617.8L179.0 -616.9L179.6 -616.0L180.1 -615.1L180.6 -614.2L181.2 -613.2L181.7 -612.3L182.2 -611.4L182.7 -610.5L183.2 -609.5L183.7 -608.6L184.2 -607.7L184.7 -606.7L185.2 -605.8L185.7 -604.8L186.2 -603.9L186.6 -602.9L187.1 -602.0L187.6 -601.0L188.0 -600.1L188.4 -599.1L188.9 -598.1L189.3 -597.2L189.7 -596.2L190.2 -595.2L190.6 -594.2L191.0 -593.3L191.4 -592.3L191.8 -591.3L192.2 -590.3L192.6 -589.3L192.9 -588.3L193.3 -587.3L193.7 -586.3L194.0 -585.3L194.4 -584.3L194.7 -583.3L195.1 -582.3L195.4 -581.3L195.8 -580.3L196.1 -579.3L341.1 -92.0L345.1 -92.0L478.1 -545.3L684.4 -700.0L684.4 -700.0L469.1 -0.0L216.1 -0.0L0.0 -700.0ZM804.3 -0.0L651.7 -0.0L651.7 -412.6L720.8 -637.4L804.3 -700.0ZM967.9 -197.8L968.5 -194.5L969.2 -191.3L970.0 -188.1L970.9 -184.9L971.9 -181.8L972.9 -178.8L974.1 -175.8L975.4 -172.9L976.7 -170.0L978.1 -167.2L979.6 -164.4L981.3 -161.7L983.0 -159.1L984.7 -156.5L986.6 -154.0L988.5 -151.5L990.6 -149.2L992.7 -146.9L994.8 -144.7L997.1 -142.5L999.4 -140.5L1001.9 -138.5L1004.4 -136.5L1007.0 -134.7L1009.6 -132.9L1012.4 -131.2L1015.2 -129.6L1018.1 -128.0L1021.1 -126.5L1024.1 -125.1L1027.2 -123.8L1030.4 -122.6L1033.6 -121.5L1036.9 -120.5L1040.3 -119.6L1043.7 -118.8L1047.2 -118.1L1050.7 -117.5L1054.3 -117.0L1058.0 -116.5L1061.7 -116.2L1065.5 -116.0L1069.4 -115.8L1073.3 -115.8L1076.5 -115.8L1079.7 -115.9L1082.8 -116.0L1085.9 -116.3L1089.0 -116.5L1092.0 -116.9L1095.0 -117.3L1097.9 -117.7L1100.7 -118.3L1103.6 -118.8L1106.3 -119.5L1109.1 -120.2L1111.8 -121.0L1114.4 -121.8L1117.0 -122.7L1119.5 -123.6L1122.0 -124.7L1124.5 -125.7L1126.8 -126.9L1129.1 -128.1L1131.4 -129.4L1133.5 -130.7L1135.7 -132.1L1137.7 -133.6L1139.7 -135.1L1141.6 -136.7L1143.5 -138.4L1145.2 -140.1L1147.0 -141.9L1148.6 -143.8L1150.2 -145.7L1151.8 -147.7L1153.2 -149.7L1154.6 -151.8L1155.8 -154.0L1157.0 -156.3L1158.1 -158.6L1159.1 -161.0L1160.0 -163.4L1160.8 -166.0L1161.5 -168.6L1162.1 -171.2L1162.6 -174.0L1163.0 -176.8L1163.3 -179.6L1163.6 -182.5L1163.7 -185.5L1163.8 -188.6L1163.7 -191.9L1163.5 -195.1L1163.3 -198.2L1162.9 -201.3L1162.4 -204.3L1161.8 -207.3L1161.1 -210.2L1160.3 -213.0L1159.4 -215.8L1158.3 -218.5L1157.2 -221.1L1155.9 -223.7L1154.6 -226.2L1153.1 -228.7L1151.5 -231.1L1149.8 -233.4L1148.0 -235.7L1146.2 -237.9L1144.2 -240.1L1142.2 -242.3L1140.1 -244.4L1137.9 -246.5L1135.6 -248.6L1133.2 -250.6L1130.8 -252.5L1128.3 -254.5L1125.7 -256.4L1123.0 -258.2L1120.2 -260.0L1117.3 -261.8L1114.4 -263.6L1111.4 -265.3L1108.3 -266.9L1105.2 -268.6L1102.0 -270.2L1098.7 -271.8L1095.4 -273.4L1092.1 -275.0L1088.7 -276.5L1085.3 -278.1L1081.8 -279.6L1078.2 -281.1L1074.6 -282.6L1071.0 -284.0L1067.3 -285.4L1063.6 -286.9L1059.8 -288.3L1055.9 -289.6L1052.0 -291.0L1048.1 -292.4L1044.2 -293.7L1040.2 -295.1L1036.3 -296.5L1036.3 -296.5L1036.3 -296.5L1032.3 -297.9L1032.3 -297.9L1028.2 -299.3L1028.2 -299.3L1024.2 -300.7L1024.2 -300.7L1020.1 -302.1L1020.1 -302.1L1016.0 -303.5L1016.0 -303.5L1011.9 -304.9L1011.9 -304.9L1007.7 -306.3L1007.7 -306.3L1003.5 -307.7L1003.5 -307.7L999.4 -309.1L999.4 -309.1L995.1 -310.6L995.1 -310.6L991.0 -311.9L991.0 -311.9L991.0 -311.9L990.9 -312.0L980.6 -315.6L970.7 -319.3L961.0 -323.1L951.7 -327.1L942.6 -331.3L933.9 -335.6L925.4 -340.0L917.2 -344.6L909.4 -349.3L901.8 -354.2L894.5 -359.2L887.5 -364.3L880.8 -369.6L874.4 -375.0L868.3 -380.6L862.5 -386.3L857.5 -391.7L857.5 -630.3L861.6 -635.1L866.2 -640.2L871.0 -645.1L875.9 -649.8L881.1 -654.3L886.4 -658.7L892.0 -663.0L897.7 -667.0L903.6 -670.9L909.7 -674.7L916.0 -678.3L922.4 -681.7L929.1 -684.9L935.9 -688.0L942.9 -690.9L950.0 -693.6L957.2 -696.2L964.5 -698.5L971.9 -700.7L979.5 -702.6L987.1 -704.4L994.9 -706.0L1002.7 -707.4L1010.7 -708.6L1018.8 -709.7L1027.0 -710.5L1035.3 -711.2L1043.7 -711.6L1052.3 -711.9L1060.9 -712.0L1069.9 -711.9L1078.8 -711.6L1087.5 -711.1L1096.1 -710.5L1104.5 -709.6L1112.8 -708.5L1121.0 -707.3L1129.0 -705.8L1137.0 -704.2L1144.7 -702.4L1152.3 -700.4L1159.8 -698.2L1167.2 -695.8L1174.4 -693.2L1181.5 -690.4L1188.4 -687.4L1195.2 -684.2L1201.8 -680.9L1208.3 -677.4L1214.5 -673.7L1220.6 -669.9L1226.5 -665.9L1232.2 -661.7L1237.8 -657.4L1243.2 -652.9L1248.4 -648.2L1253.4 -643.3L1258.2 -638.3L1262.9 -633.1L1267.4 -627.8L1271.7 -622.2L1272.2 -621.5L1272.2 -505.4L1147.4 -505.4L1144.5 -519.6L1143.9 -522.3L1143.2 -524.9L1142.5 -527.5L1141.7 -530.1L1140.8 -532.6L1139.8 -535.1L1138.7 -537.5L1137.6 -539.9L1136.3 -542.2L1135.0 -544.5L1133.6 -546.7L1132.1 -548.9L1130.5 -551.0L1128.9 -553.1L1127.3 -555.1L1125.5 -557.1L1123.8 -559.0L1121.9 -560.8L1120.0 -562.6L1118.1 -564.3L1116.1 -566.0L1114.0 -567.6L1111.8 -569.1L1109.7 -570.6L1107.4 -572.0L1105.1 -573.4L1102.7 -574.7L1100.3 -575.9L1097.8 -577.1L1095.3 -578.1L1092.8 -579.1L1090.2 -580.0L1087.5 -580.9L1084.9 -581.6L1082.1 -582.3L1079.3 -582.9L1076.5 -583.4L1073.7 -583.9L1070.7 -584.2L1067.8 -584.5L1064.8 -584.7L1061.7 -584.8L1058.6 -584.9L1055.9 -584.9L1053.2 -584.9L1050.5 -584.9L1047.8 -584.8L1045.2 -584.6L1042.6 -584.3L1040.1 -584.0L1037.5 -583.7L1035.0 -583.3L1032.5 -582.8L1030.0 -582.2L1027.6 -581.6L1025.2 -581.0L1022.8 -580.2L1020.5 -579.4L1018.2 -578.6L1015.9 -577.7L1013.7 -576.7L1011.5 -575.7L1009.4 -574.6L1007.3 -573.5L1005.4 -572.2L1003.4 -571.0L1001.6 -569.7L999.8 -568.3L998.0 -566.8L996.3 -565.4L994.7 -563.8L993.1 -562.2L991.6 -560.5L990.1 -558.8L988.7 -557.0L987.4 -555.1L986.1 -553.2L985.0 -551.2L983.9 -549.2L982.9 -547.1L982.0 -544.9L981.2 -542.7L980.5 -540.3L979.8 -538.0L979.3 -535.5L978.8 -533.0L978.4 -530.4L978.1 -527.8L977.9 -525.1L977.8 -522.3L977.7 -519.4L977.8 -516.7L977.9 -514.1L978.1 -511.5L978.4 -508.9L978.8 -506.4L979.3 -504.0L979.8 -501.5L980.5 -499.2L981.2 -496.8L982.0 -494.5L982.9 -492.3L983.9 -490.1L985.0 -488.0L986.2 -485.9L987.4 -483.8L988.8 -481.8L990.2 -479.8L991.7 -477.9L993.2 -476.0L994.8 -474.1L996.5 -472.3L998.3 -470.5L1000.1 -468.8L1002.0 -467.0L1004.0 -465.3L1006.0 -463.7L1008.2 -462.0L1010.3 -460.4L1012.6 -458.9L1014.9 -457.3L1017.3 -455.8L1019.8 -454.4L1022.3 -452.9L1024.9 -451.5L1027.5 -450.1L1030.2 -448.7L1033.0 -447.3L1035.8 -445.9L1038.6 -444.5L1041.6 -443.1L1044.6 -441.7L1047.6 -440.3L1050.7 -439.0L1053.8 -437.6L1057.0 -436.3L1060.3 -434.9L1063.6 -433.6L1067.0 -432.3L1070.4 -430.9L1073.9 -429.6L1077.4 -428.3L1081.0 -427.0L1084.5 -425.6L1088.2 -424.3L1091.8 -423.0L1095.6 -421.6L1099.3 -420.3L1103.1 -418.9L1106.9 -417.6L1110.8 -416.2L1114.7 -414.9L1118.7 -413.5L1122.7 -412.2L1126.7 -410.8L1133.3 -408.5L1139.9 -406.2L1146.4 -403.8L1152.9 -401.4L1159.3 -398.9L1165.6 -396.4L1171.8 -393.8L1178.0 -391.2L1184.2 -388.5L1190.2 -385.8L1196.2 -383.0L1202.2 -380.2L1208.0 -377.3L1213.9 -374.3L1219.6 -371.3L1225.3 -368.3L1230.9 -365.2L1236.3 -362.0L1241.6 -358.6L1246.8 -355.1L1251.8 -351.5L1256.7 -347.8L1261.5 -344.0L1266.1 -340.1L1270.5 -336.0L1272.2 -334.4L1272.2 -62.8L1270.6 -61.1L1265.6 -56.0L1260.4 -51.1L1255.0 -46.4L1249.3 -41.8L1243.5 -37.3L1237.5 -33.0L1231.2 -28.8L1224.7 -24.8L1218.0 -20.9L1211.2 -17.2L1204.1 -13.6L1196.8 -10.3L1189.3 -7.3L1181.6 -4.4L1173.7 -1.8L1165.6 0.6L1157.3 2.8L1148.9 4.7L1140.2 6.4L1131.3 7.9L1122.2 9.2L1112.9 10.2L1103.5 11.0L1093.8 11.5L1083.9 11.9L1073.8 12.0L1064.5 11.9L1055.2 11.6L1046.1 11.1L1037.1 10.4L1028.2 9.5L1019.4 8.4L1010.7 7.1L1002.1 5.6L993.7 3.9L985.4 2.0L977.2 -0.1L969.1 -2.4L961.1 -4.9L953.2 -7.6L945.5 -10.5L937.9 -13.6L930.4 -16.9L923.1 -20.4L916.1 -24.1L909.2 -28.0L902.5 -32.0L896.0 -36.3L889.7 -40.7L883.6 -45.4L877.7 -50.2L872.0 -55.2L866.5 -60.4L861.2 -65.8L857.5 -69.9L857.5 -211.6L965.4 -211.6ZM1589.3 11.5L1579.7 10.9L1570.2 10.0L1560.8 8.9L1551.6 7.6L1542.4 6.0L1533.4 4.2L1524.5 2.1L1515.7 -0.3L1507.0 -2.8L1498.4 -5.6L1489.9 -8.7L1481.6 -12.0L1473.4 -15.6L1465.2 -19.4L1457.3 -23.4L1449.5 -27.7L1442.0 -32.3L1434.7 -37.1L1427.5 -42.1L1420.6 -47.4L1413.9 -53.0L1407.4 -58.8L1401.1 -64.8L1395.1 -71.1L1389.2 -77.7L1383.6 -84.5L1378.1 -91.5L1372.9 -98.8L1367.9 -106.4L1363.1 -114.2L1358.5 -122.2L1354.2 -130.5L1350.3 -139.1L1346.6 -147.9L1343.2 -157.0L1340.1 -166.4L1337.3 -175.9L1334.8 -185.8L1332.6 -195.9L1330.7 -206.3L1329.1 -216.9L1327.8 -227.7L1326.7 -238.9L1326.0 -250.2L1325.6 -261.9L1325.4 -273.8L1325.4 -700.0L1478.0 -700.0L1478.0 -272.8L1478.1 -267.0L1478.2 -261.3L1478.5 -255.8L1479.0 -250.3L1479.5 -245.0L1480.2 -239.8L1481.0 -234.6L1481.9 -229.6L1482.9 -224.8L1484.0 -220.0L1485.3 -215.3L1486.7 -210.8L1488.2 -206.3L1489.8 -202.0L1491.5 -197.8L1493.4 -193.7L1495.4 -189.7L1497.5 -185.9L1499.7 -182.1L1502.0 -178.5L1504.5 -175.0L1507.0 -171.7L1509.7 -168.4L1512.5 -165.3L1515.4 -162.3L1518.4 -159.5L1521.6 -156.7L1524.8 -154.1L1528.2 -151.6L1531.7 -149.3L1535.2 -147.0L1539.0 -144.9L1542.8 -142.9L1546.7 -141.0L1550.7 -139.3L1554.8 -137.7L1559.0 -136.2L1563.3 -134.9L1567.7 -133.7L1572.2 -132.6L1576.8 -131.6L1581.5 -130.8L1586.3 -130.1L1591.1 -129.5L1596.1 -129.0L1601.2 -128.7L1606.4 -128.5L1611.6 -128.4L1617.0 -128.5L1622.3 -128.7L1627.5 -129.0L1632.6 -129.5L1637.5 -130.1L1642.4 -130.8L1647.1 -131.6L1651.8 -132.6L1656.3 -133.7L1660.7 -134.9L1665.1 -136.2L1669.3 -137.7L1673.4 -139.3L1677.4 -141.0L1681.3 -142.9L1685.1 -144.9L1688.8 -147.0L1692.4 -149.3L1695.8 -151.6L1699.2 -154.1L1702.4 -156.7L1705.6 -159.5L1708.6 -162.3L1711.5 -165.3L1714.3 -168.4L1717.0 -171.7L1719.5 -175.0L1722.0 -178.5L1724.3 -182.1L1726.6 -185.9L1728.7 -189.7L1730.7 -193.7L1732.6 -197.8L1734.4 -202.0L1736.1 -206.3L1737.6 -210.8L1739.0 -215.3L1740.3 -220.0L1741.5 -224.8L1742.5 -229.6L1743.4 -234.6L1744.2 -239.8L1744.9 -245.0L1745.4 -250.3L1745.9 -255.8L1746.2 -261.3L1746.4 -267.0L1746.4 -272.8L1746.4 -585.5L1899.0 -700.0L1899.0 -273.8L1899.0 -0.0L1746.4 -0.0L1746.4 -15.8L1745.9 -15.6L1737.5 -12.0L1729.0 -8.7L1720.4 -5.6L1711.7 -2.8L1702.8 -0.3L1693.9 2.1L1684.9 4.2L1675.7 6.0L1666.5 7.6L1657.1 8.9L1647.7 10.0L1638.1 10.9L1628.5 11.5L1618.7 11.9L1608.9 12.0L1599.0 11.9ZM2550.1 -0.0L2549.0 -0.0L2548.0 -0.1L2546.9 -0.1L2545.8 -0.1L2544.8 -0.2L2543.7 -0.2L2542.7 -0.3L2541.6 -0.3L2540.5 -0.4L2539.5 -0.5L2538.4 -0.5L2537.4 -0.6L2536.3 -0.7L2535.3 -0.8L2534.2 -0.9L2533.1 -1.1L2532.1 -1.2L2531.0 -1.3L2530.0 -1.4L2528.9 -1.6L2527.9 -1.7L2526.8 -1.9L2525.8 -2.0L2524.7 -2.2L2523.7 -2.4L2522.6 -2.5L2521.6 -2.7L2520.6 -2.9L2519.5 -3.1L2518.5 -3.3L2517.4 -3.5L2516.4 -3.7L2515.4 -4.0L2514.3 -4.2L2513.3 -4.4L2512.3 -4.7L2511.2 -4.9L2510.2 -5.2L2509.2 -5.4L2508.1 -5.7L2507.1 -6.0L2506.1 -6.3L2505.1 -6.5L2504.0 -6.8L2503.0 -7.1L2502.0 -7.4L2501.0 -7.8L2500.0 -8.1L2499.0 -8.4L2498.0 -8.7L2497.0 -9.1L2496.0 -9.4L2495.0 -9.8L2494.0 -10.1L2493.0 -10.5L2492.0 -10.8L2491.0 -11.2L2490.0 -11.6L2489.0 -12.0L2488.0 -12.4L2487.0 -12.8L2486.0 -13.2L2485.1 -13.6L2484.1 -14.0L2483.1 -14.4L2482.1 -14.8L2481.2 -15.3L2480.2 -15.7L2479.2 -16.1L2478.3 -16.6L2477.3 -17.1L2476.4 -17.5L2475.4 -18.0L2474.5 -18.5L2473.5 -18.9L2472.6 -19.4L2471.6 -19.9L2470.7 -20.4L2469.8 -20.9L2468.8 -21.4L2467.9 -21.9L2467.0 -22.5L2466.1 -23.0L2465.1 -23.5L2464.2 -24.1L2463.3 -24.6L2462.4 -25.1L2461.5 -25.7L2460.6 -26.3L2459.7 -26.8L2458.8 -27.4L2457.9 -28.0L2457.0 -28.6L2456.1 -29.1L2455.3 -29.7L2454.4 -30.3L2453.5 -30.9L2452.6 -31.5L2451.8 -32.2L2450.9 -32.8L2450.1 -33.4L2449.2 -34.0L2448.4 -34.7L2447.5 -35.3L2446.7 -35.9L2445.8 -36.6L2445.0 -37.3L2444.2 -37.9L2443.3 -38.6L2442.5 -39.2L2441.7 -39.9L2440.9 -40.6L2440.1 -41.3L2439.3 -42.0L2438.5 -42.7L2437.7 -43.4L2436.9 -44.1L2436.1 -44.8L2435.3 -45.5L2434.5 -46.2L2433.7 -46.9L2433.0 -47.7L2432.2 -48.4L2431.5 -49.2L2430.7 -49.9L2429.9 -50.6L2429.2 -51.4L2428.5 -52.2L2427.7 -52.9L2427.0 -53.7L2426.2 -54.4L2425.5 -55.2L2424.8 -56.0L2424.1 -56.8L2423.4 -57.6L2422.7 -58.4L2422.0 -59.2L2421.3 -60.0L2420.6 -60.8L2419.9 -61.6L2419.2 -62.4L2418.5 -63.2L2417.9 -64.0L2417.2 -64.9L2416.6 -65.7L2415.9 -66.5L2415.2 -67.4L2414.6 -68.2L2414.0 -69.1L2413.3 -69.9L2412.7 -70.8L2412.1 -71.6L2411.5 -72.5L2410.8 -73.3L2410.2 -74.2L2409.6 -75.1L2409.0 -76.0L2408.4 -76.8L2407.9 -77.7L2407.3 -78.6L2406.7 -79.5L2406.1 -80.4L2405.6 -81.3L2405.0 -82.2L2404.4 -83.1L2403.9 -84.0L2403.4 -84.9L2402.8 -85.8L2402.3 -86.8L2401.8 -87.7L2401.2 -88.6L2400.7 -89.5L2400.2 -90.5L2399.7 -91.4L2399.2 -92.3L2398.7 -93.3L2398.2 -94.2L2397.8 -95.2L2397.3 -96.1L2396.8 -97.1L2396.4 -98.0L2395.9 -99.0L2395.5 -99.9L2395.0 -100.9L2394.6 -101.9L2394.1 -102.8L2393.7 -103.8L2393.3 -104.8L2392.9 -105.8L2392.5 -106.7L2392.1 -107.7L2391.7 -108.7L2391.3 -109.7L2390.9 -110.7L2390.5 -111.7L2390.1 -112.7L2389.8 -113.7L2389.4 -114.7L2389.1 -115.7L2388.7 -116.7L2388.4 -117.7L2388.0 -118.7L2387.7 -119.7L2387.4 -120.7L2242.4 -608.0L2238.4 -608.0L2105.3 -154.7L1952.2 -39.9L1952.2 -173.0L2114.3 -700.0L2367.3 -700.0L2583.5 -0.0L2552.2 -0.0L2551.1 -0.0ZM2736.1 -0.0L2639.1 -0.0L2583.5 -180.3L2583.5 -585.5L2736.1 -700.0ZM2789.3 -585.6L2941.9 -700.0L2941.9 -700.0L2941.9 -118.3L3242.6 -118.3L3242.6 -0.0L2789.3 -0.0ZM3493.6 11.6L3484.4 11.1L3475.4 10.4L3466.5 9.5L3457.7 8.4L3449.0 7.1L3440.5 5.6L3432.0 3.9L3423.7 2.0L3415.5 -0.1L3407.4 -2.4L3399.4 -4.9L3391.6 -7.6L3383.8 -10.5L3376.2 -13.6L3368.7 -16.9L3361.5 -20.4L3354.4 -24.1L3347.5 -28.0L3340.8 -32.0L3334.3 -36.3L3328.1 -40.7L3322.0 -45.4L3316.1 -50.2L3310.4 -55.2L3304.9 -60.4L3299.6 -65.8L3295.8 -69.9L3295.8 -211.6L3404.7 -211.6L3405.0 -208.1L3405.3 -204.6L3405.7 -201.2L3406.3 -197.8L3406.9 -194.5L3407.6 -191.3L3408.4 -188.1L3409.2 -184.9L3410.2 -181.8L3411.3 -178.8L3412.4 -175.8L3413.7 -172.9L3415.0 -170.0L3416.5 -167.2L3418.0 -164.4L3419.6 -161.7L3421.3 -159.1L3423.1 -156.5L3424.9 -154.0L3426.9 -151.5L3428.9 -149.2L3431.0 -146.9L3433.2 -144.7L3435.4 -142.5L3437.8 -140.5L3440.2 -138.5L3442.7 -136.5L3445.3 -134.7L3448.0 -132.9L3450.7 -131.2L3453.5 -129.6L3456.5 -128.0L3459.4 -126.5L3462.5 -125.1L3465.6 -123.8L3468.7 -122.6L3472.0 -121.5L3475.3 -120.5L3478.6 -119.6L3482.0 -118.8L3485.5 -118.1L3489.1 -117.5L3492.7 -117.0L3496.3 -116.5L3500.1 -116.2L3503.8 -116.0L3507.7 -115.8L3511.6 -115.8L3514.8 -115.8L3518.0 -115.9L3521.2 -116.0L3524.3 -116.3L3527.3 -116.5L3530.3 -116.9L3533.3 -117.3L3536.2 -117.7L3539.1 -118.3L3541.9 -118.8L3544.7 -119.5L3547.4 -120.2L3550.1 -121.0L3552.7 -121.8L3555.3 -122.7L3557.9 -123.6L3560.4 -124.7L3562.8 -125.7L3565.2 -126.9L3567.5 -128.1L3569.7 -129.4L3571.9 -130.7L3574.0 -132.1L3576.0 -133.6L3578.0 -135.1L3579.9 -136.7L3581.8 -138.4L3583.6 -140.1L3585.3 -141.9L3587.0 -143.8L3588.6 -145.7L3590.1 -147.7L3591.5 -149.7L3592.9 -151.8L3594.2 -154.0L3595.3 -156.3L3596.4 -158.6L3597.4 -161.0L3598.3 -163.4L3599.1 -166.0L3599.8 -168.6L3600.4 -171.2L3600.9 -174.0L3601.3 -176.8L3601.7 -179.6L3601.9 -182.5L3602.1 -185.5L3602.1 -188.6L3602.0 -191.9L3601.9 -195.1L3601.6 -198.2L3601.2 -201.3L3600.7 -204.3L3600.1 -207.3L3599.4 -210.2L3598.6 -213.0L3597.7 -215.8L3596.7 -218.5L3595.5 -221.1L3594.3 -223.7L3592.9 -226.2L3591.4 -228.7L3589.8 -231.1L3588.1 -233.4L3586.4 -235.7L3584.5 -237.9L3582.5 -240.1L3580.5 -242.3L3578.4 -244.4L3576.2 -246.5L3573.9 -248.6L3571.6 -250.6L3569.1 -252.5L3566.6 -254.5L3564.0 -256.4L3561.3 -258.2L3558.5 -260.0L3555.7 -261.8L3552.7 -263.6L3549.7 -265.3L3546.6 -266.9L3543.5 -268.6L3540.3 -270.2L3537.1 -271.8L3533.8 -273.4L3530.4 -275.0L3527.1 -276.5L3523.6 -278.1L3520.1 -279.6L3516.6 -281.1L3513.0 -282.6L3509.3 -284.0L3505.6 -285.4L3501.9 -286.9L3498.1 -288.3L3494.3 -289.6L3490.4 -291.0L3486.5 -292.4L3482.5 -293.7L3478.6 -295.1L3474.6 -296.5L3474.6 -296.5L3470.6 -297.9L3470.6 -297.9L3466.6 -299.3L3466.6 -299.3L3462.5 -300.7L3462.5 -300.7L3458.4 -302.1L3458.4 -302.1L3454.3 -303.5L3454.3 -303.5L3450.2 -304.9L3450.2 -304.9L3446.1 -306.3L3446.1 -306.3L3441.9 -307.7L3441.9 -307.7L3437.7 -309.1L3437.7 -309.1L3433.5 -310.6L3433.5 -310.6L3429.2 -312.0L3429.2 -312.0L3429.2 -312.0L3419.0 -315.6L3409.0 -319.3L3399.4 -323.1L3390.0 -327.1L3381.0 -331.3L3372.2 -335.6L3363.7 -340.0L3355.6 -344.6L3347.7 -349.3L3340.1 -354.2L3332.8 -359.2L3325.8 -364.3L3319.1 -369.6L3312.7 -375.0L3306.6 -380.6L3300.8 -386.3L3295.8 -391.7L3295.8 -630.3L3299.9 -635.1L3304.5 -640.2L3309.3 -645.1L3314.3 -649.8L3319.4 -654.3L3324.8 -658.7L3330.3 -663.0L3336.0 -667.0L3341.9 -670.9L3348.0 -674.7L3354.3 -678.3L3360.8 -681.7L3367.4 -684.9L3374.2 -688.0L3381.2 -690.9L3388.3 -693.6L3395.5 -696.2L3402.8 -698.5L3410.3 -700.7L3417.8 -702.6L3425.4 -704.4L3433.2 -706.0L3441.1 -707.4L3449.0 -708.6L3457.1 -709.7L3465.3 -710.5L3473.6 -711.2L3482.1 -711.6L3490.6 -711.9L3499.2 -712.0L3508.2 -711.9L3517.1 -711.6L3525.8 -711.1L3534.4 -710.5L3542.9 -709.6L3551.2 -708.5L3559.3 -707.3L3567.4 -705.8L3575.3 -704.2L3583.1 -702.4L3590.7 -700.4L3598.2 -698.2L3605.5 -695.8L3612.7 -693.2L3619.8 -690.4L3626.8 -687.4L3633.6 -684.2L3640.2 -680.9L3646.6 -677.4L3652.9 -673.7L3658.9 -669.9L3664.9 -665.9L3670.6 -661.7L3676.1 -657.4L3681.5 -652.9L3686.7 -648.2L3691.7 -643.3L3696.5 -638.3L3701.2 -633.1L3705.7 -627.8L3710.0 -622.2L3714.1 -616.5L3718.1 -610.7L3721.7 -604.7L3725.2 -598.5L3728.4 -592.2L3731.4 -585.8L3734.2 -579.2L3736.7 -572.5L3739.0 -565.6L3741.0 -558.6L3742.8 -551.4L3744.4 -544.1L3745.8 -536.7L3746.9 -529.1L3747.8 -521.3L3748.4 -513.4L3748.8 -505.4L3584.4 -505.4L3584.2 -508.3L3584.0 -511.2L3583.7 -514.0L3583.3 -516.8L3582.8 -519.6L3582.2 -522.3L3581.6 -524.9L3580.8 -527.5L3580.0 -530.1L3579.1 -532.6L3578.1 -535.1L3577.1 -537.5L3575.9 -539.9L3574.6 -542.2L3573.3 -544.5L3571.9 -546.7L3570.4 -548.9L3568.9 -551.0L3567.3 -553.1L3565.6 -555.1L3563.9 -557.1L3562.1 -559.0L3560.3 -560.8L3558.4 -562.6L3556.4 -564.3L3554.4 -566.0L3552.3 -567.6L3550.2 -569.1L3548.0 -570.6L3545.7 -572.0L3543.4 -573.4L3541.1 -574.7L3538.6 -575.9L3536.2 -577.1L3533.7 -578.1L3531.1 -579.1L3528.5 -580.0L3525.9 -580.9L3523.2 -581.6L3520.5 -582.3L3517.7 -582.9L3514.9 -583.4L3512.0 -583.9L3509.1 -584.2L3506.1 -584.5L3503.1 -584.7L3500.1 -584.8L3497.0 -584.9L3494.2 -584.9L3491.5 -584.9L3488.8 -584.9L3486.2 -584.8L3483.6 -584.6L3481.0 -584.3L3478.4 -584.0L3475.8 -583.7L3473.3 -583.3L3470.8 -582.8L3468.4 -582.2L3465.9 -581.6L3463.5 -581.0L3461.2 -580.2L3458.8 -579.4L3456.5 -578.6L3454.2 -577.7L3452.0 -576.7L3449.8 -575.7L3447.7 -574.6L3445.7 -573.5L3443.7 -572.2L3441.8 -571.0L3439.9 -569.7L3438.1 -568.3L3436.3 -566.8L3434.6 -565.4L3433.0 -563.8L3431.4 -562.2L3429.9 -560.5L3428.5 -558.8L3427.0 -557.0L3425.7 -555.1L3424.5 -553.2L3423.3 -551.2L3422.2 -549.2L3421.3 -547.1L3420.4 -544.9L3419.5 -542.7L3418.8 -540.3L3418.2 -538.0L3417.6 -535.5L3417.1 -533.0L3416.8 -530.4L3416.5 -527.8L3416.2 -525.1L3416.1 -522.3L3416.1 -519.4L3416.1 -516.7L3416.2 -514.1L3416.5 -511.5L3416.8 -508.9L3417.1 -506.4L3417.6 -504.0L3418.2 -501.5L3418.8 -499.2L3419.6 -496.8L3420.4 -494.5L3421.3 -492.3L3422.3 -490.1L3423.3 -488.0L3424.5 -485.9L3425.8 -483.8L3427.1 -481.8L3428.5 -479.8L3430.0 -477.9L3431.5 -476.0L3433.2 -474.1L3434.9 -472.3L3436.6 -470.5L3438.5 -468.8L3440.4 -467.0L3442.3 -465.3L3444.4 -463.7L3446.5 -462.0L3448.7 -460.4L3450.9 -458.9L3453.3 -457.3L3455.6 -455.8L3458.1 -454.4L3460.6 -452.9L3463.2 -451.5L3465.9 -450.1L3468.6 -448.7L3471.3 -447.3L3474.1 -445.9L3477.0 -444.5L3479.9 -443.1L3482.9 -441.7L3485.9 -440.3L3489.0 -439.0L3492.2 -437.6L3495.4 -436.3L3498.6 -434.9L3502.0 -433.6L3505.3 -432.3L3508.8 -430.9L3512.2 -429.6L3515.7 -428.3L3519.3 -427.0L3522.9 -425.6L3526.5 -424.3L3530.2 -423.0L3533.9 -421.6L3537.6 -420.3L3541.4 -418.9L3545.3 -417.6L3549.1 -416.2L3553.0 -414.9L3557.0 -413.5L3561.0 -412.2L3565.0 -410.8L3571.7 -408.5L3578.2 -406.2L3584.8 -403.8L3591.2 -401.4L3597.6 -398.9L3603.9 -396.4L3610.2 -393.8L3616.4 -391.2L3622.5 -388.5L3628.6 -385.8L3634.6 -383.0L3640.5 -380.2L3646.4 -377.3L3652.2 -374.3L3657.9 -371.3L3663.6 -368.3L3669.2 -365.2L3674.7 -362.0L3680.0 -358.6L3685.1 -355.1L3690.2 -351.5L3695.0 -347.8L3699.8 -344.0L3704.4 -340.1L3708.9 -336.0L3713.2 -331.9L3717.4 -327.6L3721.5 -323.2L3725.4 -318.7L3729.2 -314.1L3732.8 -309.3L3736.3 -304.4L3739.6 -299.4L3742.7 -294.2L3745.6 -288.8L3748.3 -283.2L3750.8 -277.3L3753.0 -271.3L3755.1 -265.1L3756.9 -258.7L3758.5 -252.1L3759.9 -245.3L3761.1 -238.3L3762.0 -231.0L3762.8 -223.6L3763.3 -216.0L3763.6 -208.2L3763.7 -200.2L3763.6 -193.1L3763.3 -186.0L3762.7 -179.0L3761.9 -172.1L3760.9 -165.3L3759.6 -158.5L3758.2 -151.8L3756.5 -145.1L3754.5 -138.6L3752.4 -132.1L3750.0 -125.7L3747.3 -119.3L3744.5 -113.0L3741.4 -106.8L3738.1 -100.7L3734.6 -94.6L3730.8 -88.7L3726.9 -82.9L3722.7 -77.2L3718.3 -71.7L3713.7 -66.3L3709.0 -61.1L3703.9 -56.0L3698.7 -51.1L3693.3 -46.4L3687.7 -41.8L3681.8 -37.3L3675.8 -33.0L3669.5 -28.8L3663.1 -24.8L3656.4 -20.9L3649.5 -17.2L3642.4 -13.6L3635.1 -10.3L3627.6 -7.3L3619.9 -4.4L3612.0 -1.8L3604.0 0.6L3595.7 2.8L3587.2 4.7L3578.5 6.4L3569.6 7.9L3560.6 9.2L3551.3 10.2L3541.8 11.0L3532.1 11.5L3522.3 11.9L3512.2 12.0L3502.8 11.9Z"/></symbol>
+  <symbol id="pijl" viewBox="0 0 16 16"><path d="M1 7h10.2L7.6 3.4 9 2l6 6-6 6-1.4-1.4L11.2 9H1z"/></symbol>
+</defs></svg>
+
+<canvas id="veld" aria-hidden="true"></canvas>
+
+<header class="balk"><nav aria-label="Hoofdmenu">
+  <svg class="wm" viewBox="0 0 3763.74 724" role="img" aria-label="VISUAILS"><use href="#wm" width="3763.74" height="724"/></svg>
+  <ul><li><a href="#maken">Wat we maken</a></li><li><a href="#hoe">Hoe het werkt</a></li><li><a href="#maken">Prijzen</a></li><li><a href="#keuzes">Jouw keuze</a></li></ul>
+  <a class="knop mint" href="#slot">Bestellen <svg aria-hidden="true"><use href="#pijl"/></svg></a>
+</nav></header>
+
+<main class="inhoud">
+  <section class="rij r held">
+    <div class="tekst">
+      <span class="mono">Voor kledingmerken</span>
+      <h1 class="k1" style="margin-top:16px">Jij maakt de kleding. Wij maken de beelden.</h1>
+      <p class="zin">Stuur een paar foto’s van je product. <b>Je krijgt productfoto’s, lifestyle en video terug</b>, klaar voor je winkel en je advertenties.</p>
+      <div class="knoppen"><a class="knop mint" href="#slot">Start een bestelling <svg aria-hidden="true"><use href="#pijl"/></svg></a><a class="knop lijn" href="#proef">Probeer één product voor €1</a></div>
+    </div>
+    <figure class="foto"><img src="b/held.webp" alt="De NON/STD-hoodie op model"><figcaption class="mono">NON/STD · op model</figcaption></figure>
+  </section>
+
+  <section class="rij l" id="maken">
+    <figure class="foto"><img src="b/life.webp" alt="Lifestylebeeld met een witte jas op een betonnen dak" style="aspect-ratio:4/3"><figcaption class="mono">Phone-made · lifestyle</figcaption></figure>
+    <div class="tekst">
+      <span class="mono">Wat we maken</span>
+      <h2 class="k2" style="margin-top:14px">Elk beeld voor je merk.</h2>
+      <ul class="lijstje">
+        <li><span>Productfoto’s</span><span>vanaf €39 per product</span></li>
+        <li><span>Lifestyle</span><span>vanaf €49 per product</span></li>
+        <li><span>Video</span><span>op aanvraag</span></li>
+      </ul>
+      <p style="margin-top:22px"><a class="link" href="#maken">Bekijk alle diensten</a></p>
+    </div>
+  </section>
+
+  <section class="rij r kaartrij" id="hoe">
+    <div class="tekst">
+      <span class="mono">Hoe het werkt</span>
+      <h2 class="k2" style="margin-top:14px">Van foto tot campagne.</h2>
+      <p class="zin">Vaak binnen een dag, soms een paar dagen.</p>
+      <p style="margin-top:22px"><a class="link" href="#hoe">Meer over hoe het werkt</a></p>
+    </div>
+    <div class="kaart" data-kaart>
+      <div class="stappen" data-tekstvlak>
+        <div class="stap"><span class="nr">01</span><div><h3>Jij stuurt</h3><p>Een paar foto’s van je product, met je telefoon.</p></div></div>
+        <div class="stap"><span class="nr">02</span><div><h3>Wij maken</h3><p>Productfoto’s, lifestyle en video, in de look die je kiest.</p></div></div>
+        <div class="stap"><span class="nr">03</span><div><h3>Jij keurt goed</h3><p>Je ziet elk beeld voordat het van jou is.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rij l kaartrij" id="proef">
+    <div class="kaart" data-kaart>
+      <div class="proefblok" data-tekstvlak>
+        <span class="mono">Proef</span>
+        <h2 class="k2" style="margin-top:12px;color:#fff">Eerst zien? Eén product voor</h2>
+        <span class="groot">€1</span>
+        <p>Gemaakt van jouw eigen foto · één per bedrijf.</p>
+        <div class="knoppen"><a class="knop mint" href="#proef">Probeer voor €1 <svg aria-hidden="true"><use href="#pijl"/></svg></a></div>
+      </div>
+    </div>
+    <figure class="foto smal"><img src="b/tel.webp" alt="De hoodie, met de telefoon op de grond gefotografeerd" style="aspect-ratio:3/4"><figcaption class="mono">Jouw foto is genoeg</figcaption></figure>
+  </section>
+
+  <section class="rij r" id="slot" style="min-height:560px">
+    <div class="tekst">
+      <span class="mono">Beginnen</span>
+      <h2 class="k2" style="margin-top:14px">Klaar voor je beelden?</h2>
+      <p class="zin">Stuur een paar foto’s van je product. Wij doen de rest.</p>
+      <div class="knoppen"><a class="knop mint" href="#slot">Start een bestelling <svg aria-hidden="true"><use href="#pijl"/></svg></a></div>
+    </div>
+    <div class="kaart klein" data-kaart>
+      <svg class="wmgroot" viewBox="0 0 3763.74 724" role="img" aria-label="VISUAILS" data-tekstvlak><use href="#wm" width="3763.74" height="724"/></svg>
+    </div>
+  </section>
+</main>
+<footer class="voet"><span>VISUAILS · Teststraat 1, 1234 AB Teststad · KVK 12345678</span><span>Proef · lijst 104</span></footer>
+
+<section class="lijst" id="keuzes"><div class="in">
+  <span class="mono">Lijst 104 · 14 november 2026</span>
+  <h2>Het veld van de kaarten</h2>
+  <p class="uitleg">De site is wit, met zwarte tekst en één mint knop. Alleen drie kaarten dragen kleur: Hoe het werkt, de €1-kaart en het slot.</p>
+  <p class="uitleg">Ze zijn uitgeknipt uit één grote kaart, zo breed als het scherm en zo hoog als de pagina. Op die grote kaart staan veel verschillende kenmerken door elkaar: een band licht die slingert en opkomt en verdwijnt, lijnen langs de snede van het merk, gloeden, horizons en brede zachte vlakken. Elke kaart toont zijn eigen stuk, dus geen twee kaarten zijn gelijk. Omdat het één kaart is, lopen ze in elkaar over.</p>
+  <p class="uitleg">Elke kaart heeft minstens één lijn van zichzelf. Waar een lijn de rand raakt, loopt hij een klein stukje door in het wit, als een ader: een glanzende streep met een hele lichte mint gloed, die op zijn plek blijft. Niets beweegt letterlijk: de lijnen en aderen staan stil. Door elke harde lijn trekt rustig een elektrische puls van licht, van donker mint heel geleidelijk naar bijna wit en weer terug, elke lijn op zijn eigen moment. De puls loopt door in de ader en stopt aan zijn uiteinde. De ader loopt als geul tot 145 px de kaart in: wit aan de rand, en hoe dieper in de kaart hoe dieper en donkerder, met een felle rand en een schaduw ernaast. De puls licht de hele ader op, ook het diepe stuk. Elke kaart heeft ook meer kleurverschil: diep zwart in de ene hoek en een zacht groen licht in de andere, alleen in zwart en groen. De kaarten zijn nu vooral zwart, met dunne, felle mint strepen die zacht gloeien in het donker. Waar een streep de rand raakt, loopt hij door als ader: twee dunne evenwijdige lijnen (de randen van de streep), met de binnenkant al een stukje in de kaart wit, die over 60 px heel geleidelijk wegvagen in het wit. Alleen waar een streep de rand echt kruist, niet waar hij er langs loopt. De voet is zwart. Onder tekst gaan de dunne lijnen weg en blijft het zachte licht half. Zo haalt wit overal minstens 11,4 : 1 (gemeten over de hele adem, op 1440 en 390 px).</p>
+  <figure style="margin:22px 0 0;display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap"><img src="b/groot.png" alt="De grote kaart van de hele voorpagina, met de drie uitgeknipte kaarten omlijnd" style="width:220px;border-radius:8px;box-shadow:0 0 0 1px var(--lijn)"><figcaption class="uitleg" style="max-width:40ch;font-size:14px;margin:0">De grote kaart van deze voorpagina, verkleind. De drie omlijnde rechthoeken zijn de kaarten. Met <b>Hele kaart</b> rechtsonder zie je hem op ware grootte, terwijl je scrolt.</figcaption></figure>
+  <div class="trap"><div style="background:#090D0B;color:#FFFFFF"><b>Zwart</b>#090D0B<br>site · tekst, balk, logo</div><div style="background:#FFFFFF;color:#090D0B"><b>Wit</b>#FFFFFF<br>site · de grond</div><div style="background:#3DFFB0;color:#090D0B"><b>Mint</b>#3DFFB0<br>site · bestellen; kaart · het licht</div><div style="background:#01140B;color:#FFFFFF"><b>Mint 950</b>#01140B<br>kaart · de diepste nacht</div><div style="background:#002416;color:#FFFFFF"><b>Mint 900</b>#002416<br>kaart · de grond</div><div style="background:#023D29;color:#FFFFFF"><b>Mint 800</b>#023D29<br>kaart · nevel</div><div style="background:#016645;color:#FFFFFF"><b>Mint 700</b>#016645<br>kaart · nevel; logo op wit</div><div style="background:#11976A;color:#090D0B"><b>Mint 600</b>#11976A<br>kaart · de grond na de druk</div><div style="background:#9DF5D2;color:#090D0B"><b>Mint 300</b>#9DF5D2<br>kaart · sterren, kleine tekst</div><div style="background:#E4FCEF;color:#090D0B"><b>Mint 100</b>#E4FCEF<br>kaart · de hoogste ster</div></div>
+  <p class="uitleg" style="font-size:14px">Gemeten: zwart op wit 19,6 : 1 · zwart op mint 15,0 : 1 · wit op mint 950 19,0 : 1 · mint 300 op mint 950 13,8 : 1 · mint 700 op wit 7,0 : 1 (alleen het logo op wit, als het mint moet zijn).</p>
+  <div class="vraag"><h3>Zwart, wit en mint als de enige drie kleuren van de site, en blauw uur weg. Welk zwart?</h3><p class="adv">Mijn advies: <b>ja</b>. Inkt schuift naar zwart, maar niet pikzwart: #090D0B (lichtheid 15 %, was 17 %), met een zweem van de groene kleurtoon van de mint in plaats van blauw. Zo komen zwart en mint uit één familie. b is nog een stap donkerder (#060807), c is het oude inkt ter vergelijking.</p><div class="opties"><label><input type="radio" name="kleuren" value="ja"> a · #090D0B <small>advies</small></label><label><input type="radio" name="kleuren" value="donker"> b · #060807, nog iets zwarter</label><label><input type="radio" name="kleuren" value="nee"> c · Het oude inkt #0B0F17</label></div><textarea id="n-kleuren" aria-label="Notitie bij: Zwart, wit en mint als de enige drie kleuren van de site, en blauw uur weg. Welk zwart?" placeholder="Notitie (mag leeg)"></textarea></div><div class="vraag"><h3>De mint-trap voor de kaarten (950 tot 100)</h3><p class="adv">Mijn advies: <b>goed</b>. Alle tinten hebben dezelfde kleurtoon (163°) en lopen alleen in licht en verzadiging op, dus ze sluiten op elkaar aan. 400 en 200 heb ik weggelaten, omdat ze naast 500 en 300 niets toevoegen.</p><div class="opties"><label><input type="radio" name="trap" value="goed"> Goed <small>advies</small></label><label><input type="radio" name="trap" value="beter"> Kan beter</label><label><input type="radio" name="trap" value="niet"> Niet doen</label></div><textarea id="n-trap" aria-label="Notitie bij: De mint-trap voor de kaarten (950 tot 100)" placeholder="Notitie (mag leeg)"></textarea></div><div class="vraag"><h3>Het ademen en de puls</h3><p class="adv">Mijn advies: <b>a</b>. De lijnen staan stil; de puls gaat 107 px per seconde en komt per lijn elke 14 seconden terug, de gloed ademt in 16 seconden. b doet de gloed in 24 seconden. c staat helemaal stil.</p><div class="opties"><label><input type="radio" name="lus" value="a"> a · 16 s <small>advies</small></label><label><input type="radio" name="lus" value="b"> b · 24 s, nog rustiger</label><label><input type="radio" name="lus" value="c"> c · Stil</label></div><textarea id="n-lus" aria-label="Notitie bij: Het ademen en de puls" placeholder="Notitie (mag leeg)"></textarea></div><div class="vraag"><h3>Het plan van aanpak (in je map: kladblok/PLAN-KAARTVELD-100.md)</h3><p class="adv">Eerst de kleuren en het logo, dan de ruimtekaart als één script, daarna de voorpagina in het links-rechtsprincipe en dan de rest van de pagina’s. Bij elke stap een lijst.</p><div class="opties"><label><input type="radio" name="plan" value="goed"> Goed, begin <small>advies</small></label><label><input type="radio" name="plan" value="beter"> Kan beter</label><label><input type="radio" name="plan" value="later"> Later</label></div><textarea id="n-plan" aria-label="Notitie bij: Het plan van aanpak (in je map: kladblok/PLAN-KAARTVELD-100.md)" placeholder="Notitie (mag leeg)"></textarea></div>
+  <label class="mono" for="notitie" style="display:block;margin-top:22px">Algemene notitie</label>
+  <textarea id="notitie" placeholder="Wat moet anders?"></textarea>
+  <div class="bewaar"><button type="button" class="knop mint" id="bewaar">Bewaar mijn keuze</button><span id="stand" role="status"></span></div>
+</div></section>
+
+<div class="paneel" role="group" aria-label="Proef">
+  <button type="button" id="heel" aria-pressed="false">Hele kaart</button>
+  <button type="button" id="rust" aria-pressed="false">Pauze</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+   HET KAARTVELD — proef voor levering 100 (14 november 2026, lijst 104)
+   Lucas: "een enorme kaart … en daar meerdere kaarten uit snijden" (01:59); "Deze achtergrond bedoel ik als space, niet
+   letterlijk … Gewoon een rustig gevoel, en alleen voor de kaarten hier en daar" (02:12); "de kaarten zijn los van elkaar
+   en ze lopen, volledig los van elkaar in elkaar over" (02:14); "Nee ik wil niet dat elke achtergrond dezelfde kenmerken
+   heeft, daarom wou ik dat je een grote kaart maakt met die kenmerken en daaruit allemaal kleine kaarten knipt" (02:33).
+   HET IDEE: één grote kaart zo breed als het scherm en zo hoog als de pagina, met veel verschillende kenmerken door elkaar.
+   Elke kaart op de site is een los venster op zijn eigen stuk van die grote kaart: de ene kaart heeft de band, de volgende
+   een gloed, een horizon of twee lijnen langs de snede. Omdat het één kaart is, lopen ze in elkaar over.
+   DE KENMERKEN (het gevoel van de logo-animatie, 04:40; geen sterren, geen bolletjes):
+     A de grond: zwart #090D0B met brede vlakken van mint 950, 900 en 800, een ruim groen vlak (800 naar 700) en diep zwart
+       ertegenover, en per kaart een zacht licht in een hoek weg van de tekst (Lucas, 04:28: meer kleurverschil);
+     B de band: één brede band licht die in een eigen ritme over de pagina slingert, met een lichte en een donkere kant;
+       hij komt op en verdwijnt (hij is niet overal even sterk), dus niet elke kaart heeft hem;
+     C de snede: zachte lijnen langs 53,13° (de hoek van het merk), om de ~1600 px, in stukken;
+     D de gloed: zachte vlekken van mint 500/600, één per vak van 800 px (niet in elk vak), elk met een eigen maat;
+     E de horizon: hier en daar een licht gebogen lijn van mint 300 met lichter erboven en donkerder eronder;
+     F korrel, grof, zoals in de logo-animatie.
+   Het licht (B tot E) dimt onder tekst ([data-tekstvlak]), zodat wit erop goed leesbaar blijft.
+   HET ADEMEN (Lucas, 04:27, 05:26 en 05:29): niets beweegt letterlijk. De lijnen en de aderen staan stil; alleen het licht
+   ademt erin, super traag en zacht: in één adem van 16 s worden ze lichter en weer donkerder, en één lange, zachte golf
+   van licht trekt door ze heen. De gloeden en het groene licht ademen mee.
+   Bij "minder beweging" staat alles stil.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var canvas = document.getElementById('veld');
+  var gl = canvas && (canvas.getContext('webgl', { antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: true }) || canvas.getContext('experimental-webgl'));
+  if (!gl) { document.documentElement.classList.add('geen-gl'); return; }
+  var MAX = 8;
+  var VS = 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0., 1.); }';
+  var FS = [
+    'precision highp float;',
+    'uniform vec2 uRes; uniform float uScroll; uniform float uTijd; uniform float uDpr; uniform float uHeel; uniform float uLus; uniform float uBreed; uniform vec2 uVerschuif;',
+    'uniform vec4 uKaart[' + MAX + ']; uniform int uN; uniform vec4 uTekst[' + MAX + ']; uniform int uNT;',
+    'const vec3 ZW = vec3(0.035,0.051,0.043);',            /* zwart #090D0B */
+    'const vec3 M950 = vec3(0.004,0.078,0.043);',          /* #01140B */
+    'const vec3 M900 = vec3(0.0,0.141,0.086);',            /* #002416 */
+    'const vec3 M800 = vec3(0.008,0.239,0.161);',          /* #023D29 */
+    'const vec3 M700 = vec3(0.004,0.4,0.271);',            /* #016645 */
+    'const vec3 M600 = vec3(0.067,0.592,0.416);',          /* #11976A */
+    'const vec3 M500 = vec3(0.239,1.0,0.69);',             /* #3DFFB0 */
+    'const vec3 M300 = vec3(0.616,0.961,0.824);',          /* #9DF5D2 */
+    'const vec3 M100 = vec3(0.894,0.988,0.937);',          /* #E4FCEF */
+    'float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f); return mix(mix(h(i), h(i + vec2(1., 0.)), f.x), mix(h(i + vec2(0., 1.)), h(i + vec2(1., 1.)), f.x), f.y); }',
+    'float doos(vec2 p, vec4 r, float rad){ vec2 c = r.xy + r.zw*.5; vec2 q = abs(p - c) - r.zw*.5 + rad; return length(max(q, 0.)) + min(max(q.x, q.y), 0.) - rad; }',
+    'float vlek(vec2 p, vec2 c, float r){ float d = length(p - c)/r; return exp(-d*d*2.2); }',
+    'float lijn(float d, float b){ return exp(-pow(d/b, 2.)); }',
+    /* de eigen lijn van kaart i (elke kaart minstens één): een brede, zachte vouw van licht zoals in de logo-animatie,
+       licht gebogen, langs 53,13° of 126,87° (om en om), door het rechterdeel van de kaart (weg van de tekst). Hij blijft
+       op zijn plek; alleen zijn licht ademt (golf staat op 0, dus de staande golf doet niets meer).
+       x = de glanzende kern, y = de gloed eromheen, z = de schaduwkant */
+    'vec3 kaartLijn(vec2 q, int i, vec4 r, float sm, float golf){',
+    '  float fi = float(i); vec2 c0 = r.xy + r.zw*vec2(.74 + .16*(h(vec2(fi, 3.)) - .5), .5 + .3*(h(vec2(fi, 7.)) - .5));',
+    '  vec2 dir = mod(fi, 2.) < .5 ? vec2(.6, .8) : vec2(-.6, .8); vec2 nrm = vec2(-dir.y, dir.x);',
+    '  vec2 v = q - c0; float langs = dot(v, dir);',
+    '  float boog = (h(vec2(fi, 5.)) - .5) * .0011;',
+    '  float dl = dot(v, nrm) + boog*langs*langs + 5.*sin(langs/170. + fi*1.7)*golf;',
+    '  float amp = exp(-max(doos(q, r, 18.), 0.)/90.) * smoothstep(1500., 250., abs(langs));',
+    '  return vec3(lijn(dl, 2.2*sm), lijn(dl, 30.*sm), lijn(dl, 110.*sm)) * amp; }',
+    /* voor de ader: de afstand in px tot de lijn van kaart i, en hoe sterk hij daar is */
+    /* DE PULS (Lucas, 06:06): een elektrische puls van licht trekt rustig door elke harde lijn: van donker (mint 700/600) heel
+       geleidelijk naar bijna wit en weer terug. Elke lijn heeft zijn eigen moment, dus nooit allemaal tegelijk. De puls loopt
+       door in de ader en stopt aan zijn uiteinde, buiten de kaart. Hij gaat 107 px per seconde en komt elke 14 s terug. */
+    'float puls(float a, float fase){ float s = fract(a/1500. - uTijd/14. + fase); return exp(-pow((s - .5)*3.4, 2.)); }',
+    'vec3 kern(float pl){ return mix(mix(M700, M600, .6), mix(M100, vec3(1.), .35), pl); }',
+    'vec3 kaartDl(vec2 q, int i, vec4 r, float golf){',
+    '  float fi = float(i); vec2 c0 = r.xy + r.zw*vec2(.74 + .16*(h(vec2(fi, 3.)) - .5), .5 + .3*(h(vec2(fi, 7.)) - .5));',
+    '  vec2 dir = mod(fi, 2.) < .5 ? vec2(.6, .8) : vec2(-.6, .8); vec2 nrm = vec2(-dir.y, dir.x);',
+    '  vec2 v = q - c0; float langs = dot(v, dir);',
+    '  float boog = (h(vec2(fi, 5.)) - .5) * .0011;',
+    '  float dl = dot(v, nrm) + boog*langs*langs + 5.*sin(langs/170. + fi*1.7)*golf;',
+    '  float amp = exp(-max(doos(q, r, 18.), 0.)/90.) * smoothstep(1500., 250., abs(langs));',
+    '  return vec3(dl, amp, langs); }',
+    /* voor de ader: welke lijn is bij q het dichtstbij (de afstand in px) en hoe sterk is hij daar */
+    'float W;',
+    'vec4 naast(vec2 q, float golf){',
+    '  vec2 p = q + uVerschuif; vec2 pz = p;',
+    '  float bdl = 1e4, bs = 0., ba = 0., bf = 0.; float sc;',
+    '  float by = pz.y; float bx = W*(.5 + .44*sin(by/950. + .7)) + W*.1*sin(by/430. + 1.3) + 6.*sin(by/210.)*golf;',
+    '  float bx2 = W*(.5 + .44*sin((by + 2.)/950. + .7)) + W*.1*sin((by + 2.)/430. + 1.3) + 6.*sin((by + 2.)/210.)*golf;',
+    '  float sdA = (p.x - bx) / sqrt(1. + pow((bx2 - bx)/2., 2.)); float stA = smoothstep(.22, .6, vn(vec2(3.7, by/1500.)));',
+    '  sc = stA*lijn(sdA, 40.); if (sc > bs){ bs = sc; bdl = sdA; ba = by; bf = .13; }',
+    '  float usA = dot(pz, vec2(.6, .8)), vsA = dot(pz, vec2(-.8, .6)); float celA = floor(usA/1600.); float hsA = h(vec2(celA, 4.2));',
+    '  if (hsA > .2){ float dsA = usA - (celA*1600. + 300. + hsA*1000.) + 4.*sin(vsA/190.)*golf; float stuk = smoothstep(.35, .7, vn(vec2(vsA/1100., celA*3.1))); sc = stuk*lijn(dsA, 40.); if (sc > bs){ bs = sc; bdl = dsA; ba = vsA; bf = h(vec2(celA, 9.1)); } }',
+    '  for (int j = -1; j <= 1; j++){ float hc = floor(pz.y/1300.) + float(j); float hh = h(vec2(hc, 8.8));',
+    '    if (hh > .35){ float hy = hc*1300. + 250. + h(vec2(hc, 2.2))*800. + 70.*sin(p.x/W*3.1416 + hh*6.) + 5.*sin(p.x/230. + hh*9.)*golf; float lang = smoothstep(.25, .65, vn(vec2(p.x/900., hc*5.)));',
+    '    sc = lang*lijn(pz.y - hy, 40.); if (sc > bs){ bs = sc; bdl = pz.y - hy; ba = p.x; bf = h(vec2(hc, 3.3)); } } }',
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; vec3 kd = kaartDl(q, i, uKaart[i], golf); sc = kd.y*lijn(kd.x, 40.); if (sc > bs){ bs = sc; bdl = kd.x; ba = abs(kd.z); bf = h(vec2(float(i), 11.)); } }',
+    '  return vec4(bdl, bs, ba, bf); }',
+    'float dmin(vec2 q){ float d = 1e5; for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; d = min(d, doos(q, uKaart[i], 18.)); } return d; }',
+    'void main(){',
+    '  vec2 f = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uDpr;',
+    '  vec2 q = vec2(f.x, f.y + uScroll);',                     /* de plek op de pagina */
+    '  float d = 1e5;',
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; d = min(d, doos(q, uKaart[i], 18.)); }',
+    '  if (uHeel < .5 && d > 130.){ gl_FragColor = vec4(1.); return; }',
+    '  vec2 p = q + uVerschuif;',                               /* de plek op de grote kaart */
+    '  W = uBreed;',
+    /* het ademen: niets verschuift. Alles wordt traag breder en feller en weer smaller (0 → 1 → 0, als een zachte cosinus),
+       en de lijnen golven op hun plek met een staande golf (hun midden en hun uiteinden blijven staan) */
+    '  float T = uLus, u = fract(uTijd / T);',
+    '  float adem = .5 - .5*cos(u*6.2832);',
+    '  float golf = 0.;',                                                            /* niets beweegt letterlijk (Lucas, 05:26) */
+    '  float lg = .5 + .5*sin(dot(q, vec2(.6, .8))/340. - u*6.2832);',             /* een golf van licht die door de lijnen trekt; de lijnen zelf staan stil */
+    '  float sm = 1., fel = (.74 + .26*adem) * (.86 + .28*lg);',
+    '  float fn = smoothstep(.62, 1.12, fel);',                                       /* 0 = de donkere kant van de adem, 1 = de lichte */
+    '  vec2 pz = p;',
+    /* DE ADEREN (Lucas, 03:35, 03:47 en 04:27): waar een lijn de rand raakt, steekt hij een klein stukje uit in het wit. Geen
+       laserstraal: de ader is een stukje van de kaart zelf dat doorloopt, dus hij gaat zonder naad over (Lucas, 04:37): bij de
+       rand heeft hij precies de kleur van de kaart, en naar zijn punt toe loopt hij heel zacht van groen naar zwart
+       (04:35). Zijn binnenkant is glans (04:32). Hij blijft op één plek: hij ademt (iets langer, dan weer korter) en zijn
+       buitenranden golven op hun plek, met bewegingsonscherpte (04:35). */
+    '  float vm = 0., vx = 0., vg = 0., hol = 0., vpl = 0., rail = 0., schaduw = 0., diep = 0.;',
+    '  if (uHeel < .5 && d > -150.){',
+    '    float reik = 60. + 12.*adem;',
+    '    float x = clamp(d/reik, 0., 1.);',
+    /* welke lijn is hier het dichtstbij: de afstand in px en de sterkte van die lijn */
+    '    vec4 nb = naast(q, golf); float bdl = nb.x, bs = nb.y; vpl = puls(nb.z, nb.w);',
+    /* alleen waar een lijn de rand echt kruist, niet waar hij er vlak langs loopt */
+    '    vec2 nn = normalize(vec2(dmin(q + vec2(1., 0.)) - dmin(q - vec2(1., 0.)), dmin(q + vec2(0., 1.)) - dmin(q - vec2(0., 1.))) + 1e-5);',
+    '    float dd = abs(naast(q + nn*2., golf).x - bdl) / 2.;',
+    '    float kruis = smoothstep(.97, .86, dd);',
+    '    float sterk = smoothstep(.12, .5, bs / max(lijn(bdl, 40.), 1e-4));',     /* hoe sterk de lijn is waar hij de rand raakt */
+    /* HET EINDE (Lucas, 04:45 en 04:49): de ader loopt gewoon door in de lijn van zijn streep, even dik, en wordt buiten de
+       kaart twee dunne evenwijdige lijnen (de randen van de streep, de binnenkant wit); hij eindigt niet in een punt maar
+       stopt als die twee lijnen en trekt kort en zacht weg in het wit. De randen ademen en golven op hun plek, met
+       bewegingsonscherpte (drie momenten gemiddeld). */
+    '    float vel = abs(cos(u*6.2832*2.));',
+    '    float ph = sin(dot(q, vec2(.045, .033)) + 1.3);',
+    '    float ro0 = 2.7 * sm;',                                                    /* de halve breedte, buitenkant */
+    '    float ri = 1.5 * sm * smoothstep(-145., -20., d);',                       /* de geul loopt tot 145 px de kaart in (Lucas, 06:07 en 06:29) */
+    '    diep = smoothstep(-4., -140., d);',                                         /* 0 aan de rand, 1 diep in de kaart */
+    '    float ra = ro0, dr = 0.;',                                                /* de vorm staat stil */
+    '    float ab = abs(bdl);',
+    '    float buitenk = (smoothstep(ra - dr + .7, ra - dr - .7, ab) + smoothstep(ra + .7, ra - .7, ab) + smoothstep(ra + dr + .7, ra + dr - .7, ab))/3.;',
+    '    float vorm = buitenk * smoothstep(ri - .6, ri + .6, ab);',
+    '    float uit = pow(1. - x, 1.6);',                                           /* heel geleidelijk weg in het wit, over de hele lengte (04:54) */
+    '    vm = vorm * sterk * kruis * uit * (.6 + .4*vpl); vx = x;',      /* hij ademt alleen in licht: donkerder en lichter */
+    '    float inK = smoothstep(-150., -60., d) * sterk * kruis * step(d, 1.5);',
+    '    hol = smoothstep(ri + .6, ri - .6, ab) * inK;',
+    '    rail = smoothstep(ri - .3, ri + .3, ab) * smoothstep(ri + 1.6, ri + .8, ab) * inK;',  /* de twee felle randen langs de geul */
+    '    schaduw = lijn(ab - ri - 2.5, 5. + 3.*diep) * inK * (.6 + .4*diep);',            /* een zachte schaduw naast de geul, dieper in de kaart sterker: het 3D */
+    '    vg = 0.; }',
+    /* het licht blijft van de tekst weg */
+    '  float weg = 1., zacht = 1.;',
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uNT) break; float dt = doos(q, uTekst[i], 40.); float s0 = smoothstep(-30., 260., dt); weg = min(weg, s0); zacht = min(zacht, mix(.5, 1., s0)); }',
+    /* A · de grond, met meer verschil (Lucas, 04:28): diep zwart in de ene hoek, een ruim groen vlak in de andere, zoals
+       het blauw en het licht in de logo-animatie, maar alleen in zwart en groen. Het staat stil; het ademt alleen. */
+    '  float n1 = vn(p/1300.), n2 = vn(p/2100. + vec2(7.3, 2.1)), n3 = vn(p/3400. + vec2(2.9, 5.7));',
+    '  vec3 c = mix(ZW, M950, smoothstep(.15, .75, n1));',
+    '  c = mix(c, M900, smoothstep(.45, .9, n2) * .75);',
+    '  c = mix(c, M800, pow(smoothstep(.55, 1., n1*n2*1.7), 1.3) * .55);',
+    '  c = mix(c, M800, smoothstep(.55, .95, n3) * .6 * zacht * (.9 + .1*adem));',                /* een ruim donkergroen vlak */
+    '  c = mix(c, ZW * .55, smoothstep(.45, .12, n3) * .7);',                                         /* het diepe zwart */
+    /* elke kaart krijgt zijn eigen licht in een hoek weg van de tekst (rechts, boven of onder), als het zachte licht
+       rechtsonder in de logo-animatie, en een donkere hoek ertegenover */
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; vec4 r = uKaart[i]; float fi = float(i);',
+    '    vec2 hk = r.xy + r.zw*vec2(.88 + .1*h(vec2(fi, 21.)), h(vec2(fi, 23.)) < .5 ? .12 : .9);',
+    '    float rr = max(r.z, r.w) * (.55 + .25*h(vec2(fi, 27.)));',
+    '    c = mix(c, mix(M800, M700, .3 + .2*adem), vlek(q, hk, rr) * .5 * zacht);',
+    '    vec2 dk = r.xy + r.zw*vec2(.05, h(vec2(fi, 23.)) < .5 ? .95 : .08);',
+    '    c = mix(c, ZW * .6, vlek(q, dk, rr*.9) * .55); }',
+    /* B · de band: een brede vouw van licht, hij komt op en verdwijnt; hij staat op zijn plek en ademt */
+    '  float y = pz.y;',
+    '  float bx = W*(.5 + .44*sin(y/950. + .7)) + W*.1*sin(y/430. + 1.3) + 6.*sin(y/210.)*golf;',
+    '  float bx2 = W*(.5 + .44*sin((y + 2.)/950. + .7)) + W*.1*sin((y + 2.)/430. + 1.3) + 6.*sin((y + 2.)/210.)*golf;',
+    '  float sd = (p.x - bx) / sqrt(1. + pow((bx2 - bx)/2., 2.));',
+    '  float sterk = smoothstep(.22, .6, vn(vec2(3.7, y/1500.)));',
+    '  float licht = smoothstep(-60., 700., -sd) * sterk;',
+    '  c = mix(c, M900, licht * .5); c = mix(c, ZW, smoothstep(100., 900., sd) * .6 * sterk);',
+    '  c = mix(c, M800, lijn(sd, 300.*sm) * .45 * sterk * zacht);',
+    '  c = mix(c, M600, lijn(sd, 30.*sm) * .5 * sterk * mix(.3, 1., weg) * fel);',
+    '  c = mix(c, mix(M700, kern(puls(y, .13)), weg), lijn(sd, 2.4*sm) * .95 * sterk * mix(.8, 1., weg));',
+    /* C · de snede: zachte lijnen langs 53,13°, in stukken */
+    '  float us = dot(pz, vec2(.6, .8)), vs = dot(pz, vec2(-.8, .6));',
+    '  float cel = floor(us/1600.); float hs = h(vec2(cel, 4.2));',
+    '  if (hs > .2){ float ds = us - (cel*1600. + 300. + hs*1000.) + 4.*sin(vs/190.)*golf;',
+    '    float stuk = smoothstep(.35, .7, vn(vec2(vs/1100., cel*3.1)));',
+    '    c = mix(c, M600, lijn(ds, 24.*sm) * .4 * stuk * mix(.3, 1., weg) * fel);',
+    '    c = mix(c, mix(M700, kern(puls(vs, h(vec2(cel, 9.1)))), weg), lijn(ds, 1.8*sm) * .9 * stuk * mix(.8, 1., weg)); }',
+    /* D · de gloed: één vlek per vak van 800 px, niet in elk vak; hij ademt */
+    '  vec2 vak = floor(p/800.);',
+    '  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++){ vec2 v = vak + vec2(float(i), float(j)); float k = h(v + 11.);',
+    '    if (k > .35){ vec2 mid = (v + vec2(h(v + 1.7), h(v + 5.3)))*800.; float r = 260. + 320.*h(v + 9.1);',
+    '      float g = vlek(p, mid, r * (.92 + .16*adem)) * (.3 + .35*h(v + 2.9)) * (.85 + .3*adem);',
+    '      c = mix(c, mix(M600, M700, h(v + 6.6)*.6 + .2*adem), g * .7 * zacht); } }',
+    /* E · de horizon: hier en daar een licht gebogen lijn, lichter erboven, donkerder eronder */
+    '  for (int j = -1; j <= 1; j++){ float hc = floor(pz.y/1300.) + float(j); float hh = h(vec2(hc, 8.8));',
+    '    if (hh > .35){ float hy = hc*1300. + 250. + h(vec2(hc, 2.2))*800. + 70.*sin(p.x/W*3.1416 + hh*6.) + 5.*sin(p.x/230. + hh*9.)*golf;',
+    '      float dh = pz.y - hy; float lang = smoothstep(.25, .65, vn(vec2(p.x/900., hc*5.)));',
+    '      c = mix(c, M800, smoothstep(-260., -10., dh) * smoothstep(40., -10., dh) * .5 * lang);',
+    '      c = mix(c, ZW, smoothstep(10., 240., dh) * smoothstep(600., 240., dh) * .45 * lang);',
+    '      c = mix(c, M600, lijn(dh, 26.*sm) * .4 * lang * mix(.3, 1., weg) * fel); c = mix(c, mix(M700, kern(puls(p.x, h(vec2(hc, 3.3)))), weg), lijn(dh, 2.*sm) * .9 * lang * mix(.8, 1., weg)); } }',
+    /* G · de eigen vouw van elke kaart: schaduwkant, gloed, glanzende kern */
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; vec3 kl = kaartLijn(q, i, uKaart[i], sm, golf); float pk = puls(abs(kaartDl(q, i, uKaart[i], golf).z), h(vec2(float(i), 11.)));',
+    '    c = mix(c, M700, kl.z * .25 * zacht * fel); c = mix(c, M600, kl.y * .5 * mix(.3, 1., weg) * fel); c = mix(c, mix(M700, kern(pk), weg), kl.x * .95 * mix(.8, 1., weg)); }',
+    /* F · korrel */
+    '  float k = h(floor(gl_FragCoord.xy / max(1., uDpr*.75))) - .5; float lum = dot(c, vec3(.2126, .7152, .0722));',
+    '  c += k * .095 * (.6 + 1.8*lum*(1. - lum));',
+    '  c += (h(gl_FragCoord.yx*1.7) - .5)/255.;',
+    '  float rand = smoothstep(1.5, -.5, d);',
+    '  if (uHeel > .5){ float rl = smoothstep(2., .5, abs(d)); c = mix(c, vec3(1.), rl*.9); gl_FragColor = vec4(c, 1.); return; }',
+    '  vec3 geul = mix(vec3(1.), mix(M900, ZW, .5), pow(diep, .8));',                  /* de binnenkant: wit aan de rand, hoe dieper hoe donkerder */
+    '  geul = mix(geul, mix(M300, vec3(1.), .4), vpl * .75 * diep);',                    /* de puls licht ook de diepe geul op */
+    '  geul = mix(mix(M900, ZW, .5), geul, weg);',                                      /* onder tekst blijft de geul donker, zodat wit leesbaar blijft */
+    '  c = mix(c, ZW * .5, schaduw * .55); c = mix(c, mix(M700, kern(vpl), weg), rail); c = mix(c, geul, hol);',                                                  /* in de kaart: de binnenkant wordt al wit, geleidelijk naar de rand toe (Lucas, 04:55 en 05:00) */
+    '  vec3 cv = mix(clamp(c, 0., 1.), kern(vpl), smoothstep(0., .3, vx));',   /* de ader: bij de rand de kaart, dan de felle mint van zijn streep */
+    '  cv = mix(cv, mix(M300, vec3(1.), .6), vg);',
+    '  vec3 buiten = mix(vec3(1.), cv, vm);',
+    '  rand = max(rand, 0.) * (1. - hol*smoothstep(-3., 0., d));',                                           /* geen rand van de kaart in de ader (Lucas, 05:08) */
+    '  gl_FragColor = vec4(mix(buiten, clamp(c, 0., 1.), rand), 1.);',
+    '}'].join('\n');
+  function maak(type, bron) { var s = gl.createShader(type); gl.shaderSource(s, bron); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+  var prog;
+  try { prog = gl.createProgram(); gl.attachShader(prog, maak(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, maak(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog)); }
+  catch (e) { console.warn('veld', e); document.documentElement.classList.add('geen-gl'); return; }
+  gl.useProgram(prog);
+  var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  var aLoc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+  var U = {}; ['uRes', 'uScroll', 'uTijd', 'uDpr', 'uHeel', 'uLus', 'uN', 'uNT', 'uBreed', 'uVerschuif'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+  var uKaart = gl.getUniformLocation(prog, 'uKaart'), uTekst = gl.getUniformLocation(prog, 'uTekst');
+  var kaarten = [].slice.call(document.querySelectorAll('[data-kaart]')).slice(0, MAX);
+  var teksten = [].slice.call(document.querySelectorAll('[data-tekstvlak]')).slice(0, MAX);
+  var rechth = new Float32Array(MAX * 4), tekstR = new Float32Array(MAX * 4), dpr = 1, heel = 0, stil = false, lus = 16;
+  var minder = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var rect = function (el) { var r = el.getBoundingClientRect(); return [r.left, r.top + scrollY, r.width, r.height]; };
+  function meet() {
+    dpr = window.__veldDpr || Math.min(window.devicePixelRatio || 1, 1.5);
+    canvas.width = Math.round(innerWidth * dpr); canvas.height = Math.round(innerHeight * dpr);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    kaarten.forEach(function (k, i) { rechth.set(rect(k), i * 4); });
+    teksten.forEach(function (k, i) { tekstR.set(rect(k), i * 4); });
+  }
+  var t0 = performance.now(), tStil = 0;
+  function teken(nu) {
+    var t = minder ? 4 : (stil ? tStil : (nu - t0) / 1000);
+    if (!stil) tStil = t;
+    gl.uniform2f(U.uRes, canvas.width, canvas.height); gl.uniform1f(U.uScroll, scrollY); gl.uniform1f(U.uTijd, t);
+    gl.uniform1f(U.uDpr, dpr); gl.uniform1f(U.uHeel, heel); gl.uniform1f(U.uLus, lus); gl.uniform1f(U.uBreed, innerWidth);
+    gl.uniform1i(U.uN, kaarten.length); gl.uniform4fv(uKaart, rechth);
+    gl.uniform1i(U.uNT, teksten.length); gl.uniform4fv(uTekst, tekstR); var vs = window.__veldVerschuif || [0, 0]; gl.uniform2f(U.uVerschuif, vs[0], vs[1]);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  var raf = 0;
+  function lusje(nu) { teken(nu); raf = (minder || document.hidden || stil) ? 0 : requestAnimationFrame(lusje); }
+  function wek() { if (!raf) raf = requestAnimationFrame(lusje); }
+  meet(); wek();
+  addEventListener('resize', function () { meet(); teken(performance.now()); });
+  addEventListener('scroll', function () { if (!raf) teken(performance.now()); }, { passive: true });
+  document.addEventListener('visibilitychange', wek);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(meet);
+  addEventListener('load', meet);
+  if (window.ResizeObserver) new ResizeObserver(meet).observe(document.body);
+  var knopHeel = document.getElementById('heel'), knopRust = document.getElementById('rust');
+  if (knopHeel) knopHeel.addEventListener('click', function () { heel = heel ? 0 : 1; knopHeel.setAttribute('aria-pressed', String(!!heel)); document.documentElement.classList.toggle('heel', !!heel); teken(performance.now()); });
+  if (knopRust) knopRust.addEventListener('click', function () { stil = !stil; if (!stil) { t0 = performance.now() - tStil * 1000; wek(); } knopRust.setAttribute('aria-pressed', String(stil)); });
+  document.addEventListener('change', function (e) { if (e.target.name === 'lus') { lus = e.target.value === 'b' ? 24 : e.target.value === 'c' ? 1e6 : 16; } });
+  window.__veld = { meet: meet, zet: function (t) { stil = true; tStil = t; meet(); teken(0); } };
+})();
+
+</script>
+<script>
+(function () {
+  var VRAGEN = ["kleuren", "trap", "lus", "plan"], stand = document.getElementById('stand');
+  function lees() {
+    var d = { vragen: {}, vraagNotities: {}, notitie: document.getElementById('notitie').value, bijgewerkt: new Date().toISOString() };
+    VRAGEN.forEach(function (id) { var c = document.querySelector('input[name="' + id + '"]:checked'); if (c) d.vragen[id] = c.value; var n = document.getElementById('n-' + id); if (n && n.value) d.vraagNotities[id] = n.value; });
+    return d;
+  }
+  function vul(d) {
+    Object.keys(d.vragen || {}).forEach(function (id) { var c = document.querySelector('input[name="' + id + '"][value="' + d.vragen[id] + '"]'); if (c) c.checked = true; });
+    Object.keys(d.vraagNotities || {}).forEach(function (id) { var n = document.getElementById('n-' + id); if (n) n.value = d.vraagNotities[id]; });
+    if (d.notitie) document.getElementById('notitie').value = d.notitie;
+  }
+  var doc = null;
+  if (window.claude && window.claude.use) window.claude.use('db').then(function (db) {
+    if (!db) { stand.textContent = 'Opslaan kan hier niet; zet je keuze in de chat.'; return; }
+    doc = db.doc('afvinklijst/ronde105');
+    doc.get().then(function (s) { var d = s && (typeof s.data === 'function' ? s.data() : s.data || s); if (d && d.vragen) { vul(d); stand.textContent = 'Je eerdere keuze staat erin.'; } }).catch(function () {});
+  });
+  document.getElementById('bewaar').addEventListener('click', function () {
+    if (!doc) { stand.textContent = 'Opslaan kan hier niet; zet je keuze in de chat.'; return; }
+    stand.textContent = 'Bezig met bewaren…';
+    doc.set(lees()).then(function () { stand.textContent = 'Bewaard. Zeg in de chat dat je klaar bent.'; }).catch(function () { stand.textContent = 'Bewaren lukte niet. Probeer het nog eens.'; });
+  });
+})();
+</script>

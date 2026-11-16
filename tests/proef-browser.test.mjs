@@ -57,7 +57,8 @@ async function open(url, { stand = 'open', breed = 1280 } = {}) {
   await page.route('**/api/step', (r) => r.fulfill({ status: 204, body: '' }));
   await page.route('**/api/botcheck', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"sleutel":null}' }));
   await page.goto(`http://127.0.0.1:${PORT}${url}`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(250);
+  /* levering 100: met het kaartveld (WebGL, in de toets software) zet de pagina de stand soms pas na 250 ms */
+  await page.waitForTimeout(1500);
   const stand_ = await page.evaluate(() => {
     const zichtbaar = (el) => !!el && !el.closest('[hidden]') && getComputedStyle(el).display !== 'none';
     const blok = document.querySelector('[data-ts-dicht]');

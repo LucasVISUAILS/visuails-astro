@@ -98,11 +98,11 @@ const STREEPJES = {
   '/nl/pricing/': 3, '/nl/privacy/': 53, '/nl/start/': 1, '/nl/start/brand-model/': 1, '/nl/start/catalog/': 1,
   '/nl/start/custom-look/': 4, '/nl/start/lifestyle/': 1, '/nl/start/plan/': 6, '/nl/start/video/': 3, '/nl/studio/': 8,
   '/nl/terms/': 59, '/nl/test-sample/': 3, '/nl/thank-you/': 4, '/nl/upload-guidelines/': 4, '/nl/video/': 6,
-  '/nl/video/campaign/': 4, '/nl/video/custom/': 6, '/nl/video/lifestyle/': 6, '/nl/video/motion/': 4, '/per-product/': 4,
+  '/nl/video/custom/': 6, '/nl/video/motion/': 4, '/per-product/': 4,
   '/plans/': 1, '/pricing/': 3, '/privacy/': 52, '/start/': 1, '/start/brand-model/': 1, '/start/catalog/': 1,
   '/start/custom-look/': 4, '/start/lifestyle/': 1, '/start/plan/': 6, '/start/video/': 3, '/studio/': 7,
-  '/terms/': 57, '/test-sample/': 3, '/thank-you/': 4, '/upload-guidelines/': 4, '/video/': 6, '/video/campaign/': 4,
-  '/video/custom/': 6, '/video/lifestyle/': 6, '/video/motion/': 4,
+  '/terms/': 57, '/test-sample/': 3, '/thank-you/': 4, '/upload-guidelines/': 4, '/video/': 6, 
+  '/video/custom/': 6, '/video/motion/': 4,
 };
 
 const PAGINAS = Object.keys(STREEPJES);

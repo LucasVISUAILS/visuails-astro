@@ -1,0 +1,199 @@
+/* ═══ DE INTAKE OP MAAT IN STUDIO — 15 november 2026 (lijst 112) ══════════════════════════════════════════════════
+   Zoals het bestelformulier (/start/catalog): witte kaarten van 24 rond met een haarlijn, knoppen 8 (knoppen.css),
+   keuzes als pil, het paneel met de schatting rechts en vast tijdens het scrollen. Nergens één zachte hoek (Lucas,
+   lijst 112: "zorg dat je dit nooit meer gebruikt"). Kleuren: inkt #090D0B en zijn lagen, wit, en mint 700 alleen
+   als streepje bij het label, zoals op de site. Tekst minstens 13 px, klein grijs op .66 (6,95 : 1). */
+body.studio .om-blok { display: grid; gap: 14px; padding: 24px; background: #FFFFFF; border-radius: 24px; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); }
+body.studio .om-blok + .om-blok { margin-top: 16px; }
+body.studio .om-h2 { margin: 0; font-size: 28px; font-weight: 450; letter-spacing: -.02em; line-height: 1.15; color: #090D0B; text-wrap: balance; }
+body.studio .om-label { display: flex; align-items: center; gap: 10px; margin: 0; font: 500 12px/1.4 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: #090D0B; }
+body.studio .om-label::before { content: ""; width: 18px; height: 2px; background: #016645; }
+body.studio .om-label span { color: rgb(9 13 11 / .66); }
+body.studio .om-uitleg { margin: 0; max-width: 62ch; font-size: 15px; line-height: 1.5; color: rgb(9 13 11 / .66); }
+body.studio .om-mono { font: 500 12px/1.4 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: rgb(9 13 11 / .66); }
+body.studio .om-strook { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin: 0; padding: 14px 16px; border-radius: 12px; background: #F4F5F4; font-size: 15px; color: #090D0B; }
+
+/* de keuze uit vier diensten */
+body.studio .om-tegels { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+body.studio .om-tegel { display: grid; gap: 6px; padding: 18px; border-radius: 24px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); color: #090D0B; text-decoration: none; }
+body.studio .om-tegel b { font-size: 20px; font-weight: 600; }
+body.studio .om-tegel span { font-size: 15px; color: rgb(9 13 11 / .66); }
+body.studio .om-tegel:hover, body.studio .om-tegel:focus-visible { box-shadow: inset 0 0 0 2px #090D0B; }
+body.studio .om-aanvragen { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+body.studio .om-aanvragen a { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 14px 16px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); color: #090D0B; text-decoration: none; font-size: 15px; }
+body.studio .om-aanvragen a span { color: rgb(9 13 11 / .66); }
+
+/* het formulier en het paneel */
+body.studio .om { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+body.studio .om-form { min-width: 0; }
+body.studio .om-velden { border: 0; margin: 0; padding: 0; min-width: 0; }
+body.studio .om-rij { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+body.studio .om-veld { display: grid; gap: 6px; min-width: 0; font-size: 15px; font-weight: 600; color: #090D0B; }
+body.studio .om-veld > span { line-height: 1.35; }
+body.studio .om-veld :is(input[type=text], input[type=number], select, textarea) { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid rgb(9 13 11 / .34); border-radius: 8px; background: #FFFFFF; color: #090D0B; font: 400 17px/1.4 inherit; }
+body.studio .om-veld textarea { min-height: 72px; resize: vertical; }
+body.studio .om-veld :is(input, select, textarea):focus-visible { outline: 2px solid #090D0B; outline-offset: 2px; }
+body.studio .om-veld ::placeholder { color: rgb(9 13 11 / .56); }
+body.studio .om-smal { max-width: 160px; }
+body.studio .om-schuif input[type=range] { width: 100%; accent-color: #090D0B; }
+
+body.studio .om-schaal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+body.studio :is(.om-stap, .om-optie) { display: grid; gap: 6px; align-content: start; padding: 16px; border: 0; border-radius: 24px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); text-align: left; font: inherit; color: #090D0B; cursor: pointer; }
+body.studio :is(.om-stap, .om-optie) b { font-size: 17px; }
+body.studio :is(.om-stap, .om-optie) span { font-size: 15px; font-weight: 400; color: rgb(9 13 11 / .66); }
+body.studio .om-stap.is-aan, body.studio .om-optie:has(input:checked) { box-shadow: inset 0 0 0 2px #090D0B; }
+body.studio .om-keuzes2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+body.studio .om-optie input { position: absolute; opacity: 0; pointer-events: none; }
+body.studio .om-optie:has(input:focus-visible) { outline: 2px solid #090D0B; outline-offset: 2px; }
+
+body.studio .om-rijen { display: grid; gap: 10px; }
+body.studio .om-rijtje { display: grid; grid-template-columns: minmax(0, 1.2fr) 110px minmax(0, 1.4fr) 44px; gap: 10px; align-items: end; }
+body.studio [data-rij="shots"] .om-rijtje { grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 44px; }
+body.studio .om-weg { width: 44px; height: 44px; border: 0; border-radius: 8px; background: #F4F5F4; color: #090D0B; font-size: 20px; cursor: pointer; }
+body.studio .om-plus { justify-self: start; }
+
+body.studio .om-edits { display: grid; gap: 10px; }
+body.studio .om-edit { display: grid; gap: 12px; padding: 14px 16px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); }
+body.studio .om-edit:has(> .om-edit-kop input[data-toggle]:checked), body.studio .om-edit.is-vast { box-shadow: inset 0 0 0 2px #090D0B; }
+body.studio .om-edit-kop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; margin: 0; font-size: 17px; cursor: pointer; }
+body.studio p.om-edit-kop { grid-template-columns: minmax(0, 1fr) auto; cursor: default; }
+body.studio .om-edit-kop input { width: 20px; height: 20px; margin: 0; accent-color: #090D0B; }
+body.studio .om-prijs { font: 500 13.5px/1.3 'IBM Plex Mono', ui-monospace, monospace; color: rgb(9 13 11 / .66); white-space: nowrap; }
+body.studio .om-uitklap { display: grid; gap: 12px; }
+body.studio .om-edit:has(> .om-edit-kop input[data-toggle]):not(:has(> .om-edit-kop input[data-toggle]:checked)) > .om-uitklap { display: none; }
+body.studio .om-edit:has(input[value="naadloze-studio"]:checked) > .om-achtergrond,
+body.studio .om-edit:has(input[value="effen"]:checked) > .om-achtergrond { display: none; }
+body.studio .om-edit:not(:has(input[value="effen-kleur"]:checked)) .om-achtergrond .om-smal { display: none; }
+
+body.studio .om-keuzerijen { display: grid; gap: 8px; }
+body.studio .om-keuzerij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); font-size: 15px; cursor: pointer; }
+body.studio .om-keuzerij:has(input:checked) { box-shadow: inset 0 0 0 2px #090D0B; }
+body.studio .om-keuzerij input { width: 18px; height: 18px; margin: 0; accent-color: #090D0B; }
+
+body.studio .om-pillen { display: flex; flex-wrap: wrap; gap: 8px; }
+body.studio .om-pil { position: relative; display: inline-flex; }
+body.studio .om-pil input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+body.studio .om-pil span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .2); font-size: 15px; font-weight: 600; color: #090D0B; }
+body.studio .om-pil input:checked + span { background: #090D0B; color: #FFFFFF; box-shadow: none; }
+body.studio .om-pil input:focus-visible + span { outline: 2px solid #090D0B; outline-offset: 2px; }
+
+body.studio .om-eisen { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+body.studio .om-eisen li { padding: 6px 12px; border-radius: 999px; background: #F4F5F4; font-size: 13.5px; font-weight: 600; color: #090D0B; }
+body.studio .om-vragen { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 16px; border-radius: 12px; background: #F4F5F4; }
+/* Bij zijn eigen idee: het idee en (video) de shotlijst. Bij ons idee: de vragen; de shotlijst maken wij. */
+body.studio .om:not(:has(input[name="idee"][value="eigen"]:checked)) .om-als-eigen { display: none; }
+body.studio .om:not(:has(input[name="idee"][value="ons"]:checked)) .om-als-ons { display: none; }
+
+body.studio .om-check { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; font-size: 15px; color: #090D0B; }
+body.studio .om-check input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: #090D0B; }
+body.studio .om-buiten { display: grid; gap: 12px; }
+body.studio .om-buiten summary { cursor: pointer; font-size: 15px; font-weight: 600; color: #090D0B; }
+body.studio .om-buiten[open] { gap: 12px; }
+body.studio .om-upload { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+body.studio .om-verborgen { position: absolute; width: 1px; height: 1px; opacity: 0; }
+body.studio .om-refs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+body.studio .om-refs:empty { display: none; }
+body.studio .om-ref { display: grid; gap: 6px; margin: 0; font-size: 13.5px; color: rgb(9 13 11 / .66); }
+body.studio .om-ref img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 12px; background: #F4F5F4; }
+
+body.studio .om-schat { position: sticky; top: 16px; display: grid; gap: 12px; padding: 24px; border-radius: 24px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); }
+body.studio .om-schat-kop { display: flex; justify-content: space-between; gap: 10px; margin: 0; font-size: 20px; font-weight: 450; color: #090D0B; }
+body.studio .om-opgeslagen { font-size: 13.5px; font-weight: 400; color: rgb(9 13 11 / .66); }
+body.studio .om-regels { display: grid; }
+body.studio .om-regels p { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 0; border-bottom: 1px solid rgb(9 13 11 / .1); font-size: 15px; color: #090D0B; }
+body.studio .om-regels p span:last-child { font-weight: 600; white-space: nowrap; }
+body.studio .om-regels p.om-leeg { border: 0; color: rgb(9 13 11 / .66); }
+body.studio .om-tot { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font-size: 15px; font-weight: 600; color: #090D0B; }
+body.studio .om-tot b { font-size: 34px; font-weight: 600; letter-spacing: -.02em; }
+body.studio .om-klein { margin: 0; font-size: 13.5px; line-height: 1.45; color: rgb(9 13 11 / .66); }
+body.studio .om-mist { display: grid; gap: 4px; margin: 0; padding: 12px 14px; border-radius: 12px; background: #F4F5F4; list-style: none; font-size: 13.5px; color: #090D0B; }
+body.studio .om-verstuur { width: 100%; justify-content: center; }
+
+/* de voorbeeldronde en de offerte (lijst 112, schermen 9 en 10) */
+body.studio .om-blok.om-ronde, body.studio .om-blok.om-offerte { margin-bottom: 16px; }
+body.studio .om-teller { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
+body.studio .om-teller li:not(.om-teller-tekst) { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .2); font-size: 15px; font-weight: 600; color: #090D0B; }
+body.studio .om-teller li.is-aan { background: #090D0B; color: #FFFFFF; box-shadow: none; }
+body.studio .om-teller-tekst { margin-left: 4px; font-size: 13.5px; color: rgb(9 13 11 / .66); }
+body.studio .om-voorbeelden { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+body.studio .om-voorbeeld { display: grid; gap: 8px; margin: 0; }
+body.studio .om-voorbeeld img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 12px; background: #F4F5F4; }
+body.studio .om-knoppen { display: flex; flex-wrap: wrap; gap: 12px; }
+body.studio .om-groot p { font-size: 15px; }
+body.studio .om-totaalregel { font-weight: 700; border-bottom: 2px solid #090D0B !important; }
+
+@media (max-width: 1100px) {
+  body.studio .om { grid-template-columns: minmax(0, 1fr); }
+  /* op een smal scherm een balk onderaan met het totaal; tik erop en de regels klappen open (lijst 112, live = a) */
+  body.studio .om-schat { position: sticky; bottom: 0; top: auto; z-index: 3; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; box-shadow: 0 -1px 0 rgb(9 13 11 / .12); }
+  body.studio .om-schat:not(.is-open) :is(.om-regels, .om-klein, .om-mist, .om-schat-kop) { display: none; }
+  body.studio .om-schat .om-tot { cursor: pointer; }
+}
+@media (max-width: 640px) {
+  body.studio .om-blok { padding: 18px 16px; }
+  body.studio .om-schaal { grid-template-columns: 1fr; }
+  body.studio .om-rijtje, body.studio [data-rij="shots"] .om-rijtje { grid-template-columns: minmax(0, 1fr) 44px; }
+  body.studio .om-rijtje .om-veld:not(:first-child) { grid-column: 1; }
+  body.studio .om-rijtje .om-weg { grid-column: 2; grid-row: 1; align-self: end; }
+  body.studio .om-edit-kop { grid-template-columns: auto minmax(0, 1fr); }
+  body.studio .om-keuzerij { grid-template-columns: auto minmax(0, 1fr); }
+  body.studio .om-keuzerij .om-prijs { grid-column: 2; white-space: normal; }
+  body.studio .om-edit-kop .om-prijs { grid-column: 2; white-space: normal; }
+  body.studio p.om-edit-kop .om-prijs { grid-column: 1; }
+  body.studio .om-h2 { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { body.studio .om * { transition: none !important; } }
+
+/* De offerte (15 november 2026): akkoord met het zakelijk-vinkje, of iets aanpassen. */
+body.studio .om-keuze-akkoord { display: grid; gap: 12px; margin-top: 18px; }
+body.studio .om-vink { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 15px; line-height: 1.5; color: #090D0B; }
+body.studio .om-vink input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: #090D0B; }
+body.studio .om-aanpassen { margin-top: 18px; border-top: 1px solid #E7EAE8; padding-top: 14px; display: grid; gap: 12px; }
+body.studio .om-aanpassen summary { cursor: pointer; font-weight: 700; font-size: 15px; color: #090D0B; }
+body.studio .om-aanpassen summary:focus-visible { outline: 2px solid #090D0B; outline-offset: 3px; border-radius: 8px; }
+
+/* De stand in 3D (lijst 113, 15 november 2026): per groep een rij hoeken, per product een beeld van stippen op het
+   zwart van de site. Kaarten 24, beelden 12, keuzes als pil; het venster is een gewone dialog. */
+body.studio .om-groep { display: grid; gap: 12px; padding: 18px; border-radius: 24px; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .12); }
+body.studio .om-groep[hidden] { display: none; }
+body.studio .om-groep-kop { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+body.studio .om-groep-kop h3 { margin: 0; font-size: 20px; font-weight: 600; color: #090D0B; }
+body.studio .om-std { margin-left: 8px; font: 600 12px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; opacity: .78; }
+body.studio .om-3d-tegels { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+body.studio .om-3d-tegels:empty { display: none; }
+body.studio .om-3d-tegel { display: grid; gap: 8px; align-content: start; margin: 0; }
+body.studio .om-3d-beeld { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: #090D0B; }
+body.studio .om-3d-beeld img { width: 100%; height: 100%; object-fit: cover; }
+body.studio .om-3d-zonder { margin: 0; padding: 12px; text-align: center; font-size: 13.5px; line-height: 1.4; color: rgb(255 255 255 / .86); }
+body.studio .om-3d-eigen { position: absolute; left: 8px; top: 8px; padding: 5px 10px; border-radius: 999px; background: #FFFFFF; color: #090D0B; font: 600 12px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; }
+body.studio .om-3d-tegel figcaption { display: grid; gap: 2px; }
+body.studio .om-3d-tegel b { font-size: 15px; color: #090D0B; }
+body.studio .om-3d-tegel small { font-size: 13.5px; line-height: 1.4; color: rgb(9 13 11 / .66); }
+body.studio .om-tekstknop { justify-self: start; margin-top: 4px; padding: 6px 0; border: 0; background: none; font: 600 15px/1.3 inherit; color: #090D0B; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(9 13 11 / .4); cursor: pointer; }
+body.studio .om-tekstknop:hover { text-decoration-color: #090D0B; }
+body.studio .om-tekstknop:focus-visible { outline: 2px solid #090D0B; outline-offset: 2px; border-radius: 4px; }
+body.studio .om-groep-noot textarea { min-height: 56px; }
+body.studio .om-pilknop { min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgb(9 13 11 / .2); font: 600 15px/1 inherit; color: #090D0B; cursor: pointer; }
+body.studio .om-pilknop[aria-pressed="true"] { background: #090D0B; color: #FFFFFF; box-shadow: none; }
+body.studio .om-pilknop:focus-visible { outline: 2px solid #090D0B; outline-offset: 2px; }
+
+body.studio .om-3d-venster { width: min(960px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 0; border-radius: 24px; background: #FFFFFF; color: #090D0B; overflow: auto; }
+body.studio .om-3d-venster::backdrop { background: rgb(9 13 11 / .6); }
+body.studio .om-3d-dlg { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; padding: 20px; }
+body.studio .om-3d-scene { position: relative; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: #090D0B; touch-action: none; cursor: grab; }
+body.studio .om-3d-scene:active { cursor: grabbing; }
+body.studio .om-3d-scene canvas { display: block; width: 100%; height: 100%; }
+body.studio .om-3d-scene:focus-visible { outline: 2px solid #090D0B; outline-offset: 3px; }
+body.studio .om-3d-stand { position: absolute; left: 14px; bottom: 12px; margin: 0; font: 500 12px/1.3 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .04em; color: rgb(255 255 255 / .86); pointer-events: none; }
+body.studio .om-3d-paneel { display: grid; gap: 14px; align-content: start; min-width: 0; }
+body.studio .om-3d-kop { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+body.studio .om-3d-kop .om-mono, body.studio .om-3d-kop .om-h2 { margin: 0; }
+body.studio .om-3d-kop .om-h2 { font-size: 24px; }
+@media (max-width: 720px) {
+  body.studio .om-3d-dlg { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  body.studio .om-3d-tegels { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  body.studio .om-groep { padding: 14px; }
+}
+@media (forced-colors: active) { body.studio .om-3d-beeld, body.studio .om-3d-scene { background: Canvas; } }
+body.studio #om-standen .om-pillen[hidden] { display: none; }
+body.studio .om-look .om-optie { position: relative; }

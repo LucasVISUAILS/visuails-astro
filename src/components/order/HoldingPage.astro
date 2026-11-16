@@ -45,8 +45,8 @@ import { AMOUNT, euro, vatLabel, vatLead, vatDetail, VIDEO_OP_AANVRAAG } from '.
    `style`, precies zoals bij lifestyle, zodat /admin er dezelfde regel voor
    tekent (zie het blok "Wat de klant koos" in admin.js) en quoteVideo() hem op
    dezelfde plek vindt. */
-import { videoStyles as videoStylesEn } from '../../data/videoStyles.js';
-import { videoStyles as videoStylesNl } from '../../data/videoStyles.nl.js';
+import { videoOpPagina as videoStylesEn } from '../../data/videoStyles.js';  // lijst 109: alleen Motion en op maat
+import { videoOpPagina as videoStylesNl } from '../../data/videoStyles.nl.js';  // lijst 109: alleen Motion en op maat
 import { localizedPath } from '../../i18n/ui.js';
 
 import Note from '../Note.astro';
@@ -352,7 +352,7 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
   <div class="hold">
     <!-- THE STATUS. The same object on all three pages, so a visitor who has
          seen one of them knows what kind of page this is on sight. -->
-    <div class="hold-status">
+    <div class="hold-status kv-108" data-kaart>
       <p class="hold-status-label">{ui.statusLabel}</p>
       <p class="hold-status-word">{k.status}</p>
       <p class="hold-status-body">{k.statusBody}</p>

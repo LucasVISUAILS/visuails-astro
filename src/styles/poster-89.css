@@ -9,9 +9,9 @@
    ═══════════════════════════════════════════════════════════════════════════════ */
 .p9.p9 { --p9-m: var(--r8-m, max(20px, min(8.333vw, 160px), calc((100vw - 1280px) / 2))); --p9-vh: clamp(130px, 25svh, 280px); position: relative; padding: 0; }
 .p9-baan { position: relative; }
-.p9-podium { position: relative; height: 100svh; min-height: 520px; max-height: 1100px; overflow: hidden; color: #FBFCFF; }
+.p9-podium { position: relative; height: 100svh; min-height: 520px; max-height: 1100px; overflow: hidden; color: #FFFFFF; }
 .p9-zacht { position: absolute; inset: 0; -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%); }
-.p9-stil { position: absolute; inset: 0; background: #25508B url(/img/hal/veld-p2.webp) center / cover no-repeat; }
+.p9-stil { position: absolute; inset: 0; background: #016645 url(/img/hal/veld-p2.webp) center / cover no-repeat; }
 @media (max-aspect-ratio: 1 / 1) { .p9-stil { background-image: url(/img/hal/veld-p2-staand.webp); } }
 /* .h-pagina svg (hal.css) maakt elke svg 1 em groot, zonder vulling en met een lijn: hier niet */
 .p9 .p9-veld, .p9 .p9-logo { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; display: block; }
@@ -19,13 +19,13 @@
 .p9-veld { visibility: hidden; }
 .p9.p9-veld-aan .p9-stil { visibility: hidden; }
 .p9.p9-veld-aan .p9-veld { visibility: visible; }
-.p9 .p9-v { position: absolute; left: 50%; top: 50%; height: var(--p9-vh); width: auto; max-width: none; max-height: none; aspect-ratio: 702 / 813.25; transform: translate(-50%, -50%); fill: #FBFCFF; color: #FBFCFF; stroke: none; overflow: visible; }
-.p9 .p9-kop.h-kop { position: absolute; left: var(--p9-m); right: var(--p9-m); top: calc(50% + var(--p9-vh) / 2 + clamp(22px, 3.5svh, 40px)); margin: 0; text-align: center; font: 700 clamp(26px, 3.33vw, 48px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: #FBFCFF; text-wrap: balance; }
+.p9 .p9-v { position: absolute; left: 50%; top: 50%; height: var(--p9-vh); width: auto; max-width: none; max-height: none; aspect-ratio: 702 / 813.25; transform: translate(-50%, -50%); fill: #FFFFFF; color: #FFFFFF; stroke: none; overflow: visible; }
+.p9 .p9-kop.h-kop { position: absolute; left: var(--p9-m); right: var(--p9-m); top: calc(50% + var(--p9-vh) / 2 + clamp(22px, 3.5svh, 40px)); margin: 0; text-align: center; font: 700 clamp(26px, 3.33vw, 48px)/.92 var(--h-kopletter); letter-spacing: -.01em; text-transform: uppercase; color: #FFFFFF; text-wrap: balance; }
 /* de look van de foto, als die het scherm vult: hetzelfde plaatje als in de galerij */
-.p9 .p9-look { position: absolute; left: var(--p9-m); bottom: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px 8px 12px; border-radius: 999px; background: #FBFCFF; box-shadow: inset 0 0 0 1px var(--h-lijn, #E6E8EC); font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); text-decoration: none; opacity: 0; pointer-events: none; transform: translate3d(0, 6px, 0); transition: opacity .3s cubic-bezier(.2, .8, .2, 1), transform .3s cubic-bezier(.2, .8, .2, 1); }
+.p9 .p9-look { position: absolute; left: var(--p9-m); bottom: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px 8px 12px; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--h-lijn, #E7EAE8); font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt); text-decoration: none; opacity: 0; pointer-events: none; transform: translate3d(0, 6px, 0); transition: opacity .3s cubic-bezier(.2, .8, .2, 1), transform .3s cubic-bezier(.2, .8, .2, 1); }
 .p9 .p9-look b { color: var(--h-inkt); font-weight: 600; }
-.p9 .p9-look span { color: var(--h-grijs, #636974); font-weight: 500; }
-.p9 .p9-look:focus-visible { opacity: 1; pointer-events: auto; transform: none; outline: 2px solid #25508B; outline-offset: 3px; }
+.p9 .p9-look span { color: var(--h-grijs, #5E6461); font-weight: 500; }
+.p9 .p9-look:focus-visible { opacity: 1; pointer-events: auto; transform: none; outline: 2px solid #016645; outline-offset: 3px; }
 .p9:not(.p9-aan) .p9-look { display: none; }
 
 /* met het script: de baan, het podium blijft staan, de animatie tekent het logo, de kop komt na de klap */

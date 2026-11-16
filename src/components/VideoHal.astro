@@ -92,8 +92,8 @@ import {
    een component niet lezen — zie de kop boven serviceFaqs(). */
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
-import { videoStyles as videoStylesEn } from '../data/videoStyles.js';
-import { videoStyles as videoStylesNl } from '../data/videoStyles.nl.js';
+import { videoOpPagina as videoStylesEn } from '../data/videoStyles.js';  // lijst 109: alleen Motion en op maat
+import { videoOpPagina as videoStylesNl } from '../data/videoStyles.nl.js';  // lijst 109: alleen Motion en op maat
 
 /* basis: '/voorbeeld' op het voorbeeld, zodat de links naar de stijlpagina's
    binnen het voorbeeld blijven; leeg op de echte pagina. */
@@ -510,8 +510,8 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
       {vast.map((s: any, i: number) => (
         <li class="h-st-look h-in" style={`--d:${i}`}>
           {opAanvraag ? (
-            <div class="h-st-beeld h-vd-klip" aria-hidden="true" data-achter={`klip-${s.slug}`}>
-              <span class="h-vd-klip-in">
+            <div class="h-st-beeld h-vd-klip kv-108" aria-hidden="true" data-achter={`klip-${s.slug}`} data-kaart>
+              <span class="h-vd-klip-in" data-tekstvlak>
                 <span class="h-cirkel h-cirkel-wit" set:html={ik('speel')} />
                 <span class="h-vd-klip-t">{PLAAT(s.slug)[0]}</span>
                 <span class="h-vd-klip-m">{PLAAT(s.slug)[1]}</span>

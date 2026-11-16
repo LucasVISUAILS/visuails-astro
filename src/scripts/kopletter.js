@@ -58,8 +58,8 @@ function maakAnimatie(svg, M, V_PADEN, opties = {}) {
      wat kort groter wordt ... en dan weer tegen de achtergrond aan knalt") */
   const T = Object.assign({ stil: 700, druk: 280, naloop: 3000, KIER: .076, STOOT: .35, DG: 500, SW: 1, KQ: 0.55, KLIK: 'recht', VLAG: 'recht', VVORM: 'kantel' }, opties.T || {});
   const KL0 = opties.kleur || {};
-  const K = { grond: KL0.grond || opties.grond || '#FBFCFF', letters: KL0.letters || opties.woordKleur || '#0F1217', venster: !!KL0.venster,
-              naGrond: KL0.naGrond === undefined ? null : KL0.naGrond, naV: KL0.naV || opties.vEind || '#FBFCFF', naBeeld: KL0.naBeeld || null };
+  const K = { grond: KL0.grond || opties.grond || '#FFFFFF', letters: KL0.letters || opties.woordKleur || '#090D0B', venster: !!KL0.venster,
+              naGrond: KL0.naGrond === undefined ? null : KL0.naGrond, naV: KL0.naV || opties.vEind || '#FFFFFF', naBeeld: KL0.naBeeld || null };
   /* lijst 81, de poster: na de klap is de V een venster op een foto (naBeeld), en daarna groeit hij tot de foto het beeld vult
      (T.groei = [wacht na de klap, duur] in ms; op de site volgt dat stuk het scrollen) */
   const stapZ = Z.t[1] - Z.t[0], nZ = Z.t.length;
@@ -142,7 +142,7 @@ function maakAnimatie(svg, M, V_PADEN, opties = {}) {
     el9('rect', { x: 0, y: 0, width: TB9, height: TH9, fill: '#fff' }, m);
     const vm = el9('g', { fill: '#000' }, m);
     V_PADEN.forEach((d) => el9('path', { d }, vm));
-    dek = el9('rect', { x: 0, y: 0, width: TB9, height: TH9, fill: '#FBFCFF', mask: `url(#mv-${id})`, display: 'none' });
+    dek = el9('rect', { x: 0, y: 0, width: TB9, height: TH9, fill: '#FFFFFF', mask: `url(#mv-${id})`, display: 'none' });
     svg.insertBefore(dek, woordG);
     dek._vm = vm;
   }

@@ -10,122 +10,122 @@ const H = (h) => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16)
    3 lucht (van onder: hoogte y, zachtheid r). sterk: hoe vol (0 – 1). drift: hoeveel hij beweegt. */
 export const VELDEN = {
   /* b1: de lucht na zonsondergang: wit boven, het blauwe uur onder, de laatste roze streep op de horizon */
-  b1: { naam: 'Horizon', grond: '#FBFCFF', korrel: 0.06, lagen: [
+  b1: { naam: 'Horizon', grond: '#FFFFFF', korrel: 0.06, lagen: [
     { k: '#D0D8E9', vorm: 3, x: 0, y: 0.50, r: 0.42, sterk: 0.9, drift: 0.03 },
     { k: '#ROZE', vorm: 1, x: 0.55, y: 0.69, hoek: -6, r: 0.11, zij: 0.45, sterk: 0.85, drift: 0.04 },
     { k: '#6283AF', vorm: 3, x: 0, y: 0.80, r: 0.18, sterk: 0.95, drift: 0.03 },
-    { k: '#25508B', vorm: 3, x: 0, y: 0.98, r: 0.2, sterk: 1.0, drift: 0.03 },
+    { k: '#016645', vorm: 3, x: 0, y: 0.98, r: 0.2, sterk: 1.0, drift: 0.03 },
   ] },
   /* b2: blauw uur met het licht langs de snede (53,13°), roze waar het licht eindigt */
-  b2: { naam: 'Snede', grond: '#25508B', korrel: 0.065, lagen: [
-    { k: '#1A4279', vorm: 0, x: 0.1, y: 0.1, r: 0.7, sterk: 0.95, drift: 0.04 },
-    { k: '#0F1217', vorm: 0, x: 1.0, y: 0.0, r: 0.5, sterk: 0.6, drift: 0.03 },
+  b2: { naam: 'Snede', grond: '#016645', korrel: 0.065, lagen: [
+    { k: '#023D29', vorm: 0, x: 0.1, y: 0.1, r: 0.7, sterk: 0.95, drift: 0.04 },
+    { k: '#090D0B', vorm: 0, x: 1.0, y: 0.0, r: 0.5, sterk: 0.6, drift: 0.03 },
     { k: '#6283AF', vorm: 1, x: 0.56, y: 0.5, hoek: 53.13, r: 0.3, zij: 0.25, sterk: 0.9, drift: 0.04 },
     { k: '#E6EAF4', vorm: 1, x: 0.56, y: 0.5, hoek: 53.13, r: 0.1, zij: 0.2, sterk: 0.9, drift: 0.04 },
     { k: '#ROZE', vorm: 0, x: 0.92, y: 0.95, r: 0.38, sterk: 0.85, drift: 0.04 },
   ] },
   /* b3: wit met een golf van blauw uur (de S uit het woordmerk), roze in de bocht */
-  b3: { naam: 'Golf', grond: '#FBFCFF', korrel: 0.055, lagen: [
+  b3: { naam: 'Golf', grond: '#FFFFFF', korrel: 0.055, lagen: [
     { k: '#D0D8E9', vorm: 2, x: 0.5, y: 0.5, hoek: 10, r: 0.34, zij: 0.5, sterk: 0.9, drift: 0.04 },
-    { k: '#25508B', vorm: 2, x: 0.5, y: 0.56, hoek: 10, r: 0.16, zij: 0.35, sterk: 0.95, drift: 0.04 },
+    { k: '#016645', vorm: 2, x: 0.5, y: 0.56, hoek: 10, r: 0.16, zij: 0.35, sterk: 0.95, drift: 0.04 },
     { k: '#ROZE', vorm: 0, x: 0.95, y: 0.92, r: 0.36, sterk: 0.9, drift: 0.04 },
-    { k: '#FBFCFF', vorm: 2, x: 0.5, y: 0.47, hoek: 10, r: 0.045, zij: 1.0, sterk: 0.55, drift: 0.04 },
+    { k: '#FFFFFF', vorm: 2, x: 0.5, y: 0.47, hoek: 10, r: 0.045, zij: 1.0, sterk: 0.55, drift: 0.04 },
   ] },
   /* b4: de nacht (het dichtst bij je voorbeeld): inkt, een plooi van blauw uur met licht op de rand, roze rechtsonder */
-  b4: { naam: 'Nacht', grond: '#0F1217', korrel: 0.075, lagen: [
-    { k: '#FBFCFF', vorm: 0, x: 0.08, y: 0.1, r: 0.36, sterk: 0.9, drift: 0.03 },
-    { k: '#25508B', vorm: 2, x: 0.55, y: 0.52, hoek: -24, r: 0.3, zij: 0.4, sterk: 0.95, drift: 0.04 },
+  b4: { naam: 'Nacht', grond: '#090D0B', korrel: 0.075, lagen: [
+    { k: '#FFFFFF', vorm: 0, x: 0.08, y: 0.1, r: 0.36, sterk: 0.9, drift: 0.03 },
+    { k: '#016645', vorm: 2, x: 0.55, y: 0.52, hoek: -24, r: 0.3, zij: 0.4, sterk: 0.95, drift: 0.04 },
     { k: '#A2B7D2', vorm: 2, x: 0.5, y: 0.43, hoek: -24, r: 0.11, zij: 0.3, sterk: 0.8, drift: 0.04 },
     { k: '#ROZE', vorm: 0, x: 0.92, y: 0.84, r: 0.3, sterk: 1.0, drift: 0.04 },
-    { k: '#0F1217', vorm: 0, x: 1.08, y: -0.08, r: 0.55, sterk: 0.95, drift: 0.03 },
-    { k: '#0F1217', vorm: 0, x: -0.08, y: 1.1, r: 0.5, sterk: 0.9, drift: 0.03 },
+    { k: '#090D0B', vorm: 0, x: 1.08, y: -0.08, r: 0.55, sterk: 0.95, drift: 0.03 },
+    { k: '#090D0B', vorm: 0, x: -0.08, y: 1.1, r: 0.5, sterk: 0.9, drift: 0.03 },
   ] },
   /* b5: adem: bijna wit, voor achter tekst (inkt erop houdt 15 : 1) */
-  b5: { naam: 'Adem', grond: '#FBFCFF', korrel: 0.04, lagen: [
+  b5: { naam: 'Adem', grond: '#FFFFFF', korrel: 0.04, lagen: [
     { k: '#D0D8E9', vorm: 0, x: 0.15, y: 0.25, r: 0.6, sterk: 0.8, drift: 0.05 },
     { k: '#ROZE', vorm: 0, x: 0.95, y: 0.9, r: 0.5, sterk: 0.32, drift: 0.05 },
     { k: '#E6EAF4', vorm: 0, x: 0.65, y: 0.05, r: 0.5, sterk: 0.6, drift: 0.04 },
   ] },
   /* b6: de snede in het licht: wit, het blauwe uur snijdt van linksonder het wit in langs 53,13°, roze op de rand */
-  b6: { naam: 'Insnede', grond: '#FBFCFF', korrel: 0.055, lagen: [
+  b6: { naam: 'Insnede', grond: '#FFFFFF', korrel: 0.055, lagen: [
     { k: '#D0D8E9', vorm: 1, x: 0.22, y: 0.66, hoek: 53.13, r: 0.36, zij: 2.4, sterk: 0.7, drift: 0.03 },
-    { k: '#25508B', vorm: 4, x: 0.16, y: 0.74, hoek: 53.13, r: 0.14, sterk: 1.0, drift: 0.03 },
+    { k: '#016645', vorm: 4, x: 0.16, y: 0.74, hoek: 53.13, r: 0.14, sterk: 1.0, drift: 0.03 },
     { k: '#ROZE', vorm: 1, x: 0.16, y: 0.74, hoek: 53.13, r: 0.06, zij: 0.5, sterk: 0.75, drift: 0.03 },
-    { k: '#1A4279', vorm: 0, x: -0.05, y: 1.05, r: 0.45, sterk: 0.85, drift: 0.03 },
+    { k: '#023D29', vorm: 0, x: -0.05, y: 1.05, r: 0.45, sterk: 0.85, drift: 0.03 },
   ] },
   /* het heelal (lijst 79): alle kleuren door elkaar, voor achter het logo in de film; beweegt sneller (tempo) */
-  h1: { naam: 'Heelal', grond: '#0F1217', korrel: 0.07, lagen: [
-    { k: '#1A4279', vorm: 0, x: 0.75, y: 0.2, r: 0.45, sterk: 0.9, drift: 0.12 },
-    { k: '#25508B', vorm: 0, x: 0.28, y: 0.62, r: 0.45, sterk: 0.95, drift: 0.12 },
+  h1: { naam: 'Heelal', grond: '#090D0B', korrel: 0.07, lagen: [
+    { k: '#023D29', vorm: 0, x: 0.75, y: 0.2, r: 0.45, sterk: 0.9, drift: 0.12 },
+    { k: '#016645', vorm: 0, x: 0.28, y: 0.62, r: 0.45, sterk: 0.95, drift: 0.12 },
     { k: '#6283AF', vorm: 2, x: 0.5, y: 0.48, hoek: -18, r: 0.12, zij: 0.35, sterk: 0.8, drift: 0.1 },
     { k: '#A2B7D2', vorm: 2, x: 0.5, y: 0.44, hoek: -18, r: 0.035, zij: 0.6, sterk: 0.75, drift: 0.1 },
     { k: '#ROZE', vorm: 0, x: 0.82, y: 0.78, r: 0.3, sterk: 0.95, drift: 0.13 },
-    { k: '#0F1217', vorm: 0, x: 0.5, y: 1.02, r: 0.28, sterk: 0.7, drift: 0.1 },
+    { k: '#090D0B', vorm: 0, x: 0.5, y: 1.02, r: 0.28, sterk: 0.7, drift: 0.1 },
   ] },
   /* lijst 81: de velden in de letters (de letters zijn vensters op het veld, op wit). Zonder het licht dat in de letters wit op
      wit zou worden (gemeten: in b2, b4 en h1 zakte het tot 1,3 : 1); het roze onder de letters, zodat ze leesbaar blijven */
   /* lijst 81: de logoposter op de site (lijst 78, C3: "B2 … in een variant waar het licht rechts blijft"). Het tekstlogo staat in
      het midden in wit: het licht van de snede en het roze staan rechts, buiten de letters */
-  p2: { naam: 'Snede, poster', grond: '#25508B', korrel: 0.065, lagen: [
-    { k: '#1A4279', vorm: 0, x: 0.1, y: 0.1, r: 0.7, sterk: 0.95, drift: 0.04 },
-    { k: '#0F1217', vorm: 0, x: 0.0, y: 1.0, r: 0.5, sterk: 0.5, drift: 0.03 },
+  p2: { naam: 'Snede, poster', grond: '#016645', korrel: 0.065, lagen: [
+    { k: '#023D29', vorm: 0, x: 0.1, y: 0.1, r: 0.7, sterk: 0.95, drift: 0.04 },
+    { k: '#090D0B', vorm: 0, x: 0.0, y: 1.0, r: 0.5, sterk: 0.5, drift: 0.03 },
     { k: '#6283AF', vorm: 1, x: 0.98, y: 0.5, hoek: 53.13, r: 0.22, zij: 0.25, sterk: 0.85, drift: 0.04 },
     { k: '#E6EAF4', vorm: 1, x: 0.99, y: 0.5, hoek: 53.13, r: 0.07, zij: 0.2, sterk: 0.85, drift: 0.04 },
     { k: '#ROZE', vorm: 0, x: 1.02, y: 1.0, r: 0.32, sterk: 0.85, drift: 0.04 },
   ] },
-  w2: { naam: 'Snede in de letters', grond: '#25508B', korrel: 0.065, lagen: [
-    { k: '#1A4279', vorm: 0, x: 0.1, y: 0.1, r: 0.7, sterk: 0.95, drift: 0.04 },
-    { k: '#0F1217', vorm: 0, x: 1.0, y: 0.0, r: 0.5, sterk: 0.6, drift: 0.03 },
+  w2: { naam: 'Snede in de letters', grond: '#016645', korrel: 0.065, lagen: [
+    { k: '#023D29', vorm: 0, x: 0.1, y: 0.1, r: 0.7, sterk: 0.95, drift: 0.04 },
+    { k: '#090D0B', vorm: 0, x: 1.0, y: 0.0, r: 0.5, sterk: 0.6, drift: 0.03 },
     { k: '#6283AF', vorm: 1, x: 0.56, y: 0.5, hoek: 53.13, r: 0.3, zij: 0.25, sterk: 0.7, drift: 0.04 },
     { k: '#ROZE', vorm: 0, x: 0.92, y: 1.15, r: 0.38, sterk: 0.85, drift: 0.04 },
   ] },
-  w4: { naam: 'Nacht in de letters', grond: '#0F1217', korrel: 0.075, lagen: [
-    { k: '#1A4279', vorm: 0, x: 0.12, y: 0.2, r: 0.42, sterk: 0.9, drift: 0.03 },
-    { k: '#25508B', vorm: 2, x: 0.55, y: 0.52, hoek: -24, r: 0.3, zij: 0.4, sterk: 0.95, drift: 0.04 },
+  w4: { naam: 'Nacht in de letters', grond: '#090D0B', korrel: 0.075, lagen: [
+    { k: '#023D29', vorm: 0, x: 0.12, y: 0.2, r: 0.42, sterk: 0.9, drift: 0.03 },
+    { k: '#016645', vorm: 2, x: 0.55, y: 0.52, hoek: -24, r: 0.3, zij: 0.4, sterk: 0.95, drift: 0.04 },
     { k: '#ROZE', vorm: 0, x: 0.95, y: 0.98, r: 0.26, sterk: 1.0, drift: 0.04 },
-    { k: '#0F1217', vorm: 0, x: 1.08, y: -0.08, r: 0.55, sterk: 0.95, drift: 0.03 },
+    { k: '#090D0B', vorm: 0, x: 1.08, y: -0.08, r: 0.55, sterk: 0.95, drift: 0.03 },
   ] },
-  w9: { naam: 'Heelal in de letters', grond: '#0F1217', korrel: 0.07, lagen: [
-    { k: '#1A4279', vorm: 0, x: 0.75, y: 0.2, r: 0.45, sterk: 0.9, drift: 0.12 },
-    { k: '#25508B', vorm: 0, x: 0.28, y: 0.62, r: 0.45, sterk: 0.95, drift: 0.12 },
+  w9: { naam: 'Heelal in de letters', grond: '#090D0B', korrel: 0.07, lagen: [
+    { k: '#023D29', vorm: 0, x: 0.75, y: 0.2, r: 0.45, sterk: 0.9, drift: 0.12 },
+    { k: '#016645', vorm: 0, x: 0.28, y: 0.62, r: 0.45, sterk: 0.95, drift: 0.12 },
     { k: '#6283AF', vorm: 2, x: 0.5, y: 0.48, hoek: -18, r: 0.12, zij: 0.35, sterk: 0.6, drift: 0.1 },
     { k: '#ROZE', vorm: 0, x: 0.84, y: 0.95, r: 0.3, sterk: 0.95, drift: 0.13 },
-    { k: '#0F1217', vorm: 0, x: 0.5, y: 1.02, r: 0.28, sterk: 0.7, drift: 0.1 },
+    { k: '#090D0B', vorm: 0, x: 0.5, y: 1.02, r: 0.28, sterk: 0.7, drift: 0.1 },
   ] },
-  h2: { naam: 'Heelal licht', grond: '#FBFCFF', korrel: 0.06, lagen: [
+  h2: { naam: 'Heelal licht', grond: '#FFFFFF', korrel: 0.06, lagen: [
     { k: '#A2B7D2', vorm: 0, x: 0.25, y: 0.7, r: 0.4, sterk: 0.85, drift: 0.12 },
-    { k: '#25508B', vorm: 2, x: 0.5, y: 0.6, hoek: -14, r: 0.12, zij: 0.4, sterk: 0.9, drift: 0.11 },
+    { k: '#016645', vorm: 2, x: 0.5, y: 0.6, hoek: -14, r: 0.12, zij: 0.4, sterk: 0.9, drift: 0.11 },
     { k: '#ROZE', vorm: 0, x: 0.82, y: 0.3, r: 0.3, sterk: 0.9, drift: 0.13 },
     { k: '#6283AF', vorm: 0, x: 0.9, y: 0.9, r: 0.3, sterk: 0.8, drift: 0.12 },
-    { k: '#FBFCFF', vorm: 0, x: 0.45, y: 0.2, r: 0.3, sterk: 0.7, drift: 0.1 },
+    { k: '#FFFFFF', vorm: 0, x: 0.45, y: 0.2, r: 0.3, sterk: 0.7, drift: 0.1 },
   ] },
   /* op de site, met tekst erop: het licht blijft van de tekst weg */
-  c4: { naam: 'Nacht (blok)', grond: '#0F1217', korrel: 0.07, lagen: [
-    { k: '#25508B', vorm: 1, x: 0.94, y: 0.86, hoek: 53.13, r: 0.3, zij: 0.5, sterk: 0.9, drift: 0.03 },
+  c4: { naam: 'Nacht (blok)', grond: '#090D0B', korrel: 0.07, lagen: [
+    { k: '#016645', vorm: 1, x: 0.94, y: 0.86, hoek: 53.13, r: 0.3, zij: 0.5, sterk: 0.9, drift: 0.03 },
     { k: '#A2B7D2', vorm: 1, x: 0.99, y: 0.84, hoek: 53.13, r: 0.06, zij: 0.4, sterk: 0.75, drift: 0.03 },
     { k: '#ROZE', vorm: 0, x: 0.98, y: 0.98, r: 0.3, sterk: 0.95, drift: 0.03 },
-    { k: '#0F1217', vorm: 0, x: 0.2, y: 0.3, r: 0.55, sterk: 0.95, drift: 0.02 },
+    { k: '#090D0B', vorm: 0, x: 0.2, y: 0.3, r: 0.55, sterk: 0.95, drift: 0.02 },
   ] },
-  c2: { naam: 'Snede (poster)', grond: '#25508B', korrel: 0.065, lagen: [
-    { k: '#1A4279', vorm: 0, x: 0.3, y: 0.3, r: 0.7, sterk: 0.9, drift: 0.03 },
+  c2: { naam: 'Snede (poster)', grond: '#016645', korrel: 0.065, lagen: [
+    { k: '#023D29', vorm: 0, x: 0.3, y: 0.3, r: 0.7, sterk: 0.9, drift: 0.03 },
     { k: '#6283AF', vorm: 1, x: 0.88, y: 0.5, hoek: 53.13, r: 0.22, zij: 0.25, sterk: 0.85, drift: 0.03 },
     { k: '#E6EAF4', vorm: 1, x: 0.88, y: 0.5, hoek: 53.13, r: 0.06, zij: 0.2, sterk: 0.85, drift: 0.03 },
     { k: '#ROZE', vorm: 0, x: 0.97, y: 0.97, r: 0.32, sterk: 0.85, drift: 0.03 },
   ] },
   /* staand (posters, 4 : 5): dezelfde velden, anders gelegd */
-  p4: { naam: 'Nacht staand', grond: '#0F1217', korrel: 0.08, lagen: [
-    { k: '#25508B', vorm: 2, x: 0.42, y: 0.5, hoek: -42, r: 0.26, zij: 0.4, sterk: 0.95, drift: 0.04 },
+  p4: { naam: 'Nacht staand', grond: '#090D0B', korrel: 0.08, lagen: [
+    { k: '#016645', vorm: 2, x: 0.42, y: 0.5, hoek: -42, r: 0.26, zij: 0.4, sterk: 0.95, drift: 0.04 },
     { k: '#A2B7D2', vorm: 2, x: 0.38, y: 0.43, hoek: -42, r: 0.09, zij: 0.25, sterk: 0.85, drift: 0.04 },
-    { k: '#FBFCFF', vorm: 2, x: 0.36, y: 0.405, hoek: -42, r: 0.025, zij: 1.0, sterk: 0.7, drift: 0.04 },
+    { k: '#FFFFFF', vorm: 2, x: 0.36, y: 0.405, hoek: -42, r: 0.025, zij: 1.0, sterk: 0.7, drift: 0.04 },
     { k: '#ROZE', vorm: 0, x: 0.78, y: 0.86, r: 0.26, sterk: 1.0, drift: 0.04 },
-    { k: '#0F1217', vorm: 0, x: 0.85, y: 0.05, r: 0.5, sterk: 0.95, drift: 0.03 },
-    { k: '#0F1217', vorm: 0, x: -0.05, y: 1.05, r: 0.45, sterk: 0.9, drift: 0.03 },
+    { k: '#090D0B', vorm: 0, x: 0.85, y: 0.05, r: 0.5, sterk: 0.95, drift: 0.03 },
+    { k: '#090D0B', vorm: 0, x: -0.05, y: 1.05, r: 0.45, sterk: 0.9, drift: 0.03 },
   ] },
-  p6: { naam: 'Insnede staand', grond: '#FBFCFF', korrel: 0.06, lagen: [
+  p6: { naam: 'Insnede staand', grond: '#FFFFFF', korrel: 0.06, lagen: [
     { k: '#D0D8E9', vorm: 1, x: 0.04, y: 0.5, hoek: 53.13, r: 0.34, zij: 0.35, sterk: 0.7, drift: 0.03 },
-    { k: '#25508B', vorm: 4, x: 0.0, y: 0.46, hoek: 53.13, r: 0.1, sterk: 1.0, drift: 0.03 },
+    { k: '#016645', vorm: 4, x: 0.0, y: 0.46, hoek: 53.13, r: 0.1, sterk: 1.0, drift: 0.03 },
     { k: '#ROZE', vorm: 1, x: 0.0, y: 0.46, hoek: 53.13, r: 0.045, zij: 2.0, sterk: 0.8, drift: 0.03 },
-    { k: '#1A4279', vorm: 0, x: -0.05, y: -0.05, r: 0.32, sterk: 0.85, drift: 0.03 },
+    { k: '#023D29', vorm: 0, x: -0.05, y: -0.05, r: 0.32, sterk: 0.85, drift: 0.03 },
   ] },
 };
 
@@ -188,7 +188,7 @@ void main(){
 
 export function maakVeld(canvas, soort, opties = {}) {
   const cfg = VELDEN[soort]; if (!cfg) return null;
-  const roze = opties.roze || '#F1B7AC';
+  const roze = opties.roze || '#9DF5D2';  /* levering 99: de gloed is zacht mint (lijst 102, A1 b); de naam van de optie bleef */
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: !!opties.bewaar });
   if (!gl) return null;
   const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };

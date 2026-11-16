@@ -90,7 +90,7 @@ try {
         const span = getComputedStyle(document.querySelector('.pl-qty-lat .wk-trap li:not(.is-nu) span'));
         return { overlap, binnen, px: parseFloat(span.fontSize), kleur: span.color, sw: document.documentElement.scrollWidth, vw: innerWidth };
       });
-      ok(`${tag}: de treden passen naast elkaar in de lat, tekst ≥ 11,5 px in grijs`, !m.overlap && m.binnen && m.px >= 11.5 && m.kleur === 'rgb(99, 105, 116)', JSON.stringify(m));
+      ok(`${tag}: de treden passen naast elkaar in de lat, tekst ≥ 11,5 px in grijs`, !m.overlap && m.binnen && m.px >= 11.5 && m.kleur === 'rgb(94, 100, 97)', JSON.stringify(m));
       ok(`${tag}: geen horizontale scroll`, m.sw <= m.vw, JSON.stringify(m));
       const hint = await page.evaluate(() => { const h = document.querySelector('.pl-qty-onder > .hint:not(.pl-outfit-note)'); return h ? getComputedStyle(h).display : 'geen'; });
       ok(`${tag}: "Tot 20 producten …" staat niet meer onder de lat (de lat zegt het)`, hint === 'none' || hint === 'geen', hint);

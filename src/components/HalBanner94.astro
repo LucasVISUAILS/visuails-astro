@@ -66,14 +66,17 @@ const STAPPEN = T.stappen;
   <div class="b94-beeld" data-b94-beeld>
     <video class="b94-video" data-b94-video muted playsinline loop preload="metadata" poster={pad('poster-1280.webp')}
            data-klein={pad('banner-1280.mp4')} data-groot={pad('banner-1920.mp4')} aria-label={T.video}></video>
+    {/* lijst 114 (V1): de video zelf wordt hier getekend, in hetzelfde moment als de letters, zodat ze nooit uit de pas lopen */}
+    <canvas class="b94-basis" data-b94-basis aria-hidden="true"></canvas>
     {(['gat', 'vul'] as const).map((laag) => (
       <div class={`b94-laag b94-${laag}`} aria-hidden={laag === 'vul' ? 'true' : undefined} data-b94-laag={laag}>
         {laag === 'vul' && <canvas class="b94-effect" data-b94-effect></canvas>}
         <div class="b94-tekst">
           <div class="b94-kopvak">
+          {/* levering 110 (lijst 122, opbouw b): de eerste regel is een kleine aanloop, de tweede vult de kolom */}
           {laag === 'gat'
-            ? <h1 id="b94-h1" class="b94-kop" aria-label={T.kop.join(' ')}><span aria-hidden="true">{T.kop[0]}</span><span aria-hidden="true">{T.kop[1]}</span></h1>
-            : <p class="b94-kop"><span>{T.kop[0]}</span><span>{T.kop[1]}</span></p>}
+            ? <h1 id="b94-h1" class="b94-kop" aria-label={T.kop.join(' ')}><span class="b94-aanloop" aria-hidden="true">{T.kop[0]}</span><span class="b94-groot" aria-hidden="true">{T.kop[1]}</span></h1>
+            : <p class="b94-kop"><span class="b94-aanloop">{T.kop[0]}</span><span class="b94-groot">{T.kop[1]}</span></p>}
           </div>
         </div>
       </div>
@@ -125,6 +128,11 @@ const STAPPEN = T.stappen;
     const beeld = sec.querySelector<HTMLElement>('[data-b94-beeld]')!;
     const vid = sec.querySelector<HTMLVideoElement>('[data-b94-video]')!;
     let doek = sec.querySelector<HTMLCanvasElement>('[data-b94-effect]')!;
+    /* LIJST 114 (V1): "De negatieve tekst kleuren gaan nog niet perfect mee met de video erachter." De video kwam via de
+       browser op het scherm en de letters via ons canvas, een beeld later. Nu tekenen we de video zelf ook, in hetzelfde
+       moment als de letters (het basisvlak); de video-tag speelt onzichtbaar als bron. */
+    const basis = sec.querySelector<HTMLCanvasElement>('[data-b94-basis]');
+    const bg = basis ? basis.getContext('2d', { alpha: false }) : null;
     const pauze = sec.querySelector<HTMLButtonElement>('[data-b94-pauze]')!;
     const html = document.documentElement;
     const minder = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -229,6 +237,7 @@ const STAPPEN = T.stappen;
       const r = beeld.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
       const w = Math.max(1, Math.round(r.width * dpr)), hh = Math.max(1, Math.round(r.height * dpr));
       if (doek.width !== w || doek.height !== hh) { doek.width = w; doek.height = hh; }
+      if (basis && (basis.width !== w || basis.height !== hh)) { basis.width = w; basis.height = hh; }
     }
     /* het stuk van de video dat de banner toont (object-fit: cover), in breukdelen van de video */
     function dek(): [number, number, number, number] {
@@ -237,6 +246,10 @@ const STAPPEN = T.stappen;
     }
     function teken() {
       if (vid.readyState < 2) return;
+      if (bg && basis) {
+        const [x, y, w, h] = dek(), vw = vid.videoWidth, vh = vid.videoHeight;
+        try { bg.drawImage(vid, x * vw, y * vh, w * vw, h * vh, 0, 0, basis.width, basis.height); sec.classList.add('b94-sync'); } catch { /* het basisvlak blijft uit; de video staat er zelf */ }
+      }
       if (gl && prog) {
         gl.viewport(0, 0, doek.width, doek.height);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, vTex);

@@ -1,0 +1,437 @@
+<title>Lijst 105 · Sfeerkaarten</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+@font-face { font-family: 'VISUAILS Display'; src: url(f/display.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+:root { --zwart: #090D0B; --wit: #FFFFFF; --mint: #3DFFB0; --mint-muis: #1FEA9C; --grijs: #5E6461; --lijn: #E7EAE8; --vlak: #F4F5F4; --m300: #9DF5D2; color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--wit); color: var(--zwart); font: 16px/1.55 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+#veld { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+.pag { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 56px max(20px, env(safe-area-inset-right, 0px)) 120px max(20px, env(safe-area-inset-left, 0px)); }
+.mono { font: 500 12px/1.3 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--grijs); }
+h1 { font: 700 clamp(30px, 4.4vw, 52px)/1.02 'VISUAILS Display', 'DM Sans', sans-serif; text-transform: uppercase; margin: 10px 0 18px; }
+h2 { font: 700 clamp(22px, 2.6vw, 30px)/1.1 'VISUAILS Display', 'DM Sans', sans-serif; text-transform: uppercase; margin: 0 0 10px; }
+.uitleg { max-width: 68ch; color: var(--grijs); margin: 0 0 14px; }
+.uitleg b { color: var(--zwart); font-weight: 600; }
+.regels { max-width: 68ch; margin: 0 0 8px; padding-left: 20px; color: var(--grijs); }
+.regels li { margin: 4px 0; } .regels b { color: var(--zwart); font-weight: 600; }
+.blok { margin-top: 56px; border-top: 1px solid var(--lijn); padding-top: 26px; }
+/* het voorbeeld: Studio, abonnement */
+.raam { border: 1px solid var(--lijn); border-radius: 14px; overflow: hidden; background: transparent; margin-top: 18px; }
+.studio { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 640px; }
+.st-zij { border-right: 1px solid var(--lijn); padding: 26px 16px; display: flex; flex-direction: column; gap: 4px; background: #fff; }
+.st-zij .wm { width: 96px; height: 18px; color: var(--zwart); margin: 0 10px 4px; }
+.st-zij .sub { font-size: 12.5px; color: var(--grijs); margin: 0 10px 22px; }
+.st-zij a { display: block; padding: 9px 10px; border-radius: 8px; color: var(--zwart); text-decoration: none; font-size: 14.5px; }
+.st-zij a[aria-current] { background: var(--vlak); font-weight: 600; }
+.st-hoofd { padding: 30px clamp(18px, 3vw, 44px) 44px; min-width: 0; background: transparent; }
+.st-hoofd .pad { font-size: 13.5px; color: var(--grijs); }
+.st-hoofd h2 { font-size: clamp(26px, 3.2vw, 40px); margin: 22px 0 22px; }
+.kaart { position: relative; border-radius: 18px; color: #fff; padding: clamp(24px, 3.4vw, 44px); min-height: 300px; display: flex; flex-direction: column; justify-content: flex-end; }
+.kaart .klein { font-size: 13px; color: var(--m300); margin: 0 0 8px; }
+.kaart h3 { font: 600 clamp(20px, 2.2vw, 26px)/1.2 'DM Sans', sans-serif; margin: 0 0 12px; max-width: 22ch; }
+.kaart p { color: rgb(255 255 255 / .82); margin: 0 0 22px; max-width: 54ch; font-size: 15px; }
+.knoppen { display: flex; flex-wrap: wrap; gap: 10px; }
+.knop { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px; border-radius: 8px; font: 600 15px/1 'DM Sans', sans-serif; text-decoration: none; }
+.knop.mint { color: var(--zwart); background: var(--mint); }
+.knop.lijnw { color: #fff; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / .7); }
+.knop:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+.st-onder { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.st-onder div { border: 1px solid var(--lijn); border-radius: 14px; padding: 20px; background: #fff; min-width: 0; }
+.st-onder b { display: block; margin-bottom: 6px; } .st-onder p { margin: 0; color: var(--grijs); font-size: 14.5px; }
+.geen-gl .kaart { background: radial-gradient(80% 70% at 100% 100%, #11976A, #023D29 35%, #090D0B 80%); }
+/* de plekken */
+.groep { margin-top: 44px; }
+.plek { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; padding: 22px 0; border-top: 1px solid var(--lijn); }
+.plek .nu img { display: block; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 0 0 1px var(--lijn); margin-top: 8px; }
+.plek .geen { margin-top: 8px; padding: 28px 18px; border-radius: 8px; background: var(--vlak); color: var(--grijs); font-size: 14px; }
+.plek h3 { margin: 6px 0 6px; font: 600 18px/1.3 'DM Sans', sans-serif; }
+.plek p { margin: 0 0 14px; color: var(--grijs); font-size: 15px; }
+.opties { display: flex; flex-wrap: wrap; gap: 8px; }
+.opties label { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--lijn); border-radius: 8px; cursor: pointer; font-weight: 500; background: #fff; }
+.opties input { accent-color: var(--zwart); }
+.opties label:has(input:checked) { border-color: var(--zwart); background: var(--vlak); }
+.opties small { font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--grijs); }
+textarea { width: 100%; min-height: 54px; margin-top: 10px; padding: 10px 12px; border: 1px solid #8A908D; border-radius: 8px; font: 15px/1.45 'DM Sans', sans-serif; color: var(--zwart); background: #fff; resize: vertical; }
+.bewaar { margin-top: 26px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.bewaar button { height: 46px; padding: 0 22px; border: 0; border-radius: 8px; background: var(--mint); color: var(--zwart); font: 600 15px/1 'DM Sans', sans-serif; cursor: pointer; }
+.bewaar button:focus-visible { outline: 2px solid var(--zwart); outline-offset: 3px; }
+#stand { color: var(--grijs); font-size: 14px; }
+@media (max-width: 820px) {
+  .studio { grid-template-columns: 1fr; } .st-zij { display: none; }
+  .st-onder, .plek { grid-template-columns: 1fr; }
+}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="wm" viewBox="0.00 -712.00 3763.74 724.00"><path fill="currentColor" fill-rule="evenodd" d="M31.3 -700.0L32.3 -700.0L33.4 -700.0L34.4 -700.0L35.5 -699.9L36.6 -699.9L37.6 -699.9L38.7 -699.8L39.7 -699.8L40.8 -699.7L41.9 -699.7L42.9 -699.6L44.0 -699.5L45.0 -699.5L46.1 -699.4L47.1 -699.3L48.2 -699.2L49.3 -699.1L50.3 -698.9L51.4 -698.8L52.4 -698.7L53.5 -698.6L54.5 -698.4L55.6 -698.3L56.6 -698.1L57.7 -698.0L58.7 -697.8L59.8 -697.6L60.8 -697.5L61.9 -697.3L62.9 -697.1L63.9 -696.9L65.0 -696.7L66.0 -696.5L67.1 -696.3L68.1 -696.0L69.1 -695.8L70.2 -695.6L71.2 -695.3L72.2 -695.1L73.3 -694.8L74.3 -694.6L75.3 -694.3L76.3 -694.0L77.4 -693.7L78.4 -693.5L79.4 -693.2L80.4 -692.9L81.4 -692.6L82.5 -692.2L83.5 -691.9L84.5 -691.6L85.5 -691.3L86.5 -690.9L87.5 -690.6L88.5 -690.2L89.5 -689.9L90.5 -689.5L91.5 -689.2L92.5 -688.8L93.5 -688.4L94.5 -688.0L95.5 -687.6L96.4 -687.2L97.4 -686.8L98.4 -686.4L99.4 -686.0L100.3 -685.6L101.3 -685.2L102.3 -684.7L103.3 -684.3L104.2 -683.9L105.2 -683.4L106.1 -682.9L107.1 -682.5L108.0 -682.0L109.0 -681.5L109.9 -681.1L110.9 -680.6L111.8 -680.1L112.8 -679.6L113.7 -679.1L114.6 -678.6L115.6 -678.1L116.5 -677.5L117.4 -677.0L118.3 -676.5L119.2 -675.9L120.1 -675.4L121.0 -674.9L122.0 -674.3L122.9 -673.7L123.8 -673.2L124.6 -672.6L125.5 -672.0L126.4 -671.4L127.3 -670.9L128.2 -670.3L129.1 -669.7L129.9 -669.1L130.8 -668.5L131.7 -667.8L132.5 -667.2L133.4 -666.6L134.2 -666.0L135.1 -665.3L135.9 -664.7L136.8 -664.1L137.6 -663.4L138.5 -662.7L139.3 -662.1L140.1 -661.4L140.9 -660.8L141.8 -660.1L142.6 -659.4L143.4 -658.7L144.2 -658.0L145.0 -657.3L145.8 -656.6L146.6 -655.9L147.4 -655.2L148.1 -654.5L148.9 -653.8L149.7 -653.1L150.5 -652.3L151.2 -651.6L152.0 -650.8L152.8 -650.1L153.5 -649.4L154.3 -648.6L155.0 -647.8L155.7 -647.1L156.5 -646.3L157.2 -645.6L157.9 -644.8L158.6 -644.0L159.4 -643.2L160.1 -642.4L160.8 -641.6L161.5 -640.8L162.2 -640.0L162.9 -639.2L163.6 -638.4L164.2 -637.6L164.9 -636.8L165.6 -636.0L166.2 -635.1L166.9 -634.3L167.6 -633.5L168.2 -632.6L168.9 -631.8L169.5 -630.9L170.1 -630.1L170.8 -629.2L171.4 -628.4L172.0 -627.5L172.6 -626.7L173.2 -625.8L173.8 -624.9L174.4 -624.0L175.0 -623.2L175.6 -622.3L176.2 -621.4L176.8 -620.5L177.3 -619.6L177.9 -618.7L178.5 -617.8L179.0 -616.9L179.6 -616.0L180.1 -615.1L180.6 -614.2L181.2 -613.2L181.7 -612.3L182.2 -611.4L182.7 -610.5L183.2 -609.5L183.7 -608.6L184.2 -607.7L184.7 -606.7L185.2 -605.8L185.7 -604.8L186.2 -603.9L186.6 -602.9L187.1 -602.0L187.6 -601.0L188.0 -600.1L188.4 -599.1L188.9 -598.1L189.3 -597.2L189.7 -596.2L190.2 -595.2L190.6 -594.2L191.0 -593.3L191.4 -592.3L191.8 -591.3L192.2 -590.3L192.6 -589.3L192.9 -588.3L193.3 -587.3L193.7 -586.3L194.0 -585.3L194.4 -584.3L194.7 -583.3L195.1 -582.3L195.4 -581.3L195.8 -580.3L196.1 -579.3L341.1 -92.0L345.1 -92.0L478.1 -545.3L684.4 -700.0L684.4 -700.0L469.1 -0.0L216.1 -0.0L0.0 -700.0ZM804.3 -0.0L651.7 -0.0L651.7 -412.6L720.8 -637.4L804.3 -700.0ZM967.9 -197.8L968.5 -194.5L969.2 -191.3L970.0 -188.1L970.9 -184.9L971.9 -181.8L972.9 -178.8L974.1 -175.8L975.4 -172.9L976.7 -170.0L978.1 -167.2L979.6 -164.4L981.3 -161.7L983.0 -159.1L984.7 -156.5L986.6 -154.0L988.5 -151.5L990.6 -149.2L992.7 -146.9L994.8 -144.7L997.1 -142.5L999.4 -140.5L1001.9 -138.5L1004.4 -136.5L1007.0 -134.7L1009.6 -132.9L1012.4 -131.2L1015.2 -129.6L1018.1 -128.0L1021.1 -126.5L1024.1 -125.1L1027.2 -123.8L1030.4 -122.6L1033.6 -121.5L1036.9 -120.5L1040.3 -119.6L1043.7 -118.8L1047.2 -118.1L1050.7 -117.5L1054.3 -117.0L1058.0 -116.5L1061.7 -116.2L1065.5 -116.0L1069.4 -115.8L1073.3 -115.8L1076.5 -115.8L1079.7 -115.9L1082.8 -116.0L1085.9 -116.3L1089.0 -116.5L1092.0 -116.9L1095.0 -117.3L1097.9 -117.7L1100.7 -118.3L1103.6 -118.8L1106.3 -119.5L1109.1 -120.2L1111.8 -121.0L1114.4 -121.8L1117.0 -122.7L1119.5 -123.6L1122.0 -124.7L1124.5 -125.7L1126.8 -126.9L1129.1 -128.1L1131.4 -129.4L1133.5 -130.7L1135.7 -132.1L1137.7 -133.6L1139.7 -135.1L1141.6 -136.7L1143.5 -138.4L1145.2 -140.1L1147.0 -141.9L1148.6 -143.8L1150.2 -145.7L1151.8 -147.7L1153.2 -149.7L1154.6 -151.8L1155.8 -154.0L1157.0 -156.3L1158.1 -158.6L1159.1 -161.0L1160.0 -163.4L1160.8 -166.0L1161.5 -168.6L1162.1 -171.2L1162.6 -174.0L1163.0 -176.8L1163.3 -179.6L1163.6 -182.5L1163.7 -185.5L1163.8 -188.6L1163.7 -191.9L1163.5 -195.1L1163.3 -198.2L1162.9 -201.3L1162.4 -204.3L1161.8 -207.3L1161.1 -210.2L1160.3 -213.0L1159.4 -215.8L1158.3 -218.5L1157.2 -221.1L1155.9 -223.7L1154.6 -226.2L1153.1 -228.7L1151.5 -231.1L1149.8 -233.4L1148.0 -235.7L1146.2 -237.9L1144.2 -240.1L1142.2 -242.3L1140.1 -244.4L1137.9 -246.5L1135.6 -248.6L1133.2 -250.6L1130.8 -252.5L1128.3 -254.5L1125.7 -256.4L1123.0 -258.2L1120.2 -260.0L1117.3 -261.8L1114.4 -263.6L1111.4 -265.3L1108.3 -266.9L1105.2 -268.6L1102.0 -270.2L1098.7 -271.8L1095.4 -273.4L1092.1 -275.0L1088.7 -276.5L1085.3 -278.1L1081.8 -279.6L1078.2 -281.1L1074.6 -282.6L1071.0 -284.0L1067.3 -285.4L1063.6 -286.9L1059.8 -288.3L1055.9 -289.6L1052.0 -291.0L1048.1 -292.4L1044.2 -293.7L1040.2 -295.1L1036.3 -296.5L1036.3 -296.5L1036.3 -296.5L1032.3 -297.9L1032.3 -297.9L1028.2 -299.3L1028.2 -299.3L1024.2 -300.7L1024.2 -300.7L1020.1 -302.1L1020.1 -302.1L1016.0 -303.5L1016.0 -303.5L1011.9 -304.9L1011.9 -304.9L1007.7 -306.3L1007.7 -306.3L1003.5 -307.7L1003.5 -307.7L999.4 -309.1L999.4 -309.1L995.1 -310.6L995.1 -310.6L991.0 -311.9L991.0 -311.9L991.0 -311.9L990.9 -312.0L980.6 -315.6L970.7 -319.3L961.0 -323.1L951.7 -327.1L942.6 -331.3L933.9 -335.6L925.4 -340.0L917.2 -344.6L909.4 -349.3L901.8 -354.2L894.5 -359.2L887.5 -364.3L880.8 -369.6L874.4 -375.0L868.3 -380.6L862.5 -386.3L857.5 -391.7L857.5 -630.3L861.6 -635.1L866.2 -640.2L871.0 -645.1L875.9 -649.8L881.1 -654.3L886.4 -658.7L892.0 -663.0L897.7 -667.0L903.6 -670.9L909.7 -674.7L916.0 -678.3L922.4 -681.7L929.1 -684.9L935.9 -688.0L942.9 -690.9L950.0 -693.6L957.2 -696.2L964.5 -698.5L971.9 -700.7L979.5 -702.6L987.1 -704.4L994.9 -706.0L1002.7 -707.4L1010.7 -708.6L1018.8 -709.7L1027.0 -710.5L1035.3 -711.2L1043.7 -711.6L1052.3 -711.9L1060.9 -712.0L1069.9 -711.9L1078.8 -711.6L1087.5 -711.1L1096.1 -710.5L1104.5 -709.6L1112.8 -708.5L1121.0 -707.3L1129.0 -705.8L1137.0 -704.2L1144.7 -702.4L1152.3 -700.4L1159.8 -698.2L1167.2 -695.8L1174.4 -693.2L1181.5 -690.4L1188.4 -687.4L1195.2 -684.2L1201.8 -680.9L1208.3 -677.4L1214.5 -673.7L1220.6 -669.9L1226.5 -665.9L1232.2 -661.7L1237.8 -657.4L1243.2 -652.9L1248.4 -648.2L1253.4 -643.3L1258.2 -638.3L1262.9 -633.1L1267.4 -627.8L1271.7 -622.2L1272.2 -621.5L1272.2 -505.4L1147.4 -505.4L1144.5 -519.6L1143.9 -522.3L1143.2 -524.9L1142.5 -527.5L1141.7 -530.1L1140.8 -532.6L1139.8 -535.1L1138.7 -537.5L1137.6 -539.9L1136.3 -542.2L1135.0 -544.5L1133.6 -546.7L1132.1 -548.9L1130.5 -551.0L1128.9 -553.1L1127.3 -555.1L1125.5 -557.1L1123.8 -559.0L1121.9 -560.8L1120.0 -562.6L1118.1 -564.3L1116.1 -566.0L1114.0 -567.6L1111.8 -569.1L1109.7 -570.6L1107.4 -572.0L1105.1 -573.4L1102.7 -574.7L1100.3 -575.9L1097.8 -577.1L1095.3 -578.1L1092.8 -579.1L1090.2 -580.0L1087.5 -580.9L1084.9 -581.6L1082.1 -582.3L1079.3 -582.9L1076.5 -583.4L1073.7 -583.9L1070.7 -584.2L1067.8 -584.5L1064.8 -584.7L1061.7 -584.8L1058.6 -584.9L1055.9 -584.9L1053.2 -584.9L1050.5 -584.9L1047.8 -584.8L1045.2 -584.6L1042.6 -584.3L1040.1 -584.0L1037.5 -583.7L1035.0 -583.3L1032.5 -582.8L1030.0 -582.2L1027.6 -581.6L1025.2 -581.0L1022.8 -580.2L1020.5 -579.4L1018.2 -578.6L1015.9 -577.7L1013.7 -576.7L1011.5 -575.7L1009.4 -574.6L1007.3 -573.5L1005.4 -572.2L1003.4 -571.0L1001.6 -569.7L999.8 -568.3L998.0 -566.8L996.3 -565.4L994.7 -563.8L993.1 -562.2L991.6 -560.5L990.1 -558.8L988.7 -557.0L987.4 -555.1L986.1 -553.2L985.0 -551.2L983.9 -549.2L982.9 -547.1L982.0 -544.9L981.2 -542.7L980.5 -540.3L979.8 -538.0L979.3 -535.5L978.8 -533.0L978.4 -530.4L978.1 -527.8L977.9 -525.1L977.8 -522.3L977.7 -519.4L977.8 -516.7L977.9 -514.1L978.1 -511.5L978.4 -508.9L978.8 -506.4L979.3 -504.0L979.8 -501.5L980.5 -499.2L981.2 -496.8L982.0 -494.5L982.9 -492.3L983.9 -490.1L985.0 -488.0L986.2 -485.9L987.4 -483.8L988.8 -481.8L990.2 -479.8L991.7 -477.9L993.2 -476.0L994.8 -474.1L996.5 -472.3L998.3 -470.5L1000.1 -468.8L1002.0 -467.0L1004.0 -465.3L1006.0 -463.7L1008.2 -462.0L1010.3 -460.4L1012.6 -458.9L1014.9 -457.3L1017.3 -455.8L1019.8 -454.4L1022.3 -452.9L1024.9 -451.5L1027.5 -450.1L1030.2 -448.7L1033.0 -447.3L1035.8 -445.9L1038.6 -444.5L1041.6 -443.1L1044.6 -441.7L1047.6 -440.3L1050.7 -439.0L1053.8 -437.6L1057.0 -436.3L1060.3 -434.9L1063.6 -433.6L1067.0 -432.3L1070.4 -430.9L1073.9 -429.6L1077.4 -428.3L1081.0 -427.0L1084.5 -425.6L1088.2 -424.3L1091.8 -423.0L1095.6 -421.6L1099.3 -420.3L1103.1 -418.9L1106.9 -417.6L1110.8 -416.2L1114.7 -414.9L1118.7 -413.5L1122.7 -412.2L1126.7 -410.8L1133.3 -408.5L1139.9 -406.2L1146.4 -403.8L1152.9 -401.4L1159.3 -398.9L1165.6 -396.4L1171.8 -393.8L1178.0 -391.2L1184.2 -388.5L1190.2 -385.8L1196.2 -383.0L1202.2 -380.2L1208.0 -377.3L1213.9 -374.3L1219.6 -371.3L1225.3 -368.3L1230.9 -365.2L1236.3 -362.0L1241.6 -358.6L1246.8 -355.1L1251.8 -351.5L1256.7 -347.8L1261.5 -344.0L1266.1 -340.1L1270.5 -336.0L1272.2 -334.4L1272.2 -62.8L1270.6 -61.1L1265.6 -56.0L1260.4 -51.1L1255.0 -46.4L1249.3 -41.8L1243.5 -37.3L1237.5 -33.0L1231.2 -28.8L1224.7 -24.8L1218.0 -20.9L1211.2 -17.2L1204.1 -13.6L1196.8 -10.3L1189.3 -7.3L1181.6 -4.4L1173.7 -1.8L1165.6 0.6L1157.3 2.8L1148.9 4.7L1140.2 6.4L1131.3 7.9L1122.2 9.2L1112.9 10.2L1103.5 11.0L1093.8 11.5L1083.9 11.9L1073.8 12.0L1064.5 11.9L1055.2 11.6L1046.1 11.1L1037.1 10.4L1028.2 9.5L1019.4 8.4L1010.7 7.1L1002.1 5.6L993.7 3.9L985.4 2.0L977.2 -0.1L969.1 -2.4L961.1 -4.9L953.2 -7.6L945.5 -10.5L937.9 -13.6L930.4 -16.9L923.1 -20.4L916.1 -24.1L909.2 -28.0L902.5 -32.0L896.0 -36.3L889.7 -40.7L883.6 -45.4L877.7 -50.2L872.0 -55.2L866.5 -60.4L861.2 -65.8L857.5 -69.9L857.5 -211.6L965.4 -211.6ZM1589.3 11.5L1579.7 10.9L1570.2 10.0L1560.8 8.9L1551.6 7.6L1542.4 6.0L1533.4 4.2L1524.5 2.1L1515.7 -0.3L1507.0 -2.8L1498.4 -5.6L1489.9 -8.7L1481.6 -12.0L1473.4 -15.6L1465.2 -19.4L1457.3 -23.4L1449.5 -27.7L1442.0 -32.3L1434.7 -37.1L1427.5 -42.1L1420.6 -47.4L1413.9 -53.0L1407.4 -58.8L1401.1 -64.8L1395.1 -71.1L1389.2 -77.7L1383.6 -84.5L1378.1 -91.5L1372.9 -98.8L1367.9 -106.4L1363.1 -114.2L1358.5 -122.2L1354.2 -130.5L1350.3 -139.1L1346.6 -147.9L1343.2 -157.0L1340.1 -166.4L1337.3 -175.9L1334.8 -185.8L1332.6 -195.9L1330.7 -206.3L1329.1 -216.9L1327.8 -227.7L1326.7 -238.9L1326.0 -250.2L1325.6 -261.9L1325.4 -273.8L1325.4 -700.0L1478.0 -700.0L1478.0 -272.8L1478.1 -267.0L1478.2 -261.3L1478.5 -255.8L1479.0 -250.3L1479.5 -245.0L1480.2 -239.8L1481.0 -234.6L1481.9 -229.6L1482.9 -224.8L1484.0 -220.0L1485.3 -215.3L1486.7 -210.8L1488.2 -206.3L1489.8 -202.0L1491.5 -197.8L1493.4 -193.7L1495.4 -189.7L1497.5 -185.9L1499.7 -182.1L1502.0 -178.5L1504.5 -175.0L1507.0 -171.7L1509.7 -168.4L1512.5 -165.3L1515.4 -162.3L1518.4 -159.5L1521.6 -156.7L1524.8 -154.1L1528.2 -151.6L1531.7 -149.3L1535.2 -147.0L1539.0 -144.9L1542.8 -142.9L1546.7 -141.0L1550.7 -139.3L1554.8 -137.7L1559.0 -136.2L1563.3 -134.9L1567.7 -133.7L1572.2 -132.6L1576.8 -131.6L1581.5 -130.8L1586.3 -130.1L1591.1 -129.5L1596.1 -129.0L1601.2 -128.7L1606.4 -128.5L1611.6 -128.4L1617.0 -128.5L1622.3 -128.7L1627.5 -129.0L1632.6 -129.5L1637.5 -130.1L1642.4 -130.8L1647.1 -131.6L1651.8 -132.6L1656.3 -133.7L1660.7 -134.9L1665.1 -136.2L1669.3 -137.7L1673.4 -139.3L1677.4 -141.0L1681.3 -142.9L1685.1 -144.9L1688.8 -147.0L1692.4 -149.3L1695.8 -151.6L1699.2 -154.1L1702.4 -156.7L1705.6 -159.5L1708.6 -162.3L1711.5 -165.3L1714.3 -168.4L1717.0 -171.7L1719.5 -175.0L1722.0 -178.5L1724.3 -182.1L1726.6 -185.9L1728.7 -189.7L1730.7 -193.7L1732.6 -197.8L1734.4 -202.0L1736.1 -206.3L1737.6 -210.8L1739.0 -215.3L1740.3 -220.0L1741.5 -224.8L1742.5 -229.6L1743.4 -234.6L1744.2 -239.8L1744.9 -245.0L1745.4 -250.3L1745.9 -255.8L1746.2 -261.3L1746.4 -267.0L1746.4 -272.8L1746.4 -585.5L1899.0 -700.0L1899.0 -273.8L1899.0 -0.0L1746.4 -0.0L1746.4 -15.8L1745.9 -15.6L1737.5 -12.0L1729.0 -8.7L1720.4 -5.6L1711.7 -2.8L1702.8 -0.3L1693.9 2.1L1684.9 4.2L1675.7 6.0L1666.5 7.6L1657.1 8.9L1647.7 10.0L1638.1 10.9L1628.5 11.5L1618.7 11.9L1608.9 12.0L1599.0 11.9ZM2550.1 -0.0L2549.0 -0.0L2548.0 -0.1L2546.9 -0.1L2545.8 -0.1L2544.8 -0.2L2543.7 -0.2L2542.7 -0.3L2541.6 -0.3L2540.5 -0.4L2539.5 -0.5L2538.4 -0.5L2537.4 -0.6L2536.3 -0.7L2535.3 -0.8L2534.2 -0.9L2533.1 -1.1L2532.1 -1.2L2531.0 -1.3L2530.0 -1.4L2528.9 -1.6L2527.9 -1.7L2526.8 -1.9L2525.8 -2.0L2524.7 -2.2L2523.7 -2.4L2522.6 -2.5L2521.6 -2.7L2520.6 -2.9L2519.5 -3.1L2518.5 -3.3L2517.4 -3.5L2516.4 -3.7L2515.4 -4.0L2514.3 -4.2L2513.3 -4.4L2512.3 -4.7L2511.2 -4.9L2510.2 -5.2L2509.2 -5.4L2508.1 -5.7L2507.1 -6.0L2506.1 -6.3L2505.1 -6.5L2504.0 -6.8L2503.0 -7.1L2502.0 -7.4L2501.0 -7.8L2500.0 -8.1L2499.0 -8.4L2498.0 -8.7L2497.0 -9.1L2496.0 -9.4L2495.0 -9.8L2494.0 -10.1L2493.0 -10.5L2492.0 -10.8L2491.0 -11.2L2490.0 -11.6L2489.0 -12.0L2488.0 -12.4L2487.0 -12.8L2486.0 -13.2L2485.1 -13.6L2484.1 -14.0L2483.1 -14.4L2482.1 -14.8L2481.2 -15.3L2480.2 -15.7L2479.2 -16.1L2478.3 -16.6L2477.3 -17.1L2476.4 -17.5L2475.4 -18.0L2474.5 -18.5L2473.5 -18.9L2472.6 -19.4L2471.6 -19.9L2470.7 -20.4L2469.8 -20.9L2468.8 -21.4L2467.9 -21.9L2467.0 -22.5L2466.1 -23.0L2465.1 -23.5L2464.2 -24.1L2463.3 -24.6L2462.4 -25.1L2461.5 -25.7L2460.6 -26.3L2459.7 -26.8L2458.8 -27.4L2457.9 -28.0L2457.0 -28.6L2456.1 -29.1L2455.3 -29.7L2454.4 -30.3L2453.5 -30.9L2452.6 -31.5L2451.8 -32.2L2450.9 -32.8L2450.1 -33.4L2449.2 -34.0L2448.4 -34.7L2447.5 -35.3L2446.7 -35.9L2445.8 -36.6L2445.0 -37.3L2444.2 -37.9L2443.3 -38.6L2442.5 -39.2L2441.7 -39.9L2440.9 -40.6L2440.1 -41.3L2439.3 -42.0L2438.5 -42.7L2437.7 -43.4L2436.9 -44.1L2436.1 -44.8L2435.3 -45.5L2434.5 -46.2L2433.7 -46.9L2433.0 -47.7L2432.2 -48.4L2431.5 -49.2L2430.7 -49.9L2429.9 -50.6L2429.2 -51.4L2428.5 -52.2L2427.7 -52.9L2427.0 -53.7L2426.2 -54.4L2425.5 -55.2L2424.8 -56.0L2424.1 -56.8L2423.4 -57.6L2422.7 -58.4L2422.0 -59.2L2421.3 -60.0L2420.6 -60.8L2419.9 -61.6L2419.2 -62.4L2418.5 -63.2L2417.9 -64.0L2417.2 -64.9L2416.6 -65.7L2415.9 -66.5L2415.2 -67.4L2414.6 -68.2L2414.0 -69.1L2413.3 -69.9L2412.7 -70.8L2412.1 -71.6L2411.5 -72.5L2410.8 -73.3L2410.2 -74.2L2409.6 -75.1L2409.0 -76.0L2408.4 -76.8L2407.9 -77.7L2407.3 -78.6L2406.7 -79.5L2406.1 -80.4L2405.6 -81.3L2405.0 -82.2L2404.4 -83.1L2403.9 -84.0L2403.4 -84.9L2402.8 -85.8L2402.3 -86.8L2401.8 -87.7L2401.2 -88.6L2400.7 -89.5L2400.2 -90.5L2399.7 -91.4L2399.2 -92.3L2398.7 -93.3L2398.2 -94.2L2397.8 -95.2L2397.3 -96.1L2396.8 -97.1L2396.4 -98.0L2395.9 -99.0L2395.5 -99.9L2395.0 -100.9L2394.6 -101.9L2394.1 -102.8L2393.7 -103.8L2393.3 -104.8L2392.9 -105.8L2392.5 -106.7L2392.1 -107.7L2391.7 -108.7L2391.3 -109.7L2390.9 -110.7L2390.5 -111.7L2390.1 -112.7L2389.8 -113.7L2389.4 -114.7L2389.1 -115.7L2388.7 -116.7L2388.4 -117.7L2388.0 -118.7L2387.7 -119.7L2387.4 -120.7L2242.4 -608.0L2238.4 -608.0L2105.3 -154.7L1952.2 -39.9L1952.2 -173.0L2114.3 -700.0L2367.3 -700.0L2583.5 -0.0L2552.2 -0.0L2551.1 -0.0ZM2736.1 -0.0L2639.1 -0.0L2583.5 -180.3L2583.5 -585.5L2736.1 -700.0ZM2789.3 -585.6L2941.9 -700.0L2941.9 -700.0L2941.9 -118.3L3242.6 -118.3L3242.6 -0.0L2789.3 -0.0ZM3493.6 11.6L3484.4 11.1L3475.4 10.4L3466.5 9.5L3457.7 8.4L3449.0 7.1L3440.5 5.6L3432.0 3.9L3423.7 2.0L3415.5 -0.1L3407.4 -2.4L3399.4 -4.9L3391.6 -7.6L3383.8 -10.5L3376.2 -13.6L3368.7 -16.9L3361.5 -20.4L3354.4 -24.1L3347.5 -28.0L3340.8 -32.0L3334.3 -36.3L3328.1 -40.7L3322.0 -45.4L3316.1 -50.2L3310.4 -55.2L3304.9 -60.4L3299.6 -65.8L3295.8 -69.9L3295.8 -211.6L3404.7 -211.6L3405.0 -208.1L3405.3 -204.6L3405.7 -201.2L3406.3 -197.8L3406.9 -194.5L3407.6 -191.3L3408.4 -188.1L3409.2 -184.9L3410.2 -181.8L3411.3 -178.8L3412.4 -175.8L3413.7 -172.9L3415.0 -170.0L3416.5 -167.2L3418.0 -164.4L3419.6 -161.7L3421.3 -159.1L3423.1 -156.5L3424.9 -154.0L3426.9 -151.5L3428.9 -149.2L3431.0 -146.9L3433.2 -144.7L3435.4 -142.5L3437.8 -140.5L3440.2 -138.5L3442.7 -136.5L3445.3 -134.7L3448.0 -132.9L3450.7 -131.2L3453.5 -129.6L3456.5 -128.0L3459.4 -126.5L3462.5 -125.1L3465.6 -123.8L3468.7 -122.6L3472.0 -121.5L3475.3 -120.5L3478.6 -119.6L3482.0 -118.8L3485.5 -118.1L3489.1 -117.5L3492.7 -117.0L3496.3 -116.5L3500.1 -116.2L3503.8 -116.0L3507.7 -115.8L3511.6 -115.8L3514.8 -115.8L3518.0 -115.9L3521.2 -116.0L3524.3 -116.3L3527.3 -116.5L3530.3 -116.9L3533.3 -117.3L3536.2 -117.7L3539.1 -118.3L3541.9 -118.8L3544.7 -119.5L3547.4 -120.2L3550.1 -121.0L3552.7 -121.8L3555.3 -122.7L3557.9 -123.6L3560.4 -124.7L3562.8 -125.7L3565.2 -126.9L3567.5 -128.1L3569.7 -129.4L3571.9 -130.7L3574.0 -132.1L3576.0 -133.6L3578.0 -135.1L3579.9 -136.7L3581.8 -138.4L3583.6 -140.1L3585.3 -141.9L3587.0 -143.8L3588.6 -145.7L3590.1 -147.7L3591.5 -149.7L3592.9 -151.8L3594.2 -154.0L3595.3 -156.3L3596.4 -158.6L3597.4 -161.0L3598.3 -163.4L3599.1 -166.0L3599.8 -168.6L3600.4 -171.2L3600.9 -174.0L3601.3 -176.8L3601.7 -179.6L3601.9 -182.5L3602.1 -185.5L3602.1 -188.6L3602.0 -191.9L3601.9 -195.1L3601.6 -198.2L3601.2 -201.3L3600.7 -204.3L3600.1 -207.3L3599.4 -210.2L3598.6 -213.0L3597.7 -215.8L3596.7 -218.5L3595.5 -221.1L3594.3 -223.7L3592.9 -226.2L3591.4 -228.7L3589.8 -231.1L3588.1 -233.4L3586.4 -235.7L3584.5 -237.9L3582.5 -240.1L3580.5 -242.3L3578.4 -244.4L3576.2 -246.5L3573.9 -248.6L3571.6 -250.6L3569.1 -252.5L3566.6 -254.5L3564.0 -256.4L3561.3 -258.2L3558.5 -260.0L3555.7 -261.8L3552.7 -263.6L3549.7 -265.3L3546.6 -266.9L3543.5 -268.6L3540.3 -270.2L3537.1 -271.8L3533.8 -273.4L3530.4 -275.0L3527.1 -276.5L3523.6 -278.1L3520.1 -279.6L3516.6 -281.1L3513.0 -282.6L3509.3 -284.0L3505.6 -285.4L3501.9 -286.9L3498.1 -288.3L3494.3 -289.6L3490.4 -291.0L3486.5 -292.4L3482.5 -293.7L3478.6 -295.1L3474.6 -296.5L3474.6 -296.5L3470.6 -297.9L3470.6 -297.9L3466.6 -299.3L3466.6 -299.3L3462.5 -300.7L3462.5 -300.7L3458.4 -302.1L3458.4 -302.1L3454.3 -303.5L3454.3 -303.5L3450.2 -304.9L3450.2 -304.9L3446.1 -306.3L3446.1 -306.3L3441.9 -307.7L3441.9 -307.7L3437.7 -309.1L3437.7 -309.1L3433.5 -310.6L3433.5 -310.6L3429.2 -312.0L3429.2 -312.0L3429.2 -312.0L3419.0 -315.6L3409.0 -319.3L3399.4 -323.1L3390.0 -327.1L3381.0 -331.3L3372.2 -335.6L3363.7 -340.0L3355.6 -344.6L3347.7 -349.3L3340.1 -354.2L3332.8 -359.2L3325.8 -364.3L3319.1 -369.6L3312.7 -375.0L3306.6 -380.6L3300.8 -386.3L3295.8 -391.7L3295.8 -630.3L3299.9 -635.1L3304.5 -640.2L3309.3 -645.1L3314.3 -649.8L3319.4 -654.3L3324.8 -658.7L3330.3 -663.0L3336.0 -667.0L3341.9 -670.9L3348.0 -674.7L3354.3 -678.3L3360.8 -681.7L3367.4 -684.9L3374.2 -688.0L3381.2 -690.9L3388.3 -693.6L3395.5 -696.2L3402.8 -698.5L3410.3 -700.7L3417.8 -702.6L3425.4 -704.4L3433.2 -706.0L3441.1 -707.4L3449.0 -708.6L3457.1 -709.7L3465.3 -710.5L3473.6 -711.2L3482.1 -711.6L3490.6 -711.9L3499.2 -712.0L3508.2 -711.9L3517.1 -711.6L3525.8 -711.1L3534.4 -710.5L3542.9 -709.6L3551.2 -708.5L3559.3 -707.3L3567.4 -705.8L3575.3 -704.2L3583.1 -702.4L3590.7 -700.4L3598.2 -698.2L3605.5 -695.8L3612.7 -693.2L3619.8 -690.4L3626.8 -687.4L3633.6 -684.2L3640.2 -680.9L3646.6 -677.4L3652.9 -673.7L3658.9 -669.9L3664.9 -665.9L3670.6 -661.7L3676.1 -657.4L3681.5 -652.9L3686.7 -648.2L3691.7 -643.3L3696.5 -638.3L3701.2 -633.1L3705.7 -627.8L3710.0 -622.2L3714.1 -616.5L3718.1 -610.7L3721.7 -604.7L3725.2 -598.5L3728.4 -592.2L3731.4 -585.8L3734.2 -579.2L3736.7 -572.5L3739.0 -565.6L3741.0 -558.6L3742.8 -551.4L3744.4 -544.1L3745.8 -536.7L3746.9 -529.1L3747.8 -521.3L3748.4 -513.4L3748.8 -505.4L3584.4 -505.4L3584.2 -508.3L3584.0 -511.2L3583.7 -514.0L3583.3 -516.8L3582.8 -519.6L3582.2 -522.3L3581.6 -524.9L3580.8 -527.5L3580.0 -530.1L3579.1 -532.6L3578.1 -535.1L3577.1 -537.5L3575.9 -539.9L3574.6 -542.2L3573.3 -544.5L3571.9 -546.7L3570.4 -548.9L3568.9 -551.0L3567.3 -553.1L3565.6 -555.1L3563.9 -557.1L3562.1 -559.0L3560.3 -560.8L3558.4 -562.6L3556.4 -564.3L3554.4 -566.0L3552.3 -567.6L3550.2 -569.1L3548.0 -570.6L3545.7 -572.0L3543.4 -573.4L3541.1 -574.7L3538.6 -575.9L3536.2 -577.1L3533.7 -578.1L3531.1 -579.1L3528.5 -580.0L3525.9 -580.9L3523.2 -581.6L3520.5 -582.3L3517.7 -582.9L3514.9 -583.4L3512.0 -583.9L3509.1 -584.2L3506.1 -584.5L3503.1 -584.7L3500.1 -584.8L3497.0 -584.9L3494.2 -584.9L3491.5 -584.9L3488.8 -584.9L3486.2 -584.8L3483.6 -584.6L3481.0 -584.3L3478.4 -584.0L3475.8 -583.7L3473.3 -583.3L3470.8 -582.8L3468.4 -582.2L3465.9 -581.6L3463.5 -581.0L3461.2 -580.2L3458.8 -579.4L3456.5 -578.6L3454.2 -577.7L3452.0 -576.7L3449.8 -575.7L3447.7 -574.6L3445.7 -573.5L3443.7 -572.2L3441.8 -571.0L3439.9 -569.7L3438.1 -568.3L3436.3 -566.8L3434.6 -565.4L3433.0 -563.8L3431.4 -562.2L3429.9 -560.5L3428.5 -558.8L3427.0 -557.0L3425.7 -555.1L3424.5 -553.2L3423.3 -551.2L3422.2 -549.2L3421.3 -547.1L3420.4 -544.9L3419.5 -542.7L3418.8 -540.3L3418.2 -538.0L3417.6 -535.5L3417.1 -533.0L3416.8 -530.4L3416.5 -527.8L3416.2 -525.1L3416.1 -522.3L3416.1 -519.4L3416.1 -516.7L3416.2 -514.1L3416.5 -511.5L3416.8 -508.9L3417.1 -506.4L3417.6 -504.0L3418.2 -501.5L3418.8 -499.2L3419.6 -496.8L3420.4 -494.5L3421.3 -492.3L3422.3 -490.1L3423.3 -488.0L3424.5 -485.9L3425.8 -483.8L3427.1 -481.8L3428.5 -479.8L3430.0 -477.9L3431.5 -476.0L3433.2 -474.1L3434.9 -472.3L3436.6 -470.5L3438.5 -468.8L3440.4 -467.0L3442.3 -465.3L3444.4 -463.7L3446.5 -462.0L3448.7 -460.4L3450.9 -458.9L3453.3 -457.3L3455.6 -455.8L3458.1 -454.4L3460.6 -452.9L3463.2 -451.5L3465.9 -450.1L3468.6 -448.7L3471.3 -447.3L3474.1 -445.9L3477.0 -444.5L3479.9 -443.1L3482.9 -441.7L3485.9 -440.3L3489.0 -439.0L3492.2 -437.6L3495.4 -436.3L3498.6 -434.9L3502.0 -433.6L3505.3 -432.3L3508.8 -430.9L3512.2 -429.6L3515.7 -428.3L3519.3 -427.0L3522.9 -425.6L3526.5 -424.3L3530.2 -423.0L3533.9 -421.6L3537.6 -420.3L3541.4 -418.9L3545.3 -417.6L3549.1 -416.2L3553.0 -414.9L3557.0 -413.5L3561.0 -412.2L3565.0 -410.8L3571.7 -408.5L3578.2 -406.2L3584.8 -403.8L3591.2 -401.4L3597.6 -398.9L3603.9 -396.4L3610.2 -393.8L3616.4 -391.2L3622.5 -388.5L3628.6 -385.8L3634.6 -383.0L3640.5 -380.2L3646.4 -377.3L3652.2 -374.3L3657.9 -371.3L3663.6 -368.3L3669.2 -365.2L3674.7 -362.0L3680.0 -358.6L3685.1 -355.1L3690.2 -351.5L3695.0 -347.8L3699.8 -344.0L3704.4 -340.1L3708.9 -336.0L3713.2 -331.9L3717.4 -327.6L3721.5 -323.2L3725.4 -318.7L3729.2 -314.1L3732.8 -309.3L3736.3 -304.4L3739.6 -299.4L3742.7 -294.2L3745.6 -288.8L3748.3 -283.2L3750.8 -277.3L3753.0 -271.3L3755.1 -265.1L3756.9 -258.7L3758.5 -252.1L3759.9 -245.3L3761.1 -238.3L3762.0 -231.0L3762.8 -223.6L3763.3 -216.0L3763.6 -208.2L3763.7 -200.2L3763.6 -193.1L3763.3 -186.0L3762.7 -179.0L3761.9 -172.1L3760.9 -165.3L3759.6 -158.5L3758.2 -151.8L3756.5 -145.1L3754.5 -138.6L3752.4 -132.1L3750.0 -125.7L3747.3 -119.3L3744.5 -113.0L3741.4 -106.8L3738.1 -100.7L3734.6 -94.6L3730.8 -88.7L3726.9 -82.9L3722.7 -77.2L3718.3 -71.7L3713.7 -66.3L3709.0 -61.1L3703.9 -56.0L3698.7 -51.1L3693.3 -46.4L3687.7 -41.8L3681.8 -37.3L3675.8 -33.0L3669.5 -28.8L3663.1 -24.8L3656.4 -20.9L3649.5 -17.2L3642.4 -13.6L3635.1 -10.3L3627.6 -7.3L3619.9 -4.4L3612.0 -1.8L3604.0 0.6L3595.7 2.8L3587.2 4.7L3578.5 6.4L3569.6 7.9L3560.6 9.2L3551.3 10.2L3541.8 11.0L3532.1 11.5L3522.3 11.9L3512.2 12.0L3502.8 11.9Z"/></symbol></defs></svg>
+<canvas id="veld" aria-hidden="true"></canvas>
+<div class="pag">
+  <span class="mono">Lijst 105 · 14 november 2026</span>
+  <h1>Waar de sfeerkaarten komen</h1>
+  <p class="uitleg">Je schreef: <i>"De kaarten zijn bedoelt voor het specialer maken van sommige dingen … Hier is namelijk niet echt een specifieke foto voor dus moet het beeld een sfeerbeeld worden."</i></p>
+  <p class="uitleg">Ik heb alle pagina's van de site en van Studio nagelopen, met schermafdrukken: 30 openbare pagina's, en Studio als klant met en zonder abonnement. Ik zocht plekken over een dienst of een moment waarvoor geen eigen foto bestaat, en plekken waar nu een glazen fotoblok, een bewogen foto of een leeg vak staat. Ik vond er 21. Mijn advies is er 15 te doen.</p>
+  <ul class="regels">
+    <li><b>Een kaart komt alleen waar geen eigen foto is</b> en het om iets gaat dat gevoel nodig heeft: een abonnement, een moment (bedankt, je eerste bestelling, je saldo), een dienst die nog niet bestaat (eigen look), of een plek die op beeld wacht (hooks, de clips).</li>
+    <li><b>Waar jouw foto's iets laten zien, blijft de foto.</b> Een kaart vervangt nooit een productbeeld.</li>
+    <li><b>Hoogstens drie kaarten per pagina</b>, en in Studio één per scherm.</li>
+    <li><b>Elke kaart is een eigen stuk uit de grote kaart</b> van die pagina (lijst 104), met witte tekst en een mint knop.</li>
+  </ul>
+
+  <div class="blok">
+    <span class="mono">Het voorbeeld · /account/plan zonder abonnement</span>
+    <h2>Studio, abonnement</h2>
+    <p class="uitleg">Dit is het scherm dat je noemde, met de kaart in plaats van het inktblok. Tekst en knoppen staan er al; alleen het blok verandert. De strepen en aderen staan stil; door elke lijn trekt rustig een puls van licht die in de ader eindigt. Onder tekst blijven de strepen zichtbaar, maar donkerder (mint 700), zodat wit leesbaar blijft.</p>
+    <div class="raam"><div class="studio">
+      <nav class="st-zij" aria-label="Studio"><svg class="wm" viewBox="0 0 3763.74 724" role="img" aria-label="VISUAILS"><use href="#wm" width="3763.74" height="724"/></svg><span class="sub">VISUAILS Studio</span>
+        <a href="#">Overzicht</a><a href="#">Bestellingen</a><a href="#">Je vaste look</a><a href="#">Je gegevens</a><a href="#">Facturen</a><a href="#" aria-current="page">Abonnement</a></nav>
+      <div class="st-hoofd"><span class="pad">Studio / Abonnement</span><h2>Abonnement &amp; facturering</h2>
+        <div class="kaart" data-kaart><div data-tekstvlak>
+          <p class="klein">Je hebt nog geen abonnement lopen</p>
+          <h3>Elke maand nieuwe beelden, zonder elke keer te bestellen</h3>
+          <p>Een abonnement geeft je elke maand een vast aantal credits, tegen een lager tarief per product dan los bestellen. Je bestelt via het gewone formulier, wanneer je wilt, en betaalt met je credits.</p>
+          <div class="knoppen"><a class="knop mint" href="#">Bekijk de abonnementen →</a><a class="knop lijnw" href="#">Los bestellen ↗</a></div>
+        </div></div>
+        <div class="st-onder"><div><b>Een vast aantal credits per maand</b><p>Elke dienst kost credits: een catalogset 4, een lifestylecarrousel 5. Zolang je abonnement loopt, vervallen ze niet; je kunt tot 3 maanden aan credits sparen.</p></div>
+          <div><b>Je look, één keer gezet</b><p>Gezicht, ondergrond en formaat blijven vast bij elke bestelling, zodat je het niet steeds opnieuw hoeft uit te leggen.</p></div></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="blok" id="keuzes">
+    <h2>De plekken</h2>
+    <p class="uitleg">Per plek: links hoe het nu is, rechts wat de kaart wordt, met mijn advies. Kies doen, later of niet doen.</p>
+    <h2 class="groep">Studio</h2><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/s1.webp" alt="Nu: Abonnement · nog geen abonnement" loading="lazy"></div>
+<div class="voorstel"><span class="mono">/account/plan</span><h3>Abonnement · nog geen abonnement</h3><p>Het aanbod "Elke maand nieuwe beelden" staat nu in een plat inktblok. Er is geen foto die een abonnement laat zien, dus dit wordt de kaart (zie het voorbeeld bovenaan). Zelfde tekst en knoppen, wit op het veld, Bekijk de abonnementen in mint.</p>
+<div class="opties"><label><input type="radio" name="s1" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="s1" value="later"> Later</label><label><input type="radio" name="s1" value="niet"> Niet doen</label></div><textarea id="n-s1" aria-label="Notitie bij Abonnement · nog geen abonnement" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/s2.webp" alt="Nu: Abonnement · met abonnement: je saldo" loading="lazy"></div>
+<div class="voorstel"><span class="mono">/account/plan</span><h3>Abonnement · met abonnement: je saldo</h3><p>Het saldo ("Je hebt geen credits", "Op 1 december komen er 120 bij") is het moment waar een abonnee voor komt. Als kaart: het getal groot in wit, de datum van de volgende credits in mint 300. De tabs en tabellen eronder blijven wit.</p>
+<div class="opties"><label><input type="radio" name="s2" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="s2" value="later"> Later</label><label><input type="radio" name="s2" value="niet"> Niet doen</label></div><textarea id="n-s2" aria-label="Notitie bij Abonnement · met abonnement: je saldo" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/s3.webp" alt="Nu: Overzicht · een nieuwe klant zonder bestelling" loading="lazy"></div>
+<div class="voorstel"><span class="mono">/account</span><h3>Overzicht · een nieuwe klant zonder bestelling</h3><p>Jens ziet nu "Welkom" en twee lege regels. Een kaart "Je eerste bestelling" met één knop (Nieuwe bestelling, mint) maakt van een leeg scherm een begin. Zodra er een bestelling is, verdwijnt de kaart en komen de foto's.</p>
+<div class="opties"><label><input type="radio" name="s3" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="s3" value="later"> Later</label><label><input type="radio" name="s3" value="niet"> Niet doen</label></div><textarea id="n-s3" aria-label="Notitie bij Overzicht · een nieuwe klant zonder bestelling" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/s4.webp" alt="Nu: Je vaste look · nog geen eigen gezichten of look" loading="lazy"></div>
+<div class="voorstel"><span class="mono">/account/brand-kit</span><h3>Je vaste look · nog geen eigen gezichten of look</h3><p>Twee lege staten met een knop naar het merkmodel en de eigen look. Klein, dus een smalle kaart. Later: eerst de grote plekken.</p>
+<div class="opties"><label><input type="radio" name="s4" value="doen"> Doen</label><label><input type="radio" name="s4" value="later"> Later <small>advies</small></label><label><input type="radio" name="s4" value="niet"> Niet doen</label></div><textarea id="n-s4" aria-label="Notitie bij Je vaste look · nog geen eigen gezichten of look" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/s5.webp" alt="Nu: Inloggen" loading="lazy"></div>
+<div class="voorstel"><span class="mono">/account/login</span><h3>Inloggen</h3><p>Nu een klein formulier midden op een leeg wit vlak. Voorstel: links het formulier, rechts een hoge kaart met het tekstlogo in wit. Het eerste wat een klant van Studio ziet.</p>
+<div class="opties"><label><input type="radio" name="s5" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="s5" value="later"> Later</label><label><input type="radio" name="s5" value="niet"> Niet doen</label></div><textarea id="n-s5" aria-label="Notitie bij Inloggen" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><div class="geen">Geen schermafdruk: dit scherm zie je alleen na een echte betaling.</div></div>
+<div class="voorstel"><span class="mono">/account/plan/return</span><h3>Abonnement gestart (na het betalen)</h3><p>Het moment dat iemand abonnee wordt, nu een tekstregel. Een kaart "Je abonnement loopt" met de eerste credits geeft het gewicht dat het heeft. (Geen schermafdruk: dit scherm zie je alleen na een echte betaling.)</p>
+<div class="opties"><label><input type="radio" name="s6" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="s6" value="later"> Later</label><label><input type="radio" name="s6" value="niet"> Niet doen</label></div><textarea id="n-s6" aria-label="Notitie bij Abonnement gestart (na het betalen)" placeholder="Notitie (mag leeg)"></textarea></div></article><h2 class="groep">Op elke pagina</h2><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/o1.webp" alt="Nu: De €1-kaart (op 26 pagina&#x27;s)" loading="lazy"></div>
+<div class="voorstel"><span class="mono">onder catalog, lifestyle, prijzen, faq …</span><h3>De €1-kaart (op 26 pagina&#x27;s)</h3><p>Nu een glazen plaat op een bewogen foto. Wordt een kaart van het veld: Proef, de kop, €1 groot, Probeer voor €1 in mint. De foto van de broek ernaast blijft (die laat zien wat je krijgt).</p>
+<div class="opties"><label><input type="radio" name="o1" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="o1" value="later"> Later</label><label><input type="radio" name="o1" value="niet"> Niet doen</label></div><textarea id="n-o1" aria-label="Notitie bij De €1-kaart (op 26 pagina&#x27;s)" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/o2.webp" alt="Nu: Het slot onderaan (&quot;Laat zien wat je maakt&quot;, &quot;Ontwerp het gezicht van jouw merk&quot; …)" loading="lazy"></div>
+<div class="voorstel"><span class="mono">pagina&#x27;s zonder €1-kaart</span><h3>Het slot onderaan (&quot;Laat zien wat je maakt&quot;, &quot;Ontwerp het gezicht van jouw merk&quot; …)</h3><p>Nu een glazen plaat op de witte jas. Wordt een kaart, met per pagina de eigen zin die er al staat.</p>
+<div class="opties"><label><input type="radio" name="o2" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="o2" value="later"> Later</label><label><input type="radio" name="o2" value="niet"> Niet doen</label></div><textarea id="n-o2" aria-label="Notitie bij Het slot onderaan (&quot;Laat zien wat je maakt&quot;, &quot;Ontwerp het gezicht van jouw merk&quot; …)" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/o3.webp" alt="Nu: De Studiobrief in de voet" loading="lazy"></div>
+<div class="voorstel"><span class="mono">elke pagina</span><h3>De Studiobrief in de voet</h3><p>Nu een donkere band met de duinen. Mijn advies: wit met een haarlijn. Anders staan er op bijna elke pagina drie kaarten (€1, slot, brief) en wordt het weer onrustig.</p>
+<div class="opties"><label><input type="radio" name="o3" value="doen"> Doen</label><label><input type="radio" name="o3" value="later"> Later</label><label><input type="radio" name="o3" value="niet"> Niet doen <small>advies</small></label></div><textarea id="n-o3" aria-label="Notitie bij De Studiobrief in de voet" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/o4.webp" alt="Nu: De 404" loading="lazy"></div>
+<div class="voorstel"><span class="mono">/bestaat-niet</span><h3>De 404</h3><p>Nu de V op een bewogen nachtfoto. Wordt de V in wit op een kaart, het enige beeld op de pagina.</p>
+<div class="opties"><label><input type="radio" name="o4" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="o4" value="later"> Later</label><label><input type="radio" name="o4" value="niet"> Niet doen</label></div><textarea id="n-o4" aria-label="Notitie bij De 404" placeholder="Notitie (mag leeg)"></textarea></div></article><h2 class="groep">Diensten en pagina's zonder eigen foto</h2><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p1.webp" alt="Nu: /plans · de kop" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Elke maand credits. Jij kiest waarvoor.</span><h3>/plans · de kop</h3><p>Rechts staat nu alleen een getal (credits) op wit. Een abonnement heeft geen foto: dit wordt de kaart, met het getal erin in wit.</p>
+<div class="opties"><label><input type="radio" name="p1" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="p1" value="later"> Later</label><label><input type="radio" name="p1" value="niet"> Niet doen</label></div><textarea id="n-p1" aria-label="Notitie bij /plans · de kop" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p4.webp" alt="Nu: /editions · de kop" loading="lazy"></div>
+<div class="voorstel"><span class="mono">De maanden zonder nieuwe producten.</span><h3>/editions · de kop</h3><p>Editions draait om een gevoel (de maand vullen), niet om een product. Het getal "20 beelden" komt op een kaart.</p>
+<div class="opties"><label><input type="radio" name="p4" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="p4" value="later"> Later</label><label><input type="radio" name="p4" value="niet"> Niet doen</label></div><textarea id="n-p4" aria-label="Notitie bij /editions · de kop" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p5.webp" alt="Nu: /hooks · de kop" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Video die opvalt in de feed.</span><h3>/hooks · de kop</h3><p>Hier hoort jouw video. Tot die er is, een kaart met de prijs. Komt de video, dan vervangt hij de kaart.</p>
+<div class="opties"><label><input type="radio" name="p5" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="p5" value="later"> Later</label><label><input type="radio" name="p5" value="niet"> Niet doen</label></div><textarea id="n-p5" aria-label="Notitie bij /hooks · de kop" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p10.webp" alt="Nu: /video · de drie clips" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Motion, Lifestyle Video, Campaign</span><h3>/video · de drie clips</h3><p>Drie grijze vakken met "Clip volgt". Drie kaarten (elk een ander stuk van de grote kaart) tot de clips er zijn. Mooier dan een leeg vak, en ze lopen in elkaar over.</p>
+<div class="opties"><label><input type="radio" name="p10" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="p10" value="later"> Later</label><label><input type="radio" name="p10" value="niet"> Niet doen</label></div><textarea id="n-p10" aria-label="Notitie bij /video · de drie clips" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p8.webp" alt="Nu: /start/custom-look · de kop" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Een eigen look</span><h3>/start/custom-look · de kop</h3><p>Een eigen look bestaat nog niet als je hem aanvraagt, dus er is geen foto. Een kaart naast de kop: "Je eigen wereld, rond je product".</p>
+<div class="opties"><label><input type="radio" name="p8" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="p8" value="later"> Later</label><label><input type="radio" name="p8" value="niet"> Niet doen</label></div><textarea id="n-p8" aria-label="Notitie bij /start/custom-look · de kop" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p12.webp" alt="Nu: De tegel &quot;Eigen look&quot; bij de stijlen" loading="lazy"></div>
+<div class="voorstel"><span class="mono">/catalog, /lifestyle, de voorpagina</span><h3>De tegel &quot;Eigen look&quot; bij de stijlen</h3><p>Naast Classic, Dunes, Flash, Glow en Phone-made staat de eigen look nu zonder beeld (een tekstregel). Als kaart heeft hij hetzelfde formaat als de andere tegels.</p>
+<div class="opties"><label><input type="radio" name="p12" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="p12" value="later"> Later</label><label><input type="radio" name="p12" value="niet"> Niet doen</label></div><textarea id="n-p12" aria-label="Notitie bij De tegel &quot;Eigen look&quot; bij de stijlen" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p9.webp" alt="Nu: /thank-you · bedankt" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Bedankt — we hebben je aanvraag.</span><h3>/thank-you · bedankt</h3><p>Het moment na het bestellen. Nu een vinkje en tekst. Een kaart met het vinkje en "We hebben je aanvraag" maakt het een moment.</p>
+<div class="opties"><label><input type="radio" name="p9" value="doen"> Doen <small>advies</small></label><label><input type="radio" name="p9" value="later"> Later</label><label><input type="radio" name="p9" value="niet"> Niet doen</label></div><textarea id="n-p9" aria-label="Notitie bij /thank-you · bedankt" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p14.webp" alt="Nu: /start · Op maat" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Eigen look, jouw merkmodel, abonnement</span><h3>/start · Op maat</h3><p>Drie kleine blokken zonder beeld. Eén brede kaart met de drie erin kan, maar /start heeft al de foto's van de looks. Later bekijken.</p>
+<div class="opties"><label><input type="radio" name="p14" value="doen"> Doen</label><label><input type="radio" name="p14" value="later"> Later <small>advies</small></label><label><input type="radio" name="p14" value="niet"> Niet doen</label></div><textarea id="n-p14" aria-label="Notitie bij /start · Op maat" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p2.webp" alt="Nu: /start/plan · je abonnement afsluiten" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Starter, Pro, Merk</span><h3>/start/plan · je abonnement afsluiten</h3><p>Het formulier zelf blijft wit (rustig invullen). Wel kan het gekozen plan, in de samenvatting, een kaart worden. Later, na de Studio-kaarten.</p>
+<div class="opties"><label><input type="radio" name="p2" value="doen"> Doen</label><label><input type="radio" name="p2" value="later"> Later <small>advies</small></label><label><input type="radio" name="p2" value="niet"> Niet doen</label></div><textarea id="n-p2" aria-label="Notitie bij /start/plan · je abonnement afsluiten" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p15.webp" alt="Nu: /plans · de drie plannen" loading="lazy"></div>
+<div class="voorstel"><span class="mono">Kies je maandbudget.</span><h3>/plans · de drie plannen</h3><p>Drie plannen naast elkaar om te vergelijken: dat moet wit en gelijk blijven. Geen van de drie wordt een kaart, ook niet de populairste.</p>
+<div class="opties"><label><input type="radio" name="p15" value="doen"> Doen</label><label><input type="radio" name="p15" value="later"> Later</label><label><input type="radio" name="p15" value="niet"> Niet doen <small>advies</small></label></div><textarea id="n-p15" aria-label="Notitie bij /plans · de drie plannen" placeholder="Notitie (mag leeg)"></textarea></div></article><article class="plek"><div class="nu"><span class="mono">Nu</span><img src="b/p13.webp" alt="Nu: De voorpagina · Bouw de wereld van je merk" loading="lazy"></div>
+<div class="voorstel"><span class="mono">de poster</span><h3>De voorpagina · Bouw de wereld van je merk</h3><p>Nu het oude blauwe veld. Mijn advies: hier een foto van jou over de hele breedte, want hier gaat het over beeld. Zo blijven er op de voorpagina drie kaarten.</p>
+<div class="opties"><label><input type="radio" name="p13" value="doen"> Doen</label><label><input type="radio" name="p13" value="later"> Later</label><label><input type="radio" name="p13" value="niet"> Niet doen <small>advies</small></label></div><textarea id="n-p13" aria-label="Notitie bij De voorpagina · Bouw de wereld van je merk" placeholder="Notitie (mag leeg)"></textarea></div></article>
+    <label class="mono" for="notitie" style="display:block;margin-top:26px">Algemene notitie (een plek die ik mis?)</label>
+    <textarea id="notitie" placeholder="Bijvoorbeeld een plek die ik over het hoofd zag"></textarea>
+    <div class="bewaar"><button type="button" id="bewaar">Bewaar mijn keuze</button><span id="stand" role="status"></span></div>
+  </div>
+</div>
+<script>/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════
+   HET KAARTVELD — proef voor levering 100 (14 november 2026, lijst 104)
+   Lucas: "een enorme kaart … en daar meerdere kaarten uit snijden" (01:59); "Deze achtergrond bedoel ik als space, niet
+   letterlijk … Gewoon een rustig gevoel, en alleen voor de kaarten hier en daar" (02:12); "de kaarten zijn los van elkaar
+   en ze lopen, volledig los van elkaar in elkaar over" (02:14); "Nee ik wil niet dat elke achtergrond dezelfde kenmerken
+   heeft, daarom wou ik dat je een grote kaart maakt met die kenmerken en daaruit allemaal kleine kaarten knipt" (02:33).
+   HET IDEE: één grote kaart zo breed als het scherm en zo hoog als de pagina, met veel verschillende kenmerken door elkaar.
+   Elke kaart op de site is een los venster op zijn eigen stuk van die grote kaart: de ene kaart heeft de band, de volgende
+   een gloed, een horizon of twee lijnen langs de snede. Omdat het één kaart is, lopen ze in elkaar over.
+   DE KENMERKEN (het gevoel van de logo-animatie, 04:40; geen sterren, geen bolletjes):
+     A de grond: zwart #090D0B met brede vlakken van mint 950, 900 en 800, een ruim groen vlak (800 naar 700) en diep zwart
+       ertegenover, en per kaart een zacht licht in een hoek weg van de tekst (Lucas, 04:28: meer kleurverschil);
+     B de band: één brede band licht die in een eigen ritme over de pagina slingert, met een lichte en een donkere kant;
+       hij komt op en verdwijnt (hij is niet overal even sterk), dus niet elke kaart heeft hem;
+     C de snede: zachte lijnen langs 53,13° (de hoek van het merk), om de ~1600 px, in stukken;
+     D de gloed: zachte vlekken van mint 500/600, één per vak van 800 px (niet in elk vak), elk met een eigen maat;
+     E de horizon: hier en daar een licht gebogen lijn van mint 300 met lichter erboven en donkerder eronder;
+     F korrel, grof, zoals in de logo-animatie.
+   Het licht (B tot E) dimt onder tekst ([data-tekstvlak]), zodat wit erop goed leesbaar blijft.
+   HET ADEMEN (Lucas, 04:27, 05:26 en 05:29): niets beweegt letterlijk. De lijnen en de aderen staan stil; alleen het licht
+   ademt erin, super traag en zacht: in één adem van 16 s worden ze lichter en weer donkerder, en één lange, zachte golf
+   van licht trekt door ze heen. De gloeden en het groene licht ademen mee.
+   Bij "minder beweging" staat alles stil.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var canvas = document.getElementById('veld');
+  var gl = canvas && (canvas.getContext('webgl', { antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: true }) || canvas.getContext('experimental-webgl'));
+  if (!gl) { document.documentElement.classList.add('geen-gl'); return; }
+  var MAX = 8;
+  var VS = 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0., 1.); }';
+  var FS = [
+    'precision highp float;',
+    'uniform vec2 uRes; uniform float uScroll; uniform float uTijd; uniform float uDpr; uniform float uHeel; uniform float uLus; uniform float uBreed; uniform vec2 uVerschuif;',
+    'uniform vec4 uKaart[' + MAX + ']; uniform int uN; uniform vec4 uTekst[' + MAX + ']; uniform int uNT;',
+    'const vec3 ZW = vec3(0.035,0.051,0.043);',            /* zwart #090D0B */
+    'const vec3 M950 = vec3(0.004,0.078,0.043);',          /* #01140B */
+    'const vec3 M900 = vec3(0.0,0.141,0.086);',            /* #002416 */
+    'const vec3 M800 = vec3(0.008,0.239,0.161);',          /* #023D29 */
+    'const vec3 M700 = vec3(0.004,0.4,0.271);',            /* #016645 */
+    'const vec3 M600 = vec3(0.067,0.592,0.416);',          /* #11976A */
+    'const vec3 M500 = vec3(0.239,1.0,0.69);',             /* #3DFFB0 */
+    'const vec3 M300 = vec3(0.616,0.961,0.824);',          /* #9DF5D2 */
+    'const vec3 M100 = vec3(0.894,0.988,0.937);',          /* #E4FCEF */
+    'float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f); return mix(mix(h(i), h(i + vec2(1., 0.)), f.x), mix(h(i + vec2(0., 1.)), h(i + vec2(1., 1.)), f.x), f.y); }',
+    'float doos(vec2 p, vec4 r, float rad){ vec2 c = r.xy + r.zw*.5; vec2 q = abs(p - c) - r.zw*.5 + rad; return length(max(q, 0.)) + min(max(q.x, q.y), 0.) - rad; }',
+    'float vlek(vec2 p, vec2 c, float r){ float d = length(p - c)/r; return exp(-d*d*2.2); }',
+    'float lijn(float d, float b){ return exp(-pow(d/b, 2.)); }',
+    /* de eigen lijn van kaart i (elke kaart minstens één): een brede, zachte vouw van licht zoals in de logo-animatie,
+       licht gebogen, langs 53,13° of 126,87° (om en om), door het rechterdeel van de kaart (weg van de tekst). Hij blijft
+       op zijn plek; alleen zijn licht ademt (golf staat op 0, dus de staande golf doet niets meer).
+       x = de glanzende kern, y = de gloed eromheen, z = de schaduwkant */
+    'vec3 kaartLijn(vec2 q, int i, vec4 r, float sm, float golf){',
+    '  float fi = float(i); vec2 c0 = r.xy + r.zw*vec2(.74 + .16*(h(vec2(fi, 3.)) - .5), .5 + .3*(h(vec2(fi, 7.)) - .5));',
+    '  vec2 dir = mod(fi, 2.) < .5 ? vec2(.6, .8) : vec2(-.6, .8); vec2 nrm = vec2(-dir.y, dir.x);',
+    '  vec2 v = q - c0; float langs = dot(v, dir);',
+    '  float boog = (h(vec2(fi, 5.)) - .5) * .0011;',
+    '  float dl = dot(v, nrm) + boog*langs*langs + 5.*sin(langs/170. + fi*1.7)*golf;',
+    '  float amp = exp(-max(doos(q, r, 18.), 0.)/90.) * smoothstep(1500., 250., abs(langs));',
+    '  return vec3(lijn(dl, 2.2*sm), lijn(dl, 30.*sm), lijn(dl, 110.*sm)) * amp; }',
+    /* voor de ader: de afstand in px tot de lijn van kaart i, en hoe sterk hij daar is */
+    /* DE PULS (Lucas, 06:06): een elektrische puls van licht trekt rustig door elke harde lijn: van donker (mint 700/600) heel
+       geleidelijk naar bijna wit en weer terug. Elke lijn heeft zijn eigen moment, dus nooit allemaal tegelijk. De puls loopt
+       door in de ader en stopt aan zijn uiteinde, buiten de kaart. Hij gaat 107 px per seconde en komt elke 14 s terug. */
+    'float puls(float a, float fase){ float s = fract(a/1500. - uTijd/14. + fase); return exp(-pow((s - .5)*3.4, 2.)); }',
+    'vec3 kern(float pl){ return mix(mix(M700, M600, .6), mix(M100, vec3(1.), .35), pl); }',
+    'vec3 kaartDl(vec2 q, int i, vec4 r, float golf){',
+    '  float fi = float(i); vec2 c0 = r.xy + r.zw*vec2(.74 + .16*(h(vec2(fi, 3.)) - .5), .5 + .3*(h(vec2(fi, 7.)) - .5));',
+    '  vec2 dir = mod(fi, 2.) < .5 ? vec2(.6, .8) : vec2(-.6, .8); vec2 nrm = vec2(-dir.y, dir.x);',
+    '  vec2 v = q - c0; float langs = dot(v, dir);',
+    '  float boog = (h(vec2(fi, 5.)) - .5) * .0011;',
+    '  float dl = dot(v, nrm) + boog*langs*langs + 5.*sin(langs/170. + fi*1.7)*golf;',
+    '  float amp = exp(-max(doos(q, r, 18.), 0.)/90.) * smoothstep(1500., 250., abs(langs));',
+    '  return vec3(dl, amp, langs); }',
+    /* voor de ader: welke lijn is bij q het dichtstbij (de afstand in px) en hoe sterk is hij daar */
+    'float W;',
+    'vec4 naast(vec2 q, float golf){',
+    '  vec2 p = q + uVerschuif; vec2 pz = p;',
+    '  float bdl = 1e4, bs = 0., ba = 0., bf = 0.; float sc;',
+    '  float by = pz.y; float bx = W*(.5 + .44*sin(by/950. + .7)) + W*.1*sin(by/430. + 1.3) + 6.*sin(by/210.)*golf;',
+    '  float bx2 = W*(.5 + .44*sin((by + 2.)/950. + .7)) + W*.1*sin((by + 2.)/430. + 1.3) + 6.*sin((by + 2.)/210.)*golf;',
+    '  float sdA = (p.x - bx) / sqrt(1. + pow((bx2 - bx)/2., 2.)); float stA = smoothstep(.22, .6, vn(vec2(3.7, by/1500.)));',
+    '  sc = stA*lijn(sdA, 40.); if (sc > bs){ bs = sc; bdl = sdA; ba = by; bf = .13; }',
+    '  float usA = dot(pz, vec2(.6, .8)), vsA = dot(pz, vec2(-.8, .6)); float celA = floor(usA/1600.); float hsA = h(vec2(celA, 4.2));',
+    '  if (hsA > .2){ float dsA = usA - (celA*1600. + 300. + hsA*1000.) + 4.*sin(vsA/190.)*golf; float stuk = smoothstep(.35, .7, vn(vec2(vsA/1100., celA*3.1))); sc = stuk*lijn(dsA, 40.); if (sc > bs){ bs = sc; bdl = dsA; ba = vsA; bf = h(vec2(celA, 9.1)); } }',
+    '  for (int j = -1; j <= 1; j++){ float hc = floor(pz.y/1300.) + float(j); float hh = h(vec2(hc, 8.8));',
+    '    if (hh > .35){ float hy = hc*1300. + 250. + h(vec2(hc, 2.2))*800. + 70.*sin(p.x/W*3.1416 + hh*6.) + 5.*sin(p.x/230. + hh*9.)*golf; float lang = smoothstep(.25, .65, vn(vec2(p.x/900., hc*5.)));',
+    '    sc = lang*lijn(pz.y - hy, 40.); if (sc > bs){ bs = sc; bdl = pz.y - hy; ba = p.x; bf = h(vec2(hc, 3.3)); } } }',
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; vec3 kd = kaartDl(q, i, uKaart[i], golf); sc = kd.y*lijn(kd.x, 40.); if (sc > bs){ bs = sc; bdl = kd.x; ba = abs(kd.z); bf = h(vec2(float(i), 11.)); } }',
+    '  return vec4(bdl, bs, ba, bf); }',
+    'float dmin(vec2 q){ float d = 1e5; for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; d = min(d, doos(q, uKaart[i], 18.)); } return d; }',
+    'void main(){',
+    '  vec2 f = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uDpr;',
+    '  vec2 q = vec2(f.x, f.y + uScroll);',                     /* de plek op de pagina */
+    '  float d = 1e5;',
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; d = min(d, doos(q, uKaart[i], 18.)); }',
+    '  if (uHeel < .5 && d > 130.){ gl_FragColor = vec4(1.); return; }',
+    '  vec2 p = q + uVerschuif;',                               /* de plek op de grote kaart */
+    '  W = uBreed;',
+    /* het ademen: niets verschuift. Alles wordt traag breder en feller en weer smaller (0 → 1 → 0, als een zachte cosinus),
+       en de lijnen golven op hun plek met een staande golf (hun midden en hun uiteinden blijven staan) */
+    '  float T = uLus, u = fract(uTijd / T);',
+    '  float adem = .5 - .5*cos(u*6.2832);',
+    '  float golf = 0.;',                                                            /* niets beweegt letterlijk (Lucas, 05:26) */
+    '  float lg = .5 + .5*sin(dot(q, vec2(.6, .8))/340. - u*6.2832);',             /* een golf van licht die door de lijnen trekt; de lijnen zelf staan stil */
+    '  float sm = 1., fel = (.74 + .26*adem) * (.86 + .28*lg);',
+    '  float fn = smoothstep(.62, 1.12, fel);',                                       /* 0 = de donkere kant van de adem, 1 = de lichte */
+    '  vec2 pz = p;',
+    /* DE ADEREN (Lucas, 03:35, 03:47 en 04:27): waar een lijn de rand raakt, steekt hij een klein stukje uit in het wit. Geen
+       laserstraal: de ader is een stukje van de kaart zelf dat doorloopt, dus hij gaat zonder naad over (Lucas, 04:37): bij de
+       rand heeft hij precies de kleur van de kaart, en naar zijn punt toe loopt hij heel zacht van groen naar zwart
+       (04:35). Zijn binnenkant is glans (04:32). Hij blijft op één plek: hij ademt (iets langer, dan weer korter) en zijn
+       buitenranden golven op hun plek, met bewegingsonscherpte (04:35). */
+    '  float vm = 0., vx = 0., vg = 0., hol = 0., vpl = 0., rail = 0., schaduw = 0., diep = 0.;',
+    '  if (uHeel < .5 && d > -150.){',
+    '    float reik = 60. + 12.*adem;',
+    '    float x = clamp(d/reik, 0., 1.);',
+    /* welke lijn is hier het dichtstbij: de afstand in px en de sterkte van die lijn */
+    '    vec4 nb = naast(q, golf); float bdl = nb.x, bs = nb.y; vpl = puls(nb.z, nb.w);',
+    /* alleen waar een lijn de rand echt kruist, niet waar hij er vlak langs loopt */
+    '    vec2 nn = normalize(vec2(dmin(q + vec2(1., 0.)) - dmin(q - vec2(1., 0.)), dmin(q + vec2(0., 1.)) - dmin(q - vec2(0., 1.))) + 1e-5);',
+    '    float dd = abs(naast(q + nn*2., golf).x - bdl) / 2.;',
+    '    float kruis = smoothstep(.97, .86, dd);',
+    '    float sterk = smoothstep(.12, .5, bs / max(lijn(bdl, 40.), 1e-4));',     /* hoe sterk de lijn is waar hij de rand raakt */
+    /* HET EINDE (Lucas, 04:45 en 04:49): de ader loopt gewoon door in de lijn van zijn streep, even dik, en wordt buiten de
+       kaart twee dunne evenwijdige lijnen (de randen van de streep, de binnenkant wit); hij eindigt niet in een punt maar
+       stopt als die twee lijnen en trekt kort en zacht weg in het wit. De randen ademen en golven op hun plek, met
+       bewegingsonscherpte (drie momenten gemiddeld). */
+    '    float vel = abs(cos(u*6.2832*2.));',
+    '    float ph = sin(dot(q, vec2(.045, .033)) + 1.3);',
+    '    float ro0 = 2.7 * sm;',                                                    /* de halve breedte, buitenkant */
+    '    float ri = 1.5 * sm * smoothstep(-145., -20., d);',                       /* de geul loopt tot 145 px de kaart in (Lucas, 06:07 en 06:29) */
+    '    diep = smoothstep(-4., -140., d);',                                         /* 0 aan de rand, 1 diep in de kaart */
+    '    float ra = ro0, dr = 0.;',                                                /* de vorm staat stil */
+    '    float ab = abs(bdl);',
+    '    float buitenk = (smoothstep(ra - dr + .7, ra - dr - .7, ab) + smoothstep(ra + .7, ra - .7, ab) + smoothstep(ra + dr + .7, ra + dr - .7, ab))/3.;',
+    '    float vorm = buitenk * smoothstep(ri - .6, ri + .6, ab);',
+    '    float uit = pow(1. - x, 1.6);',                                           /* heel geleidelijk weg in het wit, over de hele lengte (04:54) */
+    '    vm = vorm * sterk * kruis * uit * (.6 + .4*vpl); vx = x;',      /* hij ademt alleen in licht: donkerder en lichter */
+    '    float inK = smoothstep(-150., -60., d) * sterk * kruis * step(d, 1.5);',
+    '    hol = smoothstep(ri + .6, ri - .6, ab) * inK;',
+    '    rail = smoothstep(ri - .3, ri + .3, ab) * smoothstep(ri + 1.6, ri + .8, ab) * inK;',  /* de twee felle randen langs de geul */
+    '    schaduw = lijn(ab - ri - 2.5, 5. + 3.*diep) * inK * (.6 + .4*diep);',            /* een zachte schaduw naast de geul, dieper in de kaart sterker: het 3D */
+    '    vg = 0.; }',
+    /* het licht blijft van de tekst weg */
+    '  float weg = 1., zacht = 1.;',
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uNT) break; float dt = doos(q, uTekst[i], 40.); float s0 = smoothstep(-30., 260., dt); weg = min(weg, s0); zacht = min(zacht, mix(.5, 1., s0)); }',
+    /* A · de grond, met meer verschil (Lucas, 04:28): diep zwart in de ene hoek, een ruim groen vlak in de andere, zoals
+       het blauw en het licht in de logo-animatie, maar alleen in zwart en groen. Het staat stil; het ademt alleen. */
+    '  float n1 = vn(p/1300.), n2 = vn(p/2100. + vec2(7.3, 2.1)), n3 = vn(p/3400. + vec2(2.9, 5.7));',
+    '  vec3 c = mix(ZW, M950, smoothstep(.15, .75, n1));',
+    '  c = mix(c, M900, smoothstep(.45, .9, n2) * .75);',
+    '  c = mix(c, M800, pow(smoothstep(.55, 1., n1*n2*1.7), 1.3) * .55);',
+    '  c = mix(c, M800, smoothstep(.55, .95, n3) * .6 * zacht * (.9 + .1*adem));',                /* een ruim donkergroen vlak */
+    '  c = mix(c, ZW * .55, smoothstep(.45, .12, n3) * .7);',                                         /* het diepe zwart */
+    /* elke kaart krijgt zijn eigen licht in een hoek weg van de tekst (rechts, boven of onder), als het zachte licht
+       rechtsonder in de logo-animatie, en een donkere hoek ertegenover */
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; vec4 r = uKaart[i]; float fi = float(i);',
+    '    vec2 hk = r.xy + r.zw*vec2(.88 + .1*h(vec2(fi, 21.)), h(vec2(fi, 23.)) < .5 ? .12 : .9);',
+    '    float rr = max(r.z, r.w) * (.55 + .25*h(vec2(fi, 27.)));',
+    '    c = mix(c, mix(M800, M700, .3 + .2*adem), vlek(q, hk, rr) * .5 * zacht);',
+    '    vec2 dk = r.xy + r.zw*vec2(.05, h(vec2(fi, 23.)) < .5 ? .95 : .08);',
+    '    c = mix(c, ZW * .6, vlek(q, dk, rr*.9) * .55); }',
+    /* B · de band: een brede vouw van licht, hij komt op en verdwijnt; hij staat op zijn plek en ademt */
+    '  float y = pz.y;',
+    '  float bx = W*(.5 + .44*sin(y/950. + .7)) + W*.1*sin(y/430. + 1.3) + 6.*sin(y/210.)*golf;',
+    '  float bx2 = W*(.5 + .44*sin((y + 2.)/950. + .7)) + W*.1*sin((y + 2.)/430. + 1.3) + 6.*sin((y + 2.)/210.)*golf;',
+    '  float sd = (p.x - bx) / sqrt(1. + pow((bx2 - bx)/2., 2.));',
+    '  float sterk = smoothstep(.22, .6, vn(vec2(3.7, y/1500.)));',
+    '  float licht = smoothstep(-60., 700., -sd) * sterk;',
+    '  c = mix(c, M900, licht * .5); c = mix(c, ZW, smoothstep(100., 900., sd) * .6 * sterk);',
+    '  c = mix(c, M800, lijn(sd, 300.*sm) * .45 * sterk * zacht);',
+    '  c = mix(c, M600, lijn(sd, 30.*sm) * .5 * sterk * mix(.3, 1., weg) * fel);',
+    '  c = mix(c, mix(M700, kern(puls(y, .13)), weg), lijn(sd, 2.4*sm) * .95 * sterk * mix(.8, 1., weg));',
+    /* C · de snede: zachte lijnen langs 53,13°, in stukken */
+    '  float us = dot(pz, vec2(.6, .8)), vs = dot(pz, vec2(-.8, .6));',
+    '  float cel = floor(us/1600.); float hs = h(vec2(cel, 4.2));',
+    '  if (hs > .2){ float ds = us - (cel*1600. + 300. + hs*1000.) + 4.*sin(vs/190.)*golf;',
+    '    float stuk = smoothstep(.35, .7, vn(vec2(vs/1100., cel*3.1)));',
+    '    c = mix(c, M600, lijn(ds, 24.*sm) * .4 * stuk * mix(.3, 1., weg) * fel);',
+    '    c = mix(c, mix(M700, kern(puls(vs, h(vec2(cel, 9.1)))), weg), lijn(ds, 1.8*sm) * .9 * stuk * mix(.8, 1., weg)); }',
+    /* D · de gloed: één vlek per vak van 800 px, niet in elk vak; hij ademt */
+    '  vec2 vak = floor(p/800.);',
+    '  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++){ vec2 v = vak + vec2(float(i), float(j)); float k = h(v + 11.);',
+    '    if (k > .35){ vec2 mid = (v + vec2(h(v + 1.7), h(v + 5.3)))*800.; float r = 260. + 320.*h(v + 9.1);',
+    '      float g = vlek(p, mid, r * (.92 + .16*adem)) * (.3 + .35*h(v + 2.9)) * (.85 + .3*adem);',
+    '      c = mix(c, mix(M600, M700, h(v + 6.6)*.6 + .2*adem), g * .7 * zacht); } }',
+    /* E · de horizon: hier en daar een licht gebogen lijn, lichter erboven, donkerder eronder */
+    '  for (int j = -1; j <= 1; j++){ float hc = floor(pz.y/1300.) + float(j); float hh = h(vec2(hc, 8.8));',
+    '    if (hh > .35){ float hy = hc*1300. + 250. + h(vec2(hc, 2.2))*800. + 70.*sin(p.x/W*3.1416 + hh*6.) + 5.*sin(p.x/230. + hh*9.)*golf;',
+    '      float dh = pz.y - hy; float lang = smoothstep(.25, .65, vn(vec2(p.x/900., hc*5.)));',
+    '      c = mix(c, M800, smoothstep(-260., -10., dh) * smoothstep(40., -10., dh) * .5 * lang);',
+    '      c = mix(c, ZW, smoothstep(10., 240., dh) * smoothstep(600., 240., dh) * .45 * lang);',
+    '      c = mix(c, M600, lijn(dh, 26.*sm) * .4 * lang * mix(.3, 1., weg) * fel); c = mix(c, mix(M700, kern(puls(p.x, h(vec2(hc, 3.3)))), weg), lijn(dh, 2.*sm) * .9 * lang * mix(.8, 1., weg)); } }',
+    /* G · de eigen vouw van elke kaart: schaduwkant, gloed, glanzende kern */
+    '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; vec3 kl = kaartLijn(q, i, uKaart[i], sm, golf); float pk = puls(abs(kaartDl(q, i, uKaart[i], golf).z), h(vec2(float(i), 11.)));',
+    '    c = mix(c, M700, kl.z * .25 * zacht * fel); c = mix(c, M600, kl.y * .5 * mix(.3, 1., weg) * fel); c = mix(c, mix(M700, kern(pk), weg), kl.x * .95 * mix(.8, 1., weg)); }',
+    /* F · korrel */
+    '  float k = h(floor(gl_FragCoord.xy / max(1., uDpr*.75))) - .5; float lum = dot(c, vec3(.2126, .7152, .0722));',
+    '  c += k * .095 * (.6 + 1.8*lum*(1. - lum));',
+    '  c += (h(gl_FragCoord.yx*1.7) - .5)/255.;',
+    '  float rand = smoothstep(1.5, -.5, d);',
+    '  if (uHeel > .5){ float rl = smoothstep(2., .5, abs(d)); c = mix(c, vec3(1.), rl*.9); gl_FragColor = vec4(c, 1.); return; }',
+    '  vec3 geul = mix(vec3(1.), mix(M900, ZW, .5), pow(diep, .8));',                  /* de binnenkant: wit aan de rand, hoe dieper hoe donkerder */
+    '  geul = mix(geul, mix(M300, vec3(1.), .4), vpl * .75 * diep);',                    /* de puls licht ook de diepe geul op */
+    '  geul = mix(mix(M900, ZW, .5), geul, weg);',                                      /* onder tekst blijft de geul donker, zodat wit leesbaar blijft */
+    '  c = mix(c, ZW * .5, schaduw * .55); c = mix(c, mix(M700, kern(vpl), weg), rail); c = mix(c, geul, hol);',                                                  /* in de kaart: de binnenkant wordt al wit, geleidelijk naar de rand toe (Lucas, 04:55 en 05:00) */
+    '  vec3 cv = mix(clamp(c, 0., 1.), kern(vpl), smoothstep(0., .3, vx));',   /* de ader: bij de rand de kaart, dan de felle mint van zijn streep */
+    '  cv = mix(cv, mix(M300, vec3(1.), .6), vg);',
+    '  vec3 buiten = mix(vec3(1.), cv, vm);',
+    '  rand = max(rand, 0.) * (1. - hol*smoothstep(-3., 0., d));',                                           /* geen rand van de kaart in de ader (Lucas, 05:08) */
+    '  gl_FragColor = vec4(mix(buiten, clamp(c, 0., 1.), rand), 1.);',
+    '}'].join('\n');
+  function maak(type, bron) { var s = gl.createShader(type); gl.shaderSource(s, bron); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+  var prog;
+  try { prog = gl.createProgram(); gl.attachShader(prog, maak(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, maak(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog)); }
+  catch (e) { console.warn('veld', e); document.documentElement.classList.add('geen-gl'); return; }
+  gl.useProgram(prog);
+  var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  var aLoc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+  var U = {}; ['uRes', 'uScroll', 'uTijd', 'uDpr', 'uHeel', 'uLus', 'uN', 'uNT', 'uBreed', 'uVerschuif'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+  var uKaart = gl.getUniformLocation(prog, 'uKaart'), uTekst = gl.getUniformLocation(prog, 'uTekst');
+  var kaarten = [].slice.call(document.querySelectorAll('[data-kaart]')).slice(0, MAX);
+  var teksten = [].slice.call(document.querySelectorAll('[data-tekstvlak]')).slice(0, MAX);
+  var rechth = new Float32Array(MAX * 4), tekstR = new Float32Array(MAX * 4), dpr = 1, heel = 0, stil = false, lus = 16;
+  var minder = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var rect = function (el) { var r = el.getBoundingClientRect(); return [r.left, r.top + scrollY, r.width, r.height]; };
+  function meet() {
+    dpr = window.__veldDpr || Math.min(window.devicePixelRatio || 1, 1.5);
+    canvas.width = Math.round(innerWidth * dpr); canvas.height = Math.round(innerHeight * dpr);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    kaarten.forEach(function (k, i) { rechth.set(rect(k), i * 4); });
+    teksten.forEach(function (k, i) { tekstR.set(rect(k), i * 4); });
+  }
+  var t0 = performance.now(), tStil = 0;
+  function teken(nu) {
+    var t = minder ? 4 : (stil ? tStil : (nu - t0) / 1000);
+    if (!stil) tStil = t;
+    gl.uniform2f(U.uRes, canvas.width, canvas.height); gl.uniform1f(U.uScroll, scrollY); gl.uniform1f(U.uTijd, t);
+    gl.uniform1f(U.uDpr, dpr); gl.uniform1f(U.uHeel, heel); gl.uniform1f(U.uLus, lus); gl.uniform1f(U.uBreed, innerWidth);
+    gl.uniform1i(U.uN, kaarten.length); gl.uniform4fv(uKaart, rechth);
+    gl.uniform1i(U.uNT, teksten.length); gl.uniform4fv(uTekst, tekstR); var vs = window.__veldVerschuif || [0, 0]; gl.uniform2f(U.uVerschuif, vs[0], vs[1]);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  var raf = 0;
+  function lusje(nu) { teken(nu); raf = (minder || document.hidden || stil) ? 0 : requestAnimationFrame(lusje); }
+  function wek() { if (!raf) raf = requestAnimationFrame(lusje); }
+  meet(); wek();
+  addEventListener('resize', function () { meet(); teken(performance.now()); });
+  addEventListener('scroll', function () { if (!raf) teken(performance.now()); }, { passive: true });
+  document.addEventListener('visibilitychange', wek);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(meet);
+  addEventListener('load', meet);
+  if (window.ResizeObserver) new ResizeObserver(meet).observe(document.body);
+  var knopHeel = document.getElementById('heel'), knopRust = document.getElementById('rust');
+  if (knopHeel) knopHeel.addEventListener('click', function () { heel = heel ? 0 : 1; knopHeel.setAttribute('aria-pressed', String(!!heel)); document.documentElement.classList.toggle('heel', !!heel); teken(performance.now()); });
+  if (knopRust) knopRust.addEventListener('click', function () { stil = !stil; if (!stil) { t0 = performance.now() - tStil * 1000; wek(); } knopRust.setAttribute('aria-pressed', String(stil)); });
+  document.addEventListener('change', function (e) { if (e.target.name === 'lus') { lus = e.target.value === 'b' ? 24 : e.target.value === 'c' ? 1e6 : 16; } });
+  window.__veld = { meet: meet, zet: function (t) { stil = true; tStil = t; meet(); teken(0); } };
+})();
+</script>
+<script>
+(function () {
+  var VRAGEN = ["s1", "s2", "s3", "s4", "s5", "s6", "o1", "o2", "o3", "o4", "p1", "p4", "p5", "p10", "p8", "p12", "p9", "p14", "p2", "p15", "p13"], stand = document.getElementById('stand');
+  function lees() {
+    var d = { vragen: {}, vraagNotities: {}, notitie: document.getElementById('notitie').value, bijgewerkt: new Date().toISOString() };
+    VRAGEN.forEach(function (id) { var c = document.querySelector('input[name="' + id + '"]:checked'); if (c) d.vragen[id] = c.value; var n = document.getElementById('n-' + id); if (n && n.value) d.vraagNotities[id] = n.value; });
+    return d;
+  }
+  function vul(d) {
+    Object.keys(d.vragen || {}).forEach(function (id) { var c = document.querySelector('input[name="' + id + '"][value="' + d.vragen[id] + '"]'); if (c) c.checked = true; });
+    Object.keys(d.vraagNotities || {}).forEach(function (id) { var n = document.getElementById('n-' + id); if (n) n.value = d.vraagNotities[id]; });
+    if (d.notitie) document.getElementById('notitie').value = d.notitie;
+  }
+  var doc = null;
+  if (window.claude && window.claude.use) window.claude.use('db').then(function (db) {
+    if (!db) { stand.textContent = 'Opslaan kan hier niet; zet je keuze in de chat.'; return; }
+    doc = db.doc('afvinklijst/ronde106');
+    doc.get().then(function (s) { var d = s && (typeof s.data === 'function' ? s.data() : s.data || s); if (d && d.vragen) { vul(d); stand.textContent = 'Je eerdere keuze staat erin.'; } }).catch(function () {});
+  });
+  document.getElementById('bewaar').addEventListener('click', function () {
+    if (!doc) { stand.textContent = 'Opslaan kan hier niet; zet je keuze in de chat.'; return; }
+    stand.textContent = 'Bezig met bewaren…';
+    doc.set(lees()).then(function () { stand.textContent = 'Bewaard. Zeg in de chat dat je klaar bent.'; }).catch(function () { stand.textContent = 'Bewaren lukte niet. Probeer het nog eens.'; });
+  });
+})();
+</script>

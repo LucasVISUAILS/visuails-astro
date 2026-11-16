@@ -90,6 +90,10 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
     page.on('console', (m) => {
       if (m.type() !== 'error' && m.type() !== 'warning') return;
       if (/Failed to load resource/.test(m.text())) return;   // komt al via response
+      /* levering 109: de headless Chromium tekent WebGL in software (SwiftShader). Als het kaartveld zijn beeld naar de 2D-doeken kopieert, meldt de driver
+         "GPU stall due to ReadPixels". Dat is een prestatiemelding van die softwaredriver, geen fout van de site; met een echte GPU wordt het een kopie op de GPU.
+         Ook levering 108 zonder lichtnet geeft hem al. Alleen deze driverregel valt weg; elke andere waarschuwing telt nog. */
+      if (/GL Driver Message \(OpenGL, Performance/.test(m.text())) return;
       gevonden.push(`${w}px ${pad} — [${m.type()}] ${m.text().slice(0, 120)}`);
     });
     page.on('requestfailed', (r) => {

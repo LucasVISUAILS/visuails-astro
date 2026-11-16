@@ -53,7 +53,7 @@ ok('de keuze is vast per sleutel (dezelfde sleutel, hetzelfde stukje)', kies('fp
 }
 ok('"geleverd" is de enige stand die een stukje krijgt (E5); de stand zelf blijft done', standKlasse('delivered') === 'stand is-done is-geleverd' && standKlasse('paid') === 'stand is-done' && standKlasse('approved') === 'stand is-done' && standKlasse('in_production') === 'stand is-work');
 for (const f of ['src/styles/posterkleur.css', 'public/account.css', 'public/admin.css', 'public/portal.css']) {
-  ok(`${f}: "geleverd" in het stukje ${GELEVERD} met korrel, wit erop`, lees(f).includes(`url(/img/stuk/${GELEVERD}.webp) 50% 50% / cover no-repeat, #0F1217 !important; color: #FFFFFF !important;`));
+  ok(`${f}: "geleverd" in het stukje ${GELEVERD} met korrel, wit erop`, lees(f).includes(`url(/img/stuk/${GELEVERD}.webp) 50% 50% / cover no-repeat, #090D0B !important; color: #FFFFFF !important;`));
 }
 for (const f of ['src/styles/global.css', 'public/account.css', 'public/admin.css', 'public/portal.css']) {
   const css = lees(f);
@@ -187,36 +187,12 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   return { r, n };
 }
 
-/* de poster: de scroll drijft hem, en hij heeft geen harde rand */
+/* de poster: sinds levering 106 weg van de voorpagina (lijst 114, V4: "Deze poster mag voor nu weg want voegt niet veel toe");
+   tot levering 105 stond hier de logoposter (HalPoster89) met zijn scroll en zijn zachte randen. */
 {
   const { ctx, page } = await open();
   await page.goto(`${BASIS}/nl/`, { waitUntil: 'networkidle' });
-  /* de poster begint pas als hij in de buurt komt: eerst erheen springen */
-  await page.evaluate(() => window.scrollTo(0, document.querySelector('[data-p9]').getBoundingClientRect().top + scrollY - 200));
-  await page.waitForFunction(() => document.querySelector('[data-p9]')?.classList.contains('p9-aan'), null, { timeout: 60000 });
-  const baan = await page.evaluate(() => { const b = document.querySelector('[data-p9-baan]'); const r = b.getBoundingClientRect(); return { top: r.top + scrollY, h: r.height, podium: document.querySelector('[data-p9-podium]').offsetHeight }; });
-  const naar = async (q) => { await page.evaluate((y) => window.scrollTo(0, y), Math.round(baan.top + q * (baan.h - baan.podium))); await page.waitForTimeout(700); };
-  const kop = () => page.evaluate(() => document.querySelector('[data-p9] [data-p9-kop]')?.classList.contains('is-aan') ?? null);
-  const eind = () => page.evaluate(() => document.querySelector('[data-p9]').classList.contains('is-eind'));
-  /* de getoonde stand ijlt licht na (en zonder grafische kaart is alles trager): wachten tot hij er is */
-  const tot = (f) => page.waitForFunction(f, null, { timeout: 20000 }).then(() => true, () => false);
-  await naar(0.2); await page.waitForTimeout(1500); const kop1 = await kop(), eind1 = await eind();
-  await naar(0.65); const kop2 = await tot(() => document.querySelector('[data-p9] [data-p9-kop]')?.classList.contains('is-aan'));
-  await naar(0.97); const eind3 = await tot(() => document.querySelector('[data-p9]').classList.contains('is-eind'));
-  ok('de scroll drijft de poster: eerst geen kop, halverwege de kop, aan het eind het eind', kop1 === false && kop2 === true && eind1 === false && eind3 === true, JSON.stringify({ kop1, kop2, eind1, eind3 }));
-  await naar(0.65);
-  const veld = await page.evaluate(() => document.querySelector('[data-p9]').classList.contains('p9-veld-aan'));
-  ok('… het veld leeft (WebGL), het stille beeld staat eronder voor wie het niet heeft', veld);
-  /* geen harde rand: de rij boven en onder de poster lopen over, nergens een sprong van meer dan 6 van rij tot rij */
-  const randen = await page.evaluate(() => { const r = document.querySelector('[data-p9-podium]').getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; });
-  const shot = await pixels(await page.screenshot({ clip: { x: 0, y: 0, width: 1440, height: 900 }, timeout: FOTO_MS }));
-  let sprong = 0;
-  const rijGem = (y) => { let s = 0; for (let x = 0; x < 1440; x++) { const i = (y * 1440 + x) * 3; s += (shot.data[i] + shot.data[i + 1] + shot.data[i + 2]) / 3; } return s / 1440; };
-  for (const rand of [randen.top, randen.bottom]) {
-    if (rand < 6 || rand > 894) continue;
-    for (let y = Math.max(1, Math.round(rand) - 24); y < Math.min(899, Math.round(rand) + 24); y++) sprong = Math.max(sprong, Math.abs(rijGem(y) - rijGem(y - 1)));
-  }
-  ok(`de poster heeft geen harde rand (de grootste sprong van rij tot rij ${sprong.toFixed(1)}, hoogstens 6)`, sprong <= 6);
+  ok('geen poster meer op de voorpagina (het veld met de V niet, en geen foto in zijn plaats)', await page.evaluate(() => !document.querySelector('[data-p9], .r105-poster')));
   await ctx.close();
 }
 
@@ -224,14 +200,10 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
 {
   const { ctx, page } = await open({ deviceScaleFactor: 2 });
   await page.goto(`${BASIS}/nl/editions/`, { waitUntil: 'networkidle' });
-  const cta = await slechtsteTekst(page, '.site-header .nav-cta', ['']);
-  ok(`Bestellen bovenin (E3, scherp sinds levering 97): wit op het stukje minstens 4,5 : 1 (slechtste ${cta.r.toFixed(2)})`, cta.r >= 4.5 && cta.n > 50, cta.fout || '');
-  const vorm = await page.$eval('.site-header .nav-cta', (e) => getComputedStyle(e).borderTopLeftRadius);
-  ok('… en scherp (levering 97, lijst 96 B1 a: hoeken 0)', parseFloat(vorm) === 0, vorm);
-  await page.hover('.site-header .nav-cta'); await page.waitForTimeout(450);
-  const onder = await slechtsteTekst(page, '.site-header .nav-cta', ['']);
-  /* lijst 84 (A1 = c, 9 november 2026): onder de muis schuift het licht van de snede; dat mag iets lichter zijn, zolang het 4,5 haalt */
-  ok(`… onder de muis ook minstens 4,5 : 1 (${onder.r.toFixed(2)})`, onder.r >= 4.5);
+  /* E3 VERVALLEN 13 november 2026 (levering 99, lijst 100 D2 a): Bestellen bovenin is een witte knop met inkt op de zwevende
+     inktbalk (balk-99.css), geen stukje meer; 8 px (lijst 100 D3 a). Hier: dat er geen stukje meer op staat. */
+  const cta = await page.$eval('.site-header .nav-cta', (e) => { const c = getComputedStyle(e); return { kl: c.className, bg: c.backgroundColor, img: c.backgroundImage, tekst: c.color, r: c.borderTopLeftRadius, pk: e.className.includes('pk') }; });
+  ok('Bestellen bovenin (E3 vervallen, levering 99): wit met inkt, geen stukje, 8 px', !cta.pk && !/stuk\//.test(cta.img) && cta.tekst === 'rgb(9, 13, 11)' && parseFloat(cta.r) === 8, JSON.stringify(cta));
   await page.mouse.move(700, 600);
   /* E2 (het slot) VERVALLEN 9 november 2026: lijst 86 zet daar een vaste foto met glas (tests/fotoblok-browser.test.mjs meet het) */
   const slotKlasse = await page.$eval('.h-lk-slot', (e) => e.className);
@@ -239,19 +211,20 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   /* "geleverd" en de initialen staan in Studio, /admin en het portaal; hier in een site-pagina gezet, met dezelfde css.
      Op /nl/editions/ en niet op /nl/: daar loopt het veld van de poster mee in elke foto (zie FOTO_MS), en dat meet hier niets. */
   await page.evaluate(() => {
-    const d = document.createElement('div'); d.id = 'meet-pk'; d.style.cssText = 'position:fixed;left:40px;top:200px;z-index:99999;display:flex;gap:24px;align-items:center;background:#FBFCFF;padding:24px';
+    const d = document.createElement('div'); d.id = 'meet-pk'; d.style.cssText = 'position:fixed;left:40px;top:200px;z-index:99999;display:flex;gap:24px;align-items:center;background:#FFFFFF;padding:24px';
     d.innerHTML = '<span class="stand is-done is-geleverd">Geleverd</span><span class="st-wie-letter pk pk-n-vk-0" style="width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:600 13px/1 \'DM Sans\',sans-serif">AK</span>';
     document.body.append(d); document.body.classList.add('studio');
   });
   const pil = await slechtsteTekst(page, '#meet-pk .stand', ['']);
   ok(`"geleverd" (E5): wit op het stukje nacht minstens 4,5 : 1 (slechtste ${pil.r.toFixed(2)})`, pil.r >= 4.5 && pil.n > 20);
-  let vkSlechtst = 99;
+  let vkSlechtst = 99; const vkPer = [];
   for (const n of STUKKEN.vk) {
     await page.evaluate((n) => { const e = document.querySelector('#meet-pk .st-wie-letter'); e.className = `st-wie-letter pk pk-${n}`; }, n);
     await page.waitForTimeout(80);
-    vkSlechtst = Math.min(vkSlechtst, (await slechtsteTekst(page, '#meet-pk .st-wie-letter', [''])).r);
+    const r = (await slechtsteTekst(page, '#meet-pk .st-wie-letter', [''])).r; vkPer.push(`${n} ${r.toFixed(2)}`);
+    vkSlechtst = Math.min(vkSlechtst, r);
   }
-  ok(`de initialen (E4): wit op elk van de ${STUKKEN.vk.length} stukjes minstens 4,5 : 1 (slechtste ${vkSlechtst.toFixed(2)})`, vkSlechtst >= 4.5);
+  ok(`de initialen (E4): wit op elk van de ${STUKKEN.vk.length} stukjes minstens 4,5 : 1 (slechtste ${vkSlechtst.toFixed(2)})`, vkSlechtst >= 4.5, vkPer.join(' · '));
   await ctx.close();
 }
 /* het €1-blok staat alleen op /nl/: als laatste, in een eigen venster, en daarna dicht (zie FOTO_MS) */
@@ -274,8 +247,9 @@ async function slechtsteTekst(page, wortel, tekst, tekstKleur = [255, 255, 255])
   /* 8 november 21:44: zonder korrel (Lucas: de korrel maakte de overloop tussen de secties niet glad) */
   /* levering 94 (Lucas, 12 november 07:50: "Verwijder de kleuren achter de laptop"): achter de laptop de grond, geen veld;
      de video is op die grond gemaakt (laptop-video-90.py met VELD=wit) */
-  ok('achter de laptop de grond (#FBFCFF), geen veld meer',
-    vlak.beeld === 'none' && vlak.kleur === 'rgb(251, 252, 255)', JSON.stringify(vlak).slice(0, 200));
+  /* levering 107: de grond is #FCFCFC; de laptop (puur wit) ligt er met multiply op, dus ook daar de grond */
+  ok('achter de laptop de grond (#FCFCFC), geen veld meer',
+    vlak.beeld === 'none' && vlak.kleur === 'rgb(252, 252, 252)', JSON.stringify(vlak).slice(0, 200));
   ok('… en de video is op de grond gemaakt', /^(wit|puur wit)/.test(JSON.parse(lees('src/data/laptopVideo90.json')).veld) && /VELD == '(wit|puur)'/.test(lees('scripts/laptop-video-90.py')));
   await ctx.close();
   /* de tekst op het veld: de naam van de stand, onder de laptop (op de telefoon staat hij onder het podium op de grond) */
@@ -352,39 +326,34 @@ async function venster(page, sel, link) {
 {
   const { ctx, page } = await open({ deviceScaleFactor: 2 });
   await page.goto(`${BASIS}/nl/pricing/`, { waitUntil: 'networkidle' });
-  const balk = await venster(page, '.site-header .hal-vm-balk', '.site-header .brand');
-  ok('de V in de balk: onder de muis een venster op de snede (0 → 1), de schommel staat uit', balk.voor === 0 && balk.onder === 1 && balk.kleurLaag === 'none', JSON.stringify(balk));
-  /* minstens 3 : 1 op de grond: de V onder de muis tegen dezelfde plek zonder V */
-  const vak = await page.$eval('.site-header .hal-vm-balk', (e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; });
-  const met = await pixels(await page.screenshot({ clip: vak, timeout: FOTO_MS }));
-  await page.addStyleTag({ content: '.site-header .hal-vm-balk { visibility: hidden !important; }' });
-  const zonder = await pixels(await page.screenshot({ clip: vak, timeout: FOTO_MS }));
-  let slechtst = 99, n = 0;
-  const binnen = (i) => { const d = Math.abs(met.data[i] - zonder.data[i]) + Math.abs(met.data[i + 1] - zonder.data[i + 1]) + Math.abs(met.data[i + 2] - zonder.data[i + 2]); return d > 240; };
-  for (let y = 1; y < met.h - 1; y++) for (let x = 1; x < met.w - 1; x++) {
-    const i = (y * met.w + x) * 3;
-    if (!binnen(i) || !binnen(i - 3) || !binnen(i + 3) || !binnen(i - met.w * 3) || !binnen(i + met.w * 3)) continue;
-    n++; slechtst = Math.min(slechtst, ratio(L(met.data[i], met.data[i + 1], met.data[i + 2]), L(zonder.data[i], zonder.data[i + 1], zonder.data[i + 2])));
-  }
-  ok(`… het venster minstens 3 : 1 op de grond (slechtste ${slechtst.toFixed(2)} over ${n} punten)`, n > 100 && slechtst >= 3);
-  await page.reload({ waitUntil: 'networkidle' });
-  const voet = await venster(page, '.site-footer .hal-wm-voet', '.site-footer .footer-brand .brand');
-  ok('het tekstlogo in de voet: onder de muis het venster, de schommel uit', voet.voor === 0 && voet.onder === 1 && voet.kleurLaag === 'none', JSON.stringify(voet));
+  /* levering 99: de balk is inkt (balk-99.css); daar kleurt het tekstlogo onder de muis alleen (blauw licht), zonder venster:
+     een venster op de snede haalde op inkt geen 3 : 1. Het venster en zijn meting staan nu op het tekstlogo in de voet (op wit). */
+  ok('het tekstlogo in de balk (inkt): geen venster meer', (await page.$$('.site-header .hal-wm-balk .mk-raam')).length === 0);
+  /* levering 100 (lijst 104): de voet is zwart en het logo erin wit; het venster haalde daar geen 3 : 1 (2,72). Het logo in de voet
+     heeft geen venster meer en wordt onder de muis mint (kleur-100.css). VERVALLEN: het venster in de voet en zijn meting. */
+  await page.evaluate(() => document.querySelector('.site-footer .hal-wm-voet').scrollIntoView({ block: 'center' })); await page.waitForTimeout(300);
+  const raamVoet = await page.$eval('.site-footer .hal-wm-voet .mk-raam', (e) => getComputedStyle(e).display).catch(() => 'none');
+  await page.hover('.site-footer .footer-brand .brand'); await page.waitForTimeout(900);
+  /* de kleur loopt in 0,7 s over; met het kaartveld (WebGL, in de toets software) soms trager: wacht op het eind, hoogstens 4 s */
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.site-footer .hal-wm-voet use')).fill === 'rgb(61, 255, 176)', null, { timeout: 4000 }).catch(() => {});
+  const vulVoet = await page.$eval('.site-footer .hal-wm-voet use', (e) => getComputedStyle(e).fill);
+  ok('het tekstlogo in de voet (zwart, levering 100): geen venster; onder de muis mint', raamVoet === 'none' && vulVoet === 'rgb(61, 255, 176)', `${raamVoet} · ${vulVoet}`);
   ok('het grote woordmerk onderaan houdt zijn uitloop (geen venster, lijst 78 C4)', (await page.$$('.hal-wm-reus .mk-raam')).length === 0);
   /* met de toets erop */
   await page.mouse.move(700, 450);
   await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(200);
   await page.keyboard.press('Tab');
   let n2 = 0;
-  while (n2++ < 6 && !(await page.evaluate(() => document.activeElement?.matches('.site-header .brand')))) await page.keyboard.press('Tab');
-  await page.waitForTimeout(900); await totVol(page, '.site-header .hal-vm-balk .mk-raam');
-  const opToets = await page.$eval('.site-header .hal-vm-balk .mk-raam', (e) => Number(getComputedStyle(e).opacity));
-  ok('… en met de toets erop (focus-visible)', opToets === 1, JSON.stringify({ opacity: opToets, focus: await page.evaluate(() => document.activeElement?.className || document.activeElement?.tagName) }));
+  await page.focus('.site-footer .footer-brand .brand'); await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Tab');
+  await page.waitForTimeout(900);
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.site-footer .hal-wm-voet use')).fill === 'rgb(61, 255, 176)', null, { timeout: 4000 }).catch(() => {});
+  const vulToets = await page.$eval('.site-footer .hal-wm-voet use', (e) => getComputedStyle(e).fill);
+  ok('… en met de toets erop (focus-visible): mint (levering 100)', vulToets === 'rgb(61, 255, 176)', JSON.stringify({ fill: vulToets, focus: await page.evaluate(() => document.activeElement?.className || document.activeElement?.tagName) }));
   await ctx.close();
   const rustig = await open({ reducedMotion: 'reduce' });
   await rustig.page.goto(`${BASIS}/nl/pricing/`, { waitUntil: 'networkidle' });
-  await rustig.page.hover('.site-header .brand'); await rustig.page.waitForTimeout(60);
-  ok('minder beweging: meteen het venster, zonder overgang', (await rustig.page.$eval('.site-header .hal-vm-balk .mk-raam', (e) => [Number(getComputedStyle(e).opacity), getComputedStyle(e).transitionDuration])).join() === '1,0s');
+  await rustig.page.hover('.site-footer .footer-brand .brand'); await rustig.page.waitForTimeout(60);
+  ok('minder beweging: meteen mint, zonder overgang (levering 100)', (await rustig.page.$eval('.site-footer .hal-wm-voet use', (e) => [getComputedStyle(e).fill, getComputedStyle(e).transitionDuration])).join() === 'rgb(61, 255, 176),0s');
   await rustig.ctx.close();
 }
 

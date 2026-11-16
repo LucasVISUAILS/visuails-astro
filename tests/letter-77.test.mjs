@@ -139,7 +139,8 @@ try {
         };
       });
       const vast = new Set(m.maten).size === 1;
-      ok(`${taal} ${breed}: tekst DM Sans, kop VISUAILS Display ${m.kopGewicht}, alle .h-kop in 700 (beide tonen), letters geladen`, m.body === 'DM Sans' && m.kop === 'VISUAILS Display' && m.kopGewicht === '700' && m.hKop && m.geladen, JSON.stringify(m));
+      /* levering 110 (lijst 119 tot 122): de hoofdkop van de voorpagina staat in VISUAILS Display Blok; de andere koppen (.h-kop) blijven VISUAILS Display */
+      ok(`${taal} ${breed}: tekst DM Sans, hoofdkop VISUAILS Display Blok ${m.kopGewicht}, alle .h-kop in VISUAILS Display 700 (beide tonen), letters geladen`, m.body === 'DM Sans' && m.kop === 'VISUAILS Display Blok' && m.kopGewicht === '700' && m.hKop && m.geladen, JSON.stringify(m));
       ok(`${taal} ${breed}:   de kop op ${m.regels} regel(s) en binnen zijn vak`, m.regels === 2 && m.past, JSON.stringify(m));
       ok(`${taal} ${breed}:   verspringt niet bij het laden (${[...new Set(m.maten)].join(' → ')} px)`, vast, m.maten.join(', '));
       const zonder = beelden.filter((u) => !u.endsWith(`?v=${V}`));
