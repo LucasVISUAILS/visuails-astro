@@ -35,7 +35,8 @@ export const STUKKEN = {
   /* het €1-blok blijft de nacht (lijst 78, C2: B4 Nacht, het licht rechtsonder, weg van de tekst) */
   nacht: ['n-blok-0', 'n-blok-1', 'n-blok-2'],
   fp: ['N-fp-1', 'S-fp-1', 'h-fp-1', 'h1-fp-1', 'g-fp-1', 'N-fp-6', 'S-fp-6', 'h-fp-6', 'h1-fp-6', 'g-fp-6'],
-  raam: ['raam-0', 'raam-3', 'raam-6'],
+  /* levering 113: het venster in mint (raam-m-*, omgekleurd van raam-*; die waren nog blauw uur, Lucas 16 nov 20:43: "Hover effect bij inlog scherm is ook nog blauw") */
+  raam: ['raam-m-0', 'raam-m-3', 'raam-m-6'],
 };
 export const KORREL = { x1: '/img/stuk/korrel-128.webp', x2: '/img/stuk/korrel-256.webp' };
 /** hoogstens zoveel stukjes tegelijk op een pagina, buiten de grote postervlakken (lijst 82, E9) */

@@ -135,7 +135,9 @@ function meet() {
       const bd = cs.backdropFilter || cs.webkitBackdropFilter;
       // het €1-blok mag glas dragen (lijst 42), en wat boven de pagina zweeft (levering 74); sinds levering 80
       // (1 november 2026, 17:05, Lucas: "de top bar een soort liquid glass gevoel") is de hele balk het glas
-      const zweeft = el.matches('.site-header, .site-header .nav, .site-header .nav-menu, .wa-launcher, .u-balk');
+      /* levering 114 (17 november 2026, 01:07, Lucas: "deze uitleg balk een meer liquid glass look"): de balk met de stappen in
+         de bannervideo, en de €1-melding onderin ("een goede subtiele pop up") zijn het glas van de bovenbalk */
+      const zweeft = el.matches('.site-header, .site-header .nav, .site-header .nav-menu, .wa-launcher, .u-balk, .b94-paneel, .h-melding-proef');
       /* lijst 86 (9 november 2026): de glazen plaat op de fotoblokken (de plaat als ::before van het €1-blok en de
          Studiobrief, en .fb-glas in het slot) mag glas zijn: fotoblok.css */
       const fotoglas = (ps === '::before' && el.matches('.h-proef > .h-proef-woord, .site-footer .sb, .h-gd-brief, .h-ed-brief')) || (!ps && el.matches('.h-lk-slot > .fb-glas'));

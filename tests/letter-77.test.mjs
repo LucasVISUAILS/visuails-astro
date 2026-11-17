@@ -127,21 +127,22 @@ try {
         /* levering 80: de titel staat in het midden (HalOpening80.astro), altijd op twee regels; "binnen zijn
            vak" is: binnen het venster */
         const k = document.querySelector('#b94-h1'), tekst = { getBoundingClientRect: () => ({ right: document.documentElement.clientWidth }) };
-        const regels = (e) => { const tops = new Set(); for (const s of e.querySelectorAll('span')) { const rg = document.createRange(); rg.selectNodeContents(s); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top)); } return tops.size; };
+        /* levering 114: binnen de grote regel staan op de telefoon twee delen (.b94-deel); per regel één top, op 4 px afgerond */
+        const regels = (e) => { const tops = new Set(); for (const s of [...e.querySelectorAll('span')].filter((x) => !x.querySelector('span'))) { const rg = document.createRange(); rg.selectNodeContents(s); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top / 4)); } return tops.size; };
         const koppen = [...document.querySelectorAll('.h-kop')];
         return {
           body: cs(document.body).fontFamily.split(',')[0].replace(/"/g, ''),
           kop: cs(k).fontFamily.split(',')[0].replace(/"/g, ''), kopGewicht: cs(k).fontWeight,
           hKop: koppen.length > 0 && koppen.every((e) => /^"?VISUAILS Display/.test(cs(e).fontFamily) && cs(e).fontWeight === '700' && [...e.querySelectorAll('.l')].every((l) => cs(l).fontWeight === '700')),
           geladen: document.fonts.check('700 40px "VISUAILS Display"') && document.fonts.check('400 16px "DM Sans"'),
-          regels: regels(k), past: k.getBoundingClientRect().right <= tekst.getBoundingClientRect().right + 1 && k.getBoundingClientRect().left >= 0,
+          regels: regels(k), breekt: !!k.querySelector('.b94-breekt') && innerWidth <= 760, past: k.getBoundingClientRect().right <= tekst.getBoundingClientRect().right + 1 && k.getBoundingClientRect().left >= 0,
           maten: window.__maten,
         };
       });
       const vast = new Set(m.maten).size === 1;
       /* levering 110 (lijst 119 tot 122): de hoofdkop van de voorpagina staat in VISUAILS Display Blok; de andere koppen (.h-kop) blijven VISUAILS Display */
       ok(`${taal} ${breed}: tekst DM Sans, hoofdkop VISUAILS Display Blok ${m.kopGewicht}, alle .h-kop in VISUAILS Display 700 (beide tonen), letters geladen`, m.body === 'DM Sans' && m.kop === 'VISUAILS Display Blok' && m.kopGewicht === '700' && m.hKop && m.geladen, JSON.stringify(m));
-      ok(`${taal} ${breed}:   de kop op ${m.regels} regel(s) en binnen zijn vak`, m.regels === 2 && m.past, JSON.stringify(m));
+      ok(`${taal} ${breed}:   de kop op ${m.regels} regel(s) en binnen zijn vak`, m.regels === (m.breekt ? 3 : 2) && m.past, JSON.stringify(m));
       ok(`${taal} ${breed}:   verspringt niet bij het laden (${[...new Set(m.maten)].join(' → ')} px)`, vast, m.maten.join(', '));
       const zonder = beelden.filter((u) => !u.endsWith(`?v=${V}`));
       const reeks = beelden.filter((u) => /\/f\/\d{3}\.avif/.test(u));

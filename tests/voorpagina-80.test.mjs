@@ -43,9 +43,10 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const h1 = (/<h1\b[\s\S]*?<\/h1>/.exec(h) || [''])[0];
   /* levering 94 (lijst 92, kop a): de h1 staat in de bannervideo; levering 95 (lijst 94, A5 a): de nieuwe kop */
   /* levering 110 (lijst 122): "We make your brand impossible to ignore", zonder interpunctie, een aanloop en een grote regel */
-  ok(`${taal}: één h1, de titel in twee regels (lijst 122: "We make your brand impossible to ignore")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bb94-kop\b/.test(h1)
-    && tekst(h1) === (taal === 'nl' ? 'Wij maken je merk niet te negeren' : 'We make your brand impossible to ignore')
-    && /class="b94-aanloop"/.test(h1) && /class="b94-groot"/.test(h1), tekst(h1));
+  /* levering 114 (Lucas, 17 november 00:46): "Your fashion brand deserves to be seen" */
+  ok(`${taal}: één h1, de titel in twee regels (levering 114: "Your fashion brand deserves to be seen")`, (h.match(/<h1\b/g) || []).length === 1 && /<h1\b[^>]*class="[^"]*\bb94-kop\b/.test(h1)
+    && tekst(h1) === (taal === 'nl' ? 'Jouw modemerk verdient gezien te worden' : 'Your fashion brand deserves to be seen')
+    && /class="b94-aanloop"/.test(h1) && /class="b94-groot( b94-breekt)?"/.test(h1), tekst(h1));
   const plek = (re) => { const m = re.exec(h); return m ? m.index : -1; };
   /* levering 94 (lijst 92, laptop b): de bannervideo, Wat we maken, dan de laptop */
   /* levering 96 (lijst 96, A2 a): Hoe het werkt direct na Wat we maken, de €1-proef voor de vragen, het slot als einde */
@@ -78,7 +79,7 @@ for (const [pad, taal] of [['index.html', 'en'], ['nl/index.html', 'nl']]) {
   const w8 = h.slice(plek(/<section class="w8[ "]/), plek(/class="o8 o8-alleen"/));
   ok(`${taal}: Hoe het werkt: drie stappen in één regel, de levertijd uit de code`, (w8.match(/class="w8-stap(?: h-1[rk])?"/g) || []).length === 3 && tekst(w8).includes(traag ? `${snel}, ${traag}.` : `${snel}.`) && bestaat((/class="w8-link" href="([^"]+)"/.exec(w8) || [, '/x'])[1]), tekst(w8).slice(0, 160));
   /* lijst 64, knoppen: de klant ziet andere knoppen */
-  const acties = (/<p class="b94-knop"[^>]*>[\s\S]*?<\/p>/.exec(h) || [''])[0];
+  const acties = (/<p class="b94-knop[^"]*"[^>]*>[\s\S]*?<\/p>/.exec(h) || [''])[0];
   ok(`${taal}: de €1-link alleen voor wie nog niet bestelde; een klant ziet de link naar Studio`, /href="[^"]*test-sample[^"]*" data-vis-uit/.test(acties) && /href="\/account" data-vis-klant-in hidden/.test(acties), acties.slice(0, 400));
   /* het laadscherm alleen hier */
   ok(`${taal}: het laadscherm: de klasse vóór de eerste verf, het V-merk, de noodrem`, h.indexOf("classList.add('vl8-aan')") > 0 && h.indexOf("classList.add('vl8-aan')") < h.indexOf('<body') && /<div class="vl8" id="vl8"/.test(h) && /getoond\?open\(\):ruim\(\)|getoond \? open\(\) : ruim\(\)/.test(h));
@@ -166,13 +167,14 @@ for (const [breed, hoog] of [[1440, 900], [1920, 1080], [390, 844]]) {
     const klein = [];
     const w = document.createTreeWalker(document.querySelector('.h-voor'), NodeFilter.SHOW_TEXT);
     let n; while ((n = w.nextNode())) { const t = n.textContent.trim(); const el = n.parentElement; if (!t || !el.offsetParent || el.closest('.sr-only,[aria-hidden="true"]')) continue; const fs = parseFloat(getComputedStyle(el).fontSize); if (fs < 11.5) klein.push(`${t.slice(0, 20)} ${fs}`); }
-    return { sw: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth, fs: parseFloat(getComputedStyle(kop).fontSize), regels: [...kop.children].reduce((t, s) => t + Math.round(s.getBoundingClientRect().height / (parseFloat(getComputedStyle(s).fontSize) * 0.92)), 0), koppen, klein };
+    return { sw: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth, fs: parseFloat(getComputedStyle(kop).fontSize), regels: [...kop.children].reduce((t, s) => t + Math.round(s.getBoundingClientRect().height / (parseFloat(getComputedStyle(s).fontSize) * 0.92)), 0), breekt: !!kop.querySelector('.b94-breekt') && innerWidth <= 760, koppen, klein };
   });
   ok('niets zijwaarts', m.sw <= m.vw, `${m.sw} > ${m.vw}`);
   /* levering 94: de kop is zo groot als zijn kolom toelaat, hoogstens 96 px (op de telefoon 56) */
   /* levering 110 (lijst 122, opbouw b): een aanloop en een grote regel, elk één regel; de grote regel hoogstens 200 px
      (telefoon 80); hoeveel van de video hij bedekt, staat in tests/banner-kop-110-browser.test.mjs */
-  ok(`de titel op twee regels, ${breed >= 1100 ? 'tussen 60 en 200 px' : 'tussen 24 en 80 px'}`, m.regels === 2 && (breed >= 1100 ? m.fs >= 60 && m.fs <= 200 : m.fs >= 24 && m.fs <= 80), JSON.stringify([m.fs, m.regels]));
+  /* levering 114: op de telefoon staat de lange Nederlandse kop op drie regels (de aanloop, "verdient gezien", "te worden") */
+  ok(`de titel op ${m.breekt ? 'drie' : 'twee'} regels, ${breed >= 1100 ? 'tussen 60 en 200 px' : 'tussen 24 en 80 px'}`, m.regels === (m.breekt ? 3 : 2) && (breed >= 1100 ? m.fs >= 60 && m.fs <= 200 : m.fs >= 24 && m.fs <= 80), JSON.stringify([m.fs, m.regels]));
   ok('elke kop hoogstens twee regels', m.koppen.every(([, r]) => r <= 2), JSON.stringify(m.koppen.filter(([, r]) => r > 2)));
   ok('geen tekst kleiner dan 11,5 px', m.klein.length === 0, m.klein.slice(0, 4).join(' | '));
   if (breed >= 1100) {

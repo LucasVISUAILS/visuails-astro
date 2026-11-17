@@ -11,9 +11,9 @@ html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-foo
 }
 html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-footer .sb, .h-gd-brief, .h-ed-brief, .h-nf-getal).kv-aan { background: transparent !important; }   /* het veld dekt de kaart; in de ader schijnt het wit van de pagina door, niet een zwarte rand (17:19) */
 
-/* het doek van de kaart: 150 px ruimer dan de kaart (de aderen), achter de inhoud */
+/* het doek van de kaart, achter de inhoud: precies zo groot als de kaart (levering 113: geen aderen meer; was 150 px ruimer) */
 html body.hal canvas.kv-doek:not(#k):not(#k) {
-  position: absolute !important; inset: -150px !important; width: calc(100% + 300px) !important; height: calc(100% + 300px) !important;
+  position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
   max-width: none !important; margin: 0 !important; padding: 0 !important; flex: none !important; grid-area: auto !important;
   z-index: -1 !important; pointer-events: none; opacity: 0; transition: opacity .8s cubic-bezier(.22, .8, .2, 1);
 }

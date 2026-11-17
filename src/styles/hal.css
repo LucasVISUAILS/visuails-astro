@@ -5506,7 +5506,9 @@ html body.hal .site-header .nav-menu { background: #FFFFFF !important; -webkit-b
    - In de golf de lucht uit hero-dunes (rechtsboven, de wolkenstrepen bij de horizon), omgekleurd
      naar het schema: het donkerste deel blauw diep #023D29 (10 : 1), het midden blauw uur #016645
      (8,08 : 1), het lichtste #11976A, de toon van blauw uur die na het opslaan nog 6,15 : 1 haalt (img/hal/lucht-blauw-uur.webp,
-     2,3 kB). Hij schuift langzaam door het woord. Zo lang hij laadt: blauw uur.
+     2,3 kB). LEVERING 113 (16 november, Lucas: "De glow op sommige zinnen zijn nog blue hour"): het bestand zelf was nog
+     blauw. Nu img/hal/lucht-mint.webp: dezelfde lucht, omgekleurd naar #023D29 · #016645 · #0A7550; het lichtste punt haalt
+     5,3 : 1 op de grond. Hij schuift langzaam door het woord. Zo lang hij laadt: mint 700 (#016645).
    - Daarop een fijne korrel (img/hal/korrel.webp, 112 × 112, 10 %), die als film twaalf keer per
      seconde verspringt; het lichtste korreltje haalt in de browser nog minstens 4,7 : 1.
    - Alles als achtergrond op de letters (background-clip: text), alleen zolang de golf loopt; in rust
@@ -5544,7 +5546,7 @@ html body.hal.hal .h-lk-slot .h-kop .l, html body.hal.hal .h-proef-kop .l, html 
 html body.hal.hal .h-kop .l.is-gloeit, html body.hal.hal .h-kop .l.is-gloeit * { color: transparent; }
 html body.hal.hal .h-kop .l.is-gloeit {
   --gl-a: var(--h-inkt); --gl-b: #016645;
-  --gl-korrel: url('/img/hal/korrel.webp'); --gl-lucht: url('/img/hal/lucht-blauw-uur.webp');
+  --gl-korrel: url('/img/hal/korrel.webp'); --gl-lucht: url('/img/hal/lucht-mint.webp');   /* levering 113: de lucht in mint (was nog blauw uur) */
   -webkit-background-clip: text; background-clip: text; -webkit-box-decoration-break: slice; box-decoration-break: slice;
   background-color: var(--gl-b);
   background-image: linear-gradient(90deg, var(--gl-a) 0%, var(--gl-a) 30%, transparent 42%, transparent 58%, var(--gl-a) 70%, var(--gl-a) 100%), var(--gl-korrel), var(--gl-lucht);
@@ -6473,4 +6475,32 @@ html body.hal .sb .sb-veld { align-items: center; }
    ronde hoeken (het slot 32, de plaat erin 22 = 32 − 10, het €1-paneel en de plankaart die van een kaart). */
 html body.hal .h-lk-slot:not(#k), html body.hal .h-proef > .h-proef-woord:not(#k), .hal .h-pl-kaarten > .h-pk:last-child:not(#k) {
   clip-path: none !important;
+}
+
+/* ── DE €1-MELDING, SUBTIEL EN VAN GLAS — levering 114, 17 november 2026 ─────────────────────────────────────────────
+   Lucas (01:07): "Wanneer de klant omlaag scrollt mis ik nog een goede subtiele pop up voor de €1 sample", en voor de
+   balk in de bannervideo "een meer liquid glass look ... geen outlining om die box heen". De melding met de proef
+   (KlantMelding.astro) kwam op de voorpagina pas ná de laptop (interactions.js, meldingen(), nu: na de bannervideo).
+   Hij wordt hier één rij, zoals op de telefoon al: de vraag en het aanbod, de knop, het kruisje. Geen beeld en geen
+   detailregel meer, en het glas van de balk (wit op 68 %, 18 px vervaging) zonder rand, met een lage zachte schaduw.
+   Boven het donkerste beeld blijft de grond minstens #B1B2B5: het lichte deel van de kop staat daarom in inkt 2
+   (5,0 : 1), niet in inkt 3. De melding met de bestelling van een klant blijft zoals hij was. */
+html body.hal .h-melding-proef:not([hidden]) {
+  width: auto; max-width: calc(100vw - 32px - 52px - 20px);
+  grid-template-columns: auto auto 32px; grid-template-areas: "tekst knop sluit"; align-items: center; gap: 12px;
+  padding: 8px 10px 8px 18px; border-radius: 18px;
+  background: rgba(255, 255, 255, .68); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+  box-shadow: 0 16px 40px -22px rgba(9, 13, 11, .35);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html body.hal .h-melding-proef:not([hidden]) { background: rgba(255, 255, 255, .96); }
+}
+html body.hal .h-melding-proef .h-melding-beeld, html body.hal .h-melding-proef .h-melding-detail { display: none; }
+html body.hal .h-melding-proef .h-melding-kop { white-space: nowrap; }
+html body.hal .h-melding-proef .h-melding-kop .l { color: var(--h-inkt-2); }
+html body.hal .h-melding-proef .h-melding-sluit { margin: 0; background: none; }
+html body.hal .h-melding-proef .h-melding-sluit:hover { background: rgba(9, 13, 11, .06); }
+@media (max-width: 600px) {
+  html body.hal .h-melding-proef:not([hidden]) { max-width: none; grid-template-columns: minmax(0, 1fr) 44px 32px; padding: 8px 8px 8px 16px; gap: 8px; }
+  html body.hal .h-melding-proef .h-melding-kop { white-space: normal; }
 }

@@ -2455,8 +2455,14 @@ function meldingen() {
     if (opening && document.documentElement.classList.contains('lb-aan') && window.scrollY < opening.offsetTop + opening.offsetHeight - window.innerHeight) return false;
     /* Levering 80: de opening in rust (HalOpening80.astro). Met het effect (html.o8-aan) pas als de laptop
        uit beeld is: tot dan speelt daar de video en zou de melding erover komen. */
+    /* Levering 114 (Lucas, 17 november 01:07: "Wanneer de klant omlaag scrollt mis ik nog een goede subtiele pop up voor
+       de €1 sample"). Sinds levering 94 staat de laptop niet meer bovenaan maar halverwege de voorpagina; "pas als de laptop
+       uit beeld is" werd daardoor "pas na de laptop", ver naar beneden. Nu: de bannervideo (met zijn eigen €1-knop) helemaal
+       voorbij, en niet zolang de laptop in beeld is. */
+    const b94 = document.querySelector('[data-b94]');
+    if (b94 && b94.getBoundingClientRect().bottom > 0) return false;
     const o8 = document.querySelector('[data-o8-podium]');
-    if (o8 && document.documentElement.classList.contains('o8-aan') && o8.getBoundingClientRect().bottom > 0) return false;
+    if (o8 && document.documentElement.classList.contains('o8-aan')) { const r = o8.getBoundingClientRect(); if (r.top < window.innerHeight && r.bottom > 0) return false; }
     const stroomEind = document.querySelector('[data-o-stroom-eind]');
     if (stroomEind && stroomEind.getBoundingClientRect().bottom > window.innerHeight * 0.5) return false;
     for (const blok of document.querySelectorAll('section.h-proef')) {

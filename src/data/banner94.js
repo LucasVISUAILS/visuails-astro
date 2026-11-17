@@ -22,11 +22,20 @@
    De hoofdstukken: de knippen in de video, gemeten met ffmpeg (scene > 0,2): 4,25 · 6,75 · 9,33 · 14,42 s. */
 
 export const HOOFDSTUKKEN = [0, 4.25, 6.75, 9.33, 14.42];
+
+/* Levering 114 (17 november 2026). De kop (Lucas, 00:46): "Your fashion brand deserves to be seen", gecentreerd op de video.
+   Was "We make your brand impossible to ignore" (levering 110).
+   Het masker van de telefoon (scripts/telefoon-masker.py): de eerste scène, 102 beelden bij 24 per seconde, op één plaat van
+   8 × 13 vakken. donker: waar min(r, g, b) van de video van 0,96 naar 0,86 zakt, staat de telefoon vóór de kop (de grond is
+   0,988). */
+export const MASKER = { fps: 24, beelden: 102, kolommen: 8, rijen: 13, donker: [0.96, 0.86] };
 export const DUUR = 26.75;
 
 export const BANNER = {
   nl: {
-    kop: ['Wij maken je merk', 'niet te negeren'],
+    kop: ['Jouw modemerk', 'verdient gezien te worden'],
+    /* op de telefoon is "verdient gezien te worden" op één regel te klein (de aanloop zou 10,6 px worden): daar twee regels */
+    kopTelefoon: ['verdient gezien', 'te worden'],
     zin: 'Stuur een paar foto’s van je product. Je krijgt elk beeld terug dat je merk nodig heeft, klaar voor je winkel, je feed en je advertenties.',
     onder: {
       kop: 'Elk beeld dat je merk nodig heeft, zonder moeite.',
@@ -48,7 +57,7 @@ export const BANNER = {
     video: 'Video: een foto van een jas wordt productfoto’s, details, on-model en een campagne bij een waterval',
   },
   en: {
-    kop: ['We make your brand', 'impossible to ignore'],
+    kop: ['Your fashion brand', 'deserves to be seen'],
     zin: 'Send a few photos of your product. You get back every visual your brand needs, ready for your shop, your feed and your ads.',
     onder: {
       kop: 'Every visual your brand needs, without the effort.',

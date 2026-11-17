@@ -33,7 +33,7 @@ const KAARTEN = [...document.querySelectorAll(`body.hal :is(${KAART_SEL})`)];
 if (KAARTEN.length && !window.__kvUit) start();
 
 function start() {
-  const RAND = 150, MAX = 12;
+  const RAND = 0, MAX = 12;   /* levering 113: geen aderen meer, dus geen ruimte om de kaart (was 150) */
   const doek = document.createElement('canvas');
   const gl = doek.getContext('webgl', { antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: false, alpha: true });
   if (!gl) { document.documentElement.classList.add('kv-geen'); return; }
@@ -104,7 +104,7 @@ function start() {
     '  vec2 q = vec2(f.x, f.y + uScroll);',                     /* de plek op de pagina */
     '  float d = 1e5;',
     '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uN) break; d = min(d, doos(q, uKaart[i], 18.)); }',
-    '  if (uHeel < .5 && d > 130.){ gl_FragColor = vec4(0.); return; }',            /* buiten de kaart en zijn aderen: doorzichtig */
+    '  if (uHeel < .5 && d > 1.5){ gl_FragColor = vec4(0.); return; }',            /* buiten de kaart: doorzichtig (levering 113: geen aderen meer) */
     '  vec2 p = q + uVerschuif;',
     '  gD = d;',                               /* de plek op de grote kaart */
     '  W = uBreed;',
@@ -117,28 +117,8 @@ function start() {
     '  float sm = 1., fel = (.74 + .26*adem) * (.86 + .28*lg);',
     '  float fn = smoothstep(.62, 1.12, fel);',                                       /* 0 = de donkere kant van de adem, 1 = de lichte */
     '  vec2 pz = p;',
-    /* DE ADEREN (Lucas, 03:35, 03:47 en 04:27): waar een lijn de rand raakt, steekt hij een klein stukje uit in het wit. Geen
-       laserstraal: de ader is een stukje van de kaart zelf dat doorloopt, dus hij gaat zonder naad over (Lucas, 04:37): bij de
-       rand heeft hij precies de kleur van de kaart, en naar zijn punt toe loopt hij heel zacht van groen naar zwart
-       (04:35). Zijn binnenkant is glans (04:32). Hij blijft op één plek: hij ademt (iets langer, dan weer korter) en zijn
-       buitenranden golven op hun plek, met bewegingsonscherpte (04:35). */
-    '  float vm = 0., vx = 0., vpl = 0., vs = 0., vgl = 0.;',
-    '  if (uHeel < .5 && d > -2.){',
-    '    float x = clamp(d/110., 0., 1.);',                                            /* de draad loopt 110 px het wit in */
-    /* welke lijn is hier het dichtstbij: de afstand in px en de sterkte van die lijn */
-    '    vec4 nb = naast(q, golf); float bdl = nb.x, bs = nb.y; vpl = stroom(nb.z, nb.w);',
-    /* alleen waar een lijn de rand echt kruist, niet waar hij er vlak langs loopt */
-    '    vec2 nn = normalize(vec2(dmin(q + vec2(1., 0.)) - dmin(q - vec2(1., 0.)), dmin(q + vec2(0., 1.)) - dmin(q - vec2(0., 1.))) + 1e-5);',
-    '    float dd = abs(naast(q + nn*2., golf).x - bdl) / 2.;',
-    '    float kruis = smoothstep(.97, .86, dd);',
-    '    float sterk = smoothstep(.12, .5, bs / max(lijn(bdl, 40.), 1e-4));',     /* hoe sterk de lijn is waar hij de rand raakt */
-    /* DE ADER (levering 108): dezelfde draad loopt even dik door, wordt naar zijn eind iets dunner en verdwijnt heel
-       geleidelijk in het wit, als bedrading onder de pagina */
-    '    float hw = DRAAD * (1. - .35*x);',
-    '    vs = bdl / hw;',
-    '    float vorm = smoothstep(hw + .6, hw - .6, abs(bdl));',
-    '    vm = vorm * sterk * kruis * pow(1. - x, 1.5); vx = x;',
-    '    vgl = gloed(bdl, 5.) * sterk * kruis * pow(1. - x, 1.5) * (.08 + .12*vpl); }',   /* de gloed van mint om de draad, ook in het wit (22:31); zachter aflopend en zwakker (levering 109) */
+    /* DE ADEREN EN DE DRAAD (levering 101 tot 109) zijn weg (levering 113, Lucas 16 november 20:30: "Haal de aderen/bedrading
+       helemaal uit de website, hier krijg je toch lag van"). De kaart heeft alleen nog zijn veld, zijn look, zijn vouw en korrel. */
     /* het licht blijft van de tekst weg */
     '  float weg = 1., zacht = 1., vrij = 1.;',
     '  for (int i = 0; i < ' + MAX + '; i++){ if (i >= uNT) break; float dt = doos(q, uTekst[i], 40.); float s0 = smoothstep(-30., 260., dt); weg = min(weg, s0); zacht = min(zacht, mix(.5, 1., s0)); vrij = min(vrij, smoothstep(18., 64., doos(q, uTekst[i], 10.))); }',   /* vrij: 0 bij tekst en knoppen, 1 vanaf 64 px; de draad blijft daar weg (levering 109) */
@@ -193,12 +173,7 @@ function start() {
     '    c = mix(c, mix(M800, M700, .55), lichtkant * (.6 + .25*hd) * w * zacht * fel);',
     '    c = mix(c, mix(M700, M600, .6), rug * (.7 + .25*ha) * w * mix(.15, 1., weg) * fel);',
     '    c = mix(c, mix(M600, M300, .3), pow(rug, 3.) * .35 * w * mix(.05, 1., weg) * fel);',
-    /* de ene harde lijn van de kaart: schaduwkant, gloed, glanzende kern, met de puls */
-    '    float st = stroom(kd.z, h(vec2(fi, 11.)));',
-    '    float lw = max(weg, smoothstep(-24., -2., d));',                               /* alleen de draad wordt naar de rand toe weer fel, zodat hij zonder naad de ader in loopt; het vlak zelf niet (geen lichte rand) */
-    '    float rnd = smoothstep(-40., -3., d);',                                            /* 0 diep in de kaart, 1 aan de rand: daar komt de draad naar boven */
-    '    c = mix(c, mix(M500, M600, .5), gloed(kd.x, 5.) * kd.y * vrij * (.03 + .05*st + .07*rnd) * mix(.2, 1., weg));',      /* in de kaart bijna geen gloed: de draad ligt erin */
-    '    c = mix(c, mix(draadIn(kd.x/DRAAD, st), draadKleur(kd.x/DRAAD, st), rnd), smoothstep(DRAAD + .6, DRAAD - .6, abs(kd.x)) * kd.y * vrij * mix(.75, 1., rnd)); }',
+    '  }',
     /* F · fijne filmkorrel (levering 109, Lucas: "ook mis ik de film grain op de kaart"): fijn en zacht, zoals in de
        logo-animatie, zodat de kaart mat blijft; hij verspringt 8 keer per seconde, bij minder beweging staat hij stil */
     '  vec2 kp = floor(gl_FragCoord.xy / max(1., uDpr)) + floor(uTijd*8.)*vec2(17., 31.);',
@@ -206,11 +181,7 @@ function start() {
     '  c += kr * .045 * (.55 + 1.6*lum);',
     '  float rand = smoothstep(1.5, -.5, d);',
     '  if (uHeel > .5){ gl_FragColor = vec4(c, 1.); return; }',
-    '  vec3 cv = mix(draadKleur(vs, vpl), mix(draadKleur(vs, vpl), M300, .35), smoothstep(0., .7, vx));',   /* aan de rand precies de draad in de kaart, verder het wit in lichter mint, als chroom op wit */
-    '  float ag = vgl * (1. - vm), uitA = vm + ag;',                                     /* buiten de kaart: de draad en zijn gloed */
-    '  vec3 uitC = (cv*vm + mix(M500, M300, .3)*ag) / max(uitA, 1e-4);',
-    '  float al = rand + uitA * (1. - rand);',                                           /* de kaart dicht, de ader met zijn eigen dekking ; pas na de rand berekend, anders bleef in de geul aan de rand een zwart puntje over (17:19) */
-    '  gl_FragColor = vec4((clamp(c, 0., 1.) * rand + uitC * uitA * (1. - rand)) / max(al, 1e-4), al);',
+    '  gl_FragColor = vec4(clamp(c, 0., 1.), rand);',                                  /* de kaart dicht, daarbuiten niets */
     '}'].join('\n');
   const maak = (type, bron) => { const s = gl.createShader(type); gl.shaderSource(s, bron); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   let prog;

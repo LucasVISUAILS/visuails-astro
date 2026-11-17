@@ -174,13 +174,14 @@ const dist = (p) => { const f = path.join(ROOT, 'dist', p); return existsSync(f)
     /* levering 79: de opening is de laptop over de hele breedte (HalLaptopBreed.astro; in 78 de tablet) */
     /* levering 80: de opening van HalOpening80 (de titel en de zin); de €1-link is voor een klant de link naar Studio */
     /* levering 94: de opening is de bannervideo (HalBanner94.astro); zijn kop en zin staan er voor iedereen */
-    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="b94-h1" class="b94-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="b94-zin[^"]*"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
+    /* levering 114: de zin staat niet meer in de banner; de zin van de stap wel */
+    ok('  de kop en de zin van de opening staan er voor iedereen', /<h1 id="b94-h1" class="b94-kop"(?![^>]*data-vis-uit)[^>]*>/.test(thuis) && /<p class="b94-uitleg"(?![^>]*data-vis-uit)[^>]*>/.test(thuis));
     ok('  de oude welkomstregel bovenin is weg', !/class="h-welkom"/.test(thuis));
     /* 14 oktober 2026 (v26-proefblok a): de abonnementsknop staat niet meer in
        het proefblok, alleen nog in de opening. */
     /* levering 80 (lijst 64, knoppen): de opening heeft geen abonnementsknop meer; een klant ziet in plaats van de
        €1-link de link naar Studio (data-vis-klant-in). De hoofdknop draagt de creditszin nog. */
-    ok('  de hoofdknop draagt de creditszin, geen data-vis-in; voor een klant de link naar Studio', !/data-vis-klant="plan"/.test(thuis) && !/data-vis-in\b/.test(thuis) && thuis.includes('data-vis-credits="Bestel met je credits · {n} over"') && /<a class="h-link k k-tekst" data-rol="doorgaan" href="\/account" data-vis-klant-in hidden>/.test(thuis));  /* knoppensysteem lijst 88/89: de tekstlink is .k-tekst met data-rol */
+    ok('  de hoofdknop draagt de creditszin, geen data-vis-in; voor een klant de link naar Studio', !/data-vis-klant="plan"/.test(thuis) && !/data-vis-in\b/.test(thuis) && thuis.includes('data-vis-credits="Bestel met je credits · {n} over"') && /<a class="h-knop k k-lijn" data-rol="doorgaan" href="\/account" data-vis-klant-in hidden>/.test(thuis));  /* levering 114: een lijnknop in de balk */  /* knoppensysteem lijst 88/89: de tekstlink is .k-tekst met data-rol */
     ok('  het proefblok draagt een verborgen klantversie', /data-vis-klant="proefblok"/.test(thuis) && /data-vis-proefklant hidden/.test(thuis) && thuis.includes('data-vis-her="Bestel met je look."'));
     ok('  de zwevende WhatsApp-knop draagt de zin', /class="wa-launcher"[^>]*data-vis-wa="Hallo VISUAILS, een vraag over bestelling \{ref\}:"/.test(thuis));
     for (const [pad, soort] of [['nl/how-it-works/index.html', 'herbestel'], ['nl/pricing/index.html', 'herbestel'], ['nl/upload-guidelines/index.html', 'herbestel-of-start'], ['nl/upload-guidelines/index.html', 'start-naast'], ['how-it-works/index.html', 'herbestel']]) {

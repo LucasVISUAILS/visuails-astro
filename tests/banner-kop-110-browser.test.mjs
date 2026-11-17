@@ -34,6 +34,16 @@ for (const taal of ['en', 'nl']) {
   ok(`${taal}: het blok onder de video heeft een kop, een label en twee delen tekst`, ['kop', 'label', 'wat', 'waarom'].every((k) => BANNER[taal].onder?.[k]));
 }
 ok('de kop heeft een aanloop en een grote regel', /b94-aanloop/.test(lees('src/components/HalBanner94.astro')) && /b94-groot/.test(lees('src/components/HalBanner94.astro')));
+/* levering 114 (Lucas, 17 november 00:46): de telefoon gaat in de eerste scène over de kop heen */
+{
+  const ban = lees('src/components/HalBanner94.astro'), data = lees('src/data/banner94.js');
+  const plaat = path.join(ROOT, 'public/img/hal/banner/telefoon-masker.webp');
+  ok('levering 114: het masker van de telefoon staat er (8 × 13 vakken van 240 × 135, 102 beelden) en zijn script ook',
+    fs.existsSync(plaat) && fs.existsSync(path.join(ROOT, 'scripts/telefoon-masker.py')) && /beelden: 102, kolommen: 8, rijen: 13/.test(data));
+  ok('levering 114: in de letters staat de video waar de telefoon is (alleen in de eerste scène), de letters tekent WebGL zelf',
+    /uniform float b;/.test(ban) && /gl_FragColor = vec4\(e, letter \* \(1\.0 - voor\)\)/.test(ban) && /bi < data\.masker\.beelden \? bi : -1/.test(ban) && /tekenLetters/.test(ban));
+  ok('levering 114: de €1-melding komt na de bannervideo (interactions.js)', /const b94 = document\.querySelector\('\[data-b94\]'\);\s*if \(b94 && b94\.getBoundingClientRect\(\)\.bottom > 0\) return false;/.test(lees('src/scripts/interactions.js')));
+}
 ok('het blok onder de video staat op de voorpagina', /<HalOnderVideo110\b/.test(lees('src/components/VoorpaginaHal.astro')));
 
 const DIST = path.join(ROOT, 'dist');
@@ -70,7 +80,10 @@ for (const [pad, taal] of [['/', 'en'], ['/nl/', 'nl']]) {
       const lh = (e) => parseFloat(getComputedStyle(e).fontSize) * 0.92;
       const kb = r(h), vb = r(v);
       const x = Math.max(0, Math.min(kb.right, vb.right) - Math.max(kb.left, vb.left)), y = Math.max(0, Math.min(kb.bottom, vb.bottom) - Math.max(kb.top, vb.top));
-      const pan = document.querySelector('.b94-paneel'); const grens = pan && innerWidth > 760 ? r(pan).left : innerWidth;
+      /* levering 114: de kop staat gecentreerd boven de balk met de stappen (niet meer naast een vlak rechts) */
+      const pan = document.querySelector('.b94-paneel'); const grens = innerWidth;
+      const boven = !pan || innerWidth <= 760 || r(h).bottom <= r(pan).top - 16;
+      const breekt = !!h.querySelector('.b94-breekt') && innerWidth <= 760;
       const ov = document.querySelector('.ov110'), ovk = document.querySelector('.ov110-kop'), ovz = document.querySelector('.ov110-zin');
       const ban = document.querySelector('.b94');
       const grond = getComputedStyle(document.documentElement).backgroundColor;
@@ -83,16 +96,19 @@ for (const [pad, taal] of [['/', 'en'], ['/nl/', 'nl']]) {
         naBanner: !!ov && ban.compareDocumentPosition(ov) === Node.DOCUMENT_POSITION_FOLLOWING,
         ovRegels: Math.round(r(ovk).height / parseFloat(getComputedStyle(ovk).lineHeight)), ovKopPx: parseFloat(getComputedStyle(ovk).fontSize),
         zinPx: parseFloat(getComputedStyle(ovz).fontSize), zinKleur: getComputedStyle(ovz).color, grond: grond === 'rgba(0, 0, 0, 0)' ? getComputedStyle(document.body).backgroundColor : grond,
-        scroll: document.documentElement.scrollWidth > innerWidth,
+        scroll: document.documentElement.scrollWidth > innerWidth, boven, breekt,
       };
     });
     ok(`${tag}: de kop staat in VISUAILS Display Blok`, m.blok && /VISUAILS Display Blok/.test(m.fam), m.fam);
     ok(`${tag}: de grote regel vult de kolom (${(m.vul * 100).toFixed(1)} %)`, m.vul > 0.97 && m.vul <= 1.001);
     ok(`${tag}: niets van de kop steekt uit`, !m.uit);
-    ok(`${tag}: de kop bedekt hoogstens 15 % van de video (${(m.dekking * 100).toFixed(1)} %)`, m.dekking <= 0.15);
+    ok(`${tag}: de kop staat minstens 16 px boven de balk met de stappen`, m.boven);
+    /* levering 114: op de telefoon staat de lange Nederlandse kop op twee regels (17 november: "verdient gezien / te worden"), dan
+       hoogstens 18 % */
+    ok(`${tag}: de kop bedekt hoogstens ${m.breekt ? 18 : 15} % van de video (${(m.dekking * 100).toFixed(1)} %)`, m.dekking <= (m.breekt ? 0.18 : 0.15));
     ok(`${tag}: de grote regel is ruim twee keer de aanloop (${m.fs.toFixed(0)} en ${m.aanloopPx.toFixed(0)} px)`, m.fs >= 2.2 * m.aanloopPx);
     ok(`${tag}: de aanloop is minstens 11,5 px (${m.aanloopPx.toFixed(1)} px)`, m.aanloopPx >= 11.5);
-    ok(`${tag}: de aanloop en de grote regel zijn elk één regel`, m.regelsA === 1 && m.regelsG === 1, `${m.regelsA} + ${m.regelsG}`);
+    ok(`${tag}: de aanloop is één regel, de grote regel ${m.breekt ? 'twee (telefoon, Nederlands)' : 'één'}`, m.regelsA === 1 && m.regelsG === (m.breekt ? 2 : 1), `${m.regelsA} + ${m.regelsG}`);
     ok(`${tag}: het blok staat na de banner`, m.naBanner);
     ok(`${tag}: de kop van het blok is hoogstens 2 regels (${m.ovRegels}, ${m.ovKopPx} px)`, m.ovRegels <= 2);
     ok(`${tag}: de tekst van het blok is minstens 16 px (${m.zinPx} px)`, m.zinPx >= 16);

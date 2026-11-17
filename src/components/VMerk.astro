@@ -47,7 +47,7 @@ const { klasse = '', glitch = false, electro = false, venster = false } = Astro.
 const B = 702, H = 813.25;
 /* het stukje (1920 breed in verhouding 5,2 : 1) op de hoogte van de V, zo gelegd dat de lichtbaan door de V loopt */
 const RAAM = kies('raam', `${Astro.url.pathname}:${klasse}`);
-const RAAM_BAAN = { 'raam-0': 0.72, 'raam-3': 0.6, 'raam-6': 0.74 }[RAAM] ?? 0.7;
+const RAAM_BAAN = { 'raam-m-0': 0.72, 'raam-m-3': 0.6, 'raam-m-6': 0.74 }[RAAM] ?? 0.7;
 const RW = H * 640 / 123, RX = B * 0.62 - RAAM_BAAN * RW;
 ---
 <svg class:list={['wm', 'vm', klasse, glitch && 'wm-glitch', electro && 'mk', venster && 'mk-venster']} viewBox={`0 0 ${B} ${H}`} aria-hidden="true" focusable="false">

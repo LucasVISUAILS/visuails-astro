@@ -2,8 +2,8 @@
  * VISUAILS — het kaartveld in de site (levering 100, stap 2; vervangt de toets van de fotoblokken van lijst 86).
  * De vier blokken die fotoblok waren (het €1-blok, het slot, de Studiobrief, de 404) en alles met [data-kaart] zijn
  * kaarten: een venster op één groot WebGL-veld (src/scripts/kaartveld.js, src/styles/kaart-100.css). Wat hier vastligt:
- *   1 · de opmaak: kaartveld.js en kaart-100.css zitten in de Layout; elke kaart heeft één eigen lijn (dus hoogstens één
- *       ader, Lucas 14 nov 17:31), vijf looks, en een css-verloop als terugval zonder WebGL;
+ *   1 · de opmaak: kaartveld.js en kaart-100.css zitten in de Layout; vijf looks, een css-verloop als terugval zonder
+ *       WebGL; sinds levering 113 geen aderen, geen draad en geen lichtnet meer;
  *   2 · in de browser (1440 en 390): elke kaart draagt het veld (kv-aan, een eigen doek), en wit haalt op het slechtste
  *       beeldpunt onder de tekst minstens 4,5 : 1, op twee momenten van de puls; de witte V op de 404 minstens 3 : 1.
  *   node tests/kaartveld-100-browser.test.mjs        (eerst de build)
@@ -28,25 +28,18 @@ console.log('\nVISUAILS — het kaartveld (levering 100)\n\n1 · de opmaak');
 const layout = lees('src/layouts/Layout.astro'), veld = lees('src/scripts/kaartveld.js'), css = lees('src/styles/kaart-100.css');
 ok('kaartveld.js en kaart-100.css zitten in de Layout', /kaartveld\.js/.test(layout) && /kaart-100\.css/.test(layout));
 ok('de vier oude fotoblokken zijn kaarten', ['.h-proef > .h-proef-woord', '.h-lk-slot', '.site-footer .sb', '.h-nf-getal'].every((s) => veld.includes(s)));
-ok('alleen de eigen lijn van een kaart maakt een ader (geen losse lijnen over het veld)', /naast\(vec2 q[\s\S]{0,400}kaartDl\(q, i, uKaart\[i\]/.test(veld) && !/sdA|dsA|hsA/.test(veld));
-ok('de lijn begint in de kaart: één uiteinde, één ader', /smoothstep\(-\.6\*tb, -\.15\*tb, langs\)/.test(veld));
 ok('vijf looks (zijde, nacht, mint, horizon, gloed), op volgorde', /float look\(int i\)\{ return mod\(float\(i\), 5\.\); \}/.test(veld));
 ok('een kaart mengt niet met de look of de lijn van zijn buren', (veld.match(/- gD\)/g) || []).length >= 2);
 ok('zonder WebGL: een css-verloop op de kaart', /linear-gradient\(135deg, #016645/.test(css));
 ok('bij minder beweging staat het veld stil', /minder\.matches \? 4/.test(veld));
 /* levering 108 (Lucas, 15 nov 21:47): mat en glad, geen rand, de aderen als draad van chroom met stroom erdoor */
 ok('109 · een fijne filmkorrel, 8 keer per seconde (Lucas, 16 nov 00:00)', /c \+= kr \* \.045/.test(veld) && /floor\(uTijd\*8\.\)/.test(veld));
-ok('109 · de lijn ligt per kaart zo ver mogelijk van tekst en knoppen (lijnVoor), en verdwijnt vlak bij tekst (vrij)', /function lijnVoor\(/.test(veld) && /uniform vec4 uLijn\[/.test(veld) && /vrij = min\(vrij, smoothstep\(18\., 64\./.test(veld));
-ok('109 · in de kaart is de draad donker (draadIn), aan de rand komt hij naar boven', /vec3 draadIn\(/.test(veld) && /mix\(draadIn\(kd\.x\/DRAAD, st\), draadKleur\(kd\.x\/DRAAD, st\), rnd\)/.test(veld));
-ok('109 · de gloed loopt zacht af (een kern en een lange staart)', /float gloed\(float d, float b\)/.test(veld) && /vgl = gloed\(bdl, 5\.\)/.test(veld));
 ok('109 · elke kaart een eigen vouw van licht', /DE VOUW/.test(veld) && /float rug = exp/.test(veld));
-const net = lees('src/scripts/lichtnet.js');
-ok('109 · licht onder het doek: lichtnet.js zit in de Layout, zoekt een route om tekst heen (A*) en begint bij de lijnen van de kaarten', /lichtnet\.js/.test(layout) && /function route\(/.test(net) && /kv-lijnen/.test(net) && /zIndex: '-1'/.test(net));
+/* levering 113 (Lucas, 16 nov 20:30: "Haal de aderen/bedrading helemaal uit de website, hier krijg je toch lag van") */
+ok('113 · geen aderen: buiten de kaart is het doek doorzichtig, en het doek is precies zo groot als de kaart', /d > 1\.5\)\{ gl_FragColor = vec4\(0\.\); return; \}/.test(veld) && /const RAND = 0,/.test(veld) && /inset: 0 !important; width: 100% !important; height: 100% !important;/.test(css));
+ok('113 · geen draad in de kaart: geen draadIn of draadKleur in de kleur, de kaart gewoon dicht', !/mix\(draadIn\(/.test(veld) && !/draadKleur\(vs, vpl\)/.test(veld) && /gl_FragColor = vec4\(clamp\(c, 0\., 1\.\), rand\);/.test(veld));
+ok('113 · geen licht onder het doek: lichtnet.js zit niet meer in de Layout', !/import '\.\.\/scripts\/lichtnet\.js'/.test(layout));
 ok('108 · geen lichte rand langs de kaart (het licht komt niet terug in de laatste px voor de rand)', !/weg = max\(weg, smoothstep\(-16\., -2\., d\)\)/.test(veld));
-ok('108 · de draad is chroom: donkere randen, een smalle glans, een tweede weerkaatsing', /float chroom\(float s\)\{ return \.16 \+ \.84\*exp/.test(veld));
-ok('108 · de stroom trekt door de draad (golven van licht, met de tijd), ook in de ader', /float stroom\(float a, float fase\)[^\n]*uTijd/.test(veld) && /vpl = stroom\(nb\.z, nb\.w\)/.test(veld));
-ok('108 · de ader verdwijnt in het wit (geen witte geul meer in de kaart)', !/vec3 geul/.test(veld));
-ok('108 · de draad in de mint-trap, met een gloed van mint om de draad, ook in het wit (22:31)', /vec3 draadKleur[^\n]*M900[^\n]*M600[^\n]*M300/.test(veld) && /vgl = gloed\(bdl, 5\.\)/.test(veld) && /mix\(M500, M300, \.3\)\*ag/.test(veld));
 
 const DIST = path.join(ROOT, 'dist');
 if (!fs.existsSync(path.join(DIST, 'nl', 'index.html'))) { ok('dist/nl/index.html bestaat (eerst de build)', false); process.exit(1); }

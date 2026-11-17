@@ -21,11 +21,19 @@
  * rekent de videokaart (WebGL: het negatief, de kaart uit banner94.js), alleen bij een nieuw beeld (24 keer per seconde).
  * Zonder WebGL doet een canvas met een svg-filter hetzelfde; zonder script staat de kop gewoon in inkt.
  *
+ * LEVERING 114 (Lucas, 17 november 00:46, met kive.ai als voorbeeld "voor hoe de indeling dan wordt", niet het ontwerp):
+ *   - de kop staat gecentreerd op de video, met de knoppen eronder; de nieuwe kop: "Your fashion brand deserves to be seen";
+ *   - in de eerste scène gaat de telefoon over de kop heen: waar de telefoon (of de hand) staat, zie je de letters niet. Vanaf
+ *     het product dat valt (4,25 s) staat de kop weer helemaal op de video. Hoe: zie "de telefoon over de kop" hieronder;
+ *   - de stappen zijn een compacte balk onderaan in het midden: de vijf namen naast elkaar, elk met een balkje, en daaronder
+ *     de zin van de stap die speelt. De zin over VISUAILS (T.zin) staat niet meer in de banner; het blok onder de video zegt
+ *     wat VISUAILS doet.
+ *
  * WAT ER NIET HAPERT. Er speelt één video: 1920 breed op een scherm dat meer dan 1400 beeldpunten breed tekent, anders 1280.
  * Hij pauzeert zodra de banner uit beeld is en speelt niet bij "minder beweging".
  */
 import '../styles/banner-94.css';
-import { BANNER, HOOFDSTUKKEN, DUUR, kaartTabel, KAART_DEEL } from '../data/banner94.js';
+import { BANNER, HOOFDSTUKKEN, DUUR, kaartTabel, KAART_DEEL, MASKER } from '../data/banner94.js';
 import { IKOON, rolIkoon } from '../data/iconen.js';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -42,7 +50,7 @@ const { lang, knop, link, klantLink } = Astro.props as Props;
 const T = BANNER[lang];
 /* het teken achter de bestanden: verandert de video, dan haalt elke browser hem opnieuw (/img/* staat zeven dagen) */
 const h = createHash('sha1');
-for (const f of ['banner-1280.mp4', 'banner-1920.mp4', 'poster-1280.webp', 'poster-1920.webp']) {
+for (const f of ['banner-1280.mp4', 'banner-1920.mp4', 'poster-1280.webp', 'poster-1920.webp', 'telefoon-masker.webp']) {
   const p = path.join(process.cwd(), 'public', 'img', 'hal', 'banner', f);
   if (existsSync(p)) h.update(readFileSync(p));
 }
@@ -53,6 +61,8 @@ const pad = (f: string) => `/img/hal/banner/${f}?v=${V}`;
 const tab = kaartTabel();
 const reeks = (k: number) => Array.from({ length: 21 }, (_, i) => (tab[Math.round(i / 20 * 255) * 3 + k] / 255).toFixed(4)).join(' ');
 const STAPPEN = T.stappen;
+/* levering 114: een lange grote regel staat op de telefoon op twee regels (banner94.js, kopTelefoon) */
+const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
 ---
 <svg width="0" height="0" class="b94-defs" aria-hidden="true" focusable="false"><defs>
   <filter id="b94-neg" color-interpolation-filters="sRGB">
@@ -75,48 +85,58 @@ const STAPPEN = T.stappen;
           <div class="b94-kopvak">
           {/* levering 110 (lijst 122, opbouw b): de eerste regel is een kleine aanloop, de tweede vult de kolom */}
           {laag === 'gat'
-            ? <h1 id="b94-h1" class="b94-kop" aria-label={T.kop.join(' ')}><span class="b94-aanloop" aria-hidden="true">{T.kop[0]}</span><span class="b94-groot" aria-hidden="true">{T.kop[1]}</span></h1>
-            : <p class="b94-kop"><span class="b94-aanloop">{T.kop[0]}</span><span class="b94-groot">{T.kop[1]}</span></p>}
+            ? <h1 id="b94-h1" class="b94-kop" aria-label={T.kop.join(' ')}><span class="b94-aanloop" aria-hidden="true">{T.kop[0]}</span><span class={`b94-groot${GROOT_DELEN ? ' b94-breekt' : ''}`} aria-hidden="true">{GROOT_DELEN ? <Fragment><span class="b94-deel">{GROOT_DELEN[0]}</span> <span class="b94-deel">{GROOT_DELEN[1]}</span></Fragment> : T.kop[1]}</span></h1>
+            : <p class="b94-kop"><span class="b94-aanloop">{T.kop[0]}</span><span class={`b94-groot${GROOT_DELEN ? ' b94-breekt' : ''}`}>{GROOT_DELEN ? <Fragment><span class="b94-deel">{GROOT_DELEN[0]}</span> <span class="b94-deel">{GROOT_DELEN[1]}</span></Fragment> : T.kop[1]}</span></p>}
           </div>
         </div>
       </div>
     ))}
   </div>
 
-  {/* het witte vlak: alles wat je moet lezen, in inkt (lijst 94, A2 a) */}
+  {/* het witte vlak (lijst 94, A2 a), sinds levering 114 een compacte balk onderaan in het midden: de vijf stappen naast
+      elkaar, en daaronder de zin van de stap die speelt (alles in inkt, op wit: leesbaar op elke scène van de video) */}
   <div class="b94-paneel">
-    <div class="b94-paneel-kop">
-      <p class="b94-hoek">{T.hoek}</p>
+    <p class="b94-hoek" id="b94-hoek">{T.hoek}</p>
+    <div class="b94-rij">
+      <ol class="b94-stappen" aria-labelledby="b94-hoek">
+        {STAPPEN.map(([naam, zin], i) => (
+          <li class={`b94-st${i === 0 ? ' b94-nu' : ''}`} data-b94-st>
+            <button type="button" class="b94-ga" data-b94-ga={i} aria-label={T.naar(i + 1, naam)} aria-current={i === 0 ? 'step' : undefined}>
+              <span class="b94-nr">0{i + 1}</span><span class="b94-naam">{naam}</span>
+            </button>
+            <p class="b94-tx">{zin}</p>
+            <span class="b94-bj" aria-hidden="true"><b data-b94-vul></b></span>
+          </li>
+        ))}
+      </ol>
       <button type="button" class="b94-pauze" data-b94-pauze aria-pressed="false" aria-label={T.pauze} data-uit={T.pauze} data-aan={T.speel}>
         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path class="b94-p-uit" fill-rule="evenodd" d={IKOON.pauze} /><path class="b94-p-aan" fill-rule="evenodd" d={IKOON.afspelen} /></svg>
       </button>
     </div>
-    <ol class="b94-stappen">
-      {STAPPEN.map(([naam, zin], i) => (
-        <li class={`b94-st${i === 0 ? ' b94-nu' : ''}`} data-b94-st>
-          <button type="button" class="b94-ga" data-b94-ga={i} aria-label={T.naar(i + 1, naam)} aria-current={i === 0 ? 'step' : undefined}>
-            <span class="b94-nr">0{i + 1}</span><span class="b94-naam">{naam}</span>
-          </button>
-          <p class="b94-tx">{zin}</p>
-          <span class="b94-bj" aria-hidden="true"><b data-b94-vul></b></span>
-        </li>
-      ))}
-    </ol>
-    <p class="b94-zin">{T.zin}</p>
-    <p class="b94-knop">
-      <a class="h-knop k k-vol" data-rol="doorgaan" href={knop.href} {...(knop.attrs || {})}><span data-vis-label>{knop.label}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
-      {link && <a class="h-link k k-tekst" data-rol="doorgaan" href={link.href} data-vis-uit>{link.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
-      {klantLink && <a class="h-link k k-tekst" data-rol="doorgaan" href={klantLink.href} data-vis-klant-in hidden>{klantLink.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
-    </p>
+    {/* de zin van de stap die speelt, zichtbaar; de zinnen zelf (.b94-tx) staan in de lijst voor een schermlezer */}
+    <p class="b94-uitleg" data-b94-uitleg aria-hidden="true"><span class="b94-uitleg-naam" data-b94-uitleg-naam>{STAPPEN[0][0]}</span><span data-b94-uitleg-zin>{STAPPEN[0][1]}</span></p>
+    {/* de knoppen (levering 114). Lucas, 00:59: "de €1 sample is amper zichtbaar": de €1-proef is een lijnknop (wit, even hoog
+        als Bestellen), los ernaast (zonder snede, zonder-snede-99.css). 01:01: "Moeten
+        die knoppen ook onder de telefoon komen, want dit ziet er wat apart uit": ze stonden onder de kop, midden in de weg van
+        de telefoon. Nu staan ze rechts in de balk: de telefoon gaat alleen over de kop, de knoppen zijn altijd te zien. */}
+    <div class="b94-actie">
+      <p class="b94-knop h-acties">
+        <a class="h-knop k k-vol" data-rol="doorgaan" href={knop.href} {...(knop.attrs || {})}><span data-vis-label>{knop.label}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
+        {link && <a class="h-knop k k-lijn" data-rol="doorgaan" href={link.href} data-vis-uit>{link.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
+        {klantLink && <a class="h-knop k k-lijn" data-rol="doorgaan" href={klantLink.href} data-vis-klant-in hidden>{klantLink.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
+      </p>
+    </div>
   </div>
 
   <script type="application/json" data-b94-data set:html={JSON.stringify({
     hoofdstukken: HOOFDSTUKKEN, duur: DUUR, kaart: kaartTabel(), deel: KAART_DEEL,
+    masker: { ...MASKER, src: pad('telefoon-masker.webp') },
   })} />
 </section>
 
 <script>
-  type Data = { hoofdstukken: number[]; duur: number; kaart: number[]; deel: number };
+  type Data = { hoofdstukken: number[]; duur: number; kaart: number[]; deel: number;
+    masker: { src: string; fps: number; beelden: number; kolommen: number; rijen: number; donker: [number, number] } };
   let ruim: (() => void) | null = null, loopt: HTMLElement | null = null;
   function start() {
     const sec = document.querySelector<HTMLElement>('[data-b94]');
@@ -177,39 +197,130 @@ const STAPPEN = T.stappen;
     const sts = [...sec.querySelectorAll<HTMLElement>('[data-b94-st]')];
     const gas = [...sec.querySelectorAll<HTMLButtonElement>('[data-b94-ga]')];
     const vullen = [...sec.querySelectorAll<HTMLElement>('[data-b94-vul]')];
+    /* levering 114: de zin van de stap die speelt staat onder de balk (de zinnen zelf staan in de lijst, voor een schermlezer) */
+    const uitNaam = sec.querySelector<HTMLElement>('[data-b94-uitleg-naam]'), uitZin = sec.querySelector<HTMLElement>('[data-b94-uitleg-zin]');
+    const zetUitleg = (i: number) => {
+      const st = sts[i]; if (!st) return;
+      if (uitNaam) uitNaam.textContent = st.querySelector('.b94-naam')?.textContent || '';
+      if (uitZin) uitZin.textContent = st.querySelector('.b94-tx')?.textContent || '';
+    };
     const H = data.hoofdstukken, N = H.length;
     let hs = 0;
-    function stapBij() {
+    /* LEVERING 113 (Lucas, 16 november 20:45: "Bij de uitleg lijst kan je soms niet op elke stap klikken en gaat hij telkens
+       naar stap 1"). De stap die speelt klapt open (zin en balkje) en de vorige klapt dicht; liep de video door terwijl je
+       naar een stap wees, dan schoof de lijst onder je muis en klikte je op een andere stap. Nu staat de lijst stil zolang de
+       muis erop staat (of de focus erin): de video loopt door, maar wat open is verandert pas als je de lijst verlaat, of
+       als je zelf op een stap klikt. */
+    const lijst = sec.querySelector<HTMLElement>('.b94-stappen');
+    let vast = false;
+    if (lijst) {
+      const zet = (v: boolean) => { vast = v; if (!v) stapBij(); };
+      const aan = () => zet(true), uit = () => zet(lijst.matches(':focus-within'));
+      lijst.addEventListener('pointerenter', aan); lijst.addEventListener('pointerleave', uit);
+      lijst.addEventListener('focusin', aan); lijst.addEventListener('focusout', () => setTimeout(() => zet(lijst.matches(':hover')), 0));
+      weg.push(() => { lijst.removeEventListener('pointerenter', aan); lijst.removeEventListener('pointerleave', uit); });
+    }
+    /* LEVERING 113, de tweede oorzaak: de bestanden komen van Cloudflare zonder "Range" (gemeten op 16 november: een vraag om
+       bytes 1000 – 1999 gaf 200 met het hele bestand). Dan kan de browser alleen springen naar een stuk dat al binnen is; vraag
+       je om stap 5 terwijl de video pas tot stap 2 geladen is, dan begint hij weer bij 0, dus bij stap 1. Nu springt hij pas
+       als dat stuk binnen is: tot dan staat de gekozen stap al open en wacht de video (meestal een fractie van een seconde). */
+    let wacht = -1, wachtStap = -1;
+    const binnen = (t: number) => { const b = vid.buffered; for (let k = 0; k < b.length; k++) if (t >= b.start(k) && t <= b.end(k) - 0.25) return true; return false; };
+    function gaNaar(i: number) {
+      const t = H[i] + 0.02;
+      if (binnen(t) || (vid.seekable.length && vid.buffered.length === 0 && t < 0.5)) { wacht = -1; wachtStap = -1; vid.currentTime = t; teken(); stapBij(true); return; }
+      wacht = t; wachtStap = i; zetStap(i); haalHeel();
+    }
+    opV('progress', () => { if (wacht >= 0 && binnen(wacht)) gaNaar(wachtStap); });
+    /* Zodra de video speelt, halen we hem in zijn geheel op (meestal uit de cache van de browser, die hem toch al laadt) en
+       spelen we verder vanuit het geheugen, op hetzelfde moment. Daarna is elke stap direct: alles is binnen. Het basisvlak
+       houdt zijn laatste beeld vast, dus de wissel is niet te zien. */
+    let heel = false;
+    const haalHeel = async () => {
+      if (heel || !vid.currentSrc || vid.currentSrc.startsWith('blob:')) return; heel = true;
+      try {
+        const r = await fetch(vid.currentSrc); if (!r.ok) return;
+        const url = URL.createObjectURL(await r.blob());
+        if (!loopt || loopt !== sec) { URL.revokeObjectURL(url); return; }
+        const t = vid.currentTime, liep = !vid.paused;
+        vid.src = url; weg.push(() => URL.revokeObjectURL(url));
+        await new Promise((klaar) => vid.addEventListener('loadedmetadata', klaar, { once: true }));
+        vid.currentTime = wacht >= 0 ? wacht : t;
+        if (wacht >= 0) { wacht = -1; wachtStap = -1; }
+        if (liep) speel();
+      } catch { /* dan blijft het bij het wachten op het laden */ }
+    };
+    /* Alleen wie naar de stappen gaat (muis, toets of vinger) haalt de video heel op; de rest laadt hem niet dubbel. */
+    const stappenVak = sec.querySelector<HTMLElement>('.b94-stappen');
+    ['pointerenter', 'focusin', 'touchstart'].forEach((e) => stappenVak?.addEventListener(e, () => haalHeel(), { once: true, passive: true }));
+    opV('timeupdate', () => { if (wacht >= 0 && binnen(wacht)) gaNaar(wachtStap); });
+    function zetStap(i: number) {
+      hs = i; zetUitleg(i);
+      sts.forEach((s, k) => s.classList.toggle('b94-nu', k === i));
+      gas.forEach((g, k) => { if (k === i) g.setAttribute('aria-current', 'step'); else g.removeAttribute('aria-current'); });
+      vullen.forEach((b, k) => { b.style.transform = `scaleX(${k === i && wacht < 0 ? '1' : '0'})`; });
+    }
+    function stapBij(dwing = false) {
+      if (wacht >= 0) return;   /* de gekozen stap staat al open; de video komt zo */
       const t = vid.currentTime, d = vid.duration || data.duur;
       let i = 0; while (i + 1 < N && t >= H[i + 1]) i++;
+      if (vast && !dwing && i !== hs) {
+        /* de lijst staat stil: het balkje van de open stap staat vol tot je de lijst loslaat */
+        vullen.forEach((b, k) => { b.style.transform = `scaleX(${k === hs ? '1' : '0'})`; });
+        return;
+      }
       if (i !== hs) {
-        hs = i;
+        hs = i; zetUitleg(i);
         sts.forEach((s, k) => s.classList.toggle('b94-nu', k === i));
         gas.forEach((g, k) => { if (k === i) g.setAttribute('aria-current', 'step'); else g.removeAttribute('aria-current'); });
       }
       const a = H[i], e = i + 1 < N ? H[i + 1] : d;
       vullen.forEach((b, k) => { b.style.transform = `scaleX(${k === i ? Math.min(1, Math.max(0, (t - a) / (e - a))).toFixed(4) : '0'})`; });
     }
-    gas.forEach((b) => b.addEventListener('click', () => { vid.currentTime = H[+(b.dataset.b94Ga || 0)] + 0.02; tekenNu(); }));
+    gas.forEach((b) => b.addEventListener('click', () => gaNaar(+(b.dataset.b94Ga || 0))));
 
     /* ── het effect: WebGL (het negatief en de kaart in één tekening), anders een canvas met het svg-filter ── */
     let gl: WebGLRenderingContext | null = null, prog: WebGLProgram | null = null, uDek: WebGLUniformLocation | null = null, vTex: WebGLTexture | null = null;
+    let uB: WebGLUniformLocation | null = null, maskerKlaar = false, mediaTijd = -1, lTex: WebGLTexture | null = null;
+    const letters = document.createElement('canvas'), lc = letters.getContext('2d');
     try { gl = doek.getContext('webgl', { premultipliedAlpha: false, antialias: false, preserveDrawingBuffer: false }) as WebGLRenderingContext | null; } catch { gl = null; }
     /* Zonder echte videokaart (SwiftShader, de software-tekenaar van Chrome) gaat elk videobeeld als textuur via het geheugen
        en wacht de tekenaar ("GPU stall due to ReadPixels"). Daar is het canvas met het svg-filter lichter. */
     if (gl) {
       const info = gl.getExtension('WEBGL_debug_renderer_info');
       const naam = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
-      if (/SwiftShader|llvmpipe|Software/i.test(naam)) { gl.getExtension('WEBGL_lose_context')?.loseContext(); gl = null; }
+      if (/SwiftShader|llvmpipe|Software/i.test(naam) && !(window as any).__b94ZachtGL) { gl.getExtension('WEBGL_lose_context')?.loseContext(); gl = null; }
     }
     let g2: CanvasRenderingContext2D | null = null;
     if (gl) {
       const sh = (t: number, s: string) => { const x = gl!.createShader(t)!; gl!.shaderSource(x, s); gl!.compileShader(x); return x; };
       prog = gl.createProgram()!;
       gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }'));
-      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float; varying vec2 uv; uniform sampler2D v; uniform sampler2D k; uniform vec4 dek;
-        void main(){ vec3 c = texture2D(v, dek.xy + uv * dek.zw).rgb; vec3 n = 1.0 - c; float l = dot(n, vec3(.2126, .7152, .0722));
-        vec3 m = texture2D(k, vec2(l * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).rgb; gl_FragColor = vec4(mix(n, m, ${data.deel.toFixed(3)}), 1.0); }`));
+      /* LEVERING 114, DE TELEFOON OVER DE KOP. In de eerste scène staat de telefoon op een effen witte grond (min(r, g, b) =
+         0,988). Waar de video niet bijna wit is (de telefoon, de hand, de mouw) tekenen we in de letters de video zelf in plaats
+         van het negatief: dan staat de telefoon vóór de kop. Die rand komt per beeldpunt uit de video, dus scherp. Het scherm
+         van de telefoon is licht (een houten vloer, de witte sluiterknop); daar vult het masker (scripts/telefoon-masker.py,
+         per videobeeld de vorm met de gaten dicht) het binnenste. b = het beeld in het masker, of -1 buiten de eerste scène.
+         De letters tekent WebGL dan zelf (lt: de kop als plaatje, wit op doorzichtig), met als dekking "letter × niet de
+         telefoon", over het basisvlak heen. Met de twee lagen (gat en vulling) bleef van elke letter onder de telefoon een
+         dunne omtrek zichtbaar (de zachte rand van een letter mengt bij "screen" niet precies terug tot de video). De twee
+         lagen blijven voor wie geen WebGL heeft; de kop in de html blijft er voor een schermlezer. */
+      const M = data.masker;
+      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float; varying vec2 uv; uniform sampler2D v; uniform sampler2D k; uniform sampler2D mk; uniform sampler2D lt; uniform vec4 dek; uniform float b;
+        void main(){ vec2 q = dek.xy + uv * dek.zw; vec3 c = texture2D(v, q).rgb; vec3 n = 1.0 - c; float l = dot(n, vec3(.2126, .7152, .0722));
+        vec3 m = texture2D(k, vec2(l * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).rgb; vec3 e = mix(n, m, ${data.deel.toFixed(3)});
+        float voor = 0.0;
+        if (b >= 0.0) {
+          float mn = min(c.r, min(c.g, c.b));
+          float rand = smoothstep(${M.donker[0].toFixed(3)}, ${M.donker[1].toFixed(3)}, mn);
+          vec2 iq = vec2(q.x, 1.0 - q.y);
+          float kol = mod(b, ${M.kolommen.toFixed(1)}), rij = floor(b / ${M.kolommen.toFixed(1)});
+          vec2 a = vec2((kol + clamp(iq.x, 0.002, 0.998)) / ${M.kolommen.toFixed(1)}, (rij + clamp(iq.y, 0.004, 0.996)) / ${M.rijen.toFixed(1)});
+          float vol = texture2D(mk, vec2(a.x, 1.0 - a.y)).r;
+          voor = max(rand, vol);
+        }
+        float letter = texture2D(lt, uv).a;
+        gl_FragColor = vec4(e, letter * (1.0 - voor)); }`));
       gl.linkProgram(prog);
       if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; }
     }
@@ -225,24 +336,79 @@ const STAPPEN = T.stappen;
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
       vTex = tex(0);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.uniform1i(gl.getUniformLocation(prog, 'v'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'k'), 1);
+      gl.uniform1i(gl.getUniformLocation(prog, 'v'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'k'), 1); gl.uniform1i(gl.getUniformLocation(prog, 'mk'), 2);
       uDek = gl.getUniformLocation(prog, 'dek');
+      uB = gl.getUniformLocation(prog, 'b'); gl.uniform1f(uB, -1);
+      /* het masker van de telefoon: één plaat, pas als die binnen is doet de telefoon mee (tot dan het negatief, zoals vroeger) */
+      const mTex = tex(2);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 1, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, new Uint8Array([0]));
+      const mImg = new Image(); mImg.decoding = 'async';
+      mImg.onload = () => { if (!gl) return; gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, mTex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, gl.LUMINANCE, gl.UNSIGNED_BYTE, mImg); maskerKlaar = true; teken(); };
+      mImg.src = data.masker.src;
+      lTex = tex(3);
+      gl.uniform1i(gl.getUniformLocation(prog, 'lt'), 3);
     } else {
       /* een canvas dat al webgl was, geeft geen 2d meer: dan een nieuw */
       g2 = doek.getContext('2d');
       if (!g2) { const nieuw = doek.cloneNode(false) as HTMLCanvasElement; doek.replaceWith(nieuw); doek = nieuw; g2 = doek.getContext('2d'); }
       doek.classList.add('b94-svg');
     }
+    /* LEVERING 113 (Lucas, 16 november 20:45: "Hoe kunnen we ervoor zorgen dat de video op de home page wat soepeler loopt").
+       Per videobeeld kopieerden we de hele video twee keer: naar het basisvlak en, als textuur, naar het effect, allebei op
+       de maat van het scherm keer de pixeldichtheid (op een retina-scherm van 1440 breed: 2880 × 1800, terwijl de video zelf
+       1920 breed is). Nu:
+       - geen doek is groter dan de video zelf (meer beeldpunten dan de video heeft, maakt het niet scherper);
+       - het effect (het negatief in de letters) beslaat alleen de rechthoek van de kop, niet de hele banner: de laag eromheen
+         is zwart, en zwart verandert met "screen" niets. De kop is ongeveer een tiende van de banner. */
+    let vak = { x: 0, y: 0, w: 1, h: 1 };   /* de rechthoek van de kop, in breukdelen van de banner */
+    const kopEl = sec.querySelector<HTMLElement>('.b94-vul .b94-kop');
     function maat() {
       const r = beeld.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
-      const w = Math.max(1, Math.round(r.width * dpr)), hh = Math.max(1, Math.round(r.height * dpr));
-      if (doek.width !== w || doek.height !== hh) { doek.width = w; doek.height = hh; }
+      const max = Math.min(1, (vid.videoWidth || 1920) / Math.max(1, r.width * dpr));   /* nooit meer beeldpunten dan de video */
+      const k = dpr * max;
+      const w = Math.max(1, Math.round(r.width * k)), hh = Math.max(1, Math.round(r.height * k));
       if (basis && (basis.width !== w || basis.height !== hh)) { basis.width = w; basis.height = hh; }
+      if (kopEl && r.width > 0) {
+        const q = kopEl.getBoundingClientRect(), m = 8;
+        const x0 = Math.max(0, q.left - r.left - m), y0 = Math.max(0, q.top - r.top - m);
+        const x1 = Math.min(r.width, q.right - r.left + m), y1 = Math.min(r.height, q.bottom - r.top + m);
+        vak = { x: x0 / r.width, y: y0 / r.height, w: Math.max(1, x1 - x0) / r.width, h: Math.max(1, y1 - y0) / r.height };
+        Object.assign(doek.style, { inset: 'auto', left: `${x0}px`, top: `${y0}px`, width: `${x1 - x0}px`, height: `${y1 - y0}px` });
+      }
+      const ew = Math.max(1, Math.round(r.width * vak.w * k)), eh = Math.max(1, Math.round(r.height * vak.h * k));
+      if (doek.width !== ew || doek.height !== eh) { doek.width = ew; doek.height = eh; }
+      tekenLetters(r, ew / Math.max(1, r.width * vak.w));
     }
-    /* het stuk van de video dat de banner toont (object-fit: cover), in breukdelen van de video */
-    function dek(): [number, number, number, number] {
-      const vw = vid.videoWidth || 16, vh = vid.videoHeight || 9, A = doek.width / doek.height, Av = vw / vh;
+    /* de kop als plaatje voor WebGL: elke regel op de plek waar de html hem zet (de lagen staan dan onzichtbaar), in dezelfde
+       letter. De basislijn: midden in de regel, zoals de browser hem zet (de letter is hoger dan de regel, .92). */
+    function tekenLetters(r: DOMRect, k: number) {
+      if (!gl || !lTex || !lc || !kopEl) return;
+      if (!document.fonts.check('700 20px "VISUAILS Display Blok"')) return;
+      letters.width = doek.width; letters.height = doek.height;
+      lc.clearRect(0, 0, letters.width, letters.height); lc.fillStyle = '#FFFFFF'; lc.textBaseline = 'alphabetic';
+      const ox = r.left + vak.x * r.width, oy = r.top + vak.y * r.height;
+      const regels = [...kopEl.querySelectorAll<HTMLElement>('.b94-aanloop, .b94-groot:not(.b94-breekt), .b94-deel')].filter((e) => e.getClientRects().length);
+      for (const e of regels) {
+        const fs = parseFloat(getComputedStyle(e).fontSize), q = e.getBoundingClientRect();
+        lc.font = `700 ${fs * k}px "VISUAILS Display Blok"`;
+        const t = (e.textContent || '').toUpperCase(), mt = lc.measureText(t);
+        const asc = mt.fontBoundingBoxAscent ?? fs * k * .8, desc = mt.fontBoundingBoxDescent ?? fs * k * .2;
+        const rh = q.height * k, basis = (q.top - oy) * k + (rh - (asc + desc)) / 2 + asc;
+        lc.fillText(t, (q.left - ox) * k, basis);
+      }
+      gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, lTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, letters);
+      gl.activeTexture(gl.TEXTURE0);
+      sec.classList.add('b94-gl');
+    }
+    /* het stuk van de video dat de banner toont (object-fit: cover), in breukdelen van de video; deel = alleen de kop */
+    function dekVol(): [number, number, number, number] {
+      const vw = vid.videoWidth || 16, vh = vid.videoHeight || 9, A = beeld.clientWidth / Math.max(1, beeld.clientHeight), Av = vw / vh;
       return A > Av ? [0, (1 - Av / A) / 2, 1, Av / A] : [(1 - A / Av) / 2, 0, A / Av, 1];
+    }
+    function dek(deel = false): [number, number, number, number] {
+      const [x, y, w, h] = dekVol();
+      return deel ? [x + w * vak.x, y + h * vak.y, w * vak.w, h * vak.h] : [x, y, w, h];
     }
     function teken() {
       if (vid.readyState < 2) return;
@@ -255,10 +421,14 @@ const STAPPEN = T.stappen;
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, vTex);
         try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, vid); } catch { return; }
         gl.useProgram(prog);
-        gl.uniform4fv(uDek, dek());
+        /* de textuur staat op zijn kop (UNPACK_FLIP_Y): in de textuur telt y van onder, dus de rechthoek van de kop omrekenen */
+        const [ex, ey, ew, eh] = dek(true); gl.uniform4fv(uDek, [ex, 1 - ey - eh, ew, eh]);
+        /* het beeld van de video (24 per seconde): uit requestVideoFrameCallback als die er is, anders de tijd van de video */
+        const t = mediaTijd >= 0 ? mediaTijd : vid.currentTime, bi = Math.round(t * data.masker.fps);
+        gl.uniform1f(uB, maskerKlaar && bi >= 0 && bi < data.masker.beelden ? bi : -1);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       } else if (g2) {
-        const [x, y, w, h] = dek(), vw = vid.videoWidth, vh = vid.videoHeight;
+        const [x, y, w, h] = dek(true), vw = vid.videoWidth, vh = vid.videoHeight;
         g2.drawImage(vid, x * vw, y * vh, w * vw, h * vh, 0, 0, doek.width, doek.height);
       }
     }
@@ -266,11 +436,12 @@ const STAPPEN = T.stappen;
     /* per nieuw videobeeld (24 keer per seconde, niet 60) */
     let actief = true;
     const rv = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
-    const lus = () => { if (!actief) return; tekenNu(); if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(lus); };
-    if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(lus);
+    const lus = (_nu?: number, meta?: { mediaTime?: number }) => { if (!actief) return; mediaTijd = rv && meta && typeof meta.mediaTime === 'number' ? meta.mediaTime : -1; tekenNu(); if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(() => lus()); };
+    if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(() => lus());
     weg.push(() => { actief = false; });
     opV('loadeddata', () => { maat(); tekenNu(); });
-    opV('seeked', tekenNu);
+    opV('loadedmetadata', () => { maat(); });
+    opV('seeked', () => { mediaTijd = -1; tekenNu(); });
     const ro = new ResizeObserver(() => { maat(); tekenNu(); }); ro.observe(beeld); weg.push(() => ro.disconnect());
     document.fonts?.ready.then(() => { maat(); tekenNu(); });
     maat();
