@@ -28,6 +28,9 @@
     .h-st-vk-meer, .h-st-looks, .h-strook, .h-faq-index-lijst, .h-pr-een, .h-pr-prijs, .h-ov-ctrl-stand, .ps-term-kop, .ps-sum-los, .h-nr, .h-pil):not(#k) {
     justify-content: center;
   }
+  /* levering 116: een veegrij niet in het midden. Breder dan het scherm zou hij links even ver uitsteken als rechts, en
+     dat stuk kun je niet terugvegen: de eerste look op /start, /catalog en /lifestyle stond half buiten beeld. */
+  html body.hal .h-pagina:not(.h-voor) .h-st-looks[data-st-rij]:not(#k):not(#k) { justify-content: flex-start; }
   html body.hal .h-pagina:not(.h-voor) :is(.h-sec-kop, .h-paginakop-tekst, .h-faq-kop-tekst, .h-st-band-kop, .h-ov-lucas-tekst,
     .h-pl-kern, .h-ts-slot-woord, .h-st-stap, .h-bewijs-kaart, .h-dienst-komend, .h-dienst-eigen, .h-pr-tarief, .h-pr-kaart,
     .h-faq-nog, .h-ls-model, .fb-glas, .h-st-set, .h-st-look, .h-pk):not(#k) {

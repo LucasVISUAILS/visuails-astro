@@ -70,6 +70,7 @@ import '../styles/voorpagina-rust.css';
 import '../styles/voorpagina-78.css';
 import '../styles/voorpagina-80.css';
 import '../styles/voorpagina-105.css';   /* fase 3 van het kaartveld: links en rechts (lijst 113) */
+import '../styles/secties-115.css';   /* levering 115: één opbouw voor elke sectie (lijst 124) */
 /* Levering 75 (Lucas, 25 oktober, 23:35): stap 2 van catalog is alleen nog de lagen in 3D
    ("veel korter en simpeler, wel met de 3 lagen erin"). Het handwerk ervoor (rechtzetten,
    opbouwen, nakijken, de pen; scripts/maak-recht.py en maak-pad.py) staat niet meer op de pagina. */
@@ -144,7 +145,7 @@ const COPY = {
       ['Lifestyle', `vanaf ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Je product in een sfeer: vier beelden in één look, klaar voor een carrousel.', 'Bekijk lifestyle', '/start#lifestyle'],
       ['Video', videoPrijsLabel('nl'), '/video', 'Een korte, verticale clip van je product, voor Reels en je webshop.', 'Bekijk video', '/start#video'],
       ['Hooks', `vanaf ${e(AMOUNT.hooks)} per hook`, '/hooks', 'Een korte verticale clip voor je advertenties, 6 tot 8 seconden.', 'Bekijk hooks'],
-      ['Eigen look', lifestyleNl.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Je eigen wereld, gebouwd rond je product. Samen met ons bedacht.', 'Bekijk de eigen look', '/start#op-maat'],
+      ['Eigen look', lifestyleNl.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Je eigen wereld, gebouwd rond je product. Samen met ons bedacht.', 'Bekijk de eigen look', '/start/custom-look'],
     ],
     /* levering 110 (Lucas, 16 november 02:59: "het gebeurt te vaak dat alleen catalog en lifestyle als producten worden neergezet"):
        onder Elk beeld voor je merk geen twee prijzen meer; de bedragen staan op /pricing */
@@ -201,7 +202,7 @@ const COPY = {
       ['Lifestyle', `from ${e(ladderFloor('lifestyle'))} per product`, '/lifestyle', 'Your product in a setting: four images in one look, ready for a carousel.', 'See lifestyle', '/start#lifestyle'],
       ['Video', videoPrijsLabel('en'), '/video', 'A short, vertical clip of your product, for reels and your shop.', 'See video', '/start#video'],
       ['Hooks', `from ${e(AMOUNT.hooks)} per hook`, '/hooks', 'A short vertical clip for your ads, 6 to 8 seconds.', 'See hooks'],
-      ['Your own look', lifestyleEn.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Your own world, built around your product. Thought up together with us.', 'See your own look', '/start#op-maat'],
+      ['Your own look', lifestyleEn.find((s: any) => s.slug === 'custom')!.priceTrust.toLowerCase(), '/lifestyle/custom', 'Your own world, built around your product. Thought up together with us.', 'See your own look', '/start/custom-look'],
     ],
     /* levering 110: see the Dutch above — no longer two prices under "Every image for your brand"; the amounts live on /pricing */
     eenProduct: 'Priced per product: the more you order, the lower the rate.',

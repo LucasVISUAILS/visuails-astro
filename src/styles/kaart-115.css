@@ -1,0 +1,32 @@
+/* ═══ LEVERING 115 · HET DOEK (17 november 2026, lijst 124) ═══════════════════════════════════════════════════════════
+   Lucas (16 november 20:30): "dat space achtige gevoel met film grain en rust met het logo erop. Weer een groot canvas
+   maken met een design dat het gevoel van het voorbeeld geeft en daar allemaal stukken uitknippen zodat alles hetzelfde
+   gevoel krijgt van de kaarten." Lijst 124: doek A (nacht en mint), stille korrel, alles naar het doek, het logo alleen op
+   de marketingbeelden.
+   Elke kaart is een stuk van hetzelfde doek (public/img/doek/stuk-0 … 7.webp, scripts/doek-stukken.py), met één tegel
+   korrel erover (korrel.webp, "overlay": hij maakt het doek een fractie lichter en donkerder, nooit wit). Het WebGL-veld
+   (kaartveld.js) tekent niet meer: een plaatje kost niets per beeld. Welk stuk een kaart krijgt, zet kaartdoek.js
+   (data-stuk, op volgorde in de pagina); zonder script stuk 0.
+   Gemeten: het lichtste punt van elk stuk is luminantie 0,155, wit erop minstens 5,1 : 1 (met de korrel 4,8 : 1).
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-footer .sb, .h-gd-brief, .h-ed-brief, .h-nf-getal) {
+  background: url('/img/doek/korrel.webp') 0 0 / 256px 256px repeat, var(--kd, url('/img/doek/stuk-0.webp')) 50% 50% / cover no-repeat, #04110B !important;
+  background-blend-mode: overlay, normal, normal !important;
+}
+html body.hal [data-stuk="0"] { --kd: url('/img/doek/stuk-0.webp'); }
+html body.hal [data-stuk="1"] { --kd: url('/img/doek/stuk-1.webp'); }
+html body.hal [data-stuk="2"] { --kd: url('/img/doek/stuk-2.webp'); }
+html body.hal [data-stuk="3"] { --kd: url('/img/doek/stuk-3.webp'); }
+html body.hal [data-stuk="4"] { --kd: url('/img/doek/stuk-4.webp'); }
+html body.hal [data-stuk="5"] { --kd: url('/img/doek/stuk-5.webp'); }
+html body.hal [data-stuk="6"] { --kd: url('/img/doek/stuk-6.webp'); }
+html body.hal [data-stuk="7"] { --kd: url('/img/doek/stuk-7.webp'); }
+/* het slot op de voorpagina (een eigen zwarte kaart, voorpagina-105.css) ook */
+html body.hal .r105-slot > .r105-slotkaart {
+  background: url('/img/doek/korrel.webp') 0 0 / 256px 256px repeat, var(--kd, url('/img/doek/stuk-4.webp')) 50% 50% / cover no-repeat, #04110B;
+  background-blend-mode: overlay, normal, normal;
+}
+html body.hal canvas.kv-doek { display: none !important; }
+@media (forced-colors: active) {
+  html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-footer .sb, .h-gd-brief, .h-ed-brief, .h-nf-getal, .r105-slotkaart) { background: Canvas !important; }
+}

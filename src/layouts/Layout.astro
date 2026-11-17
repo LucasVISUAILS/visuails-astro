@@ -35,6 +35,7 @@ import '../styles/kleur-100.css';  /* levering 100: zwart, wit en mint (de rolle
 import '../styles/kaart-100.css';  /* levering 100 stap 2: de kaarten van het kaartveld (de vier fotoblokken worden kaarten) */
 import '../styles/kaart-108.css';  /* levering 108, kaartveld fase 4: de kaarten op de andere pagina's (lijst 105) */
 import '../styles/telefoon-115.css';  /* levering 108, kaartveld fase 4: op de telefoon alles in het midden, op elke pagina (lijst 114) */
+import '../styles/kaart-115.css';  /* levering 115: elke kaart een stuk van het doek (lijst 124), in plaats van het WebGL-veld */
 // Self-hosted Archivo (Fontsource) — served from our own build instead of
 // Google's servers (AVG/GDPR-clean, no third-party connection). font-display
 // is 'swap' by default in Fontsource, matching the old &display=swap.
@@ -1739,7 +1740,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
      * hieronder: dit is bewust kleiner; src/scripts/zachtscrollen.js) */
     import '../scripts/zachtscrollen.js';
     import '../scripts/balk100.js';   /* levering 100: de balk klapt weg en valt terug (16:42) */
-    import '../scripts/kaartveld.js';   /* levering 100 stap 2: het kaartveld */
+    import '../scripts/kaartdoek.js';   /* levering 115: de kaarten zijn stukken van het doek (was kaartveld.js, het WebGL-veld) */
     /* lichtnet.js (levering 109, het net van licht tussen de kaarten) is eruit: levering 113, Lucas 16 november 20:30 */
     /* shader-hero.js is hier weg — 7 augustus 2026. Het chroomveld dat het
      * tekende stond op één sectie van de homepage, en die sectie is herbouwd

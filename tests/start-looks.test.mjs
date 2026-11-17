@@ -13,7 +13,10 @@
  *   3 · "Probeer VISUAILS · €1" gaat naar /test-sample?style=<look> (1.06), en
  *       "Meer over deze look" naar de bestaande lookpagina;
  *   4 · de rustige rij: abonnement, video, eigen look, merkmodel, proef, App ons;
- *   5 · elk bedrag op de kaart komt uit pricing.js (de onderste trede).
+ *   5 · elk bedrag op de kaart komt uit pricing.js (de onderste trede);
+ *   6 · levering 116 (lijst 126): eerst de soort (#kies, vijf tegels zoals Wat we maken op de voorpagina), dan
+ *       alleen de looks van die soort, met "Andere soort kiezen" terug naar #kies. Geen kopfoto, strook of band
+ *       Op maat meer; merkmodel en abonnement staan in de rij van stap 1.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { styles as lsEn } from '../src/data/styles.js';
@@ -74,13 +77,25 @@ for (const [taal, pre, ls, cat] of [['en', '', lsEn, catEn], ['nl', '/nl', lsNl,
   for (const slug of ['motion', 'campaign', 'lifestyle']) ok(`${taal}: de band Video heeft geen ${slug === 'motion' ? 'dode link' : slug}`, slug === 'motion' || !video.includes(`href="${pre}/video/${slug}/"`));
   for (const slug of ['motion', 'custom']) ok(`${taal}: de band Video heeft ${slug} → ${pre}/video/${slug}/`, video.includes(`href="${pre}/video/${slug}/"`));
   ok(`${taal}: en de aanvraag → ${pre}/start/video/`, video.includes(`href="${pre}/start/video/"`));
-  const maat = band('op-maat');
-  for (const doel of ['/start/custom-look/', '/custom-models/', '/plans/']) ok(`${taal}: de band Op maat linkt naar ${pre}${doel}`, maat.includes(`href="${pre}${doel}"`));
-  ok(`${taal}:   het abonnement wordt "Je abonnement" voor een abonnee`, /data-vis-klant="plan-kies"[^>]*data-vis-abo="\/account\/plan"/.test(maat) && /data-vis-label/.test(maat));
-  const rij = html.slice(html.indexOf('st-ook-rij'), html.indexOf('</nav>', html.indexOf('st-ook-rij')));
-  ok(`${taal}: de rij linkt naar ${pre}/test-sample/ (niet voor wie al klant is)`, rij.includes(`href="${pre}/test-sample/"`) && /<li data-vis-uit[^>]*><a[^>]*href="[^"]*\/test-sample\/"/.test(rij));
+  /* Levering 116 (lijst 126): stap 1, de soort. */
+  const kies = html.slice(html.indexOf('id="kies"'), html.indexOf('</section>', html.indexOf('id="kies"')));
+  const tegels = [...kies.matchAll(/<a href="([^"]+)" class="st2-a"/g)].map((m) => m[1]);
+  ok(`${taal}: stap 1 heeft vijf soorten, in de volgorde van de voorpagina`, JSON.stringify(tegels) === JSON.stringify(['#catalog', '#lifestyle', '#video', `${pre}/hooks/`, `${pre}/start/custom-look/`]), JSON.stringify(tegels));
+  ok(`${taal}: elke soort zegt waarvoor, met een naam en een prijs`, (kies.match(/class="st2-voor"/g) || []).length === 5 && (kies.match(/class="st2-prijs"/g) || []).length === 5);
+  ok(`${taal}: de prijs van productfoto's en lifestyle is de onderste trede`, kies.includes(euro(ladderFloor('catalog'), taal)) && kies.includes(euro(ladderFloor('lifestyle'), taal)));
+  ok(`${taal}: de stappenrij staat op 01`, /<li aria-current="step"[^>]*><span>01<\/span>/.test(kies));
+  const rij = kies.slice(kies.indexOf('h-st-ook-rij'));
+  for (const doel of ['/custom-models/', '/plans/']) ok(`${taal}: de rij van stap 1 linkt naar ${pre}${doel}`, rij.includes(`href="${pre}${doel}"`));
+  ok(`${taal}: de rij linkt naar ${pre}/test-sample/ (niet voor wie al klant is)`, /<li data-vis-uit[^>]*><a[^>]*href="[^"]*\/test-sample\/"/.test(rij));
   ok(`${taal}: de rij heeft App ons (wa.me)`, /href="https:\/\/wa\.me\//.test(rij));
-  ok(`${taal}: bovenaan de strook in drie stappen`, (html.slice(html.indexOf('h-st-kort-rij'), html.indexOf('</ol>', html.indexOf('h-st-kort-rij'))).match(/<li(?: class="h-1[rk]")?>/g) || []).length === 3);  // levering 87: h-1r
+  /* stap 2: elke groep en de video terug naar de soort, met de stappenrij op 02 */
+  for (const id of ['catalog', 'lifestyle', 'video']) {
+    const i = html.indexOf(`id="${id}"`);
+    const kop = html.slice(i, html.indexOf('</nav>', i));
+    ok(`${taal}: ${id} heeft "Andere soort kiezen" → #kies en staat op 02`, kop.includes('class="st2-terug" href="#kies"') && /aria-current="step"[^>]*><span>02/.test(kop));
+  }
+  ok(`${taal}: geen kopfoto, strook of band Op maat meer`, !html.includes('h-st-kort-rij') && !html.includes('id="op-maat"') && !html.includes('kopbeeld'));
+  ok(`${taal}: welke stap er staat volgt het anker (start-126.css)`, /:has\(:is\(#catalog,\s?#lifestyle,\s?#video\):target\)/.test(readFileSync(new URL('../src/styles/start-126.css', import.meta.url), 'utf8')));
   ok(`${taal}: geen grijs vlak op /start`, !html.includes('/img/plaatshouder/') && !html.includes('data-placeholder='));
 }
 
@@ -101,6 +116,7 @@ for (const [p, pre] of [['index.html', ''], ['nl/index.html', '/nl']]) {
   ok(`${pre || 'en'}: "Start een bestelling" → ${pre}/start/`, h.includes(`class="h-knop k k-vol" data-rol="doorgaan" href="${pre}/start/"`));
   ok(`${pre || 'en'}: geen knop rechtstreeks naar een formulier`, !/href="(?:\/nl)?\/start\/(?:catalog|lifestyle)\/"/.test(h));
   ok(`${pre || 'en'}: geen ?zie= meer`, !h.includes('?zie='));
+  ok(`${pre || 'en'}: Bestel dit bij Eigen look → ${pre}/start/custom-look/ (levering 116: #op-maat bestaat niet meer)`, ontsnap(h).includes(`"bestel":"${pre}/start/custom-look/"`) && !h.includes('/start/#op-maat'));
 }
 
 console.log(`\n${pass}/${pass + fail} geslaagd`);

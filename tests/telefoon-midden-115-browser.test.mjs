@@ -53,7 +53,7 @@ for (const pad of PAGINAS) {
     const af = (e) => { if (!e) return null; const r = e.getBoundingClientRect(); return Math.round((r.left + r.right) / 2 - mid); };
     const main = document.querySelector('.h-pagina:not(.h-voor)');
     const h1 = main?.querySelector('h1');
-    const pil = main?.querySelector('.h-pil');
+    const pil = [...(main?.querySelectorAll('.h-pil') || [])].find((e) => e.getBoundingClientRect().width > 0) || null;   /* levering 116: een verborgen pil (stap 2 op /start) telt niet */
     const knop = main?.querySelector('.h-acties .h-knop, .h-acties a');
     const tekst = [...(main?.querySelectorAll('.h-sec-kop h2, .h-lede, .h-sec-kop p:not(.h-pil)') || [])].filter((e) => e.getBoundingClientRect().height > 0);
     const links = tekst.filter((e) => getComputedStyle(e).textAlign !== 'center').map((e) => e.className || e.tagName);

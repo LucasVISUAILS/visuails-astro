@@ -1,0 +1,49 @@
+/* ═══ LEVERING 115 · ÉÉN OPBOUW VOOR ELKE SECTIE (17 november 2026, lijst 124) ════════════════════════════════════════
+   Lucas (16 november 20:30): "de koppen van de secties [kunnen] een stuk groter ... alles wat breder ... de afbeeldingen
+   ... wat groter. Maak een systeem van hoe elke sectie moet worden opgebouwd." Zijn voorbeeld: Setless (één brede kolom,
+   een heel grote kop, het label rechts op de lijn, een haarlijn). Lijst 124: SY goed, kolom 1320 (Q5), kop b (Q6),
+   beelden × 1,3 (Q7), lucht 160 (Q8).
+   HET SYSTEEM:
+   - de kolom: hoogstens 1320 px (60 px marge op 1440, 300 op 1920), nooit minder dan 20 px marge;
+   - de lucht boven en onder een sectie: clamp(80, 11,11 vw, 160): 160 op 1440 en breder;
+   - de kop: VISUAILS Display 700, clamp(40, 6,11 vw, 112): 88 op 1440, 112 vanaf 1833; hoogstens twee regels;
+   - de kop staat ALTIJD bovenaan over de hele kolom (nooit meer in een zijkolom), het label rechts op de onderlijn van de
+     kop, een haarlijn eronder (20 px lucht erboven), 48 px tot de inhoud;
+   - de inhoud mag daaronder links en rechts (de Z van lijst 113 blijft), beelden 1,3 keer zo groot als in levering 105;
+   - op de telefoon (tot 640): het label boven de kop, alles in het midden (lijst 114).
+   Dit bestand komt na sectiekop-96.css en voorpagina-105.css en zet alleen wat verandert.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+.h-voor {
+  --sk-m: max(20px, calc((100vw - 1320px) / 2));
+  --sk-lucht: clamp(80px, 11.11vw, 160px);
+}
+html body.hal .h-voor .sk .sk-kop.h-kop,
+html body.hal .h-voor .r105 > .sk .sk-kop.h-kop,
+html body.hal .h-voor .r105-slot .sk .sk-kop.h-kop { font-size: clamp(40px, 6.11vw, 112px); line-height: .9; }
+
+/* de kop van een rij: boven over de hele kolom, met het label rechts en de haarlijn (in levering 105 stonden ze in een kolom) */
+@media (min-width: 641px) {
+  .h-voor .r105 > .sk, .h-voor .r105-slot .sk {
+    flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 16px 40px;
+    padding-bottom: 20px; border-bottom: 1px solid var(--h-lijn, #E7EAE8);
+  }
+  .h-voor .r105 > .sk .sk-lbl, .h-voor .r105-slot .sk .sk-lbl { order: 2; }
+}
+@media (min-width: 901px) {
+  /* Wat we maken: de kop boven, daaronder de kaarten links (8 kolommen) en de tekst rechts (4) */
+  .h-voor .m8.r105 > .sk { grid-column: 1 / -1; grid-row: 1; align-self: end; margin-bottom: 28px; }   /* + 20 px rij = 48 */
+  .h-voor .m8.r105 > .m8-carrousel { grid-row: 2 / span 4; }
+  /* Hoe het werkt: de kop boven, daaronder de stappen links en het verhaal rechts */
+  .h-voor .w8.r105 > .sk { grid-column: 1 / -1; grid-row: 1; margin-bottom: 48px; }
+  .h-voor .w8.r105 > .w8-regel { grid-row: 2; }
+  .h-voor .w8.r105 > .w8-onder { grid-row: 3; }
+  .h-voor .w8.r105 > :is(.w8-podium, .w8-clip) { grid-row: 2 / span 2; }
+  /* het slot: de kop boven, daaronder de zin links en de kaart rechts */
+  .h-voor .r105-slot > .r105-tekst { display: contents; }
+  .h-voor .r105-slot .sk { grid-column: 1 / -1; grid-row: 1; margin: 0 0 48px; }
+  .h-voor .r105-slot .slot96-zin { grid-column: 1 / 6; grid-row: 2; align-self: center; margin: 0; }
+  .h-voor .r105-slot > .r105-slotkaart { grid-row: 2; }
+}
+
+/* de beelden × 1,3 (lijst 124, Q7): de looks (galerij-80.css: clamp(170, min(22 vw, 30 svh), 330)) */
+html body.hal .h-voor .g8.g8 { --g8-h: clamp(221px, min(28.6vw, 39svh), 429px); }

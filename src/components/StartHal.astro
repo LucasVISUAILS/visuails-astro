@@ -1,6 +1,17 @@
 ---
 /* ═══════════════════════════════════════════════════════════════════════════
- * VISUAILS — /start in de hal: kies een look, en het formulier opent ermee.
+ * VISUAILS — /start in de hal: eerst wat je nodig hebt, dan de look, en het formulier opent ermee.
+ *
+ * TWEE STAPPEN SINDS LEVERING 116 (17 november 2026, lijst 126: alles volgens advies). Lucas (06:41): "Als je op
+ * start order klikt word je naar "Pick a look" gestuurd. Dit is veel te breed want ik wil er eerst achter komen wat
+ * de klant wil voor content wat voor hem nodig is, dan komen pas van die specifieke categorie de looks."
+ *   · stap 1 (#kies): vijf soorten, dezelfde als Wat we maken op de voorpagina (Q2 a), met erboven waarvoor
+ *     (Q3 a); Hooks en Eigen look gaan meteen naar hun eigen pagina (Q5 a); merkmodel, abonnement, de proef en
+ *     App ons in één rij. De kopfoto, de strook Zo gaat het en de band Op maat zijn weg (Q6 a);
+ *   · stap 2: alleen de looks van die soort (#catalog, #lifestyle, #video), ook bij één look (Q4 a);
+ *   · welke stap er staat, volgt het anker (start-126.css, :target): zonder script, de terugknop is de vorige
+ *     stap, en /start#lifestyle (Bestel dit op de voorpagina) opent meteen stap 2 (Q1 a).
+ * Hieronder de opbouw van oktober; die geldt nog voor stap 2.
  * 12 oktober 2026, afvinklijst 7 (groep 1, als eerste: "Start een bestelling" op
  * de nieuwe voorpagina komt hier uit). Voorbeeld op /voorbeeld/start/ en
  * /nl/voorbeeld/start/; de echte /start blijft StartPage.astro tot Lucas de
@@ -48,7 +59,6 @@ import { waHref } from '../data/whatsapp.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import Note from './Note.astro';
 import HalBeweging from './HalBeweging.astro';
-import KopBeeld from './KopBeeld.astro';
 import {
   ladderFloor, euro, vatLabel, vatLead, vatDetail,
   WINDOW_THRESHOLD, TEST_SAMPLE, TIERS, clause, eenProductRegel, CATALOG_IMAGES, levervlakken, SERVICE_CREDITS, levertijdDelen, aboVanafPerProduct,
@@ -67,6 +77,9 @@ import { geleverd } from '../data/voorbeeldset.js';
 import { setSize } from '../data/lexicon.js';
 import { localizedPath } from '../i18n/ui.js';
 import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
+import { halV } from '../data/beeldVersie.js';
+import { videoPrijsLabel, AMOUNT } from '../data/pricing.js';
+import '../styles/start-126.css';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -120,9 +133,6 @@ const SET = geleverd(lang).map((b, i) => ({ ...b, naam: levervlakken('catalog', 
 
 const COPY = {
   en: {
-    pil: 'Start',
-    h1: ['Pick a look.', 'The form follows.'],
-    lede: 'Nothing is charged until you pay.',
     vanaf: 'From', per: `per product, ${vatLabel('excl', 'en')}`, perCredits: 'per product, with your plan',
     kies: 'Pick this look', meer: 'More about this look',
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'en')}, ready for your shop.`, setMeer: 'More images can be added in the order form.',
@@ -139,16 +149,8 @@ const COPY = {
     wa: 'Message us on WhatsApp',
     waText: "Hello VISUAILS, I'm not sure which look fits my products.",
     aboRegel: (b: string) => `Or from ${b} per product with a plan`,
-    kortLabel: 'How it goes',
-    kort: [['You send a few photos', `${telwoord(REQUIRED_SHOT_IDS.length, 'en', true)} photos per product are enough.`], ['We do the rest', `${levertijdDelen('unattended', 'en').filter(Boolean).join(', ')}.`], ['You approve', 'Image by image, then download everything at once.']],
     beeldPil: 'Images',
     videoPil: 'Video', videoH: ['Video.', 'On request.'], videoLead: 'Pick a style and send a short brief; we reply with a price and a date.', videoCta: 'Ask about a video', videoMeer: 'See',
-    maatPil: 'Made to fit', maatH: ['Made to fit.', 'When you want more.'],
-    maat: [
-      { id: 'look', naam: 'Your own look', zin: 'A look that is yours alone, built around your brand.', knop: 'Ask for your own look', href: '/start/custom-look' },
-      { id: 'model', naam: 'Your Brand Model', zin: 'One face for your brand, used by nobody else.', knop: 'More about your Brand Model', href: door('brand-model')!.lees },
-      { id: 'plan', naam: door('plan')!.naam.en, zin: 'A fixed number of credits each month, for brands that release often.', knop: 'See the plans', href: door('plan')!.lees, abo: 'Your plan' },
-    ],
     afterPil: 'After you press it', afterH: ['Five steps,', 'then it’s with us.'],
     afterLead: 'Video and custom work start with a short brief; we reply with a price and a date.',
     steps: ['Order', 'Your photos', 'Your details', 'Timing', 'Confirm'],
@@ -159,9 +161,6 @@ const COPY = {
     ],
   },
   nl: {
-    pil: 'Start',
-    h1: ['Kies een look.', 'Het formulier volgt.'],
-    lede: 'Er wordt niets afgeschreven tot je betaalt.',
     vanaf: 'Vanaf', per: `per product, ${vatLabel('excl', 'nl')}`, perCredits: 'per product, met je abonnement',
     kies: 'Kies deze look', meer: 'Meer over deze look',
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'nl').replace(/^v/, 'V')}, klaar voor je webshop.`, setMeer: 'Meer beelden kies je erbij in het bestelformulier.',
@@ -178,16 +177,8 @@ const COPY = {
     wa: 'App ons',
     waText: 'Hallo VISUAILS, ik weet niet zeker welke look bij mijn producten past.',
     aboRegel: (b: string) => `Of vanaf ${b} per product met een abonnement`,
-    kortLabel: 'Zo gaat het',
-    kort: [['Jij stuurt een paar foto’s', `${telwoord(REQUIRED_SHOT_IDS.length, 'nl', true)} foto’s per product zijn genoeg.`], ['Wij doen de rest', `${levertijdDelen('unattended', 'nl').filter(Boolean).join(', ')}.`], ['Jij keurt goed', 'Beeld voor beeld, daarna alles in één keer downloaden.']],
     beeldPil: 'Beeld',
     videoPil: 'Video', videoH: ['Video.', 'Op aanvraag.'], videoLead: 'Kies een stijl en stuur een korte briefing; wij antwoorden met een prijs en een datum.', videoCta: 'Vraag een video aan', videoMeer: 'Bekijk',
-    maatPil: 'Op maat', maatH: ['Op maat.', 'Voor wie meer wil.'],
-    maat: [
-      { id: 'look', naam: 'Eigen look', zin: 'Een look die alleen van jou is, gemaakt rond je merk.', knop: 'Vraag een eigen look aan', href: '/start/custom-look' },
-      { id: 'model', naam: 'Jouw merkmodel', zin: 'Eén gezicht voor je merk, door niemand anders gebruikt.', knop: 'Meer over je merkmodel', href: door('brand-model')!.lees },
-      { id: 'plan', naam: door('plan')!.naam.nl, zin: 'Elke maand een vast aantal credits, voor merken die vaak iets nieuws uitbrengen.', knop: 'Bekijk de abonnementen', href: door('plan')!.lees, abo: 'Je abonnement' },
-    ],
     afterPil: 'Nadat je erop drukt', afterH: ['Vijf stappen,', 'dan ligt het bij ons.'],
     afterLead: 'Video en maatwerk beginnen met een korte briefing; wij antwoorden met een prijs en een datum.',
     steps: ['Bestelling', 'Je foto’s', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
@@ -199,6 +190,35 @@ const COPY = {
   },
 };
 const c = COPY[lang];
+/* ── LIJST 126: STAP 1, DE SOORT ───────────────────────────────────────────
+   Lucas (17 november, 06:41): "ik wil er eerst achter komen wat de klant wil voor content wat voor hem nodig is, dan komen
+   pas van die specifieke categorie de looks." Dezelfde vijf soorten, namen, beelden en prijzen als Wat we maken op de
+   voorpagina (VoorpaginaHal COPY.diensten), met erboven waarvoor je het gebruikt. */
+const eigenLook = (nl ? lifestyleNl : lifestyleEn).find((s: any) => s.slug === 'custom');
+const SOORT = nl ? {
+  pil: 'Start', h1: ['Wat heb je nodig?', 'Daarna kies je de look.'], lede: 'Kies wat je wilt laten maken. Er wordt niets afgeschreven tot je betaalt.',
+  stappen: ['Wat', 'Look', 'Bestellen'], stapLabel: 'Waar je bent', terug: 'Andere soort kiezen', kiesLook: 'Kies een look',
+  ook: 'Ook', merkmodel: 'Je eigen merkmodel', abo: 'Een abonnement',
+  soorten: [
+    { id: 'catalog', voor: 'Voor je webshop', naam: 'Productfoto’s', zin: 'Voorkant, achterkant, detail en op model.', prijs: `vanaf ${euro(ladderFloor('catalog'), 'nl')} per product`, href: '#catalog', beeld: 'prod' },
+    { id: 'lifestyle', voor: 'Voor social en je webshop', naam: 'Lifestyle', zin: 'Je product in een sfeer, vier beelden in één look.', prijs: `vanaf ${euro(ladderFloor('lifestyle'), 'nl')} per product`, href: '#lifestyle', beeld: 'life' },
+    { id: 'video', voor: 'Voor Reels en je webshop', naam: 'Video', zin: 'Een korte, verticale clip van je product.', prijs: videoPrijsLabel('nl'), href: '#video', beeld: 'video' },
+    { id: 'hooks', voor: 'Voor advertenties', naam: 'Hooks', zin: 'Een clip van 6 tot 8 seconden die stopt met scrollen.', prijs: `vanaf ${euro(AMOUNT.hooks, 'nl')} per hook`, href: lp('/hooks'), beeld: 'afspelen' },
+    { id: 'eigen', voor: 'Voor je eigen wereld', naam: 'Eigen look', zin: 'Samen met ons bedacht, rond je product.', prijs: String(eigenLook?.priceTrust || '').toLowerCase(), href: lp('/start/custom-look'), beeld: 'potlood' },
+  ],
+} : {
+  pil: 'Start', h1: ['What do you need?', 'Then pick the look.'], lede: 'Pick what you want made. Nothing is charged until you pay.',
+  stappen: ['What', 'Look', 'Order'], stapLabel: 'Where you are', terug: 'Pick another kind', kiesLook: 'Pick a look',
+  ook: 'Also', merkmodel: 'Your own brand model', abo: 'A monthly plan',
+  soorten: [
+    { id: 'catalog', voor: 'For your shop', naam: 'Product photos', zin: 'Front, back, detail and on model.', prijs: `from ${euro(ladderFloor('catalog'), 'en')} per product`, href: '#catalog', beeld: 'prod' },
+    { id: 'lifestyle', voor: 'For social and your shop', naam: 'Lifestyle', zin: 'Your product in a setting, four images in one look.', prijs: `from ${euro(ladderFloor('lifestyle'), 'en')} per product`, href: '#lifestyle', beeld: 'life' },
+    { id: 'video', voor: 'For reels and your shop', naam: 'Video', zin: 'A short, vertical clip of your product.', prijs: videoPrijsLabel('en'), href: '#video', beeld: 'video' },
+    { id: 'hooks', voor: 'For ads', naam: 'Hooks', zin: 'A 6 to 8 second clip that stops the scroll.', prijs: `from ${euro(AMOUNT.hooks, 'en')} per hook`, href: lp('/hooks'), beeld: 'afspelen' },
+    { id: 'eigen', voor: 'For a world of your own', naam: 'Your own look', zin: 'Thought up together with us, around your product.', prijs: String(eigenLook?.priceTrust || '').toLowerCase(), href: lp('/start/custom-look'), beeld: 'potlood' },
+  ],
+};
+const stapRij = (nu: number) => SOORT.stappen.map((n, i) => ({ n, nr: String(i + 1).padStart(2, '0'), nu: i === nu }));
 /* De vier videostijlen, als rij kleine kaarten (v28-start = a). */
 const VIDEO = (nl ? videoNl : videoEn).map((v: any) => ({ slug: v.slug, naam: v.name, zin: v.tagline, prijs: v.cardPrice }));
 /* De iconen uit het kit (levering 54, afvinklijst 34): links de naam in dit
@@ -211,36 +231,47 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
 const EIGEN_VORM: Record<string, string> = { met: '<path fill-rule="evenodd" d="' + IKOON.vink + '"/>', zonder: '<path fill-rule="evenodd" d="' + IKOON.streep + '"/>', beide: '<path fill-rule="evenodd" d="' + IKOON.plusmin + '"/>' };
 const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${EIGEN_VORM[stand] || EIGEN_VORM.met}</svg>`;
 const DRIE = (n: number) => String(n).padStart(2, '0');
-/* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zie KopBeeld.astro. */
-const BEELD = {
-  soort: 'foto' as const, verhouding: '4 / 3',
-  foto: { src: '/img/lifestyle-phone-made-06.webp', positie: '50% 40%',
-    alt: nl ? 'Een lifestylebeeld in de look Phone-made' : 'A lifestyle image in the Phone-made look',
-    pil: 'Phone-made · lifestyle' },
-};
 ---
-<div class="h-pagina h-st">
+<div class="h-pagina h-st st2">
 
-  {/* ── 1 · DE KOP ─────────────────────────────────────────────────────────── */}
-  <header class="h-paginakop met-kopbeeld">
-    <div class="h-paginakop-tekst">
-      <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
-      <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{c.h1[0]}</span> <span>{c.h1[1]}</span></h1>
-      <p class="h-lede h-op" style="--d:2">{c.lede}</p>
-    </div>
-    <KopBeeld {...BEELD} />
-  </header>
+  {/* ── LIJST 126 · STAP 1: DE SOORT ── zonder keuze (geen #catalog, #lifestyle of #video in de adresbalk)
+      staat alleen deze stap er; een klik op een soort zet zijn anker in de adresbalk en toont alleen die looks
+      (start-126.css, met :target; de terugknop van de browser brengt je weer hier). */}
+    <section class="st2-soort" id="kies" aria-labelledby="st2-kop">
+      <header class="st2-kop">
+        <ol class="st2-stappen" role="list" aria-label={SOORT.stapLabel}>{stapRij(0).map((t) => <li aria-current={t.nu ? 'step' : undefined}><span>{t.nr}</span>{t.n}</li>)}</ol>
+        <h1 id="st2-kop" class="h-kop h-h1"><span class="l">{SOORT.h1[0]}</span> <span>{SOORT.h1[1]}</span></h1>
+        <p class="h-lede">{SOORT.lede}</p>
+      </header>
+      <ul class="st2-tegels" role="list">
+        {SOORT.soorten.map((t) => (
+          <li class={`st2-tegel st2-${t.beeld}`}>
+            <a href={t.href} class="st2-a">
+              <span class="st2-beeld" aria-hidden="true">
+                {t.beeld === 'prod' && <img class="st2-prod" src={halV('/img/hal/rust/hoodie-720.webp')} alt="" width="1564" height="1811" loading="eager" decoding="async" />}
+                {t.beeld === 'life' && <img src={halV('/img/hal/maken/lifestyle-720.webp')} alt="" width="1080" height="1350" loading="eager" decoding="async" />}
+                {t.beeld === 'video' && <img src={halV('/img/hal/maken/video-poster-720.webp')} alt="" width="720" height="900" loading="eager" decoding="async" />}
+                {(t.beeld === 'afspelen' || t.beeld === 'potlood') && <svg viewBox="0 0 24 24" focusable="false"><path fill-rule="evenodd" d={IKOON[t.beeld]} /></svg>}
+              </span>
+              <span class="st2-voor">{t.voor}</span>
+              <span class="st2-naam">{t.naam}<span set:html={ik('rechts')} /></span>
+              <span class="st2-zin">{t.zin}</span>
+              <span class="st2-prijs">{t.prijs}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <nav class="h-st-ook st2-ook" aria-label={c.ookLabel}>
+        <span class="h-st-ook-l">{SOORT.ook}</span>
+        <ul class="h-st-ook-rij" role="list">
+          <li><a class="h-st-chip" href={lp(door('brand-model')!.lees)}>{SOORT.merkmodel}</a></li>
+          <li><a class="h-st-chip" href={lp('/plans')}>{SOORT.abo}</a></li>
+          <li data-vis-uit=""><a class="h-st-chip" href={lp('/test-sample')}>{sample.cta}</a></li>
+          <li><a class="h-st-chip" href={waHref(c.waText)} target="_blank" rel="noopener">{c.wa}<span set:html={ik('pijl')} /><NieuwTabblad lang={lang} /></a></li>
+        </ul>
+      </nav>
+    </section>
 
-  {/* ── 1b · ZO GAAT HET ── v28-start = a (15 oktober 2026): de vijf stappen van
-      onderaan als korte strook bovenaan, in drie woorden: jij stuurt, wij doen de
-      rest, jij keurt goed. */}
-  <section class="h-st-kort h-in" aria-label={c.kortLabel}>
-    <ol class="h-st-kort-rij" role="list">
-      {c.kort.map(([kop, zin], i) => (
-        <li><span class="h-st-kort-nr" aria-hidden="true">{i + 1}</span><span><b>{kop}</b><span>{zin}</span></span></li>
-      ))}
-    </ol>
-  </section>
 
   {/* ── 2 · DE LOOKS, PER DIENST ───────────────────────────────────────────
       Met id: de voorpagina en oude links springen naar #catalog en #lifestyle. */}
@@ -248,6 +279,10 @@ const BEELD = {
     <p class="h-pil h-st-band-pil h-in"><span>{c.beeldPil}</span></p>
     {groepen.map((g) => (
       <section class:list={['h-st-groep', `n-${g.looks.length}`]} id={g.id} aria-labelledby={`st-g-${g.id}`} data-st-groep={g.id}>
+          <nav class="st2-waar" aria-label={SOORT.stapLabel}>
+            <a class="st2-terug" href="#kies"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON['pijl-links']} /></svg>{SOORT.terug}</a>
+            <ol class="st2-stappen" role="list">{stapRij(1).map((t) => <li aria-current={t.nu ? 'step' : undefined}><span>{t.nr}</span>{t.n}</li>)}</ol>
+          </nav>
         <div class="h-st-groep-kop h-in">
           <h2 id={`st-g-${g.id}`} class="h-kop h-h3">{g.naam}. <span class="l">{g.kort}.</span></h2>
           <span class={`h-chip h-st-eigen is-${g.stand}`}><i set:html={eigenVorm(g.stand)} />{PRODUCT_COPY[lang][g.stand]}</span>
@@ -316,6 +351,10 @@ const BEELD = {
 
   {/* ── 3 · VIDEO ── de vier stijlen als rij kleine kaarten, "op aanvraag". */}
   <section class="h-sec h-st-video" id="video" aria-labelledby="st-video">
+      <nav class="st2-waar" aria-label={SOORT.stapLabel}>
+        <a class="st2-terug" href="#kies"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON['pijl-links']} /></svg>{SOORT.terug}</a>
+        <ol class="st2-stappen" role="list">{stapRij(1).map((t) => <li aria-current={t.nu ? 'step' : undefined}><span>{t.nr}</span>{t.n}</li>)}</ol>
+      </nav>
     <header class="h-st-band-kop h-in">
       <p class="h-pil"><span>{c.videoPil}</span></p>
       <h2 id="st-video" class="h-kop h-h3">{c.videoH[0]} <span class="l">{c.videoH[1]}</span></h2>
@@ -335,34 +374,6 @@ const BEELD = {
     <p class="h-st-wegen h-in"><a class="h-knop k k-lijn k-klein" data-rol="doorgaan" href={lp(door('video')!.bestel)}>{c.videoCta}<Fragment set:html={rolIkoon('doorgaan')} /></a></p>
   </section>
 
-  {/* ── 4 · OP MAAT ── eigen look, merkmodel en het abonnement als drie kaarten. Een
-      abonnee ziet bij het abonnement "Je abonnement" (data-vis-klant="plan-kies"). */}
-  <section class="h-sec h-st-maat" id="op-maat" aria-labelledby="st-maat">
-    <header class="h-st-band-kop h-in">
-      <p class="h-pil"><span>{c.maatPil}</span></p>
-      <h2 id="st-maat" class="h-kop h-h3">{c.maatH[0]} <span class="l">{c.maatH[1]}</span></h2>
-    </header>
-    <ul class="h-st-mk kv-108" role="list" data-kaart>
-      {c.maat.map((m, i) => (
-        <li class="h-st-mk-k h-in" style={`--d:${i}`}>
-          <b class="h-st-mk-naam">{m.naam}</b>
-          <p class="h-st-mk-zin">{m.zin}</p>
-          {m.abo
-            ? <a class="h-link k k-tekst" data-rol="doorgaan" href={lp(m.href)} data-vis-klant="plan-kies" data-vis-abo-label={m.abo} data-vis-abo="/account/plan"><span data-vis-label>{m.knop}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
-            : <a class="h-link k k-tekst" data-rol="doorgaan" href={lp(m.href)}>{m.knop}<Fragment set:html={rolIkoon('doorgaan')} /></a>}
-        </li>
-      ))}
-    </ul>
-
-    {/* De rest, in één rustige rij: de proef (niet voor wie al klant is) en App ons. */}
-    <nav class="h-st-ook h-in" aria-label={c.ookLabel}>
-      <span class="h-st-ook-l">{c.ook}</span>
-      <ul class="h-st-ook-rij st-ook-rij" role="list">
-        <li data-vis-uit=""><a class="h-st-chip" href={lp('/test-sample')}>{sample.cta}</a></li>
-        <li><a class="h-st-chip" href={waHref(c.waText)} target="_blank" rel="noopener">{c.wa}<span set:html={ik('pijl')} /><NieuwTabblad lang={lang} /></a></li>
-      </ul>
-    </nav>
-  </section>
 </div>
 <HalBeweging />
 <script>
@@ -393,4 +404,7 @@ const BEELD = {
   }
   volgLook();
   document.addEventListener('astro:page-load', volgLook);
+  /* lijst 126: een stap wisselen begint bovenaan de pagina, niet bij het anker onder de balk */
+  addEventListener('hashchange', () => { if (/^#(kies|catalog|lifestyle|video)$/.test(location.hash)) setTimeout(() => scrollTo({ top: 0 }), 0); });
+  if (/^#(catalog|lifestyle|video)$/.test(location.hash)) { requestAnimationFrame(() => scrollTo({ top: 0 })); addEventListener('load', () => setTimeout(() => scrollTo({ top: 0 }), 0), { once: true }); }
 </script>

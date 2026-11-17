@@ -1,7 +1,9 @@
 /**
  * VISUAILS — het kaartveld in de site (levering 100, stap 2; vervangt de toets van de fotoblokken van lijst 86).
  * De vier blokken die fotoblok waren (het €1-blok, het slot, de Studiobrief, de 404) en alles met [data-kaart] zijn
- * kaarten: een venster op één groot WebGL-veld (src/scripts/kaartveld.js, src/styles/kaart-100.css). Wat hier vastligt:
+ * kaarten: een venster op één groot WebGL-veld (src/scripts/kaartveld.js, src/styles/kaart-100.css). Sinds levering 115 is
+ * elke kaart een stuk van het doek (src/scripts/kaartdoek.js, src/styles/kaart-115.css); kaartveld.js staat nog in de map,
+ * maar wordt niet meer geladen. Wat hier vastligt:
  *   1 · de opmaak: kaartveld.js en kaart-100.css zitten in de Layout; vijf looks, een css-verloop als terugval zonder
  *       WebGL; sinds levering 113 geen aderen, geen draad en geen lichtnet meer;
  *   2 · in de browser (1440 en 390): elke kaart draagt het veld (kv-aan, een eigen doek), en wit haalt op het slechtste
@@ -26,7 +28,9 @@ const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 
 console.log('\nVISUAILS — het kaartveld (levering 100)\n\n1 · de opmaak');
 const layout = lees('src/layouts/Layout.astro'), veld = lees('src/scripts/kaartveld.js'), css = lees('src/styles/kaart-100.css');
-ok('kaartveld.js en kaart-100.css zitten in de Layout', /kaartveld\.js/.test(layout) && /kaart-100\.css/.test(layout));
+/* levering 115 (lijst 124): het WebGL-veld is uit; elke kaart is een stuk van het doek (kaartdoek.js, kaart-115.css) */
+ok('115 · kaartdoek.js en kaart-115.css zitten in de Layout, kaartveld.js niet meer', /import '\.\.\/scripts\/kaartdoek\.js'/.test(layout) && !/import '\.\.\/scripts\/kaartveld\.js'/.test(layout) && /kaart-100\.css/.test(layout) && /kaart-115\.css/.test(layout));
+ok('115 · acht stukken van het doek en één tegel korrel staan in public/img/doek', [0, 1, 2, 3, 4, 5, 6, 7].every((i) => fs.existsSync(path.join(ROOT, `public/img/doek/stuk-${i}.webp`))) && fs.existsSync(path.join(ROOT, 'public/img/doek/korrel.webp')));
 ok('de vier oude fotoblokken zijn kaarten', ['.h-proef > .h-proef-woord', '.h-lk-slot', '.site-footer .sb', '.h-nf-getal'].every((s) => veld.includes(s)));
 ok('vijf looks (zijde, nacht, mint, horizon, gloed), op volgorde', /float look\(int i\)\{ return mod\(float\(i\), 5\.\); \}/.test(veld));
 ok('een kaart mengt niet met de look of de lijn van zijn buren', (veld.match(/- gD\)/g) || []).length >= 2);
@@ -147,7 +151,7 @@ const PLEKKEN = [
   ['/nl/hooks/', '.h-kopbeeld-getal.kv-108', ['.h-kopbeeld-rij', '.h-kopbeeld-voet']],
   ['/nl/catalog/', '.h-dienst-eigen.kv-108', ['.h-dienst-extra-kop', '.h-dienst-extra-zin']],
   ['/nl/video/', '.h-vd-klip.kv-108', ['.h-vd-klip-t', '.h-vd-klip-m']],
-  ['/nl/start/', '.h-st-mk.kv-108', ['.h-st-mk-naam', '.h-st-mk-zin']],
+  /* levering 116 (lijst 126): de kaarten Op maat op /start zijn weg */
   ['/nl/start/custom-look/', '.hold-status.kv-108', ['.hold-status-label', '.hold-status-word', '.hold-status-body']],
   ['/nl/thank-you/', '.ty-bar.kv-108', ['h1']],
 ];
@@ -163,8 +167,9 @@ for (const [breed, hoog] of [[1440, 900], [390, 844]]) {
       const m = await slechtsteTekst(page, wortel, tekst.map((s) => `${wortel} ${s}`.replace(wortel + ' ', '')), [255, 255, 255]);
       slechtst = Math.min(slechtst, m.r); n = Math.max(n, m.n); fout2 = m.fout || fout2;
     }
-    const aan = await page.$eval(wortel, (e) => e.classList.contains('kv-aan') && !!e.querySelector(':scope > canvas.kv-doek'));
-    ok(`${breed} ${pad} ${wortel}: het veld staat aan, wit op het slechtste punt ${slechtst.toFixed(2)} : 1`, aan && n > 200 && slechtst >= 4.5, `aan=${aan} n=${n} ${fout2}`);
+    /* levering 115 (lijst 124): de kaart is een stuk van het doek (kaart-115.css, kaartdoek.js), niet meer het WebGL-veld */
+    const aan = await page.$eval(wortel, (e) => /\/img\/doek\/stuk-\d\.webp/.test(getComputedStyle(e).backgroundImage) && /\/img\/doek\/korrel\.webp/.test(getComputedStyle(e).backgroundImage) && e.dataset.stuk !== undefined);
+    ok(`${breed} ${pad} ${wortel}: een stuk van het doek met korrel, wit op het slechtste punt ${slechtst.toFixed(2)} : 1`, aan && n > 200 && slechtst >= 4.5, `aan=${aan} n=${n} ${fout2}`);
     await ctx.close();
   }
   const { ctx, page } = await open({ viewport: { width: breed, height: hoog }, deviceScaleFactor: 1, ...(telefoon ? { isMobile: true, hasTouch: true } : {}) });

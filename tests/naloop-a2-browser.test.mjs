@@ -240,7 +240,7 @@ const VIER = [
   /* Start, catalog en lifestyle staan sinds 12 oktober 2026 (avond) ook in de
      hal: de regel staat op /start in .h-st-regel (StartHal.astro) en op de twee
      dienstpagina's als eerste zin van de prijsband (.h-pr-band-zin). */
-  ['/nl/start/', '.h-st-regel', eenProductRegel('nl'), 'start'],
+  ['/nl/start/#catalog', '.h-st-regel', eenProductRegel('nl'), 'start'],   /* levering 116: de regel staat in stap 2 */
   ['/nl/catalog/', '.h-pr-band-zin', eenProductRegel('nl', ['catalog']), 'catalog'],
   ['/nl/lifestyle/', '.h-pr-band-zin', eenProductRegel('nl', ['lifestyle']), 'lifestyle'],
 ];

@@ -41,7 +41,10 @@ ok('de kop heeft een aanloop en een grote regel', /b94-aanloop/.test(lees('src/c
   ok('levering 114: het masker van de telefoon staat er (8 × 13 vakken van 240 × 135, 102 beelden) en zijn script ook',
     fs.existsSync(plaat) && fs.existsSync(path.join(ROOT, 'scripts/telefoon-masker.py')) && /beelden: 102, kolommen: 8, rijen: 13/.test(data));
   ok('levering 114: in de letters staat de video waar de telefoon is (alleen in de eerste scène), de letters tekent WebGL zelf',
-    /uniform float b;/.test(ban) && /gl_FragColor = vec4\(e, letter \* \(1\.0 - voor\)\)/.test(ban) && /bi < data\.masker\.beelden \? bi : -1/.test(ban) && /tekenLetters/.test(ban));
+    /uniform float b;/.test(ban) && /a \* \(1\.0 - voor\)\); \}/.test(ban) && /bi < data\.masker\.beelden \? bi : -1/.test(ban) && /tekenLetters/.test(ban));
+  /* levering 115 (lijst 125 C, Lucas 03:40): de hele kop één kleur, gekozen op contrast in lineair licht, met een zachte rand */
+  ok('levering 115: de kop is effen (geen negatief meer), één kleur gekozen op contrast (1,05 / (L + 0,05) tegen (L + 0,05) / 0,0535), met een rand in de andere kleur',
+    /function kopKleur\(\)/.test(ban) && /const cWit = 1\.05 \/ \(deel\(\.6\) \+ \.05\), cInkt = \(deel\(\.4\) \+ \.05\) \/ \.0535;/.test(ban) && /uniform sampler2D hl; uniform float wit;/.test(ban) && !/vec3 n = 1\.0 - c;/.test(ban));
   ok('levering 114: de €1-melding komt na de bannervideo (interactions.js)', /const b94 = document\.querySelector\('\[data-b94\]'\);\s*if \(b94 && b94\.getBoundingClientRect\(\)\.bottom > 0\) return false;/.test(lees('src/scripts/interactions.js')));
 }
 ok('het blok onder de video staat op de voorpagina', /<HalOnderVideo110\b/.test(lees('src/components/VoorpaginaHal.astro')));

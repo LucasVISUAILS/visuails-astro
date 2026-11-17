@@ -39,9 +39,10 @@ const layout = fs.readFileSync(path.join(WORTEL, 'src/layouts/Layout.astro'), 'u
 const imports = [...layout.matchAll(/^import '\.\.\/styles\/([^']+)';/gm)].map((m) => m[1]);
 /* levering 108: na kaart-100.css komen alleen nog kaart-108.css (de tekst op de nieuwe kaarten) en telefoon-115.css (de telefoon
    in het midden); geen van beide zet een kleur van de site zelf */
-const NA_KAART = ['kaart-108.css', 'telefoon-115.css'];
+/* levering 115 (17 november 2026): daarna kaart-115.css, de kaarten als stukken van het doek (lijst 124) */
+const NA_KAART = ['kaart-108.css', 'telefoon-115.css', 'kaart-115.css'];
 const kern = imports.filter((i) => !NA_KAART.includes(i));
-ok('kleur-100.css en daarna kaart-100.css zijn de laatste stijlbladen in Layout.astro (daarna alleen kaart-108 en telefoon-115)', kern[kern.length - 2] === 'kleur-100.css' && kern[kern.length - 1] === 'kaart-100.css' && imports.slice(-NA_KAART.length).every((i) => NA_KAART.includes(i)), imports.slice(-4).join(', '));
+ok('kleur-100.css en daarna kaart-100.css zijn de laatste stijlbladen in Layout.astro (daarna alleen kaart-108, telefoon-115 en kaart-115)', kern[kern.length - 2] === 'kleur-100.css' && kern[kern.length - 1] === 'kaart-100.css' && imports.slice(-NA_KAART.length).every((i) => NA_KAART.includes(i)), imports.slice(-4).join(', '));
 
 const css = fs.readFileSync(path.join(WORTEL, 'src/styles/kleur-100.css'), 'utf8');
 ok('de voet is zwart #090D0B', /\.site-footer \{[^}]*background: #090D0B/.test(css));

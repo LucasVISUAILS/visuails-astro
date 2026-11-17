@@ -295,7 +295,8 @@ try {
     const proef = await page.evaluate(() => getComputedStyle(document.querySelector('.h-proef > .h-proef-woord')).backgroundImage);
     /* levering 89 (lijst 78 C2): het €1-blok is het veld B4 Nacht, een stukje nacht met korrel, het licht rechtsonder */
     /* lijst 86 (9 november 2026): het €1-blok heeft zijn vaste foto (fotoblok.css); tests/fotoblok-browser meet het */
-    ok('D6 · het €1-blok is een kaart uit het kaartveld (levering 100; was de vaste foto van lijst 86)', /linear-gradient\(135deg, rgb\(1, 102, 69\)/.test(proef), proef.slice(0, 160));
+    /* levering 115 (lijst 124): een stuk van het doek met korrel (kaart-115.css), in plaats van het kaartveld */
+    ok('D6 · het €1-blok is een stuk van het doek met korrel (levering 115; was het kaartveld van levering 100)', /\/img\/doek\/korrel\.webp/.test(proef) && /\/img\/doek\/stuk-\d\.webp/.test(proef), proef.slice(0, 160));
     const tekst = await page.evaluate(() => { const blok = document.querySelector('.h-proef > .h-proef-woord'); const br = blok.getBoundingClientRect(); return [...blok.querySelectorAll('p, h1, h2, span, a')].filter((e) => e.textContent.trim() && e.getBoundingClientRect().width).map((e) => { const g = document.createRange(); g.selectNodeContents(e); const r = g.getBoundingClientRect(); return { x: (r.right - br.left) / br.width, y: (r.bottom - br.top) / br.height, kleur: getComputedStyle(e).color }; }); });  /* de tekst zelf, niet zijn vak: sinds levering 87 loopt het vak van een korte zin tot de rand (h-1r) */
     /* het lichtste punt onder tekst: de rechteronderhoek van het verste tekstvak, op de fade */
     const t = Math.max(...tekst.filter((e) => /255, 255, 255/.test(e.kleur)).map((e) => { const b = 0.8 * e.x + 0.6 * e.y; return b / 1.4; }));

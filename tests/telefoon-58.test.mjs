@@ -126,7 +126,7 @@ try {
   }
 
   console.log('\n/start op de telefoon');
-  for (const [pad, taal] of [['/nl/start/', 'nl'], ['/start/', 'en']]) {
+  for (const [pad, taal] of [['/nl/start/#lifestyle', 'nl'], ['/start/#lifestyle', 'en']]) {  /* levering 116 (lijst 126): de looks staan in stap 2 */
     const { ctx, page, fouten } = await open(pad, 390);
     const s = await page.evaluate(() => {
       const zicht = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).display !== 'none' && !el.closest('[hidden]');
@@ -138,6 +138,7 @@ try {
         breed: document.documentElement.scrollWidth, vw: innerWidth,
         rij: [getComputedStyle(rij).overflowX, rij.scrollWidth > rij.clientWidth + 100],
         aandeel: kaarten.map((k) => Math.round((k.getBoundingClientRect().width / rij.clientWidth) * 100)),
+        eersteInBeeld: kaarten[0].getBoundingClientRect().left >= 0,
         tweedeGluurt: kaarten[1].getBoundingClientRect().left < innerWidth && getComputedStyle(kaarten[1]).opacity === '1',
         inKaart: ['.h-st-beeld', '.h-st-naam', '.h-st-zin', '[data-st-kies]', '.h-st-tarief', '.h-st-abo', '[data-st-proef]', '.h-st-meer'].map((sel) => zicht(k0.querySelector(sel))),
         prijs: [...g.querySelectorAll('.h-st-groep-prijs [data-vis-klant="niet-abonnee"]')].filter(zicht).map((p) => p.textContent.replace(/\s+/g, ' ').trim()),
@@ -150,11 +151,12 @@ try {
     ok(`${taal}: de pagina schuift niet opzij`, s.breed === s.vw, `${s.breed} > ${s.vw}`);
     ok(`${taal}: de lifestylelooks staan in een veegrij`, s.rij[0] === 'auto' && s.rij[1], JSON.stringify(s.rij));
     ok(`${taal}: elke kaart 80% breed`, s.aandeel.every((a) => a >= 72 && a <= 80), s.aandeel.join(' / '));
+    ok(`${taal}: de eerste look staat helemaal in beeld (levering 116: de rij stond in het midden en stak links uit)`, s.eersteInBeeld);
     ok(`${taal}: de volgende look gluurt erbij, zichtbaar`, s.tweedeGluurt);
     ok(`${taal}: per kaart beeld, naam, zin en Kies deze look, en verder niets`, JSON.stringify(s.inKaart) === JSON.stringify([true, true, true, true, false, false, false, false]), JSON.stringify(s.inKaart));
     ok(`${taal}: de prijs en de planprijs één keer, boven de rij`, s.prijs.length === 2 && /€\s?50/.test(s.prijs[0]) /* lijst 111: de onderste lifestyletrede is €50 (was €49) */ && /(abonnement|plan)/.test(s.prijs[1]) && s.prijsBoven, JSON.stringify(s.prijs));
     ok(`${taal}: de proef één keer, onder de rij, bij de eerste look`, s.proef.length === 1 && /€1/.test(s.proef[0][0]) && /style=dunes$/.test(s.proef[0][1]) && s.proefOnder, JSON.stringify(s.proef));
-    ok(`${taal}: op heel /start precies vier prijsregels (twee per groep)`, s.tarieven === 4, String(s.tarieven));
+    ok(`${taal}: in stap 2 precies twee prijsregels (alleen de gekozen groep)`, s.tarieven === 2, String(s.tarieven));
     await page.evaluate(() => { const r = document.querySelector('[data-st-rij]'); r.scrollTo({ left: r.querySelectorAll('[data-st-look]')[2].offsetLeft - 16 }); });
     await page.waitForTimeout(400);
     const na = await page.evaluate(() => document.querySelector('[data-st-groep="lifestyle"] [data-st-groep-proef]').getAttribute('href'));
@@ -163,17 +165,17 @@ try {
     await ctx.close();
   }
   {
-    const { ctx, page } = await open('/nl/start/', 1440);
+    const { ctx, page } = await open('/nl/start/#lifestyle', 1440);
     const s = await page.evaluate(() => {
       const zicht = (el) => !!el && el.getClientRects().length > 0 && getComputedStyle(el).display !== 'none';
-      const rij = document.querySelector('[data-st-rij]');
+      const rij = document.querySelector('[data-st-groep="lifestyle"] [data-st-rij]');
       return {
         grid: getComputedStyle(rij).display,
         groep: [...document.querySelectorAll('.h-st-groep-prijs, .h-st-groep-proef')].filter(zicht).length,
         perKaart: [...document.querySelectorAll('.h-st-look .h-st-tarief[data-vis-klant="niet-abonnee"]')].filter(zicht).length,
       };
     });
-    ok('1440: de looks in het raster, de groepsregels weg, de prijs per kaart', s.grid === 'grid' && s.groep === 0 && s.perKaart === 5, JSON.stringify(s));
+    ok('1440: de looks in het raster, de groepsregels weg, de prijs per kaart', s.grid === 'grid' && s.groep === 0 && s.perKaart === 4 /* levering 116: alleen de vier lifestylelooks in stap 2 */, JSON.stringify(s));
     await ctx.close();
   }
 } finally {
