@@ -14,7 +14,8 @@ import { notifyPaid } from './notify.js';
 
 export async function betaalVolledigMetTegoed(env, orderId) {
   const order = await env.DB.prepare(
-    'SELECT id, ref, customer_id, status, payment_status, total_cents, vat_cents, details_json, lang, email, name, country FROM orders WHERE id = ?1'
+    /* levering 119 (18 november 2026, proefronde A0-01): ook first_name, voor de aanhef. */
+    'SELECT id, ref, customer_id, status, payment_status, total_cents, vat_cents, details_json, lang, email, name, first_name, country FROM orders WHERE id = ?1'
   ).bind(orderId).first();
   if (!order) return false;
   const tegoed = tegoedOpBestelling(order);
@@ -41,7 +42,7 @@ export async function betaalVolledigMetTegoed(env, orderId) {
   await notifyPaid(env, order.id);
   try {
     const invoice = await issueInvoice(env, order.id);
-    if (invoice) await mailInvoice(env, { order: { ref: order.ref, email: order.email, lang: order.lang, name: order.name, country: order.country }, invoice, direct: true });
+    if (invoice) await mailInvoice(env, { order: { ref: order.ref, email: order.email, lang: order.lang, name: order.name, first_name: order.first_name, country: order.country }, invoice, direct: true });
   } catch (e) {
     console.error('[tegoed] factuur voor', order.ref, 'niet uitgegeven —', e?.message || e);
   }

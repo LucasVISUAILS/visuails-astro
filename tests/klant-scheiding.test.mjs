@@ -324,7 +324,12 @@ const laatste = (db) => db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 
   const o = laatste(db); const d = JSON.parse(o?.details_json || '{}');
   gelijk('controle: met de sessie van A geldt zijn eigen look', [d.style, d.own_style_id], [`cs-${ID.stijlA}`, ID.stijlA]);
   gelijk('  en zijn eigen gezicht', d.model, `c${ID.modelA}`);
-  gelijk('  en vult zijn lege velden (de regel voor wie ingelogd is)', db.prepare('SELECT reg_number FROM customers WHERE id = ?').get(A.id).reg_number, '12345678');
+  /* Levering 117 (17 november 2026, P12-01): ingelogd worden de accountvelden alleen bijgewerkt met het vinkje
+     "Bewaar deze gegevens", of als de bestelling voor hetzelfde merk is als het account. Deze bestelling is voor
+     een ANDER merk (VREEMD, het account is VOLTPROEF): dat is precies het geval waarin anders diens btw- en
+     KVK-nummer op het eigen account kwamen. Ingelogd stuurt het formulier het vinkje niet mee (bewaren gaat via
+     /account/details), dus hier blijft het lege veld leeg. */
+  gelijk('  en vult zijn lege velden niet met een ander merk zonder "Bewaar" (P12-01)', db.prepare('SELECT reg_number FROM customers WHERE id = ?').get(A.id).reg_number, null);
   gelijk('  en gebruikt zijn opgeslagen land', o?.country ?? JSON.parse(o?.details_json || '{}').country ?? null, 'DE');
   void res;
 }
@@ -349,8 +354,11 @@ const laatste = (db) => db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 
     const voor = foto(db); mollie = [];
     const res = await abonneer(env, PLAN);
     antwoorden.push(`${res.status} ${res.headers.get('location')}`);
-    ok(`/api/plan met A's adres, ${stand}: niets veranderd`, verschil(voor, foto(db)).length === 0, verschil(voor, foto(db)).join(', '));
-    ok(`  en niets naar Mollie`, mollie.length === 0, `${mollie.length} verzoeken`);
+    /* levering 118 (integratie IA, L-07): een bestaand adres krijgt nu bewust een inlogmail (een rij in account_tokens en
+       één verzoek naar Resend), voor A zelf; verder verandert er niets en gaat er niets naar Mollie. */
+    const versch = verschil(voor, foto(db)).filter((t) => t !== 'account_tokens');
+    ok(`/api/plan met A's adres, ${stand}: niets veranderd (alleen een inlogcode voor A zelf, levering 118 L-07)`, versch.length === 0, versch.join(', '));
+    ok(`  en niets naar Mollie`, mollie.filter((u) => String(u).includes('mollie')).length === 0, mollie.join(' | '));
   }
   ok('/api/plan geeft in alle drie de standen hetzelfde antwoord: log eerst in', new Set(antwoorden).size === 1 && /fout=account/.test(antwoorden[0]), antwoorden.join(' | '));
   /* de controle: een nieuw adres gaat gewoon door */

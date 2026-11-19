@@ -93,8 +93,16 @@ const css = lees('src/styles/hal.css');
 ok('hal.css: een stand is pas in de opmaak als hij klaar is, en alleen is-nu is zichtbaar', css.includes('.hal .hl-stand { position: absolute; inset: 0; width: 100%; height: 100%; display: none; opacity: 0;') && css.includes('.hal .hl-stand.is-klaar { display: block; }') && css.includes('.hal .hl-stand.is-nu { opacity: 1; }'));
 ok('  de catalogbeelden staan in een vierkant vak, op hun eigen 1:1 (08:14)', /\.hal \.sc-hoofd \{[^}]*width: 860px; height: 860px;/.test(css) && /\.hal \.sc-hoofd img \{[^}]*inset: 0; width: 100%; height: 100%; object-fit: cover;/.test(css));
 /* Levering 74 (25 oktober 2026): de voorpagina heeft geen laptop meer (de opening is een
-   scrollvideo, HalOpening.astro); de laptop staat op /catalog, /lifestyle en /video. */
-for (const [pagina, aantal] of [['catalog/index.html', alleStanden('en', ['catalog']).length], ['nl/catalog/index.html', alleStanden('nl', ['catalog']).length], ['nl/lifestyle/index.html', alleStanden('nl', ['lifestyle']).length], ['video/index.html', alleStanden('en', ['video']).length]]) {
+   scrollvideo, HalOpening.astro); de laptop staat op /catalog en /lifestyle.
+   Levering 117 (17 november 2026, proefronde P4-01): op /video is de laptop met de videodia (een stilstaand beeld
+   met een voortgangsbalk) vervangen door de echte bannerclip (VideoHal.astro, FILM). /video hoeft dus geen
+   laptopstand meer te hebben; hieronder staat wat er wél moet staan. */
+{
+  const h = fs.readFileSync(path.join(DIST, 'video/index.html'), 'utf8');
+  ok('video/index.html: geen laptop meer in de opening (levering 117, P4-01)', !/data-hl-doos|data-hl-stand/.test(h));
+  ok('  maar de bannerclip, met poster en preload="none"', /<video class="vd-film-v"[^>]*preload="none"[^>]*poster="\/img\/hal\/banner\/poster-1280\.avif/.test(h) && /<source src="\/img\/hal\/banner\/banner-1280\.mp4/.test(h));
+}
+for (const [pagina, aantal] of [['catalog/index.html', alleStanden('en', ['catalog']).length], ['nl/catalog/index.html', alleStanden('nl', ['catalog']).length], ['nl/lifestyle/index.html', alleStanden('nl', ['lifestyle']).length]]) {
   const h = fs.readFileSync(path.join(DIST, pagina), 'utf8');
   const doos = h.slice(h.indexOf('data-hl-doos'), h.indexOf('hl-bel hl-bel-lap'));
   const imgs = [...doos.matchAll(/<img[^>]*data-hl-stand="(\d+)"[^>]*>/g)].map((m) => m[0]);

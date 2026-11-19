@@ -65,6 +65,12 @@ const I18N = {
     tyUnpaidFlow: 'Nothing is being made yet: we start as soon as the payment is in. Your photos and choices are saved with the order.',
     tyUnpaidNote: 'Cancelled, declined or expired — nothing has been charged. Your order is saved: pay now, or later through the link in your email.',
     tyRetryCta: 'Pay again',
+    /* levering 119 (18 november 2026, proefronde P1-09): after 20 s with the payment still open at Mollie. */
+    tyOpenNote: 'Mollie has no payment from you yet. Went back without paying? Pay here. Just paid? Then this page updates itself.',
+    tyOpenCta: 'Pay now',
+    /* levering 119 (18 november 2026, proefronde P6-26): the sample buttons while the round is closed; {bedrag} is the amount already on the button. */
+    proefWacht: 'Sample {bedrag} · join the waitlist',
+    proefWachtKaal: 'Sample · join the waitlist',
     tySignedIn: 'You are signed in — the order is already in VISUAILS Studio.',
     tsSending: 'Uploading…',
     tsDone: 'Uploaded',
@@ -109,6 +115,12 @@ const I18N = {
     tyUnpaidFlow: 'Er wordt nog niets gemaakt: we beginnen zodra de betaling binnen is. Je foto’s en keuzes staan bewaard bij de bestelling.',
     tyUnpaidNote: 'Afgebroken, geweigerd of verlopen — er is niets afgeschreven. Je bestelling staat bewaard: betaal nu, of later via de link in je mail.',
     tyRetryCta: 'Opnieuw betalen',
+    /* levering 119 (18 november 2026, proefronde P1-09): na 20 s met de betaling nog open bij Mollie. */
+    tyOpenNote: 'Mollie heeft nog geen betaling van je. Ben je teruggegaan zonder te betalen? Betaal dan hier. Net betaald? Dan werkt deze pagina zichzelf bij.',
+    tyOpenCta: 'Betaal nu',
+    /* levering 119 (18 november 2026, proefronde P6-26): de proefknoppen zolang de ronde gesloten is; {bedrag} staat al op de knop. */
+    proefWacht: 'Proef {bedrag} · op de wachtlijst',
+    proefWachtKaal: 'Proef · op de wachtlijst',
     tySignedIn: 'Je bent ingelogd — de bestelling staat al in VISUAILS Studio.',
     tsSending: 'Uploaden…',
     tsDone: 'Geüpload',
@@ -1126,6 +1138,20 @@ function initThankYou() {
   const ref = ((params.get('ref') || '').trim() || betaald);
   if (!/^VIS-[A-Z0-9-]{3,}$/i.test(ref)) return;
   const d = t18();
+  /* levering 118 (17 november 2026, proefronde P1-10): /api/order-pay weigerde een betaling omdat dit bedrijf al een betaalde proef had
+     (?proef=al). Dan geen bedankverhaal en geen betaalknop, maar de reden en de weg naar de diensten. */
+  if (params.get('proef') === 'al') {
+    const al = document.querySelector('[data-ty-proef-al]');
+    const kopAl = document.querySelector('[data-ty-title]');
+    if (al) {
+      al.hidden = false;
+      if (kopAl && kopAl.dataset.tyTitleProefAl) kopAl.textContent = kopAl.dataset.tyTitleProefAl;
+      const balkAl = document.querySelector('[data-ty-bar]');
+      if (balkAl) balkAl.setAttribute('data-ty-cancelled-state', '');
+      document.querySelectorAll('.ty-hide-when-cancelled').forEach((el) => { el.hidden = true; });
+      return;
+    }
+  }
   const pay = molliePayUrl(params.get('pay'));
   /* Wie nog niet betaald heeft, leest in het blok niet "je factuur komt zo"
      maar "na je betaling krijg je de factuur". */
@@ -1470,19 +1496,38 @@ function zetWhatsappTekst(soort, ref) {
 /* Het laatste antwoord van order-status: kon er nog betaald worden? (B17, 8 november 2026.) */
 let tyBetaalbaar = false;
 
-/* De betaalknop onder de noot, één keer. */
-function zetBetaalknop(ref, noot, d) {
+/* De betaalknop onder de noot, één keer. levering 119 (P1-09): met een eigen woord ("Betaal nu") als de betaling nog open staat. */
+function zetBetaalknop(ref, noot, d, woord) {
   if (document.querySelector('.ty-pay-cta')) return;
   const wrap = document.createElement('p');
   wrap.className = 'ty-pay-cta';
   const knop = document.createElement('a');
   knop.className = 'knop knop-inkt';
   knop.href = `/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${pageLang() === 'nl' ? 'nl' : 'en'}`;
-  knop.textContent = d.tyRetryCta;
+  knop.textContent = woord || d.tyRetryCta;
   knop.dataset.rol = 'doorgaan';
   knop.insertAdjacentHTML('beforeend', ikoon('pijl'));
   wrap.append(knop);
   noot.after(wrap);
+}
+
+/* levering 119 (18 november 2026, proefronde P1-09): de tussenstand "Nog niet betaald", één keer. De zin over de factuur in
+   "Zo gaat het verder" wordt "na je betaling" (zoals bij een gewone onbetaalde aankomst), en onthoudt de oude voor als de betaling
+   toch binnenkomt. */
+function zetNogNietBetaald(ref, noot, d, kop, balk) {
+  if (!noot.dataset || noot.dataset.tyOpen) return;
+  noot.dataset.tyOpen = '1';
+  noot.textContent = d.tyOpenNote;
+  if (kop && kop.dataset.tyTitleOpen) kop.textContent = kop.dataset.tyTitleOpen;
+  if (balk) balk.setAttribute('data-ty-pay-state', '');
+  const stil = document.querySelector('[data-ty-verder-stil]');
+  if (stil && stil.dataset.tyVerderOnbetaald) {
+    if (stil.dataset.tyVerderBetaald === undefined) stil.dataset.tyVerderBetaald = stil.textContent;
+    stil.textContent = stil.dataset.tyVerderOnbetaald;
+  }
+  zetBetaalknop(ref, noot, d, d.tyOpenCta);
+  const knop = document.querySelector('.ty-pay-cta');
+  if (knop) knop.setAttribute('data-ty-open-knop', '');
 }
 
 function verifyPaid(ref, noot, d, attempt = 0) {
@@ -1496,6 +1541,8 @@ function verifyPaid(ref, noot, d, attempt = 0) {
      met de zin dat hij alleen voor wie níet betaalde is. Eerder niet: een trage bank zou anders twee keer
      betaald worden. */
   const opgeven = () => {
+    /* levering 119 (P1-09): staat "Nog niet betaald" er al (met de knop), dan blijft dat staan. */
+    if (noot.dataset && noot.dataset.tyOpen) return;
     noot.textContent = tyBetaalbaar && d.tyCheckingSlowPay ? d.tyCheckingSlowPay : d.tyCheckingSlow;
     if (tyBetaalbaar) zetBetaalknop(ref, noot, d);
   };
@@ -1511,7 +1558,16 @@ function verifyPaid(ref, noot, d, attempt = 0) {
         tyBetaalbaar = !!s.payable && !s.paid && !s.cancelled;
         const kop = document.querySelector('[data-ty-title]');
         const balk = document.querySelector('[data-ty-bar]');
+        /* levering 118 (17 november 2026, proefronde P1-10): eerst geannuleerd, dan pas betaald. Een tweede proef is betaald én geannuleerd (en
+           teruggestort); kwam dit antwoord na dat van checkCancelled(), dan zette het "Betaald — we gaan aan de slag"
+           boven de annulering. checkCancelled() neemt het over. */
+        if (s.cancelled) return;
         if (s.paid) {
+          /* levering 119 (P1-09): stond de tussenstand "Nog niet betaald" er al, dan de knop weg en de zin over de factuur terug. */
+          const openKnop = document.querySelector('.ty-pay-cta[data-ty-open-knop]');
+          if (openKnop) openKnop.remove();
+          const stilP = document.querySelector('[data-ty-verder-stil]');
+          if (stilP && stilP.dataset.tyVerderBetaald !== undefined) stilP.textContent = stilP.dataset.tyVerderBetaald;
           let metCredits = false;
           try { metCredits = new URLSearchParams(location.search).get('credits') === '1'; } catch { /* oude browser */ }
           noot.textContent = metCredits && d.tyPaidNoteCredits ? d.tyPaidNoteCredits : d.tyPaidNote;
@@ -1521,7 +1577,12 @@ function verifyPaid(ref, noot, d, attempt = 0) {
           if (balk) balk.removeAttribute('data-ty-pay-state');
           return;
         }
-        if (s.cancelled) return; /* checkCancelled() neemt het over */
+        /* levering 119 (18 november 2026, proefronde P1-09): na 20 s staat de betaling nog open bij Mollie en kan er nog betaald
+           worden. Dan zegt de kop het ("Nog niet betaald.") en staat "Betaal nu" bovenaan, in plaats van een minuut lang "Je betaling
+           wordt bevestigd… je factuur komt zo". Er wordt verder gevraagd: betaalt de bank alsnog, dan zet de tak hierboven
+           "Betaald" terug en gaat de knop weg. Eerder dan 20 s niet: een trage webhook zou dan een tweede betaling uitlokken. */
+        const verstreken = DELAYS.slice(0, attempt + 1).reduce((a, b) => a + b, 0);
+        if (!s.failed && tyBetaalbaar && verstreken >= 20000) zetNogNietBetaald(ref, noot, d, kop, balk);
         /* Mollie heeft nog niets gemeld: doorvragen, en na de minuut stoppen. */
         if (!s.failed && attempt + 1 < DELAYS.length) { verifyPaid(ref, noot, d, attempt + 1); return; }
         if (!s.failed || !s.payable) { opgeven(); return; }
@@ -2037,7 +2098,11 @@ function initFormulierTerug() {
   }
   const taal = (document.documentElement.lang || 'en').slice(0, 2) === 'nl' ? 'nl' : 'en';
   const zin = TERUG_ZIN[taal][code] || TERUG_ZIN[taal].anders;
-  if (!eigenZin && (!f.previousElementSibling || !f.previousElementSibling.classList.contains('form-terug'))) {
+  /* levering 118 (17 november 2026, proefronde P4-08): heeft de pagina een eigen kader voor deze code
+     ([data-form-refusal], initFormRefusal), dan staat de melding daar al; geen tweede zin erboven. */
+  let eigenKader = false;
+  try { eigenKader = !!document.querySelector(`[data-form-refusal="${CSS.escape(code)}"]`); } catch { eigenKader = false; }
+  if (!eigenZin && !eigenKader && (!f.previousElementSibling || !f.previousElementSibling.classList.contains('form-terug'))) {
     const p = document.createElement('p');
     p.className = 'form-terug';
     p.setAttribute('role', 'alert');
@@ -2337,6 +2402,8 @@ function vulKlant(stand) {
 let meldingOpen = null;
 let meldingDicht = { s: null, p: false };
 let meldingKijk = null;
+/* levering 119 (P1-01): de luisteraar die de €1-melding inklapt zolang een €1-blok in beeld is. */
+let meldingInklap = null;
 const meldingNotitie = () => {
   try {
     const j = JSON.parse(localStorage.getItem(MELDING_SLEUTEL) || 'null');
@@ -2362,6 +2429,7 @@ document.addEventListener('keydown', (e) => {
 
 function meldingen() {
   if (meldingKijk) { window.removeEventListener('scroll', meldingKijk); meldingKijk = null; }
+  if (meldingInklap) { window.removeEventListener('scroll', meldingInklap); meldingInklap = null; }
   const elStand = document.querySelector('.h-melding[data-vis-klant="melding"]');
   const elProef = document.querySelector('.h-melding[data-vis-proef]');
   if (!elStand && !elProef) return;
@@ -2420,13 +2488,51 @@ function meldingen() {
     });
   }
 
+  /* ── INKLAPPEN BOVEN EEN €1-BLOK — levering 119 (18 november 2026, proefronde P1-01) ──────────────────────
+     mag() hieronder kijkt alleen vóór het openen of er een €1-blok (section.h-proef) in beeld is. Daarna stond de melding
+     "Eerst zien? Eén product voor €1" open onder het blok met precies die kop. Nu klapt hij in zolang zo'n blok in beeld is
+     (dezelfde overgang als open en dicht, inert zodat Tab hem overslaat) en komt hij terug als het blok voorbij is.
+     Alleen de proefmelding; weggeklikt of gevolgd (meldingOpen leeg) doet niets meer. */
+  const proefBlokInBeeld = () => [...document.querySelectorAll('section.h-proef')].some((b) => {
+    const r = b.getBoundingClientRect();
+    return r.top < window.innerHeight && r.bottom > 0;
+  });
+  const inklap = () => {
+    if (meldingOpen !== soort || !el.isConnected || el.hidden) {
+      window.removeEventListener('scroll', inklap);
+      if (meldingInklap === inklap) meldingInklap = null;
+      return;
+    }
+    const weg = proefBlokInBeeld();
+    if (weg && !el.dataset.visIngeklapt) {
+      el.dataset.visIngeklapt = '1';
+      el.inert = true;
+      el.classList.remove('is-open');
+      document.documentElement.style.removeProperty('--h-melding-h');
+      document.documentElement.style.scrollPaddingBottom = '';
+    } else if (!weg && el.dataset.visIngeklapt) {
+      delete el.dataset.visIngeklapt;
+      el.inert = false;
+      el.classList.add('is-open');
+      meldingHoogte(el);
+    }
+  };
+  const bewaak = () => {
+    if (soort !== 'proef') return;
+    if (meldingInklap) window.removeEventListener('scroll', meldingInklap);
+    meldingInklap = inklap;
+    window.addEventListener('scroll', inklap, { passive: true });
+  };
   const open = (meteen) => {
     meldingOpen = soort;
     el.hidden = false;
+    delete el.dataset.visIngeklapt;
+    el.inert = false;
+    bewaak();
     if (meteen) {
       el.classList.add('is-meteen', 'is-open');
       meldingHoogte(el);
-      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('is-meteen')));
+      requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.remove('is-meteen'); if (soort === 'proef') inklap(); }));
       return;
     }
     requestAnimationFrame(() => requestAnimationFrame(() => { meldingHoogte(el); el.classList.add('is-open'); }));
@@ -2574,8 +2680,66 @@ function magAccountVragen() {
   try { return /(?:^|;\s*)vis_in=1(?:;|$)/.test(document.cookie); } catch { return true; }
 }
 
+/* ── DE PROEFKNOPPEN BIJ EEN GESLOTEN RONDE — levering 119 (18 november 2026, proefronde P6-26) ───────────────────────
+   Live stond de proef op "Deze ronde is gesloten", maar overal stond nog "Probeer VISUAILS · €1". Nu vraagt de pagina één keer
+   per vijf minuten (sessionStorage) /api/proef-stand, en bij "dicht" wordt de tekst van elke proefknop (a[data-vis-uit] naar
+   /test-sample) "Proef €1 · op de wachtlijst". Het bedrag komt van de knop zelf (uit pricing.js gerenderd), niet uit dit bestand.
+   De link blijft: /test-sample toont bij een gesloten ronde de wachtlijst. Faalt de vraag, dan blijft alles zoals het was. */
+const PROEF_STAND_SLEUTEL = 'vis-proef-stand';
+function proefKnoppenStand() {
+  /* levering 119 (18 november 2026, proefronde P6-26, hersteller H10): ook de voetlink (daar staat data-vis-uit op de <li>), het
+     item in het telefoonmenu (op de <span> eromheen) en de knop in de €1-melding (zonder data-vis-uit); hun tekst staat soms
+     in een <span> in de link, dus zoeken we de eerste tekst in de link en niet alleen een direct kind. */
+  const knoppen = [...new Set([
+    ...document.querySelectorAll('a[data-vis-uit][href*="test-sample"]'),
+    ...document.querySelectorAll('[data-vis-uit] a[href*="test-sample"], .h-melding-proef a[href*="test-sample"]'),
+  ])];
+  const eersteTekst = (n) => {
+    for (const k of n.childNodes || []) {
+      if (k.nodeType === 3 && k.textContent.trim()) return k;
+      if (k.nodeType === 1 && !(k.matches && k.matches('svg, .sr-only, .visually-hidden'))) { const t = eersteTekst(k); if (t) return t; }
+    }
+    return null;
+  };
+  if (!knoppen.length) return;
+  const d = I18N[pageLang()] || I18N.en;
+  const zet = (stand) => {
+    if (stand !== 'dicht') return;
+    knoppen.forEach((a) => {
+      if (a.dataset.visProefDicht) return;
+      const tekst = eersteTekst(a);
+      if (!tekst) return;
+      const bedrag = (tekst.textContent.match(/€\s?\d+(?:[.,]\d+)?/) || [''])[0];
+      a.dataset.visProefDicht = '1';
+      tekst.textContent = bedrag ? d.proefWacht.replace('{bedrag}', bedrag) : d.proefWachtKaal;
+    });
+  };
+  try {
+    const j = JSON.parse(sessionStorage.getItem(PROEF_STAND_SLEUTEL) || 'null');
+    if (j && typeof j.stand === 'string' && Date.now() - Number(j.at) < 300000) { zet(j.stand); return; }
+  } catch { /* geen opslag: dan vragen */ }
+  if (typeof fetch !== 'function') return;
+  /* levering 119 (18 november 2026, hersteller H9): init() draait bij het eerste laden twee keer (import én astro:page-load),
+     dus vroeg de pagina twee keer; nu delen ze één vraag zolang hij loopt (op de functie zelf). Daarna weer vrij: de vijf minuten
+     staan in sessionStorage. */
+  if (!proefKnoppenStand.vraag) {
+    proefKnoppenStand.vraag = fetch('/api/proef-stand', { headers: { accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!j || typeof j.stand !== 'string') return null;
+        try { sessionStorage.setItem(PROEF_STAND_SLEUTEL, JSON.stringify({ stand: j.stand, at: Date.now() })); } catch { /* alleen nu */ }
+        return j.stand;
+      })
+      .catch(() => null /* de knoppen blijven zoals ze zijn */)
+      .finally(() => { proefKnoppenStand.vraag = null; });
+  }
+  proefKnoppenStand.vraag.then(zet);
+}
+
 export function init() {
   pasKlantstandToe();
+  /* levering 119 (P6-26) */
+  proefKnoppenStand();
   initReveal();
   initSplitLines();
   initCompareDrag();
@@ -2607,6 +2771,57 @@ export function init() {
    VASTE plek (rechts en onder uit de CSS), niet op waar hij op dat moment staat, zodat
    wegschuiven de meting niet verandert. Eén luisteraar voor de hele site; een zachte
    navigatie roept alleen meet() opnieuw aan. */
+/* levering 119 (18 november 2026, proefronde P1-13): ligt er in het vak r een zichtbare regel tekst, of een klikbaar element
+   (ook als alleen zijn rand erin valt)? Loopt de pagina af en slaat elk element over dat r niet raakt (en dan ook zijn
+   kinderen), en wat verborgen is (dicht <details>, sr-only, hidden). Gemeten: gemiddeld ± 1 ms per scroll op een telefoonpagina. */
+function ietsOnder(r, dock, klik) {
+  const raakt = (q) => q.width > 0 && q.height > 0 && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top;
+  let gevonden = false;
+  const loper = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => {
+      if (n.nodeType === 3) return n.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      if (n === dock || n.matches('script, style, svg, [hidden], .sr-only, .visually-hidden, details:not([open]) > :not(summary)')) return NodeFilter.FILTER_REJECT;
+      const cs = getComputedStyle(n);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return NodeFilter.FILTER_REJECT;
+      if (cs.display === 'contents') return NodeFilter.FILTER_SKIP;
+      if (!raakt(n.getBoundingClientRect())) return NodeFilter.FILTER_REJECT;
+      if (n.matches(klik) && cs.pointerEvents !== 'none') { gevonden = true; return NodeFilter.FILTER_ACCEPT; }
+      return NodeFilter.FILTER_SKIP;
+    },
+  });
+  const rg = document.createRange();
+  for (let n = loper.nextNode(); n; n = loper.nextNode()) {
+    if (gevonden) return true;
+    rg.selectNodeContents(n);
+    for (const q of rg.getClientRects()) if (raakt(q)) return true;
+  }
+  return gevonden;
+}
+/* levering 119 (18 november 2026, proefronde P1-13, hersteller H10): ietsOnder() slaat een element over dat het vak niet
+   raakt, en dan ook zijn kinderen. Tekst die absoluut buiten zijn ouder staat (de regel "NON/STD is een conceptmerk" onder de
+   laptop van de opening) viel zo weg, en de knop lag er stilstaand overheen. Hier vragen we de browser wat er op zestien
+   punten van het vak ligt (elementsFromPoint) en kijken we of daar zichtbare tekst in het vak staat. */
+function tekstOpPunten(r, dock) {
+  const raakt = (q) => q.width > 0 && q.height > 0 && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top;
+  const zichtbaar = (el) => { for (let e = el; e && e !== document.documentElement; e = e.parentElement) { const cs = getComputedStyle(e); if (cs.opacity === '0' || cs.visibility === 'hidden' || cs.display === 'none') return false; } return true; };
+  const gezien = new Set();
+  const rg = document.createRange();
+  const xs = [0.1, 0.37, 0.63, 0.9].map((f) => r.left + (r.right - r.left) * f);
+  const ys = [0.1, 0.37, 0.63, 0.9].map((f) => r.top + (r.bottom - r.top) * f);
+  for (const x of xs) for (const y of ys) {
+    for (const el of document.elementsFromPoint(x, y)) {
+      if (el === document.body || el === document.documentElement) break;
+      if (gezien.has(el) || dock.contains(el)) continue;
+      gezien.add(el);
+      for (const n of el.childNodes) {
+        if (n.nodeType !== 3 || !n.textContent.trim()) continue;
+        rg.selectNodeContents(n);
+        if ([...rg.getClientRects()].some(raakt) && zichtbaar(el)) return true;
+      }
+    }
+  }
+  return false;
+}
 let waMeet = null;
 function initWaDock() {
   if (waMeet) { waMeet(); return; }
@@ -2627,13 +2842,31 @@ function initWaDock() {
     const x0 = window.innerWidth - (parseFloat(cs.right) || 0) - w;
     const y0 = window.innerHeight - (parseFloat(cs.bottom) || 0) - h;
     const punten = [[x0 + w / 2, y0 + h / 2], [x0 + 6, y0 + 6], [x0 + w - 6, y0 + 6], [x0 + 6, y0 + h - 6], [x0 + w - 6, y0 + h - 6]];
-    const eronder = punten.some(([x, y]) => document.elementsFromPoint(x, y).some((el) => !dock.contains(el) && el.closest(KLIK) && !el.closest('.wa-dock')));
+    /* levering 119 (18 november 2026, proefronde P1-13): ook TEKST op zijn plek telt, en een link die er maar met een randje
+       in valt. Op de telefoon staat de tekst in het midden en loopt hij tot de rand; de knop lag over "Vaak binnen een dag,
+       soms een paar dagen." en over de 't' van de link "Meer over hoe het werkt" (de vijf punten misten dat randje). */
+    const eronder = punten.some(([x, y]) => document.elementsFromPoint(x, y).some((el) => !dock.contains(el) && el.closest(KLIK) && !el.closest('.wa-dock')))
+      || ietsOnder({ left: x0 - 4, top: y0 - 4, right: x0 + w + 4, bottom: y0 + h + 4 }, dock, KLIK)
+      || tekstOpPunten({ left: x0 - 4, top: y0 - 4, right: x0 + w + 4, bottom: y0 + h + 4 }, dock);
     dock.classList.toggle('is-weg', eronder);
   };
   const plan = () => { if (gepland) return; gepland = true; requestAnimationFrame(() => { gepland = false; try { waMeet(); } catch { /* dan niet */ } }); };
   window.addEventListener('scroll', plan, { passive: true });
   window.addEventListener('resize', plan, { passive: true });
   if (mq.addEventListener) mq.addEventListener('change', plan);
+  /* levering 119 (18 november 2026, proefronde P1-13): tekst die nog binnenkomt (opacity 0, verschoven) telt bij de meting niet;
+     zodra hij binnen is, meet niemand opnieuw tot de volgende scroll, en dan lag de knop stilstaand over tekst. Nu meet de knop
+     opnieuw als een overgang of animatie op de pagina klaar is (een keer per beeld, dus goedkoop). */
+  document.addEventListener('transitionend', plan, true);
+  document.addEventListener('animationend', plan, true);
+  /* Wat met een script beweegt (de laptop in de opening speelt na één scroll op zijn eigen klok, en houdt de pagina zolang
+     stil) geeft geen overgang en geen scroll. Daarom na elke scroll, draai aan het wieltje of veeg nog vier keer meten:
+     na 0,25, 0,7, 1,5 en 3 s; een nieuwe beweging zet de klok opnieuw. */
+  let naTijden = [];
+  const naMeten = () => { naTijden.forEach(clearTimeout); naTijden = [250, 700, 1500, 3000].map((ms) => setTimeout(plan, ms)); };
+  window.addEventListener('scroll', naMeten, { passive: true });
+  window.addEventListener('wheel', naMeten, { passive: true });
+  window.addEventListener('touchend', naMeten, { passive: true });
   waMeet();
 }
 
@@ -2683,6 +2916,25 @@ function initAanvraagKeuze() {
 // given ClientRouter navigation. init() itself is guarded so a runtime error in
 // any sub-init can’t break the rest of the page.
 bindRevealNet();
+/* ── EEN AFGEBROKEN OVERGANG IS GEEN FOUT — levering 119 (18 november 2026, proefronde P9-08) ───────────────────────────
+   "Transition was aborted because of invalid state. ViewTransition opt-in disabled" kwam als scriptfout bij het bestellen en
+   in Studio. Studio zet @view-transition { navigation: auto } aan (studio.css); gaat de klant van Studio naar een pagina
+   zonder die regel (het bestelformulier), of breekt de router een overgang af, dan verwerpt de browser de beloften van de
+   overgang en niemand vangt ze. Er breekt niets; het is ruis in de foutmeldingen. Hier: de beloften van een overgang die
+   deze pagina krijgt afvangen (pageswap, pagereveal), en alleen déze afbreekmelding stil laten. Elke andere fout blijft
+   gewoon zichtbaar. Zie de notities van levering 119 voor het deel in Layout.astro (een regel in <head>, vóór de eerste
+   weergave) en in Studio. */
+const vangOvergang = (e) => {
+  const vt = e && e.viewTransition;
+  if (!vt) return;
+  ['ready', 'finished', 'updateCallbackDone'].forEach((k) => { try { if (vt[k] && typeof vt[k].catch === 'function') vt[k].catch(() => {}); } catch { /* niets */ } });
+};
+window.addEventListener('pageswap', vangOvergang);
+window.addEventListener('pagereveal', vangOvergang);
+window.addEventListener('unhandledrejection', (e) => {
+  const r = e && e.reason;
+  if (r && (r.name === 'AbortError' || r.name === 'InvalidStateError') && /Transition was aborted|ViewTransition|transition was skipped/i.test(String(r.message || ''))) e.preventDefault();
+});
 // Signing in to the gate in Layout.astro's <head>. That script hides 203
 // elements before first paint on the promise that this file will uncover
 // them; this line is the promise being kept, and it is placed immediately

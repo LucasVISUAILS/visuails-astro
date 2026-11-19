@@ -157,7 +157,8 @@ console.log('\n4 · de bestelling namens de klant, met de foto\'s uit WhatsApp')
   ok('de twee foto\'s staan bij de bestelling', bestanden.map((b) => b.filename), ['IMG-20260923-WA0001.jpg', 'IMG-20260923-WA0002.png']);
   ok('  als materiaal van de klant (kind upload), niet als levering', bestanden.every((b) => b.kind === 'upload'), true);
   ok('  en het .exe-bestand is overgeslagen', [...inhoud.keys()].some((k) => /virus/.test(k)), false);
-  ok('  de bytes zijn echt in R2 gezet', [...inhoud.values()].map((v) => v.bytes).sort((a, b) => a - b), [1024, 2048]);
+  /* levering 119 (W2-06): naast de foto's staat nu ook het overzicht voor de betaalmail in R2 (mail-uitgesteld/). */
+  ok('  de bytes zijn echt in R2 gezet', [...inhoud.entries()].filter(([k]) => !k.startsWith('mail-uitgesteld/')).map(([, v]) => v.bytes).sort((a, b) => a - b), [1024, 2048]);
   const log = db.prepare(`SELECT detail FROM admin_log WHERE action = 'order.namens' ORDER BY id DESC LIMIT 1`).get();
   ok('het logboek noemt de foto\'s en wat er is overgeslagen', /met foto's/.test(log?.detail || '') && /virus\.exe/.test(log?.detail || ''), true);
   /* Zonder btw-nummer maar met een KVK-nummer: de bestelling gaat door de poort

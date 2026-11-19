@@ -34,6 +34,9 @@ import KlantKnop from './KlantKnop.astro';
 import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
 import { TELEFOONBEELDEN, telefoonPad } from '../data/telefoonbeelden.js';
 import { localizedPath } from '../i18n/ui.js';
+// levering 118 (17 november 2026, proefronde P6-06, P6-18 en P8-08): drie vaste regels bij "Kies deze look".
+import { AI_REGEL } from '../data/styles.js';
+import { AFTERCARE, voorrangTip } from '../data/pricing.js';
 
 interface Beeld { src: string; alt: string }
 interface Props {
@@ -111,6 +114,11 @@ const rij = blokken.length > 0 && blokken.every((b) => !b.beeld);
    onderdeel, rechts het icoon in src/data/iconen.js. */
 const ICOON = { rechts: 'pijl', terug: 'pijl-links', check: 'vink' } as const;
 const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
+/* levering 118 (17 november 2026, proefronde P6-18, P6-06 en P8-08): onder de knoppen stond alleen de wachtrijregel. Nu ook
+   wat er gebeurt als het tegenvalt (de tevredenheidsregel uit pricing.js), dat beeld en gezichten met AI gemaakt zijn, en
+   voorrang. Voorrang niet bij een look op aanvraag: een stijl die nog ontworpen wordt, kan niet sneller (VOORRANG_COPY.limits). */
+const zin = (t: string) => (/[.!?]$/.test(t) ? t : `${t}.`);
+const slotRegel = [queue, style.slug === 'custom' ? '' : voorrangTip(lang), AFTERCARE[lang], AI_REGEL.look[lang]].filter(Boolean).map(zin).join(' ');
 ---
 <div class:list={['h-pagina', 'h-lk', `h-lk-${dienst}`]} data-achter={`${dienst}-${style.slug}`}>
 
@@ -132,7 +140,9 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
   {/* ── HET EERSTE BEELD ─────────────────────────────────────────────────── */}
   {hero && (
     <section class="h-sec h-lk-held-sec" aria-label={style.name}>
-      <figure class:list={['h-lk-held', 'h-op', paar ? `is-paar paar-${vorm(helden[0])}-${vorm(helden[1])}` : staand(hero) ? 'is-staand' : 'is-liggend']}>
+      {/* levering 118 (17 november 2026, proefronde T1-07): een paar is een schuifstrook; met tabindex en een naam kan het
+          toetsenbord hem met de pijltjes bekijken (de focusrand staat in hal.css). */}
+      <figure class:list={['h-lk-held', 'h-op', paar ? `is-paar paar-${vorm(helden[0])}-${vorm(helden[1])}` : staand(hero) ? 'is-staand' : 'is-liggend']} tabindex={paar ? 0 : undefined} aria-label={paar ? (nl ? 'Voorbeelden. Schuif met de pijltjestoetsen.' : 'Examples. Scroll with the arrow keys.') : undefined}>
         {/* sizes voor een paar, gemeten (levering 66): tot 900 px staan ze in een
             schuifrij, elk 82 % breed (78 tot 79vw gemeten; hal.css, max-width 900px);
             daarboven naast elkaar, de eerste 55vw en vanaf 1440 px 789 px. De oude
@@ -220,7 +230,7 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <ul class="h-feiten" role="list">
           {feiten.map((f) => <li><span>{f}</span></li>)}
         </ul>
-        {queue && <p class="h-lk-queue">{queue}</p>}
+        {slotRegel && <p class="h-lk-queue">{slotRegel}</p>}
         <p class="h-acties k-inkt">
           <a class="h-knop k k-vol" data-rol="doorgaan" href={kies.href}>{kies.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>
           <a class="h-knop k k-lijn" data-rol="doorgaan" href={proef.href} data-vis-uit>{proef.label}<Fragment set:html={rolIkoon('doorgaan')} /></a>

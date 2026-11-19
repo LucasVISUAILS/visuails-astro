@@ -822,7 +822,8 @@ const SIZES = '(max-width: 900px) 284vw, 170vw';
     document.fonts?.ready.then(() => { if (podium.isConnected) meet(); });
     /* levering 77: fonts.ready is al klaar voordat de kopletter gevraagd wordt (een preload telt daar niet
        mee); dus nog één keer meten als VISUAILS Display er echt is */
-    document.fonts?.load?.('700 40px "VISUAILS Display"').then(() => { if (podium.isConnected) meet(); }).catch(() => {});
+    /* levering 121 (19 november 2026, lijst 134): de kopletter is nu VISUAILS Display 2 Medium */
+    document.fonts?.load?.('500 40px "VISUAILS Display 2"').then(() => { if (podium.isConnected) meet(); }).catch(() => {});
     if (still instanceof HTMLImageElement && !still.complete) still.addEventListener('load', () => { if (podium.isConnected) meet(); }, { once: true });
 
     ruim = () => {

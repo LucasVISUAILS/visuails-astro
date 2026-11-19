@@ -230,8 +230,21 @@ const c = nl ? {
   @media (max-width: 760px) {
     .sb { grid-template-columns: minmax(0, 1fr); }
   }
+  /* levering 119 (18 november 2026, proefronde D1-13): op de tablet staat de brief in twee kolommen en was het veld
+     139–186 px breed; de plaatshouder werd "naam@jouwmei". Daar veld en knop onder elkaar, zoals op de telefoon.
+     Gemeten (C3) op 768 px: de rechterkolom is ±311 px (veld 157 + kier 10 + knop 144), dus het veld wordt ±311 px.
+     Vanaf 761 px: daaronder is de brief al één kolom (regel hierboven) en past alles naast elkaar. */
+  /* levering 119 (18 november 2026, proefronde D1-13, hersteller H10): onder elkaar bleef het veld op zijn eigen breedte
+     (233 px) en kwam het in het midden te staan, onder een knop van 302 – 362 px (N5). Nu zijn veld en knop even breed als de
+     kolom en staan ze links, zoals de rest van de brief. */
+  @media (min-width: 761px) and (max-width: 1000px) {
+    .sb-veld { flex-direction: column; align-items: stretch; }
+    .sb-veld input, .sb-veld button { width: 100%; align-self: stretch; box-sizing: border-box; }
+    .sb-veld input { flex: 0 0 auto; }
+  }
   @media (max-width: 420px) {
-    .sb-veld { flex-direction: column; }
-    .sb-veld button { width: 100%; }
+    .sb-veld { flex-direction: column; align-items: stretch; }
+    .sb-veld input, .sb-veld button { width: 100%; align-self: stretch; box-sizing: border-box; }
+    .sb-veld input { flex: 0 0 auto; }
   }
 </style>

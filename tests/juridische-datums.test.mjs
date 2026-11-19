@@ -93,20 +93,32 @@ ok('de zoekterm herkent de oude vorm wél', UITGETYPT.test('Last updated: August
 ok('en de Nederlandse ook', UITGETYPT.test('Laatst bijgewerkt: augustus 2026'), true);
 
 console.log('\n2 · de vorm van de regel');
-/* Lijst 87 (9 november 2026): /terms staat nu op november; de vorm toetsen we op /ai-act, dat oktober bleef. */
-ok('Engels', bijgewerktOp('ai-act', 'en'), 'Last updated: November 2026');
-ok('Nederlands, met een kleine maand', bijgewerktOp('ai-act', 'nl'), 'Laatst bijgewerkt: november 2026');
-ok('met een achtervoegsel', bijgewerktOp('data-processing-agreement', 'en', 'Article 28 GDPR'),
+/* Lijst 87 (9 november 2026): /terms staat nu op november; de vorm toetsen we op /ai-act, dat oktober bleef.
+   levering 118 (17 november 2026, proefronde P6-08): /ai-act staat nu op de dag; de maandvorm toetsen we op het cookiebeleid. */
+/* levering 119 (18 november 2026, proefronde P6-10): ook het cookiebeleid staat nu op de dag, dus geen document heeft
+   nog alleen de maand. De maandvorm toetsen we met een tijdelijke waarde, die we hieronder meteen weer weghalen. */
+LAATST_BIJGEWERKT.__maandproef = '2026-11';
+ok('Engels', bijgewerktOp('__maandproef', 'en'), 'Last updated: November 2026');
+ok('Nederlands, met een kleine maand', bijgewerktOp('__maandproef', 'nl'), 'Laatst bijgewerkt: november 2026');
+/* levering 117: de verwerkersovereenkomst staat op de dag; het achtervoegsel toetsen we op de maandvorm */
+ok('met een achtervoegsel', bijgewerktOp('__maandproef', 'en', 'Article 28 GDPR'),
   'Last updated: November 2026 · Article 28 GDPR');
+delete LAATST_BIJGEWERKT.__maandproef;
+/* levering 119: de verwerkersovereenkomst staat nu op 18 november (P6-14) */
+ok('met de dag (levering 117)', bijgewerktOp('data-processing-agreement', 'en', 'Article 28 GDPR'),
+  'Last updated: 18\u00a0November 2026 · Article 28 GDPR');
 let wierp = false;
 try { bijgewerktOp('bestaat-niet', 'en'); } catch { wierp = true; }
 ok('een onbekend document werpt in plaats van iets leegs te tonen', wierp, true);
 
 const nu = new Date();
 const dezeMaand = `${nu.getFullYear()}-${String(nu.getMonth() + 1).padStart(2, '0')}`;
+/* levering 117 (17 november 2026, P6-01): een waarde mag ook de dag hebben ('JJJJ-MM-DD', zie de kop van
+   juridischeDatums.js); "niet in de toekomst" vergelijkt dan met vandaag, anders met deze maand. */
+const vandaag = `${dezeMaand}-${String(nu.getDate()).padStart(2, '0')}`;
 for (const [doc, maand] of Object.entries(LAATST_BIJGEWERKT)) {
-  ok(`${doc} heeft de vorm JJJJ-MM`, /^\d{4}-(0[1-9]|1[0-2])$/.test(maand), true);
-  ok(`${doc} ligt niet in de toekomst`, maand <= dezeMaand, true);
+  ok(`${doc} heeft de vorm JJJJ-MM of JJJJ-MM-DD`, /^\d{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?$/.test(maand), true);
+  ok(`${doc} ligt niet in de toekomst`, maand.length > 7 ? maand <= vandaag : maand <= dezeMaand, true);
 }
 
 console.log('\n3 · en hij is niet stil verouderd (via git)');

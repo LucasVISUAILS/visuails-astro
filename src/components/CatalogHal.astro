@@ -27,6 +27,8 @@ import {
   ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, reviewClaim,
   TIERS, clause, RESOLUTIE, TEST_SAMPLE, CATALOG_IMAGES, levervlakken,
 } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P8-08): voorrang zichtbaar bij de levertijd. */
+import { voorrangTip } from '../data/pricing.js';
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import { catalogStyles as catalogEn } from '../data/catalogStyles.js';
@@ -81,8 +83,9 @@ const COPY = {
     pil: 'Catalog',
     h1: ['Catalog photos.', 'Every one alike.'],
     lede: `${CATALOG_IMAGES} photos per product: front, back, a detail and one on a model.`,
-    feiten: [`<b>From ${e(floor)}</b> per product · ${ex}`, `<b>From ${CATALOG_IMAGES} photos</b> per product`],
-    wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
+    /* levering 118 (17 november 2026, proefronde P2-12 keuze a): wat één product kost, direct onder het vanaf-bedrag (hersteller H: een spatie vóór de <br>, en ÉÉN in de hoofdletters van de feiten). P8-08: voorrang bij de levertijd. */
+    feiten: [`<b>From ${e(floor)}</b> per product · ${ex} <br>${eenProductRegel('en', ['catalog'])}`, `<b>From ${CATALOG_IMAGES} photos</b> per product`],
+    wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date. ${voorrangTip('en')}`,
     kiesCta: 'Pick your look', prijsCta: 'See the price per product',
     bewijsPil: 'Before and after', bewijsKop: ['Your photo in.', 'A clean catalog image out.'],
     voorLabel: 'Your photo', voorAlt: 'A raw phone photo of a T-shirt on a table before VISUAILS', naAlt: 'The same T-shirt as a clean catalog image after VISUAILS',
@@ -96,7 +99,7 @@ const COPY = {
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'en')}, ready for your shop.`, setMeer: 'More images can be added in the order form.',
     eigenKop: 'Not in there?', eigenCta: 'Request your own look', eigenMeer: 'More about your own look', opAanvraag: 'On request',
     komendKop: 'On the way', komendTag: 'Coming soon',
-    prijsKop: 'What a catalog set costs', prijsRegel: `${eenProductRegel('en', ['catalog'])} The rate applies to every product in the order; all amounts ${ex}.`,
+    prijsKop: 'What a catalog set costs', prijsRegel: `The rate applies to every product in the order; all amounts ${ex}.`,
     merk: ['The on-model shot uses a face from the roster, or ', 'a Brand Model made only for you', '.'],
     staffelCta: 'See all prices by quantity',
     proefKop: ['See it first?', 'One product for'] as [string, string],
@@ -107,8 +110,9 @@ const COPY = {
     pil: 'Catalog',
     h1: ['Catalogfoto’s.', 'Elke keer gelijk.'],
     lede: `${CATALOG_IMAGES} foto’s per product: voorkant, achterkant, een detail en één op een model.`,
-    feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex}`, `<b>Vanaf ${CATALOG_IMAGES} foto’s</b> per product`],
-    wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
+    /* levering 118 (17 november 2026, proefronde P2-12 keuze a en P8-08): zie de Engelse regels. */
+    feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex} <br>${eenProductRegel('nl', ['catalog'], { hoofdletters: true })}`, `<b>Vanaf ${CATALOG_IMAGES} foto’s</b> per product`],
+    wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum. ${voorrangTip('nl')}`,
     kiesCta: 'Kies je look', prijsCta: 'Bekijk de prijs per product',
     bewijsPil: 'Voor en na', bewijsKop: ['Je foto erin.', 'Een catalogfoto eruit.'],
     voorLabel: 'Jouw foto', voorAlt: 'Een ruwe telefoonfoto van een T-shirt op een tafel vóór VISUAILS', naAlt: 'Hetzelfde T-shirt als een strakke catalogfoto na VISUAILS',
@@ -122,7 +126,7 @@ const COPY = {
     setKop: 'Per product', setZin: `${setSize('catalog', CATALOG_IMAGES, 'nl').replace(/^v/, 'V')}, klaar voor je webshop.`, setMeer: 'Meer beelden kies je erbij in het bestelformulier.',
     eigenKop: 'Zit het er niet bij?', eigenCta: 'Vraag een eigen look aan', eigenMeer: 'Meer over een eigen look', opAanvraag: 'Op aanvraag',
     komendKop: 'Komt eraan', komendTag: 'Binnenkort',
-    prijsKop: 'Wat een catalogset kost', prijsRegel: `${eenProductRegel('nl', ['catalog'])} Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}.`,
+    prijsKop: 'Wat een catalogset kost', prijsRegel: `Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}.`,
     merk: ['De foto op model gebruikt een gezicht uit de bibliotheek, of ', 'een merkmodel dat alleen voor jou is', '.'],
     staffelCta: 'Bekijk alle prijzen per aantal',
     proefKop: ['Eerst zien?', 'Één product voor'] as [string, string],
@@ -148,7 +152,9 @@ const eigenVorm = (stand: string) => `<svg class="ik" viewBox="0 0 24 24" aria-h
     <div class="h-open-tekst">
       <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
       <h1 id="cat-h1" class="h-kop h-h1">
-        {c.h1.map((r, i) => <span class="h-regel" style={`--d:${i + 1}`}><span class:list={['h-regel-in', i === 0 && 'l']}>{r}</span></span>)}
+        {/* levering 119 (18 november 2026, proefronde D1-12): een spatie tussen de regels, anders leest de tekst van de kop
+           "Product videosthat move." (zoekmachine, deelkaart, kopiëren); .h-regel is een blok, dus op het scherm verandert niets */}
+        {c.h1.map((r, i) => <>{i > 0 && ' '}<span class="h-regel" style={`--d:${i + 1}`}><span class:list={['h-regel-in', i === 0 && 'l']}>{r}</span></span></>)}
       </h1>
       <p class="h-lede h-op" style="--d:3">{c.lede}</p>
       <p class="h-acties h-op" style="--d:4">

@@ -255,7 +255,8 @@ export async function formaatMail(env, id, { origin = 'https://visuails.com', se
   const n = Number(id);
   if (!Number.isInteger(n) || n <= 0 || typeof sendMail !== 'function' || !mail) return { ok: false };
   const r = await env.DB.prepare(
-    `SELECT fv.formaat, fv.klaar_at, o.id AS order_id, o.ref, o.email, o.name, o.lang
+    /* levering 119 (18 november 2026, proefronde A0-01): ook o.first_name, voor de aanhef. */
+    `SELECT fv.formaat, fv.klaar_at, o.id AS order_id, o.ref, o.email, o.name, o.first_name, o.lang
        FROM formaat_verzoeken fv JOIN orders o ON o.id = fv.order_id WHERE fv.id = ?1`
   ).bind(n).first().catch(() => null);
   if (!r || !r.klaar_at || !r.email || !formaatGeldig(r.formaat)) return { ok: false };
@@ -286,7 +287,7 @@ export async function formaatMail(env, id, { origin = 'https://visuails.com', se
         body: [
           /* Het kenmerk met een woord ervoor, als de aanroeper die helper meegeeft. */
           mail.h1(t.kop(r.formaat), mail.kenmerk ? mail.kenmerk('bestelling', r.ref, lang) : mail.esc(r.ref)),
-          mail.p(mail.greeting(r.name, lang)),
+          mail.p(mail.greeting(r.name, lang, { voornaam: r.first_name })), /* levering 119 (A0-01) */
           mail.p(mail.esc(t.tekst(r.formaat))),
           mail.button(href, knop),
           mail.vragen(lang, r.ref),

@@ -104,3 +104,10 @@ export const PAUZE_MAX_MAANDEN = 3;
  * waarin die persoon voorkomt vervangen voor een nieuw model op onze kosten."*
  * Een richttijd ("meestal"), geen harde termijn. /terms §5 noemt hem in woorden. */
 export const PORTRET_VERVANGEN_WEKEN = 2;
+
+/* ── MERKMODEL: DE EERSTE RICHTINGEN BINNEN N WERKDAGEN — levering 118 (17 november 2026, proefronde P4-09) ──
+ * /custom-models, het formulier, de bevestiging, Studio en de betaalmail noemden geen termijn, en /admin plande een
+ * merkmodel als "af morgen". Dit getal staat nu overal waar de termijn genoemd wordt (Studio, de betaalmail, de pagina's
+ * en de planning in /admin). 3 is het voorbeeld uit het voorstel: Lucas, verander het getal hier als je iets anders
+ * wilt; alle plekken volgen vanzelf. Werkdagen, gerekend vanaf de betaling. */
+export const MERKMODEL_RICHTINGEN_WERKDAGEN = 3;

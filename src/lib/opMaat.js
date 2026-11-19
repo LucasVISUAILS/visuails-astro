@@ -15,11 +15,13 @@
 
 import {
   DIENSTEN, STANDEN, MERK_VELDEN, REF_WAT, BUITEN_VRAGEN, KANALEN, CONTACT, SOORTEN, OMGEVINGEN,
-  MODEL_KEUZE, STAND_GROEPEN, STAND_WIJ, STAND_GRENS, STAND_LOOKS, hoekenVan, CAMERA, PLEKKEN, BINNEN_BUITEN, HOOK_KANALEN, EERSTE_MOMENT,
+  MODEL_KEUZE, STAND_TEKST, STAND_GROEPEN, STAND_WIJ, STAND_GRENS, STAND_LOOKS, hoekenVan, CAMERA, PLEKKEN, BINNEN_BUITEN, HOOK_KANALEN, EERSTE_MOMENT,
   VIDEO_DOELEN, SHOT_SOORTEN, CAMERABEWEGING, TEMPO, SHOTS, MERKMODEL, MAX_EXTRA_FOTOS, LIFESTYLE_LICHT, IDEE, DOELEN,
-  KIJKER_ACTIE, IDEE_VRAGEN, MAX_PERSONEN, VIDEO_OMGEVING, VIDEO_SECONDEN,
+  KIJKER_ACTIE, IDEE_VRAGEN, MAX_PERSONEN, VIDEO_OMGEVING, VIDEO_SECONDEN, DIENST_NAAM,
 } from '../data/opMaat.js';
 import { EDITS, schatting } from '../data/opMaatPrijs.js';
+/* Levering 117 (17 november 2026, proefronde P5-07): de mails tussen versturen en offerte. */
+import { mailAanvraagOntvangen, mailAanvraagAfgerond, kenmerkVan } from './opMaatMail.js';
 
 /* ── kleine gereedschappen ───────────────────────────────────────────────────────────────────────────────── */
 
@@ -245,8 +247,12 @@ export function ontbreekt(dienst, inhoud, merk = {}) {
     if (!i.materiaal) uit.push('materiaal');                 // v4: het materiaal is verplicht
     if (i.idee === 'eigen' && (!i.shots || !i.shots.length)) uit.push('shots');   // bij ons idee maken wij de shotlijst
   }
-  /* Een edit met een eigen tekstveld (de pose van het model, het pose-idee, de plek) is met dat veld al uitgelegd. */
-  const eigen = { 'c-modelpose': i.model && i.model.pose, 'l-pose': i.pose && i.pose.idee, 'l-plek': i.plek && i.plek.tekst,
+  /* Een edit met een eigen tekstveld (de pose van het model, het pose-idee, de plek) is met dat veld al uitgelegd.
+     Levering 117 (17 november 2026, proefronde P5-06): ook "Je moment uitwerken" (l-moment). Die zit in elke
+     lifestyle-aanvraag en heeft geen eigen uitlegveld; het moment in één zin ÍS de uitleg. Zonder deze regel bleef
+     "Nog nodig" altijd staan en was geen enkele lifestyle-aanvraag te versturen. Ontbreekt de zin, dan staat dat al als
+     moment.zin in de lijst, en niet nog een keer als uitleg. */
+  const eigen = { 'l-moment': (i.moment && i.moment.zin) || uit.includes('moment.zin'), 'c-modelpose': i.model && i.model.pose, 'l-pose': i.pose && i.pose.idee, 'l-plek': i.plek && i.plek.tekst,
     'h-tekst': i.tekstOpBeeld && i.tekstOpBeeld.tekst, 'v-tekst': i.tekstInBeeld };
   /* De achtergrond of omgeving heeft zijn eigen veld "beschrijf"; een effen kleur mag ook met alleen de hexcode. */
   const omg = i.omgeving || {};
@@ -276,8 +282,19 @@ export async function bewaarMerk(env, customerId, raw) {
 
 function rij(r) {
   if (!r) return null;
+  /* levering 118 (17 november 2026, proefronde P12-02): `merk` is de kopie van het merkprofiel bij het versturen
+     (migratie 0074); null bij een concept en bij een aanvraag van daarvoor. */
   return { id: r.id, dienst: r.dienst, stand: r.stand, inhoud: leesJson(r.inhoud_json, {}), versie: r.versie, taal: r.taal,
-    gemaaktOp: r.gemaakt_op, bijgewerktOp: r.bijgewerkt_op, verstuurdOp: r.verstuurd_op };
+    gemaaktOp: r.gemaakt_op, bijgewerktOp: r.bijgewerkt_op, verstuurdOp: r.verstuurd_op,
+    merk: r.merk_json ? leesJson(r.merk_json, null) : null };
+}
+
+/** levering 118 (17 november 2026, proefronde P12-02): het merk dat bij deze aanvraag hoort. Een verstuurde aanvraag
+ *  heeft zijn eigen kopie; een concept (of een aanvraag van vóór migratie 0074) het profiel van nu.
+ *  Geeft { merk, kopie } — `kopie` zegt of het de vastgelegde kopie is. */
+export async function merkVanAanvraag(env, aanvraag, customerId) {
+  if (aanvraag && aanvraag.merk && typeof aanvraag.merk === 'object') return { merk: aanvraag.merk, kopie: true };
+  return { merk: await merkVan(env, customerId), kopie: false };
 }
 
 /** Een nieuwe aanvraag, als concept. Heeft de klant al een concept voor deze dienst, dan gaat hij daar verder
@@ -296,10 +313,48 @@ export async function aanvraagVan(env, customerId, id) {
   return rij(await env.DB.prepare('SELECT * FROM maat_aanvragen WHERE id = ? AND customer_id = ?').bind(id, customerId).first());
 }
 
-export async function aanvragenVan(env, customerId) {
-  const { results } = await env.DB.prepare("SELECT * FROM maat_aanvragen WHERE customer_id = ? AND stand != 'gesloten' ORDER BY bijgewerkt_op DESC, id DESC")
-    .bind(customerId).all();
-  return (results || []).map(rij);
+/* levering 118 (17 november 2026, proefronde P5-09): met `ookGesloten` ook de gesloten aanvragen (Studio zet ze onder
+   "Afgerond", in plaats van dat ze zonder bericht verdwijnen), en bij elke aanvraag of de aanbetaling binnen is
+   (`betaald`) en het kenmerk van die bestelling (`ref`). Zonder de offertetabel van 0072/0073 gewoon zonder die twee. */
+export async function aanvragenVan(env, customerId, { ookGesloten = false } = {}) {
+  const waar = ookGesloten ? '' : " AND a.stand != 'gesloten'";
+  let results;
+  try {
+    ({ results } = await env.DB.prepare(`SELECT a.*, o.ref AS order_ref, (o.payment_status = 'paid') AS order_betaald FROM maat_aanvragen a
+      LEFT JOIN maat_offertes f ON f.aanvraag_id = a.id LEFT JOIN orders o ON o.id = f.order_id
+      WHERE a.customer_id = ?${waar} ORDER BY a.bijgewerkt_op DESC, a.id DESC`).bind(customerId).all());
+  } catch {
+    ({ results } = await env.DB.prepare(`SELECT a.* FROM maat_aanvragen a WHERE a.customer_id = ?${waar} ORDER BY a.bijgewerkt_op DESC, a.id DESC`).bind(customerId).all());
+  }
+  return (results || []).map((r) => ({ ...rij(r), betaald: !!r.order_betaald, ref: r.order_ref || null }));
+}
+
+/* ── WAT DE KLANT ZIET PER STAND — levering 118 (17 november 2026, proefronde P5-09) ────────────────────────────
+   Studio zette bij elke stand na het versturen het label "Verstuurd", ook na de aanbetaling. Nu een kort label per stand,
+   met twee standen die alleen de klant ziet: `betaald` (vastgelegd, en de aanbetaling is binnen) en `afgerond`
+   (gesloten na betalen). De zin erbij komt uit STAND_TEKST (src/data/opMaat.js), behalve bij die twee. */
+export const STAND_LABEL = {
+  nl: { concept: 'Concept', verstuurd: 'Verstuurd', voorstel: 'Voorbeeld klaar', akkoord: 'Akkoord', offerte: 'Offerte', vastgelegd: 'Wacht op betaling', betaald: 'Betaald', gesloten: 'Gesloten', afgerond: 'Afgerond' },
+  en: { concept: 'Draft', verstuurd: 'Sent', voorstel: 'Preview ready', akkoord: 'Approved', offerte: 'Quote', vastgelegd: 'Awaiting payment', betaald: 'Paid', gesloten: 'Closed', afgerond: 'Completed' },
+};
+export function klantStand(stand, betaald = false) {
+  if (stand === 'vastgelegd' && betaald) return 'betaald';
+  if (stand === 'gesloten' && betaald) return 'afgerond';
+  return stand;
+}
+/** { label, zin } voor Studio. `ref` is het kenmerk van de bestelling uit de offerte, als die er is. */
+export function standVoorKlant(stand, { betaald = false, ref = '' } = {}, lang = 'nl') {
+  const taal = lang === 'en' ? 'en' : 'nl';
+  const k = klantStand(stand, betaald);
+  const nl = taal === 'nl';
+  const zin = k === 'betaald'
+    ? (nl ? `De aanbetaling is binnen.${ref ? ` Je bestelling ${ref} staat in de planning.` : ''}` : `The deposit is in.${ref ? ` Your order ${ref} is in the schedule.` : ''}`)
+    : k === 'afgerond'
+      ? (nl ? `Deze aanvraag is afgerond.${ref ? ` Je bestelling ${ref} staat bij Bestellingen.` : ''}` : `This request is completed.${ref ? ` Your order ${ref} is under Orders.` : ''}`)
+      : k === 'gesloten'
+        ? (nl ? 'Deze aanvraag is gesloten. Wil je toch verder? Stuur ons een bericht.' : 'This request is closed. Want to carry on after all? Send us a message.')
+        : (STAND_TEKST[taal] || {})[stand] || '';
+  return { stand: k, label: STAND_LABEL[taal][k] || stand, zin };
 }
 
 /** Tussendoor opslaan (g5). Alleen een concept, en alleen als `versie` de laatste is.
@@ -316,16 +371,29 @@ export async function bewaarConcept(env, customerId, id, raw, versie) {
   return { ok: true, aanvraag: rij(r) };
 }
 
-/** Versturen, zonder te betalen (q3). Alleen een volledig concept. */
-export async function verstuur(env, customerId, id) {
+/** Versturen, zonder te betalen (q3). Alleen een volledig concept.
+ *  Levering 117 (17 november 2026, proefronde P5-07): daarna krijgt de klant "We hebben je aanvraag" (src/lib/opMaatMail.js).
+ *  `origin` is de site waar de link in de mail naartoe gaat. Mislukt de mail, dan is de aanvraag toch verstuurd. */
+export async function verstuur(env, customerId, id, { origin } = {}) {
   const nu = await aanvraagVan(env, customerId, id);
   if (!nu) return { ok: false, reden: 'weg' };
   if (nu.stand !== 'concept') return { ok: false, reden: 'stand', aanvraag: nu };
-  const mist = ontbreekt(nu.dienst, nu.inhoud, await merkVan(env, customerId));
+  const merk = await merkVan(env, customerId);
+  const mist = ontbreekt(nu.dienst, nu.inhoud, merk);
   if (mist.length) return { ok: false, reden: 'ontbreekt', ontbreekt: mist, aanvraag: nu };
-  const r = await env.DB.prepare(`UPDATE maat_aanvragen SET stand = 'verstuurd', verstuurd_op = datetime('now'), bijgewerkt_op = datetime('now')
+  let r = await env.DB.prepare(`UPDATE maat_aanvragen SET stand = 'verstuurd', verstuurd_op = datetime('now'), bijgewerkt_op = datetime('now')
     WHERE id = ? AND customer_id = ? AND stand = 'concept' RETURNING *`).bind(id, customerId).first();
-  return r ? { ok: true, aanvraag: rij(r) } : { ok: false, reden: 'stand', aanvraag: await aanvraagVan(env, customerId, id) };
+  if (!r) return { ok: false, reden: 'stand', aanvraag: await aanvraagVan(env, customerId, id) };
+  /* levering 118 (17 november 2026, proefronde P12-02): een kopie van het merkprofiel bij de aanvraag, zodat een later
+     aangepast merkblok (een bureau met een tweede klantmerk) deze aanvraag niet meer verandert. Zonder migratie 0074
+     blijft de aanvraag gewoon verstuurd; dan toont /admin het profiel van nu, zoals voorheen. */
+  try {
+    const m = await env.DB.prepare('UPDATE maat_aanvragen SET merk_json = ? WHERE id = ? AND customer_id = ? RETURNING *')
+      .bind(JSON.stringify(normaliseerMerk(merk)), id, customerId).first();
+    if (m) r = m;
+  } catch (e) { console.error('[opMaat] merk niet bij de aanvraag gezet (migratie 0074?)', e && e.message); }
+  const gemaild = await mailAanvraagOntvangen(env, id, { origin });
+  return { ok: true, aanvraag: rij(r), gemaild };
 }
 
 /** De studio zet de stand verder (vanuit /admin): verstuurd → voorstel → (klant: akkoord) → offerte → vastgelegd. */
@@ -333,13 +401,21 @@ export async function verstuur(env, customerId, id) {
    (src/lib/opMaatOfferte.js: mailen, akkoord met de bestelling), zodat er altijd een offerte en een bestelling achter
    staan; een gemailde offerte kan wel terug naar `akkoord` om hem opnieuw te maken (15 november 2026). */
 export const STUDIO_MAG = { verstuurd: ['voorstel', 'gesloten'], voorstel: ['verstuurd', 'gesloten'], akkoord: ['voorstel', 'gesloten'], offerte: ['akkoord', 'gesloten'], vastgelegd: ['gesloten'], concept: ['gesloten'] };
-export async function zetStand(env, id, naar) {
+export async function zetStand(env, id, naar, { origin } = {}) {
   if (!STANDEN.includes(naar)) return { ok: false, reden: 'stand' };
   const nu = await env.DB.prepare('SELECT stand FROM maat_aanvragen WHERE id = ?').bind(id).first();
   if (!nu) return { ok: false, reden: 'weg' };
   if (!(STUDIO_MAG[nu.stand] || []).includes(naar)) return { ok: false, reden: 'stand' };
   await env.DB.prepare("UPDATE maat_aanvragen SET stand = ?, bijgewerkt_op = datetime('now') WHERE id = ?").bind(naar, id).run();
-  return { ok: true };
+  /* levering 118 (17 november 2026, proefronde P5-09): sluit de studio een aanvraag waarvan de aanbetaling binnen is,
+     dan hoort de klant dat; zonder bericht verdween hij uit Studio. Mislukt de mail, dan is de stand toch gezet. */
+  let gemaild = false;
+  if (naar === 'gesloten') {
+    const b = await env.DB.prepare(`SELECT o.ref FROM maat_offertes f JOIN orders o ON o.id = f.order_id
+      WHERE f.aanvraag_id = ? AND o.payment_status = 'paid'`).bind(id).first().catch(() => null);
+    if (b) gemaild = await mailAanvraagAfgerond(env, id, b.ref, { origin });
+  }
+  return { ok: true, gemaild };
 }
 
 /** Een besluit van de klant op het concept-bord (g7): per foto of op het hele concept goed of aanpassen, met datum.
@@ -404,4 +480,31 @@ export async function verwijderConcept(env, customerId, id) {
   if (env.UPLOADS && refs.length) { try { await env.UPLOADS.delete(refs.map((r) => r.r2Key)); } catch (e) { console.error('[opMaat] R2', e && e.message); } }
   await env.DB.prepare('DELETE FROM maat_aanvragen WHERE id = ? AND customer_id = ?').bind(id, customerId).run();
   return { ok: true };
+}
+
+/* ── NU TE DOEN IN STUDIO — levering 117 (17 november 2026, proefronde P5-07) ──────────────────────────────
+   Het Studio-overzicht noemde een klaarstaand voorbeeld niet: de klant zag alleen zijn bestellingen. Nu een regel per
+   aanvraag waar de klant aan zet is: een voorbeeld (stand `voorstel`) of een offerte (stand `offerte`). Dezelfde vorm
+   als "En nog 1 bestelling" in src/pages/account/index.astro (ref, zin, href), plus de tekst van de knop.
+   Zonder de tabellen van 0071 (een oude database) gewoon een lege lijst. */
+const AAN_ZET = {
+  voorstel: { anker: '#om-ronde', nl: ['je voorbeeld staat klaar. Zeg wat goed is en wat anders moet.', 'Bekijk het voorbeeld'], en: ['your preview is ready. Tell us what works and what should change.', 'View the preview'] },
+  offerte: { anker: '#om-offerte', nl: ['je offerte staat klaar. Geef akkoord of vraag een aanpassing.', 'Bekijk de offerte'], en: ['your quote is ready. Accept it or ask for a change.', 'View the quote'] },
+};
+export async function opMaatAanZet(env, customerId, lang = 'nl') {
+  const taal = lang === 'en' ? 'en' : 'nl';
+  try {
+    const { results } = await env.DB.prepare("SELECT id, dienst, stand FROM maat_aanvragen WHERE customer_id = ? AND stand IN ('voorstel', 'offerte') ORDER BY bijgewerkt_op DESC, id DESC LIMIT 3")
+      .bind(customerId).all();
+    const uit = [];
+    for (const a of results || []) {
+      const z = AAN_ZET[a.stand];
+      if (!z) continue;
+      const dienst = (DIENST_NAAM[taal] || {})[a.dienst] || a.dienst;
+      uit.push({ id: a.id, ref: kenmerkVan(a.id), zin: `${dienst}: ${z[taal][0]}`, knop: z[taal][1], href: `/account/op-maat?id=${a.id}${z.anker}` });
+    }
+    return uit;
+  } catch {
+    return [];
+  }
 }

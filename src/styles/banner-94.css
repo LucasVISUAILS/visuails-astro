@@ -4,12 +4,15 @@
 
    DE MATEN (uitgerekend, niet op het oog):
    - de rand: 3,3 vw (48 px op 1440), nooit minder dan 20 px. Breder dan de rest van de site (1080), zoals Lucas vroeg.
-   - de kop: VISUAILS Display 700, zo groot dat de langste regel zijn kolom vult (zie .b94-kop), hoogstens 96 px.
+   - de kop: sinds levering 120 (19 november 2026) één titel in VISUAILS Display 2 Light met een beschrijving; zie
+     "LEVERING 120" hieronder. Wat hieronder over de kop van levering 94 – 114 staat, is geschiedenis.
    - het witte vlak rechtsonder: clamp(320px, 27vw, 400px) breed, 22 px binnenrand, hoeken 18 px (zoals de bovenbalk).
      Tekst 15 px (de stap, de zin), de nummers en het hoekje 12 px mono, de zin van de stap 13,5 px.
    - onderaan 3,6 vw (52 px op 1440), nooit minder dan 24 px.
    ═══════════════════════════════════════════════════════════════════════════ */
 .b94 {
+  /* levering 120: de hoogte van de bovenbalk met zijn rand (balk-99.css), zoals de margin-top hieronder */
+  --b94-balk: calc(var(--b99-rand, 12px) + env(safe-area-inset-top, 0px) + var(--b99-hoog, 60px));
   --b94-rand: max(20px, 3.3vw);
   --b94-onder: max(24px, 3.6vw);
   --b94-paneel: clamp(320px, 27vw, 400px);
@@ -18,65 +21,21 @@
   height: 100svh; min-height: 600px; max-height: 1200px;
   background: var(--h-grond, #FFFFFF);
 }
-.b94-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 /* Levering 113 (Lucas, 16 november 20:30: "Er zit nu een witte balk achter de top bar. De video mag dit helemaal vullen"):
    de banner schuift omhoog tot de bovenrand, achter de zwevende balk. Precies zo ver als de balk hoog is (balk-99.css: de
    rand boven de balk, de veilige zone van de telefoon en de balk zelf), dus de rest van de pagina blijft waar hij was. */
 html body.hal .h-voor > .b94 { margin-top: calc(-1 * (var(--b99-rand, 12px) + env(safe-area-inset-top, 0px) + var(--b99-hoog, 60px))); }
-.b94-beeld { position: absolute; inset: 0; overflow: hidden; isolation: isolate; background: var(--h-grond, #FFFFFF); }
-.b94-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; z-index: 0; }
-/* lijst 114 (V1): het basisvlak tekent de video in hetzelfde moment als de letters; de video-tag speelt dan onzichtbaar */
-.b94-basis { position: absolute; inset: 0; width: 100%; height: 100%; display: none; z-index: 0; }
-.b94.b94-aan.b94-sync:not(.b94-geen) .b94-basis { display: block; }
-.b94.b94-aan.b94-sync:not(.b94-geen) .b94-video { opacity: 0; }
-
-/* de twee lagen van de kop: het gat en de vulling (zie de kop van HalBanner94.astro) */
-.b94-laag { position: absolute; inset: 0; z-index: 1; isolation: isolate; pointer-events: none; }
-.b94-gat { mix-blend-mode: multiply; }
-.b94-gat .b94-tekst { background: #FFFFFF; color: #000000; }
-.b94-vul { mix-blend-mode: screen; background: #000000; }
-.b94-vul .b94-tekst { background: #000000; color: #FFFFFF; mix-blend-mode: multiply; }
-.b94-effect { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.b94-effect.b94-svg { filter: url(#b94-neg); }
-/* levering 114: met WebGL tekent het effect de letters zelf, met de telefoon ervoor (HalBanner94.astro); de twee lagen staan
-   dan onzichtbaar (de h1 blijft er voor een schermlezer), het effect ligt gewoon over het basisvlak */
-.b94.b94-gl.b94-aan:not(.b94-geen) .b94-tekst { opacity: 0; }
-.b94.b94-gl.b94-aan:not(.b94-geen) .b94-vul { mix-blend-mode: normal; background: none; }
-.b94.b94-gl.b94-aan:not(.b94-geen) .b94-gat { mix-blend-mode: normal; }
-/* zonder script (of zonder video): de kop gewoon in inkt, geen vulling */
-.b94:not(.b94-aan) .b94-vul, .b94.b94-geen .b94-vul { display: none; }
-.b94:not(.b94-aan) .b94-gat, .b94.b94-geen .b94-gat { mix-blend-mode: normal; }
-.b94:not(.b94-aan) .b94-gat .b94-tekst, .b94.b94-geen .b94-gat .b94-tekst { background: none; color: var(--h-inkt, #090D0B); }
-
-.b94-tekst { position: absolute; inset: 0; }
-/* Levering 110 (lijst 119 tot 122): de kop in VISUAILS Display Blok (docs/letter/bron/blok.py). Opbouw b: een kleine
-   aanloop ("We make your brand") en één grote regel ("impossible to ignore") die de kolom precies vult: de grote regel is
-   --b94-em breed (gemeten in Chromium op 16 november 2026, met 1 % speling). Hoogstens 200 px (telefoon 80 px) in plaats
-   van 96, zodat de kop groot is; de kop bedekt hoogstens 15 % van de video (tests/banner-kop-110-browser.test.mjs).
-   Geen interpunctie in de titel (lijst 122, Q3 a). Was (13 november) de langste van twee gelijke regels, 11,06 / 11,33. */
-@font-face { font-family: 'VISUAILS Display Blok'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplayBlok-Bold.woff2) format('woff2'); }
-.b94 { --b94-em: 13.84; --b94-max: 200px; }
-html[lang="en"] .b94 { --b94-em: 10.64; }   /* levering 114: "Jouw modemerk / verdient gezien te worden" en "Your fashion brand / deserves to be seen", gemeten 13,708 en 10,530 em, plus 1 % */
-/* ── LEVERING 114 (Lucas, 17 november 00:46, kive.ai als voorbeeld voor de indeling): de kop gecentreerd op de video, de
-   knoppen eronder, de stappen als compacte balk onderaan in het midden.
-   De maten:
-   - de kolom van de kop: 66,7 vw (960 op 1440, 1280 op 1920), hoogstens 1100 px; de grote regel vult hem (--b94-em);
-   - de kop staat met zijn onderkant op 50 % van de banner;
-   - de balk: zo breed als zijn inhoud, hoogstens de banner min twee randen; links de stappen (de namen 15 px, de nummers
-     12 px mono, de zin eronder 13,5 px), rechts achter een haarlijn de knoppen; hoeken 18 px; onderaan 32 px (of hoger
-     als de cookiebalk er staat). Past hij niet naast elkaar (onder 1240 breed), dan staan de knoppen onder de stappen. ── */
-.b94-kopvak {
-  position: absolute; left: 50%; bottom: 50%; transform: translateX(-50%);
-  width: min(1100px, 66.7vw, calc(100% - 2 * var(--b94-rand)));
-  container-type: inline-size; min-width: 0;
+.b94-beeld { position: absolute; inset: 0; overflow: hidden; isolation: isolate; background: var(--h-grond, #FFFFFF); container-type: size; }
+/* LEVERING 120 (19 november 2026, lijst 132): "het telefoonstuk (en de video) beter gecentreerd, want de bovenbalk zit in de
+   weg". Het midden van de video ligt nu in het midden van het vrije stuk onder de bovenbalk: een halve balk (36 px op een
+   breed scherm) lager dan het midden van de banner. Zonder rand: de video is minstens de banner plus één balk hoog (dan
+   valt hij boven en onder even ver buiten de banner) en nooit lager dan zijn eigen 16 : 9 over de hele breedte (cover vult
+   de rest). Op een breed scherm is de banner daarvoor een balk lager dan de video (zie de hoogte hieronder), zodat de video
+   precies op zijn eigen maat staat: niet vergroot, alleen onderaan een balk (en 10 px speling) afgesneden. */
+.b94-video {
+  position: absolute; left: 0; right: auto; bottom: auto; top: calc(50% + var(--b94-balk) / 2); transform: translateY(-50%);
+  width: 100%; height: max(calc(100% + var(--b94-balk)), 56.25cqw); object-fit: cover; display: block; z-index: 0;
 }
-.b94-kop {
-  margin: 0; font: 700 min(var(--b94-max), calc(100cqw / var(--b94-em)))/.92 'VISUAILS Display Blok', var(--h-kopletter); text-transform: uppercase; letter-spacing: 0;
-  text-align: center;
-}
-.b94-kop > span { display: block; white-space: nowrap; width: max-content; margin-inline: auto; }
-.b94-deel { display: inline; }
-.b94-kop .b94-aanloop { font-size: .42em; margin-bottom: .12em; }   /* de aanloop: 42 % van de grote regel */
 
 /* de knoppen: rechts in de balk (Lucas, 01:01: onder de kop zaten ze de telefoon in de weg). De €1-proef is een lijnknop. */
 .b94-actie { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; display: flex; align-items: center; padding: 6px 0 0 18px; border-left: 1px solid rgba(9, 13, 11, .1); }
@@ -87,7 +46,8 @@ html[lang="en"] .b94 { --b94-em: 10.64; }   /* levering 114: "Jouw modemerk / ve
 /* ── de balk met de stappen (lijst 94, A2 a: alles wat je moet lezen in inkt op wit, nu compact) ── */
 .b94-paneel {
   /* de cookiebalk (levering 97, --b94-cc) duwt de balk omhoog, maar nooit tegen de kop aan: de balk (± 104 hoog, smal
-     ± 170) blijft 24 px onder de kop (die eindigt op 50 %), dus hoogstens 50 % - 200 px van de onderkant */
+     ± 170) blijft 24 px onder de kop (die eindigt op 50 %), dus hoogstens 50 % - 200 px van de onderkant.
+     levering 120: op een breed scherm staat de balk in het raster van de banner (zie "LEVERING 120" hieronder) */
   position: absolute; z-index: 3; left: 50%; bottom: max(32px, min(var(--b94-cc, 0px), 50% - 200px)); transform: translateX(-50%);
   width: max-content; max-width: calc(100% - 2 * var(--b94-rand)); box-sizing: border-box;
   display: grid; grid-template-columns: auto auto; column-gap: 18px; row-gap: 4px; padding: 6px 14px 12px;
@@ -141,35 +101,40 @@ html[lang="en"] .b94 { --b94-em: 10.64; }   /* levering 114: "Jouw modemerk / ve
 html.b94-boven body.hal .site-header { background: transparent !important; box-shadow: none !important; }
 /* De WhatsApp-knop (rechtsonder, 20 px van de rand, 52 px) viel op een breed scherm over de hoek van het witte vlak. Hij
    blijft altijd staan (tests/telefoon-58); het vlak en de kop staan daarom op een breed scherm hoger: 92 px van de onderkant
-   (20 + 52 + 20). */
-@media (min-width: 761px) {
-  .b94 { min-height: 640px; }   /* levering 114: de kop, de knoppen en de balk passen in 640 (de kop begint onder de bovenbalk) */
+   (20 + 52 + 20).
+   levering 120: "een breed scherm" begint nu op 1100 px (was 761): daaronder past de kop niet naast de telefoon en staat hij
+   op de grond onder de video, net als op de telefoon (zie "LEVERING 120"). */
+@media (min-width: 1100px) {
+  /* levering 114: de kop, de knoppen en de balk passen in 640 (de kop begint onder de bovenbalk). Levering 120: 600 (gemeten
+     op 1100 × 600: de kop links, de balk met de knoppen eronder, 24 px ertussen) */
+  .b94 { min-height: 600px; }
   /* Levering 113 (Lucas, 16 november 21:07: "hoeft niet het hele scherm te vullen en mag aan de onderkant al wat wit laten
      zien ... volledig op de website plaatsen en niet hoeft in te zoomen"): de banner is nooit hoger dan de video zelf
      (16 : 9 over de hele breedte), dus de video staat er in zijn geheel. Is het venster hoger, dan zie je onderaan de
-     grond. Alleen onder 1138 breed (640 hoog) snijdt hij nog een strookje af. */
-  .b94 { height: min(100svh, 56.25vw); max-height: none; }
+     grond. Alleen onder 1138 breed (640 hoog) snijdt hij nog een strookje af.
+     Levering 120 (lijst 132, het midden onder de bovenbalk): de banner is een balk lager dan de video (en 10 px, de breedte
+     van een schuifbalk onder Windows: vw telt die mee, de banner niet). Dan past de video met zijn midden onder de balk
+     zonder vergroting; gemeten: 1440 × 900 → 728 hoog, 1920 × 1080 → 998, 1280 × 800 → 638 (de ondergrens 600 niet nodig). */
+  .b94 { height: max(600px, min(100svh, 56.25vw - var(--b94-balk) - 10px)); max-height: none; }
 }
 
-@media (min-width: 761px) and (max-width: 1240px) {
+@media (min-width: 1100px) and (max-width: 1240px) {
   .b94-paneel { grid-template-columns: auto; }
   .b94-actie { grid-column: 1; grid-row: 3; justify-content: center; padding: 12px 0 2px; margin-top: 6px; border-left: 0; border-top: 1px solid rgba(9, 13, 11, .1); }
 }
-/* telefoon en smal: eerst het beeld met de kop in het midden, dan de stappen en de knoppen op de grond */
-@media (max-width: 760px) {
+/* smal (de telefoon, en sinds levering 120 alles onder 1100): eerst het beeld, dan de kop, de stappen en de knoppen op de grond */
+@media (max-width: 1099.98px) {
   .b94 { height: auto; min-height: 0; max-height: none; display: flex; flex-direction: column; }
-  .b94-beeld { position: relative; inset: auto; height: max(380px, 62svh); }
-  .b94 { --b94-max: 80px; }
-  /* de lange grote regel (Nederlands) op twee regels: de kolom past op "VERDIENT GEZIEN" (gemeten 8,153 em, plus 1 %) */
-  html[lang="nl"] .b94:has(.b94-breekt) { --b94-em: 8.24; }
-  .b94-kop .b94-groot.b94-breekt { white-space: normal; }
-  .b94-groot.b94-breekt .b94-deel { display: block; width: max-content; margin-inline: auto; }
-  .b94-kopvak { width: calc(100% - 2 * var(--b94-rand)); bottom: auto; top: 50%; transform: translate(-50%, -50%); }
+  .b94-beeld { position: relative; inset: auto; height: max(380px, min(56.25vw, 70svh)); }
   /* op de grond, geen wit vlak nodig: de stappen, de zin, dan de knoppen */
   .b94-paneel { position: static; transform: none; width: auto; max-width: none; grid-template-columns: minmax(0, 1fr); margin: 12px var(--b94-rand) 40px; padding: 0; background: none; box-shadow: none; border-radius: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .b94-rij { justify-content: center; }
   .b94-ga { color: var(--h-inkt-3, #5E6461); }   /* op de witte grond haalt grijs 5,9 : 1 */
   .b94-bj { background: var(--h-lijn, #E7EAE8); }
   .b94-actie { grid-column: 1; grid-row: 3; align-self: auto; display: block; padding: 0; margin: 20px 0 0; border: 0; }
+}
+@media (max-width: 760px) {
+  .b94-beeld { height: max(380px, 62svh); }
   /* op de telefoon past een naam niet naast vier andere: alleen de nummers, de naam staat in de zin eronder */
   .b94-stappen { flex: 1; justify-content: space-between; }
   .b94-st { flex: 1; }
@@ -178,8 +143,63 @@ html.b94-boven body.hal .site-header { background: transparent !important; box-s
   .b94-bj { margin: 0 4px; }
   .b94-uitleg { text-wrap: pretty; }
 }
-/* de kop in 700: de algemene regel voor h1 in de hal (gewicht 450) won van het font hierboven (letter-77 mat 450) */
-html body.hal .b94 .b94-kop { font-weight: 700; }
+
+/* ═══ LEVERING 120 (19 november 2026, lijst 130 en 132) · DE KOP OP DE VIDEO ═══════════════════════════════════════════════
+   Lucas koos één titel in één maat, met een korte beschrijving eronder, in een dunne letter (VISUAILS Display 2 Light, 300:
+   DM Sans Light met de a met de driehoek, vierkante punten en één zachte hoek linksboven; docs/letter/bron/familie2.py), de
+   beschrijving in DM Sans. Geen waas over de video: de kleur van de tekst volgt de video (--b94-kleur, het script in
+   HalBanner94.astro): sinds ronde 2 (lijst 133) kiest de kop zelf inkt of wit uit het licht erachter (kopPlan, banner94.js).
+   WAAR (gemeten met ffmpeg, alle 102 beelden van de eerste scène, alles donkerder dan 235): de telefoon met de hand staat
+   van 37,76 % tot 79 % van de breedte en van 10,2 % tot onderaan. Een kop in het midden staat er dus altijd overheen, en
+   zwarte letters op een zwarte telefoon lees je niet. Daarom staat de kop links naast de telefoon, verticaal in het midden
+   van het vrije stuk tussen de bovenbalk en de balk met de stappen:
+   - de kolom loopt van de rand (3,3 vw) tot 24 px voor de telefoon. De telefoon staat op 37,76 % van de getekende video;
+     die is max(de banner, (de banner + de balk) × 16/9) breed en staat in het midden, dus de linkerkant van de telefoon ligt
+     op 50 % − 12,24 % × de getekende breedte (--b94-vb);
+   - de titel is zo groot dat zijn langste regel in die kolom past (Engels "Your brand’s visual", 7,58 em in VISUAILS Display 2
+     Light, plus speling: 7,7), hoogstens 76 px: 1280 → 54 px, 1440 → 61 px, 1920 → 76 px (gemeten: zie notities-K.md);
+   - de beschrijving 17 – 20 px (1,25 vw), hoogstens 36 em en nooit breder dan de kolom.
+   Onder 1100 px past de titel daar niet meer op minstens 40 px (1024 → 39); dan staat de kop op de grond onder de video, in
+   inkt, gecentreerd: op de telefoon hoogstens 40 px, zo groot als op twee regels past. ════════════════════════════════════ */
+@font-face { font-family: 'VISUAILS Display 2'; font-style: normal; font-weight: 300; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay2-Light.woff2) format('woff2'); }
+/* :not(#k): de algemene regels voor koppen en alinea’s in de hal zijn zwaar. De breedte van een alinea zet hal.css met
+   max-width: var(--h-maat) !important (.hal main p:not(…)), en dit bestand staat in een laag (@layer basis): daarom zet de
+   zin zijn eigen --h-maat (zoals .g8-zin in galerij-80.css) */
+html body.hal .b94 .b94-kop:not(#k) {
+  margin: 0; font: 300 var(--b94-titel, 40px)/1.06 'VISUAILS Display 2', var(--h-letter); letter-spacing: -.01em;
+  text-transform: none; text-wrap: balance; color: inherit;
+}
+html body.hal .b94 .b94-zin:not(#k) {
+  --h-maat: min(36em, 100%); margin: .9em 0 0; max-width: min(36em, 100%); font: 400 var(--b94-zinmaat, 17px)/1.5 var(--h-letter); letter-spacing: 0;
+  text-wrap: pretty; color: inherit;
+}
+/* de kleur: op de video die van het script (zonder script inkt: dan staat de witte poster er), op de grond inkt */
+.b94-kopvak { position: relative; z-index: 2; color: var(--b94-kleur, var(--h-inkt, #090D0B)); }
+/* ronde 2 (lijst 133): een wissel tijdens het spelen loopt zacht over (0,35 s); na een sprong meteen (b94-meteen, het script) */
+.b94-kopvak { transition: color .35s ease-in-out; }
+.b94.b94-meteen .b94-kopvak { transition: none; }
+@media (prefers-reduced-motion: reduce) { .b94-kopvak { transition: none; } }
+@media (min-width: 1100px) {
+  /* het raster: de balk (vrij), de kop (in het midden van wat overblijft), de balk met de stappen; de video ligt erachter */
+  .b94 {
+    container-type: size; display: grid; grid-template-rows: var(--b94-balk) minmax(0, 1fr) auto;
+    --b94-vb: max(100cqw, (100cqh + var(--b94-balk)) * 16 / 9);
+    --b94-kol: calc(50cqw - .1224 * var(--b94-vb) - var(--b94-rand) - 24px);
+  }
+  .b94-kopvak { grid-row: 2; align-self: center; justify-self: start; margin: 24px 0 24px var(--b94-rand); width: var(--b94-kol); }
+  .b94-kopvak { --b94-titel: min(76px, var(--b94-kol) / 7.7); --b94-zinmaat: clamp(17px, 1.25vw, 20px); }
+  /* de balk met de stappen in het raster in plaats van los onderaan (zelfde plek: 32 px van de onderkant, of hoger als de
+     cookiebalk er staat, nooit hoger dan 50 % − 200 px) */
+  .b94-paneel { grid-row: 3; position: relative; left: auto; bottom: auto; transform: none; justify-self: center; margin: 0 0 max(32px, min(var(--b94-cc, 0px), 50cqh - 200px)); }
+}
+@media (max-width: 1099.98px) {
+  .b94-kopvak { color: var(--h-inkt, #090D0B); margin: 24px var(--b94-rand) 8px; text-align: center; }
+  .b94-kopvak { --b94-titel: clamp(18px, (100vw - 2 * var(--b94-rand)) / 7.7, 52px); }
+  html body.hal .b94 .b94-zin:not(#k) { margin-inline: auto; }
+}
+@media (max-width: 760px) {
+  .b94-kopvak { --b94-titel: clamp(18px, (100vw - 2 * var(--b94-rand)) / 7.7, 40px); margin-top: 20px; }
+}
 /* hoog contrast: geen glas, ook bovenaan niet (zoals hal.css) */
 @media (prefers-contrast: more) {
   html.b94-boven body.hal .site-header { background: var(--h-grond, #FFFFFF) !important; }

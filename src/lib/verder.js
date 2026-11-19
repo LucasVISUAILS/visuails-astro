@@ -19,6 +19,8 @@
  * pagina laden dit bestand allemaal.
  */
 import { turnaround, voorrangZin, heeftVoorrang } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde L-16): voorrang loopt vanaf betaald én foto's compleet. */
+import { voorrangVanaf } from './fotosCompleet.js';
 import { esc, p as mailP, datum as mailDatum, C as MAILKLEUR, tekstLink as mailLink } from './mailTemplate.js';
 
 /* De levertijdzin uit pricing.js, als bijzin: "zo snel mogelijk (vaak binnen
@@ -104,7 +106,12 @@ export function leveringVan(order = {}) {
   const o = order || {};
   if (o.window_start) return { soort: 'datum', van: String(o.window_start), tot: String(o.window_end || o.window_start) };
   /* Met de betaaldatum, als die er is: dan noemt de regel de echte dag (doorloop 90, B11). */
-  if (heeftVoorrang(o.details && typeof o.details === 'object' ? o.details : o)) return o.paid_at ? { soort: 'voorrang', betaald: String(o.paid_at) } : { soort: 'voorrang' };
+  /* levering 118 (L-16): de dag telt vanaf het latere van betaald en foto's compleet; ontbreken er nog foto's, dan de
+     regel zonder dag (de betaalmail noemt dan wat er ontbreekt). */
+  if (heeftVoorrang(o.details && typeof o.details === 'object' ? o.details : o)) {
+    const start = o.paid_at ? voorrangVanaf({ paid_at: o.paid_at, details_json: o.details && typeof o.details === 'object' ? o.details : o.details_json }) : null;
+    return start ? { soort: 'voorrang', betaald: String(start) } : { soort: 'voorrang' };
+  }
   if (o.tier === 'attended') return { soort: 'datum-volgt' };
   return { soort: 'zsm' };
 }

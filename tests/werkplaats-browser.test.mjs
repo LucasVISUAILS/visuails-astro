@@ -49,7 +49,9 @@ for (const p of ['nl/start/catalog/index.html', 'start/catalog/index.html', 'nl/
   ok(`/${p.replace('index.html', '')}: geen topbalk, lade of voet van de site`, !/class="site-header/.test(h) && !/class="mobile-nav/.test(h) && !/class="site-footer/.test(h));
   ok('  wel de balk van de werkplaats en body.werkplaats', /class="wk-balk"/.test(h) && /<body class="[^"]*\bwerkplaats\b/.test(h));
   const blokken = [...h.matchAll(/data-wk-blok="([a-z]+)"/g)].map((m) => m[1]);
-  ok('  vier blokken in de goede volgorde', JSON.stringify(blokken) === JSON.stringify(['stijl', 'aantal', 'gezicht', 'levering']), blokken.join(','));
+  /* levering 118 (17 november 2026, P1-06): de verhouding is een eigen blok in stap 1 (05 "Welke verhouding?"), na de levering;
+     het staat alleen tot 900 px in beeld, daarboven staat de keuze in "Wat je krijgt". */
+  ok('  vijf blokken in de goede volgorde', JSON.stringify(blokken) === JSON.stringify(['stijl', 'aantal', 'gezicht', 'levering', 'vorm']), blokken.join(','));
   ok('  geen "Meer opties", geen doorlooptijden, geen blokken onder het formulier', !/data-pl-meeropties/.test(h) && !/class="pl-levels/.test(h) && !/of-gelijk/.test(h) && !/of-slot/.test(h));
   ok('  het inlogblok bovenaan is een regel onder Verder', /class="wk-inloggen(?: h-1[rk])?" data-acct="out"/.test(h));  // levering 87: een korte zin krijgt h-1r
 }
@@ -183,7 +185,9 @@ try {
     ok('  Esc sluit het paneel', !(await zicht(page, '[data-wk-paneel]')) && (await page.evaluate(() => document.activeElement?.dataset.wkKleur)) === 'worn');
 
     /* De vorm en een extra hoek. */
-    await page.click('[data-wk-vorm="portrait45"]');
+    /* levering 118 (17 november 2026, P1-06): de vormknoppen staan er twee keer (het blok in stap 1 en "Wat je krijgt");
+       op 1440 is alleen die in "Wat je krijgt" zichtbaar. */
+    await page.click('[data-wk-vorm="portrait45"]:visible');
     ok('de vorm 4:5 zet het veld ratio', (await veld(page, 'ratio')) === 'portrait45' && (await page.getAttribute('[data-wk-vorm="portrait45"]', 'aria-pressed')) === 'true');
     const voor = await tekst(page, '.wk-krijg [data-pl-total]');
     await page.click('[data-wk-hoek-open]');
@@ -219,7 +223,8 @@ try {
     const knop2 = await page.evaluate(() => { const k = document.querySelectorAll('[data-pl-rail-knop]')[1]; return ['[data-wk-rail-nr]', '[data-wk-rail-naam]', '[data-wk-rail-tel]', '[data-pl-rail-naam]'].map((s) => k.querySelector(s).textContent.trim()); });
     ok('  de knoppen dragen nummer, naam en telling', knop2.slice(0, 3).join(' · ') === '02 · Product 2 · 0/4', knop2.join(' · '));
     ok('  en voor een schermlezer alleen de naam (de rest is aria-hidden)', knop2[3] === 'Product 2' && await page.evaluate(() => ['[data-wk-rail-nr]', '[data-wk-rail-naam]', '[data-wk-rail-tel]'].every((s) => document.querySelectorAll('[data-pl-rail-knop]')[1].querySelector(s).getAttribute('aria-hidden') === 'true')));
-    ok('  de tipbalk staat onderin, en niet over "Wat je krijgt"', await zicht(page, '[data-wk-tipbalk]') && await page.evaluate(() => document.querySelector('[data-wk-tipbalk]').getBoundingClientRect().right <= document.querySelector('.wk-krijg').getBoundingClientRect().left));
+    /* levering 118 (17 november 2026, proefronde P2-05): de tipbalk staat niet meer vast onderin maar in de pagina, boven de uploadvakken. */
+    ok('  de tipbalk staat in de pagina, en niet over "Wat je krijgt"', await zicht(page, '[data-wk-tipbalk]') && await page.evaluate(() => document.querySelector('[data-wk-tipbalk]').getBoundingClientRect().right <= document.querySelector('.wk-krijg').getBoundingClientRect().left));
     const t1 = await tekst(page, '[data-wk-tip-t]');
     await page.click('[data-wk-tip-volgende]');
     ok('  de volgende tip', (await tekst(page, '[data-wk-tip-t]')) !== t1);
@@ -244,7 +249,8 @@ try {
     const t1 = await tekst(page, '[data-wk-tip-t]');
     await page.clock.runFor(7200);
     const t2 = await tekst(page, '[data-wk-tip-t]');
-    ok(rustig ? 'minder beweging: de tip blijft staan' : 'na 7 seconden de volgende tip', rustig ? t1 === t2 : t1 !== t2, `${t1} → ${t2}`);
+    /* levering 118 (17 november 2026, proefronde P2-05): één tip, die niet meer vanzelf wisselt (de pijl toont de volgende); dus in beide gevallen dezelfde. */
+    ok(rustig ? 'minder beweging: de tip blijft staan' : 'na 7 seconden nog dezelfde tip (wisselt niet vanzelf)', t1 === t2, `${t1} → ${t2}`);
     await ctx.close();
   }
 
@@ -267,11 +273,18 @@ try {
     ok('het kleurpaneel past op het scherm', await page.evaluate(() => { const r = document.querySelector('[data-wk-paneel]').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }));
     await page.keyboard.press('Escape');
     await kies(page, 'model');
-    await page.click('.wk-onder [data-pl-next]');
+    /* levering 118 (18 november 2026, P1-06): de vaste Verder scrolt eerst naar elk blok van stap 1 dat nog niet in beeld was
+       ("Nog 2 keuzes", pijl omlaag) en gaat pas daarna naar stap 2; de toets tikt dus tot de knop weer "Verder" zegt. */
+    const onderKnop = page.locator('.wk-onder [data-pl-next]');
+    const eerst = (await onderKnop.innerText()).trim();
+    for (let i = 0; i < 6 && (await onderKnop.evaluate((k) => k.classList.contains('is-omlaag'))); i++) { await onderKnop.click(); await page.waitForTimeout(300); }
+    const daarna = (await onderKnop.innerText()).trim();
+    await onderKnop.click();
     await page.waitForTimeout(300);
-    ok('Verder onderaan gaat naar stap 2', (await page.evaluate(() => document.querySelector('.pl-step.is-current')?.dataset.plStep)) === '2');
+    ok('Verder onderaan gaat naar stap 2', /^Nog \d+ keuzes?$/.test(eerst) && daarna === 'Verder' && (await page.evaluate(() => document.querySelector('.pl-step.is-current')?.dataset.plStep)) === '2', `${eerst} → ${daarna}`);
     ok('  de tipbalk zonder pauzeknop, met het kruisje', await zicht(page, '[data-wk-tipbalk]') && !(await zicht(page, '[data-wk-tip-pauze]')) && await zicht(page, '[data-wk-tip-weg]'));
-    ok('  boven de balk onderaan', await page.evaluate(() => document.querySelector('[data-wk-tipbalk]').getBoundingClientRect().bottom <= document.querySelector('.wk-onder').getBoundingClientRect().top));
+    /* levering 118 (17 november 2026, proefronde P2-05): de balk staat in de pagina; "boven de balk onderaan" geldt alleen zolang hij in beeld is. */
+    ok('  boven de balk onderaan (zolang hij in beeld is)', await page.evaluate(() => { const r = document.querySelector('[data-wk-tipbalk]').getBoundingClientRect(); const o = document.querySelector('.wk-onder').getBoundingClientRect(); return r.top >= o.top || r.bottom <= o.top; }));
     ok('geen scriptfouten', fouten.length === 0, fouten.join(' | '));
     await ctx.close();
   }
@@ -281,7 +294,8 @@ try {
   {
     const { ctx, page, fouten } = await open('/nl/start/lifestyle/', 1440);
     ok('lifestyle: 01 heet Look', (await tekst(page, '#wk-h-stijl')) === 'Welke look?');
-    ok('  de vijf vormen van lifestyle', (await page.locator('[data-wk-vorm]').count()) === 5);
+    /* levering 118 (17 november 2026, P1-06): de vormen staan er twee keer; zichtbaar op 1440 één groep van vijf. */
+    ok('  de vijf vormen van lifestyle', (await page.locator('[data-wk-vorm]:visible').count()) === 5);
     ok('  "Look" staat nog te kiezen', (await tekst(page, '[data-wk-sum-look]')) === 'Nog kiezen');
     await page.evaluate(() => { const r = document.querySelector('input[name="style"][value="glow"]') || document.querySelector('input[name="style"]'); r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); });
     ok('  na een keuze staat de look erbij', (await tekst(page, '[data-wk-sum-look]')) !== 'Nog kiezen');

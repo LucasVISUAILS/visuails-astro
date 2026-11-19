@@ -114,8 +114,10 @@ async function open({ lang = 'nl', breedte = 1280, query, antwoord, sessie = nul
 }
 
 const T = {
-  nl: { betaald: 'Betaald — we gaan aan de slag.', bevestigd: 'Je betaling wordt bevestigd.', niet: 'De betaling is niet afgerond.', opnieuw: 'Opnieuw betalen', hoeftNiet: 'Betaald? Dan hoef je niets te doen', mailen: 'mailen we je zodra de betaling binnen is', terug: 'Ben je teruggegaan zonder te betalen' },
-  en: { betaald: 'Paid — we are on it.', bevestigd: 'Your payment is being confirmed.', niet: 'The payment was not completed.', opnieuw: 'Pay again', hoeftNiet: 'Paid? Then there is nothing to do', mailen: 'we email you as soon as the payment is in', terug: 'Went back without paying' },
+  /* levering 119 (18 november 2026, proefronde P1-09, integrator I9): na 20 s zonder betaling "Nog niet betaald." met
+     de knop "Betaal nu" (Lucas koos het advies); dit pinde de oude minuut met "Opnieuw betalen". */
+  nl: { open: 'Nog niet betaald.', openNoot: 'Mollie heeft nog geen betaling van je', openKnop: 'Betaal nu', betaald: 'Betaald — we gaan aan de slag.', bevestigd: 'Je betaling wordt bevestigd.', niet: 'De betaling is niet afgerond.', opnieuw: 'Opnieuw betalen', hoeftNiet: 'Betaald? Dan hoef je niets te doen', mailen: 'mailen we je zodra de betaling binnen is', terug: 'Ben je teruggegaan zonder te betalen' },
+  en: { open: 'Not paid yet.', openNoot: 'Mollie has no payment from you yet', openKnop: 'Pay now', betaald: 'Paid — we are on it.', bevestigd: 'Your payment is being confirmed.', niet: 'The payment was not completed.', opnieuw: 'Pay again', hoeftNiet: 'Paid? Then there is nothing to do', mailen: 'we email you as soon as the payment is in', terug: 'Went back without paying' },
 };
 
 console.log('\nVISUAILS — de bedankpagina in drie standen (1.05)\n');
@@ -158,9 +160,10 @@ for (const lang of ['nl', 'en']) {
     await p.loop(40000);
     s = await p.lees();
     const na = p.vragen();
-    ok(`  ${breedte}px: na ongeveer een minuut stopt hij met "we mailen je"`, s.stand.includes(t.mailen), true);
-    ok(`  ${breedte}px: en voor wie terugging zonder te betalen`, s.stand.includes(t.terug), true);
-    ok(`  ${breedte}px: pas dan één knop "opnieuw betalen" (B17)`, s.knop, [t.opnieuw]);
+    /* levering 119 (P1-09): na 20 s "Nog niet betaald." met één knop "Betaal nu"; dat blijft staan als het vragen stopt. */
+    ok(`  ${breedte}px: na een minuut staat er "Nog niet betaald." (P1-09)`, s.kop, t.open);
+    ok(`  ${breedte}px: met de zin voor wie terugging zonder te betalen`, s.stand.includes(t.openNoot), true);
+    ok(`  ${breedte}px: en één knop "Betaal nu" (P1-09, was B17 "opnieuw betalen")`, s.knop, [t.openKnop]);
     await p.loop(30000);
     ok(`  ${breedte}px: en daarna vraagt hij niets meer`, p.vragen(), na);
     ok(`  ${breedte}px: hoogstens zestien vragen in totaal (limiet 30 per minuut)`, na <= 16, true);

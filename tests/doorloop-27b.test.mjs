@@ -214,7 +214,8 @@ console.log('\nB41 · al een proef gehad');
   ok('zonder database: openvallen', (await proefGebruikt({}, { email: 'x@y.z' })).checked, false);
   const flow = lees('src/components/order/OrderFlow.astro');
   ok('de weigering is kort (NL)', /proefAl: \['Er is één proef per bedrijf, en op dit e-mailadres, telefoonnummer of KVK-nummer staat er al een\. Er is niets besteld\. ', 'Bestel gewoon'/.test(flow));
-  ok('  en de order-API gebruikt dezelfde functie', /proefGebruikt\(env, \{ email, phone, reg: get\('reg_number'\) \}\)/.test(lees('functions/api/order.js')));
+  /* levering 118 (integratie IA, B1-01): de aanroep kreeg bedrijfsnaam, postcode en btw-nummer erbij; het begin blijft gelijk. */
+  ok('  en de order-API gebruikt dezelfde functie', /proefGebruikt\(env, \{\s*email, phone, reg: get\('reg_number'\)/.test(lees('functions/api/order.js')));
 }
 
 /* ── B44 · een notitie per aangemerkt beeld ──────────────────────────────── */

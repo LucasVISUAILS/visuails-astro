@@ -1,0 +1,21 @@
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 0074 · OP MAAT: HET MERK VAN HET MOMENT VAN VERSTUREN
+-- ══════════════════════════════════════════════════════════════════════════════
+--
+-- levering 118 (17 november 2026, proefronde P12-02). Het merkprofiel is één per
+-- account (merkprofielen, 0071), en dat blijft zo. Maar een verstuurde aanvraag las
+-- in /admin en Studio het profiel van NU: een bureau dat na de catalog-aanvraag voor
+-- merk A het merkblok op merk B zette, liet de studio de look van A ontwerpen met
+-- de naam, kleuren en klant van B. Daarom krijgt elke aanvraag bij het versturen een
+-- kopie van het merkprofiel (src/lib/opMaat.js, verstuur()); /admin en Studio tonen
+-- die kopie, en het merkblok op een verstuurde aanvraag is alleen-lezen.
+--
+-- `merk_json`  het merkprofiel zoals het was bij het versturen (normaliseerMerk);
+--              leeg bij een concept en bij aanvragen van vóór deze migratie
+--              (die tonen het huidige profiel, met een regel erbij in /admin).
+--
+-- Alleen toevoegend. Veilig om twee keer te draaien: een tweede keer geeft
+-- "duplicate column", en dat vangt scripts/migrate.mjs op zoals bij elke
+-- ALTER TABLE ADD COLUMN.
+
+ALTER TABLE maat_aanvragen ADD COLUMN merk_json TEXT;

@@ -23,6 +23,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { metVisIn } from './lib/vis-in.mjs';
+import { eenProductRegel } from '../src/data/pricing.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -141,7 +142,10 @@ try {
         eersteInBeeld: kaarten[0].getBoundingClientRect().left >= 0,
         tweedeGluurt: kaarten[1].getBoundingClientRect().left < innerWidth && getComputedStyle(kaarten[1]).opacity === '1',
         inKaart: ['.h-st-beeld', '.h-st-naam', '.h-st-zin', '[data-st-kies]', '.h-st-tarief', '.h-st-abo', '[data-st-proef]', '.h-st-meer'].map((sel) => zicht(k0.querySelector(sel))),
-        prijs: [...g.querySelectorAll('.h-st-groep-prijs [data-vis-klant="niet-abonnee"]')].filter(zicht).map((p) => p.textContent.replace(/\s+/g, ' ').trim()),
+        /* levering 118 (17 november 2026, P2-12 advies a): direct onder het vanaf-bedrag staat nu de uitlegregel
+           (.h-st-tarief-uitleg, "Eén product kost …"). Die mag er staan; de prijs en de planprijs blijven elk één keer. */
+        prijs: [...g.querySelectorAll('.h-st-groep-prijs [data-vis-klant="niet-abonnee"]:not(.h-st-tarief-uitleg)')].filter(zicht).map((p) => p.textContent.replace(/\s+/g, ' ').trim()),
+        uitleg: [...g.querySelectorAll('.h-st-groep-prijs .h-st-tarief-uitleg')].filter(zicht).map((p) => [p.textContent.replace(/\s+/g, ' ').trim(), p.previousElementSibling?.classList.contains('h-st-tarief')]),
         prijsBoven: g.querySelector('.h-st-groep-prijs').getBoundingClientRect().bottom <= rij.getBoundingClientRect().top,
         proef: [...g.querySelectorAll('.h-st-groep-proef a')].filter(zicht).map((a) => [a.textContent.trim(), a.getAttribute('href')]),
         proefOnder: g.querySelector('.h-st-groep-proef').getBoundingClientRect().top >= rij.getBoundingClientRect().bottom,
@@ -155,6 +159,8 @@ try {
     ok(`${taal}: de volgende look gluurt erbij, zichtbaar`, s.tweedeGluurt);
     ok(`${taal}: per kaart beeld, naam, zin en Kies deze look, en verder niets`, JSON.stringify(s.inKaart) === JSON.stringify([true, true, true, true, false, false, false, false]), JSON.stringify(s.inKaart));
     ok(`${taal}: de prijs en de planprijs één keer, boven de rij`, s.prijs.length === 2 && /€\s?50/.test(s.prijs[0]) /* lijst 111: de onderste lifestyletrede is €50 (was €49) */ && /(abonnement|plan)/.test(s.prijs[1]) && s.prijsBoven, JSON.stringify(s.prijs));
+    /* levering 118 (17 november 2026, P2-12 advies a): de uitlegregel één keer, direct onder het vanaf-bedrag, en het is de regel uit pricing.js. */
+    ok(`${taal}: de uitleg één keer, direct onder de prijs`, s.uitleg.length === 1 && s.uitleg[0][0] === eenProductRegel(taal, ['lifestyle']) && s.uitleg[0][1] === true, JSON.stringify(s.uitleg));
     ok(`${taal}: de proef één keer, onder de rij, bij de eerste look`, s.proef.length === 1 && /€1/.test(s.proef[0][0]) && /style=dunes$/.test(s.proef[0][1]) && s.proefOnder, JSON.stringify(s.proef));
     ok(`${taal}: in stap 2 precies twee prijsregels (alleen de gekozen groep)`, s.tarieven === 2, String(s.tarieven));
     await page.evaluate(() => { const r = document.querySelector('[data-st-rij]'); r.scrollTo({ left: r.querySelectorAll('[data-st-look]')[2].offsetLeft - 16 }); });

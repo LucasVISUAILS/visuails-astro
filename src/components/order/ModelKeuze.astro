@@ -125,6 +125,9 @@ const c = nl ? {
     position: absolute; width: 1px; height: 1px;
     overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
+  /* levering 119 (18 november 2026, proefronde P11-12): het vraagteken (Note) in die verborgen kop was met Tab bereikbaar
+     maar onzichtbaar. Uit de tabvolgorde en uit de naam van de groep; de uitleg staat al naast "Wie draagt het?". */
+  .mdl :global(#pl-model-h) :global(button) { visibility: hidden; }
   /* Ook de eigen marge van de kiezer valt weg: de afstand komt van dit blok. */
   .mdl :global(.pl-model) { margin-top: 0; padding-top: 0; border-top: 0; }
 </style>

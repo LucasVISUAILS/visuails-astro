@@ -47,6 +47,8 @@ import '../styles/sectiekop-96.css';
 import {
   euro, TEST_SAMPLE, reviewClaim, ladderFloor, ladderRate, videoPrijsLabel, levertijdDelen, SHOOT_DAY, RESOLUTIE, AMOUNT,
 } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P8-08): voorrang zichtbaar op de voorpagina, bij de levertijd. */
+import { voorrangTip } from '../data/pricing.js';
 import { MERK, TAGLINE } from '../data/brand.js';
 import { localizedPath } from '../i18n/ui.js';
 import { ROSTER, modelId, telwoord } from '../data/models.js';
@@ -135,7 +137,8 @@ const COPY = {
     /* levering 78: wat er verder is, zodat niemand denkt dat het hier ophoudt (Lucas, 16:50) */
     ookKop: 'Ook voor jouw merk',
     /* levering 99 (lijst 100 A3 a en E2) */
-    vrij: ['De beelden zijn van jou: gebruik ze in je webshop, op Instagram, TikTok, in advertenties of in print. De animaties laten zien wat de meeste merken doen; jij beslist.', 'Wat je mag', '/terms#intellectueel-eigendom-gebruiksrechten'],
+    /* levering 118 (17 november 2026, proefronde P6-07): "van jou" is juridisch een exclusieve licentie (voorwaarden §8); dezelfde woorden als de FAQ. */
+    vrij: ['Je mag de beelden overal gebruiken, voor altijd, en niemand anders krijgt ze: in je webshop, op Instagram, TikTok, in advertenties of in print. De animaties laten zien wat de meeste merken doen; jij beslist.', 'Wat je mag', '/terms#intellectueel-eigendom-gebruiksrechten'],
     bestelTekst: 'Bestel dit',
     /* levering 95 (lijst 95, A1 a): hooks en de eigen look zijn kaarten bij Wat we maken geworden */
     ook: [['Je eigen merkmodel', '/custom-models'], ['Een abonnement', '/plans']],
@@ -193,7 +196,8 @@ const COPY = {
     restLink: 'More about the AI marking',
     makenLabel: 'What we make', makenKop: ['Every image for your brand.', 'From product page to feed.'],
     ookKop: 'Also for your brand',
-    vrij: ['The visuals are yours: use them in your shop, on Instagram, TikTok, in ads or in print. The animations show what most brands do; you decide.', 'What you may do', '/terms#intellectual-property-usage-rights'],
+    /* levering 118 (17 november 2026, proefronde P6-07): see the Dutch. */
+    vrij: ['You may use the visuals anywhere, for ever, and nobody else gets them: in your shop, on Instagram, TikTok, in ads or in print. The animations show what most brands do; you decide.', 'What you may do', '/terms#intellectual-property-usage-rights'],
     bestelTekst: 'Order this',
     ook: [['Your own brand model', '/custom-models'], ['A monthly plan', '/plans']],
     ookAnders: ['Need something else?', 'Ask us', '/contact'],
@@ -408,6 +412,8 @@ const IPTC_WOORD = TAG_WOORD[LEVERTAG][lang];
     </div>
     <div class="r105-slotkaart k-inkt" data-kaart>
     <p class="r105-slotregel">{LEVERTIJD}.</p>
+    {/* levering 118 (17 november 2026, proefronde P8-08): voorrang bij de levertijd. */}
+    <p class="r105-voorrang">{voorrangTip(lang)}</p>
     <p class="slot96-knoppen">
       <a class="h-knop k k-vol" data-rol="doorgaan" href={lp('/start')} {...startKnop(lang)}><span data-vis-label>{c.ctaStart}</span><Fragment set:html={rolIkoon('doorgaan')} /></a>
       <a class="h-link k k-tekst" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{c.proefLink80}<Fragment set:html={rolIkoon('doorgaan')} /></a>

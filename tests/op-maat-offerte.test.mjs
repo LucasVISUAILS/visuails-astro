@@ -98,7 +98,8 @@ const o = db.prepare('SELECT * FROM orders WHERE ref = ?').get(ak.ref);
 const d = JSON.parse(o.details_json);
 ok('de bestelling: custom, de helft (€420) netto + €88,20 btw, goedgekeurd, onbetaald', o.service === 'custom' && o.total_cents === 42000 && o.vat_cents === 8820 && o.vat_rate === 0.21 && o.review_state === 'approved' && o.payment_status === 'unpaid' && o.email === 'inkoop@example.test', JSON.stringify(o));
 ok('… met de aanvraag, de dienst, het totaal en het restant erin', d.request === 'op-maat' && d.opmaat_id === id && d.opmaat_dienst === 'catalog' && d.quote_kind === 'aanbetaling' && d.opmaat_totaal === 840 && d.opmaat_rest === 420 && !!d.business_declaration);
-const linkMail = mails().slice(voorAk).find((m) => /order-pay/.test(m.html));
+/* levering 118 (proefronde P4-06): zonder factuuradres gaat de knop eerst naar de bestelpagina (#factuur). */
+const linkMail = mails().slice(voorAk).find((m) => /order-pay|\/o\/[A-Za-z0-9_-]+#factuur/.test(m.html));
 ok('de betaallinkmail gaat naar het adres van de offerte en zegt dat het de helft is', linkMail && JSON.stringify(linkMail.to).includes('inkoop@example.test') && /Dit is de helft/.test(linkMail.html) && /Catalog op maat/.test(linkMail.html));
 ok('stand vastgelegd, akkoord en link vastgelegd', await stand() === 'vastgelegd' && !!(await offerteVoorScherm(env, id)).linkOp && (await offerteVoorScherm(env, id)).ref === ak.ref);
 ok('twee keer akkoord kan niet (één bestelling)', (await akkoordEnBetaallink(env, 1, id, { zakelijk: true, origin })).reden === 'stand' && telling(db, "SELECT COUNT(*) AS n FROM orders WHERE json_extract(details_json, '$.opmaat_id') = " + id) === 1);

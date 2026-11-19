@@ -110,12 +110,16 @@ console.log('\nB11 · voorrang noemt de echte dag, of de grens van 15:00');
   ok('zondagavond betaald → dinsdag 10 november', voorrangZin('nl', '2026-11-08 21:11:00') === 'Voorrang — geleverd uiterlijk dinsdag 10 november om 17:00, of de toeslag komt terug');
   ok('EN', voorrangZin('en', '2026-11-08T21:11:00Z') === 'Priority — delivered by 17:00 on Tuesday 10 November, or the surcharge comes back');
   ok('dinsdagochtend betaald → woensdag', /woensdag 11 november/.test(voorrangZin('nl', '2026-11-10 09:00:00')));
-  ok('zonder betaaldatum: de regel met 15:00', /als je op een werkdag vóór 15:00 betaalt \(anders de werkdag daarna\)/.test(voorrangZin('nl')));
+  /* levering 118 (17 november 2026, proefronde L-16 keuze a): de termijn loopt vanaf betaling én alle foto's; de regel met
+     15:00 en "anders de werkdag daarna" blijft (voorrangBelofte in pricing.js). */
+  ok('zonder betaaldatum: de regel met 15:00', /als je betaling én al je foto’s op een werkdag vóór 15:00 binnen zijn \(anders de werkdag daarna\)/.test(voorrangZin('nl')));
   const verder = lees('src/lib/verder.js');
-  ok('verder.js geeft de betaaldatum door', /\{ soort: 'voorrang', betaald: String\(o\.paid_at\) \}/.test(verder) && /t\.voorrang\(l\.betaald \|\| null\)/.test(verder));
+  /* levering 118 (integratie IA, L-16): de dag telt vanaf het latere van betaald en foto's compleet (voorrangVanaf() in
+     src/lib/fotosCompleet.js); zonder wachtende foto's is dat de betaaldatum, zoals hier eerst stond. */
+  ok('verder.js geeft het begin van de termijn door (betaald, of later foto’s compleet)', /voorrangVanaf\(\{ paid_at: o\.paid_at/.test(verder) && /\{ soort: 'voorrang', betaald: String\(start\) \}/.test(verder) && /t\.voorrang\(l\.betaald \|\| null\)/.test(verder));
   /* K-10 (ronde 91) leest er service, status en closed_at bij; het gaat erom dat paid_at erin zit. */
   ok('de betaalmail leest paid_at', /SELECT id,[^']*\btier\b[^']*\bpaid_at FROM orders WHERE ref = \?1/.test(lees('src/lib/invoiceMail.js')));
-  ok('Studio ook', /voorrangZin\(lang, o\.paid_at \|\| null\)/.test(lees('src/lib/account.js')));
+  ok('Studio ook (levering 118, L-16: via voorrangVanaf)', /voorrangZin\(lang, voorrangVanaf\(o\)\)/.test(lees('src/lib/account.js')));
 }
 
 console.log('\nB12, B13, B14, B23 · de mails');

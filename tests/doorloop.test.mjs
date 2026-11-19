@@ -239,7 +239,8 @@ console.log('\nronde drie: cronmails, portaal, gegevens, terugknop, video');
   const env = { RESEND_API_KEY: 're_x', FROM_EMAIL: 'x@y.z' };
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'en' });
   await f.mailCreditsVervallen(env, { email: 'a@b.c', ref: 'SUB-X', over: 12, vervalt: '2026-10-10', dagen: 7, lang: 'nl' });
-  ok('creditherinnering in het Engels voor een Engelse abonnee', /You still have 12 credits/.test(verstuurd[0]?.subject || ''), true);
+  /* levering 118 (integratie IA, P9-13 van BG): het onderwerp noemt wat vervalt, niet het saldo ("You still have …"). */
+  ok('creditherinnering in het Engels voor een Engelse abonnee', /^12 credits expire in 7 days/.test(verstuurd[0]?.subject || ''), true);
   ok('  met een leesbare datum', /10 October 2026/.test(verstuurd[0]?.html || '') && /10 oktober 2026/.test(verstuurd[1]?.html || ''), true);
   ok('  en geen ruwe ISO-datum meer', /2026-10-10/.test(verstuurd[1]?.html || ''), false);
   ok('de lege-wachtrijmail is weg met het weeksysteem', /async function mailLegeWachtrij\(/.test(bron), false);

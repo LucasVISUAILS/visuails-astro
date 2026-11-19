@@ -1905,3 +1905,9 @@ ALTER TABLE maat_offertes ADD COLUMN order_id INTEGER;
 ALTER TABLE maat_offertes ADD COLUMN aanpassing TEXT;
 ALTER TABLE maat_offertes ADD COLUMN aanpassing_op TEXT;
 ALTER TABLE maat_offertes ADD COLUMN link_op TEXT;
+
+-- 0074 · op maat: het merk van het moment van versturen (zie migrations/0074-op-maat-merk-bij-aanvraag.sql)
+ALTER TABLE maat_aanvragen ADD COLUMN merk_json TEXT;
+
+-- 0075 · het VIES-raadplegingsnummer van een abonnement (zie migrations/0075-abonnement-vies.sql)
+ALTER TABLE subscriptions ADD COLUMN vat_consultation TEXT;

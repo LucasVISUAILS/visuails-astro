@@ -16,6 +16,9 @@
  *   3 · de privélink: idem, de kop "Je bestelling" en de pagina's zonder bestelling, de marge 28 / 21, de blokken
  *       28 uit elkaar;
  *   4 · /admin: de letter 370 en nergens DM Sans op 400 of 500; de kop blijft DM Sans.
+ *
+ * levering 121 (19 november 2026, lijst 134): de paginakop van Studio en de privélink is nu VISUAILS Display 2 Medium 500 in gewone
+ * schrijfwijze (was Display Bold in hoofdletters); de toetsen 1 – 3 vragen dat nu.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,10 +35,12 @@ const ok = (naam, cond, extra = '') => { if (cond) goed++; else fout++; console.
 
 /* ── 1 · de bestanden ────────────────────────────────────────────────────── */
 console.log('\n1 · de bestanden');
-const face = /@font-face \{ font-family: ['"]VISUAILS Display['"]; font-style: normal; font-weight: 700;[^}]*\/fonts\/visuails-display\/VISUAILSDisplay-Bold\.woff2/;
-ok('studio-hal.css: VISUAILS Display Bold als @font-face', face.test(lees('src/styles/studio-hal.css')));
-ok('/fonts/gedeeld.css (de privélink): VISUAILS Display Bold', face.test(lees('scripts/fonts-voor-worker.mjs')));
-const voor = /<link rel="preload" as="font" type="font\/woff2" href="\/fonts\/visuails-display\/VISUAILSDisplay-Bold\.woff2" crossorigin/;
+/* levering 121 (19 november 2026, lijst 134): de paginakop van Studio en de privélink staat nu in VISUAILS Display 2 Medium 500,
+   in gewone schrijfwijze (was Display Bold 700 in hoofdletters) */
+const face = /@font-face \{ font-family: ['"]VISUAILS Display 2['"]; font-style: normal; font-weight: 500;[^}]*\/fonts\/visuails-display\/VISUAILSDisplay2-Medium\.woff2/;
+ok('studio-hal.css: VISUAILS Display 2 Medium als @font-face', face.test(lees('src/styles/studio-hal.css')));
+ok('/fonts/gedeeld.css (de privélink): VISUAILS Display 2 Medium', face.test(lees('scripts/fonts-voor-worker.mjs')));
+const voor = /<link rel="preload" as="font" type="font\/woff2" href="\/fonts\/visuails-display\/VISUAILSDisplay2-Medium\.woff2" crossorigin/;
 ok('vooraf geladen in StudioLayout en op de privélink', voor.test(lees('src/layouts/StudioLayout.astro')) && voor.test(lees('src/lib/portal.js')));
 ok('/admin laadt hem niet vooraf (daar staat geen kop in die letter)', !/visuails-display/.test(lees('src/lib/admin.js')));
 
@@ -79,7 +84,7 @@ async function open(pad, breed, koekjes) {
   const fouten = [];
   page.on('pageerror', (e) => fouten.push(String(e).slice(0, 160)));
   const r = await page.goto(studio.url + pad, { waitUntil: 'load' });
-  await page.evaluate(() => document.fonts.load('700 40px "VISUAILS Display"').then(() => document.fonts.ready));
+  await page.evaluate(() => document.fonts.load('500 40px "VISUAILS Display 2"').then(() => document.fonts.ready));
   return { ctx, page, fouten, status: r.status() };
 }
 
@@ -92,7 +97,7 @@ try {
       const m = await page.evaluate(METING, { blok: '.st-main', rand: '.st-main' });
       const tag = `${breed} ${pad}`;
       ok(`${tag}: lopende tekst 370, nergens DM Sans op 400 of 500`, status === 200 && m.body === '370' && !m.dik.length, `${status} ${m.body} ${m.dik.slice(0, 3).join(', ')}`);
-      ok(`${tag}:   de kop in VISUAILS Display 700, hoofdletters, hoogstens twee regels${m.kop.lang ? ' (ook met een lange naam)' : ''}`, m.kop.fam === 'VISUAILS Display' && m.kop.fw === '700' && m.kop.tt === 'uppercase' && m.kop.regels <= 2 && (m.kop.lang ?? 1) <= 2, JSON.stringify(m.kop));
+      ok(`${tag}:   de kop in VISUAILS Display 2 500, gewone schrijfwijze, hoogstens twee regels${m.kop.lang ? ' (ook met een lange naam)' : ''}`, m.kop.fam === 'VISUAILS Display 2' && m.kop.fw === '500' && m.kop.tt === 'none' && m.kop.regels <= 2 && (m.kop.lang ?? 1) <= 2, JSON.stringify(m.kop));
       ok(`${tag}:   de marge ${breed > 720 ? 51 : 21}, de blokken 51 uit elkaar (of 49 na de filters), niets zijwaarts, geen scriptfout`, m.rand === (breed > 720 ? 51 : 21) && m.gaten.every((g) => g === 51 || g === 49) && !m.zij && !fouten.length, `${m.rand} [${m.gaten.join(' ')}] ${m.zij ? 'ZIJWAARTS' : ''} ${fouten[0] || ''}`);
       await ctx.close();
     }
@@ -105,7 +110,7 @@ try {
       const { ctx, page, fouten, status } = await open(`/o/${portaal}`, breed, []);
       const m = await page.evaluate(METING, { blok: '.wrap > main', rand: '.wrap' });
       ok(`${breed} /o/…: lopende tekst 370, nergens DM Sans op 400 of 500`, status === 200 && m.body === '370' && !m.dik.length, `${status} ${m.body} ${m.dik.slice(0, 3).join(', ')}`);
-      ok(`${breed} /o/…:   de kop in VISUAILS Display 700, hoofdletters, hoogstens twee regels`, m.kop.fam === 'VISUAILS Display' && m.kop.fw === '700' && m.kop.tt === 'uppercase' && m.kop.regels <= 2, JSON.stringify(m.kop));
+      ok(`${breed} /o/…:   de kop in VISUAILS Display 2 500, gewone schrijfwijze, hoogstens twee regels`, m.kop.fam === 'VISUAILS Display 2' && m.kop.fw === '500' && m.kop.tt === 'none' && m.kop.regels <= 2, JSON.stringify(m.kop));
       /* De tip ligt tegen de kop (0); de noot onder de feiten 21; de rest 28. */
       ok(`${breed} /o/…:   de marge ${breed > 560 ? 28 : 21}, de blokken 28 uit elkaar (de noot 21), niets zijwaarts`, m.rand === (breed > 560 ? 28 : 21) && m.gaten.length >= 4 && m.gaten.every((g) => [0, 21, 28].includes(g)) && !m.zij && !fouten.length, `${m.rand} [${m.gaten.join(' ')}] ${fouten[0] || ''}`);
       await ctx.close();

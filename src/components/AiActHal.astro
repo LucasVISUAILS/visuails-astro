@@ -9,6 +9,8 @@ import JuridischHal from './JuridischHal.astro';
 import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import NieuwTabblad from './NieuwTabblad.astro';
 import { waHref } from '../data/whatsapp.js';
+// levering 118 (17 november 2026, proefronde P6-08): de revisietermijn, waarna een stille levering als aanvaard geldt.
+import { REVISIE_DAGEN } from '../data/pricing.js';
 // VISUAILS — /ai-act. Rewritten 3 August 2026 from copy supplied by Lucas,
 // which replaces the July 2026 version wholesale. The old page argued about
 // whether the disclosure rule reached ordinary product imagery; that argument
@@ -221,7 +223,8 @@ const COPY = {
     s3Items: [
       ['A ready-made sentence', 'One sentence to place under your product gallery, in your product information block or with a post, in English and Dutch. In English: “This image was created with AI from photographs of the actual product.” For a video, write “video” instead of “image”. You are free to word it differently, as long as a reader meets it at the same moment they meet the image.'],
       ['A marking in the file', `In the photos and videos we deliver we write the IPTC property DigitalSourceType, with the value ${tagNaam(LEVERTAG)}: a machine-readable line saying the image was ${TAG_WOORD[LEVERTAG].en}. Platforms and search engines can read it. If a delivered file is missing the marking, tell us and we deliver it again, with the marking. What the marking does not do is set out below, under “What we do not claim”.`],
-      ['An approval record per order', 'On an order, you approve or request a revision on each image individually in VISUAILS Studio, and every one of those decisions is stored against that image with the date it was made. If somebody later asks where an image came from and who signed it off, it is there and you can read it back in VISUAILS Studio or on your order page.'],
+      /* levering 118 (17 november 2026, proefronde P6-08): ook wat er gebeurt als je niets doet (close.js, stil afronden). */
+      ['An approval record per order', `On an order, you approve or request a revision on each image individually in VISUAILS Studio, and every one of those decisions is stored against that image with the date it was made. Do nothing for ${REVISIE_DAGEN} days after delivery, and we complete the order: the delivery then counts as accepted. We record that with the date on your order, and you get an email about it. If somebody later asks where an image came from and who signed it off, it is there and you can read it back in VISUAILS Studio or on your order page.`],
       ['A written summary on request', 'Source files supplied, visuals produced, dates, and confirmation that every image was checked before delivery. We write that summary ourselves. There is no button here that generates one, and we are not going to imply there is.'],
     ],
 
@@ -242,7 +245,7 @@ const COPY = {
       ['Real photographs of the front, the back and one close-up are required.', 'We do not invent your product, we rebuild it from your photos — and a catalog set delivers a back image and a detail, so we ask for them rather than guess at a print, a seam or a logo you cannot see from the front.'],
       ['We ask about the material.', '100% cotton falls differently from polyester, and leather catches light differently. That has to be visible.'],
       ['A worn shot is optional.', 'It makes fit and drape more accurate. Without one, we build the on-model photo from your flat photographs.'],
-      ['You approve every image', 'before your order is completed.'],
+      ['You approve every image', `before your order is completed, or the delivery counts as accepted after ${REVISIE_DAGEN} days without a reply.`],
     ],
 
     s5H: 'What you do when you publish',
@@ -272,7 +275,8 @@ const COPY = {
     s7WijLead: 'VISUAILS:',
     s7WijItems: [
       'makes the image with AI and tells you so at delivery',
-      'writes a machine-readable marking into the delivered photos, and delivers a photo without one again on request',
+      /* levering 119 (18 november 2026, proefronde P6-23): photos and videos, like "A marking in the file" above and terms §11. */
+      'writes a machine-readable marking into the delivered photos and videos, and delivers a file without one again on request',
       'gives you the sentence to place with the image, and the explanation on this page',
       'corrects an image that does not match your product',
     ],
@@ -332,7 +336,8 @@ const COPY = {
     s3Items: [
       ['Een kant-en-klare zin', 'Eén zin die je onder je productgalerij, in je productinfo-blok of bij een post plaatst, in het Nederlands en het Engels. In het Nederlands: “Dit beeld is met AI gemaakt op basis van foto’s van het echte product.” Bij een video zet je “video” in plaats van “beeld”. Je mag het anders formuleren, zolang een lezer het tegenkomt op hetzelfde moment als het beeld.'],
       ['Een markering in het bestand', `In de foto’s en video’s die we leveren zetten we de IPTC-eigenschap DigitalSourceType, met de waarde ${tagNaam(LEVERTAG)}: een machineleesbare regel die zegt dat het beeld ${TAG_WOORD[LEVERTAG].nl} is. Platforms en zoekmachines kunnen die lezen. Mist een geleverd bestand de markering, laat het ons weten; dan leveren we het opnieuw, met markering. Wat die markering níét doet, staat hieronder bij “Wat wij níét beweren”.`],
-      ['Een goedkeuringsdossier per bestelling', 'Bij een bestelling keur je in VISUAILS Studio elk beeld afzonderlijk goed of vraag je een revisie aan, en elk van die beslissingen wordt bij dat beeld vastgelegd met de datum. Vraagt iemand later waar een beeld vandaan komt en wie het heeft geaccordeerd, dan staat het er en kun je het teruglezen in VISUAILS Studio of op je bestelpagina.'],
+      /* levering 118 (17 november 2026, proefronde P6-08): ook wat er gebeurt als je niets doet (close.js, stil afronden). */
+      ['Een goedkeuringsdossier per bestelling', `Bij een bestelling keur je in VISUAILS Studio elk beeld afzonderlijk goed of vraag je een revisie aan, en elk van die beslissingen wordt bij dat beeld vastgelegd met de datum. Doe je ${REVISIE_DAGEN} dagen na de levering niets, dan ronden wij de bestelling af en geldt de levering als aanvaard. Dat leggen we met de datum vast bij je bestelling, en je krijgt er een mail over. Vraagt iemand later waar een beeld vandaan komt en wie het heeft geaccordeerd, dan staat het er en kun je het teruglezen in VISUAILS Studio of op je bestelpagina.`],
       ['Op verzoek een schriftelijk overzicht', 'Aangeleverde bronbestanden, geproduceerde beelden, data, en de bevestiging dat elk beeld vóór levering is gecontroleerd. Dat overzicht schrijven we zelf. Er zit hier geen knop die er een genereert, en we doen ook niet alsof.'],
     ],
 
@@ -353,7 +358,7 @@ const COPY = {
       ['Echte foto’s van de voorkant, de achterkant en één close-up zijn verplicht.', 'We verzinnen je product niet, we maken het na vanuit jouw foto’s — en een catalogset levert een achterkantbeeld en een detail, dus vragen we die in plaats van te gokken naar een print, een naad of een logo dat je van voren niet ziet.'],
       ['We vragen naar het materiaal.', '100% katoen valt anders dan polyester, en leer vangt anders licht. Dat moet je zien.'],
       ['Een draagfoto is optioneel.', 'Die maakt pasvorm en val nauwkeuriger. Zonder draagfoto maken we de foto op model op basis van je platte foto’s.'],
-      ['Jij keurt elk beeld goed', 'voordat je bestelling wordt afgerond.'],
+      ['Jij keurt elk beeld goed', `voordat je bestelling wordt afgerond, of na ${REVISIE_DAGEN} dagen zonder reactie geldt de levering als aanvaard.`],
     ],
 
     s5H: 'Wat jij doet als je publiceert',
@@ -383,7 +388,8 @@ const COPY = {
     s7WijLead: 'VISUAILS:',
     s7WijItems: [
       'maakt het beeld met AI en zegt je dat bij de levering',
-      'zet in de geleverde foto’s een machineleesbare markering, en levert een foto zonder markering op verzoek opnieuw',
+      /* levering 119 (proefronde P6-23): zie de Engelse tegenhanger. */
+      'zet in de geleverde foto’s en video’s een machineleesbare markering, en levert een bestand zonder markering op verzoek opnieuw',
       'geeft je de zin om bij het beeld te zetten, en de uitleg op deze pagina',
       'past een beeld aan dat niet klopt met je product',
     ],

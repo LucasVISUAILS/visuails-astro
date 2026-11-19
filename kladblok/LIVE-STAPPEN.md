@@ -158,7 +158,7 @@ Zonder deze twee sleutels staat de botcheck uit en werkt alles gewoon, alleen zo
 
 Cloudflare zet de teller niet meer vanzelf in de pagina's ("automatic setup" gaat uit).
 De site zet hem dan zelf, en alleen bij een bezoeker die in de cookiemelding
-**Analytics accepteren** kiest. Daarvoor heeft de site de openbare sitesleutel nodig.
+**Meten toestaan** kiest. Daarvoor heeft de site de openbare sitesleutel nodig.
 Wil je geen tellingen, sla deze stap dan over.
 
 1. Open in de projectmap het bestand `.env` in Kladblok. Staat het er niet: nieuw
@@ -171,7 +171,7 @@ Wil je geen tellingen, sla deze stap dan over.
 3. Dubbelklik **UITROLLEN.bat**.
 
 **Zo zie je dat het gelukt is:** open visuails.com in een privévenster en kies
-**Analytics accepteren**; de dag erna staan er bij Cloudflare → **Web Analytics** →
+**Meten toestaan**; de dag erna staan er bij Cloudflare → **Web Analytics** →
 visuails.com bezoeken. Kies je **Alleen het noodzakelijke**, dan wordt er niets geteld.
 
 ## 7 · De controle met bounced@resend.dev

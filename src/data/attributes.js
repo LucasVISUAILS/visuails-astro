@@ -123,6 +123,10 @@ export const PRODUCT_QUESTIONS = [
 
 export const PRODUCT_QUESTION_IDS = PRODUCT_QUESTIONS.map((q) => q.id);
 
+/* levering 119 (18 november 2026, proefronde P10-02): de productnaam (`product_p3`) hoogstens zoveel tekens. Eén bron voor het
+   formulier (OrderFlow → cfg.productNaamMax → maxLength) en de server (/api/order vetAnswer). */
+export const PRODUCT_NAAM_MAX = 80;
+
 /** Is this a field we are willing to store against a product? */
 export function isProductQuestionId(id) {
   return typeof id === 'string' && PRODUCT_QUESTION_IDS.includes(id);

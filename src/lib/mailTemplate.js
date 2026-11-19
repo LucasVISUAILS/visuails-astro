@@ -203,9 +203,11 @@ export function esc(s) {
    de klant de mail nu leest (hij zette hem zelf in gang) en we de tijd in zijn land
    kennen, anders "Hallo Sanne,". Het waarom staat in src/lib/aanhef.js. Een
    aanroeper die weet dat de klant nu leest, geeft { nu: new Date(), land } mee. */
-export const greeting = (name, lang = 'en', { nu = null, land = '' } = {}) => {
+/* levering 119 (18 november 2026, proefronde A0-01): staat het veld Voornaam erbij (`voornaam: o.first_name`), dan die
+   helemaal ("Hallo Jan Willem,"); alleen zonder voornaam (oude bestellingen) het eerste woord van de volle naam. */
+export const greeting = (name, lang = 'en', { nu = null, land = '', voornaam: eigenVoornaam = '' } = {}) => {
   const woord = groetwoord(lang === 'nl' ? 'nl' : 'en', { nu, land });
-  const naam = voornaam(name);
+  const naam = String(eigenVoornaam ?? '').trim().replace(/\s+/g, ' ') || voornaam(name);
   return naam ? `${woord} ${esc(naam)},` : `${woord},`;
 };
 
@@ -246,6 +248,9 @@ const KENMERK = {
   creditnota: ['Creditnota', 'Credit note'],
   tegoed: ['Tegoed', 'Credit'],
   merkmodel: ['Merkmodel', 'Brand model'],
+  /* levering 117 (17 november 2026): de op-maatmails (src/lib/opMaatMail.js) gaan over een aanvraag,
+     niet over een bestelling; zonder deze regel stond er "Referentie". */
+  aanvraag: ['Aanvraag', 'Request'],
 };
 /** "Referentie VIS-2608-4471" / "Plan VIS-AB-0012": het woord en het nummer (ge-escapet), als html. */
 export function kenmerk(soort, nummer, lang = 'nl') {
@@ -285,7 +290,10 @@ export function terugval(href, lang = 'nl', { top = 14 } = {}) {
 export const rows = pairs => {
   const live = pairs.filter(([, v]) => v !== null && v !== undefined && v !== '');
   if (!live.length) return '';
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${FONT};font-size:14px;border-top:1px solid ${C.rule};margin:0 0 8px">
+  /* levering 119 (18 november 2026, proefronde P10-02): een productnaam of adres zonder spatie (228 tekens) rekte de tabel op;
+     de cellen breken nu lange woorden (break-word voor de oudere mailapps, anywhere voor de rest). Op de tabel zelf: beide
+     eigenschappen erven door naar de cellen, en de cellen blijven zoals ze waren. */
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${FONT};font-size:14px;border-top:1px solid ${C.rule};margin:0 0 8px;word-break:break-word;overflow-wrap:anywhere">
     ${live.map(([k, v]) => `<tr>
       <td style="padding:11px 0;color:${C.muted};border-bottom:1px solid ${C.ruleSoft};width:38%;vertical-align:top">${esc(k)}</td>
       <td style="padding:11px 0;color:${C.head};font-weight:700;border-bottom:1px solid ${C.ruleSoft}">${v}</td>
@@ -398,10 +406,11 @@ export const note = html =>
  * 25 oktober 2026: rond aan alle vier de hoeken, 12 px (--r-klein: een blok tekst, geen
  * kaart), in plaats van één zachte hoek linksboven.
  */
+/* levering 119 (18 november 2026, proefronde P10-02): klanttekst zonder spatie breekt ook hier. */
 export const quote = html =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.tintBg}" style="background:${C.tintBg};margin:2px 0 16px;border-radius:12px"><tr>
     <td style="padding:16px 20px">
-      <p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.6;color:${C.text}">${html}</p>
+      <p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.6;color:${C.text};word-break:break-word;overflow-wrap:anywhere">${html}</p>
     </td>
   </tr></table>`;
 

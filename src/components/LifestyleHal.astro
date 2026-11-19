@@ -26,6 +26,9 @@ import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import {
   ladderFloor, euro, vatLabel, eenProductRegel, WINDOW_THRESHOLD, TIERS, clause, TEST_SAMPLE, LIFESTYLE_IMAGES, levervlakken, LOOK_PRIJS,
 } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P8-08): voorrang bij de levertijd. P6-06: zeggen dat het AI is (dezelfde regel als op de lookpagina's). */
+import { voorrangTip } from '../data/pricing.js';
+import { AI_REGEL } from '../data/styles.js';
 import { serviceFaqs } from '../data/faq.js';
 import { localizedPath } from '../i18n/ui.js';
 import { styles as stylesEn } from '../data/styles.js';
@@ -84,11 +87,14 @@ const COPY = {
     pil: 'Lifestyle',
     h1: ['Your product,', 'set in a scene.'],
     lede: `A ${LIFESTYLE_IMAGES}-photo carousel per product: on a model front and back, the product on its own, and a detail.`,
-    feiten: [`<b>From ${e(floor)}</b> per product · ${ex}`, `<b>${LIFESTYLE_IMAGES} photos</b> per product`],
-    wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date.`,
+    /* levering 118 (17 november 2026, proefronde P2-12 keuze a): wat één product kost, direct onder het vanaf-bedrag (hersteller H: een spatie vóór de <br>, en ÉÉN in de hoofdletters van de feiten). P8-08: voorrang bij de levertijd. */
+    feiten: [`<b>From ${e(floor)}</b> per product · ${ex} <br>${eenProductRegel('en', ['lifestyle'])}`, `<b>${LIFESTYLE_IMAGES} photos</b> per product`],
+    wacht: `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: a fixed delivery date. ${voorrangTip('en')}`,
     kiesCta: 'Pick your look', prijsCta: 'See the price per product',
     rijPil: 'The range', rijKop: ['The range,', 'in four moods.'], rijCta: 'See the full gallery',
     vorige: 'Previous images', volgende: 'Next images',
+    /* levering 118 (T1-07): de naam van de strook, voor wie hem met het toetsenbord bekijkt */
+    strook: 'Examples. Scroll with the arrow keys.',
     alt: (n: string) => `${n} lifestyle example`,
     looksPil: 'Looks', looksKop: ['Four moods,', 'or your own.'],
     vanaf: 'From', per: `per product, ${ex}`,
@@ -103,7 +109,7 @@ const COPY = {
     setNoot: 'One look per order · another scene is a separate order.',
     waarKop: 'Where it lives', waar: ['Instagram & TikTok', 'Paid ads', 'Your homepage', 'Email & campaigns'],
     /* Levering 60 (d-teksten): de complete look in dezelfde woorden als de FAQ en /pricing. */
-    prijsKop: 'What a carousel costs', prijsRegel: `${eenProductRegel('en', ['lifestyle'])} The rate applies to every product in the order; all amounts ${ex}. Pieces worn together as a complete look: ${lookCopy('en').prijs(e(LOOK_PRIJS))}`,
+    prijsKop: 'What a carousel costs', prijsRegel: `The rate applies to every product in the order; all amounts ${ex}. Pieces worn together as a complete look: ${lookCopy('en').prijs(e(LOOK_PRIJS))}`,
     staffelCta: 'See all prices by quantity',
     modelKop: ['Add a consistent', 'model.'], modelZin: 'The same face across your whole collection.', modelCta: 'Explore models',
     modelAlt: 'A VISUAILS model, styled consistently across a campaign',
@@ -115,11 +121,13 @@ const COPY = {
     pil: 'Lifestyle',
     h1: ['Jouw product,', 'in scène gezet.'],
     lede: `Een carrousel van ${LIFESTYLE_IMAGES} foto’s per product: op een model van voren en van achteren, het product alleen, en een detail.`,
-    feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex}`, `<b>${LIFESTYLE_IMAGES} foto’s</b> per product`],
-    wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum.`,
+    /* levering 118 (17 november 2026, proefronde P2-12 keuze a en P8-08): zie de Engelse regels. */
+    feiten: [`<b>Vanaf ${e(floor)}</b> per product · ${ex} <br>${eenProductRegel('nl', ['lifestyle'], { hoofdletters: true })}`, `<b>${LIFESTYLE_IMAGES} foto’s</b> per product`],
+    wacht: `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: een vaste leverdatum. ${voorrangTip('nl')}`,
     kiesCta: 'Kies je look', prijsCta: 'Bekijk de prijs per product',
     rijPil: 'Het assortiment', rijKop: ['Het assortiment,', 'in vier sferen.'], rijCta: 'Bekijk de volledige galerij',
     vorige: 'Vorige beelden', volgende: 'Volgende beelden',
+    strook: 'Voorbeelden. Schuif met de pijltjestoetsen.',
     alt: (n: string) => `${n} lifestyle-voorbeeld`,
     looksPil: 'Looks', looksKop: ['Vier sferen,', 'of je eigen.'],
     vanaf: 'Vanaf', per: `per product, ${ex}`,
@@ -131,7 +139,7 @@ const COPY = {
     set: ['Gedragen door een model, van voren.', 'Hetzelfde model, van achteren.', 'Je product zonder model, in dezelfde scène.', 'Van dichtbij op het model, in dezelfde kleurbewerking.'],
     setNoot: 'Eén look per bestelling · een andere scène is een aparte bestelling.',
     waarKop: 'Waar je het gebruikt', waar: ['Instagram & TikTok', 'Advertenties', 'Je homepage', 'E-mail & campagnes'],
-    prijsKop: 'Wat een carrousel kost', prijsRegel: `${eenProductRegel('nl', ['lifestyle'])} Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}. Stukken die je als complete look samen laat dragen: ${lookCopy('nl').prijs(e(LOOK_PRIJS))}`,
+    prijsKop: 'Wat een carrousel kost', prijsRegel: `Het tarief geldt voor elk product in de bestelling; alle bedragen ${ex}. Stukken die je als complete look samen laat dragen: ${lookCopy('nl').prijs(e(LOOK_PRIJS))}`,
     staffelCta: 'Bekijk alle prijzen per aantal',
     modelKop: ['Voeg een consistent', 'model toe.'], modelZin: 'Hetzelfde gezicht door je hele collectie.', modelCta: 'Ontdek modellen',
     modelAlt: 'Een VISUAILS-model, consistent gestyled door een hele campagne',
@@ -159,7 +167,9 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
     <div class="h-open-tekst">
       <p class="h-pil h-op" style="--d:0"><span>{c.pil}</span></p>
       <h1 id="ls-h1" class="h-kop h-h1">
-        {c.h1.map((r, i) => <span class="h-regel" style={`--d:${i + 1}`}><span class:list={['h-regel-in', i === 0 && 'l']}>{r}</span></span>)}
+        {/* levering 119 (18 november 2026, proefronde D1-12): een spatie tussen de regels, anders leest de tekst van de kop
+           "Product videosthat move." (zoekmachine, deelkaart, kopiëren); .h-regel is een blok, dus op het scherm verandert niets */}
+        {c.h1.map((r, i) => <>{i > 0 && ' '}<span class="h-regel" style={`--d:${i + 1}`}><span class:list={['h-regel-in', i === 0 && 'l']}>{r}</span></span></>)}
       </h1>
       <p class="h-lede h-op" style="--d:3">{c.lede}</p>
       <p class="h-acties h-op" style="--d:4">
@@ -170,6 +180,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         {c.feiten.map((f, i) => <li><i set:html={ik((['label', 'doos'] as const)[i])} /><span set:html={f} /></li>)}
       </ul>
       <p class="h-dienst-wacht h-op" style="--d:6">{c.wacht}</p>
+      {/* levering 118 (17 november 2026, proefronde P6-06): op /lifestyle stond nergens dat de beelden en gezichten met AI gemaakt zijn. */}
+      <p class="h-dienst-wacht h-op" style="--d:6">{AI_REGEL.look[lang]}</p>
     </div>
     <div class="h-open-beeld h-op" style="--d:3">
       <HalLaptop lang={lang} sets={['lifestyle']} />
@@ -189,7 +201,10 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
         <button type="button" class="h-cirkel" data-h-strook-stap="1" aria-label={c.volgende} set:html={ik('rechts')} /></span>
       </p>
     </header>
-    <ul class="h-strook" role="list" data-h-strook-rij>
+    {/* levering 118 (17 november 2026, proefronde T1-07): de strook is een tabstop met een naam, zodat je hem met de
+        pijltjestoetsen kunt schuiven (er stond niets focusbaars in; de helft van de looks was zonder muis niet te zien).
+        role="list" blijft (een role="region" zou de <li>'s hun lijst afnemen); de focusrand staat in hal.css. */}
+    <ul class="h-strook" role="list" data-h-strook-rij tabindex="0" aria-label={c.strook}>
       {RIJ.map((b, i) => (
         <li class="h-ls-beeld h-in" style={`--d:${Math.min(i, 4)}`}>
           <img src={kleiner(b.src)} alt={c.alt(b.label)} width={b.w} height={b.h} loading="lazy" decoding="async" />

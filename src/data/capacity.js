@@ -52,6 +52,33 @@
 import { WINDOW_THRESHOLD, KIND_PUNTEN, puntenVoor, agendaKind, lifestyleBeeldenVan } from './pricing.js';
 /* Levering 60: een complete look weegt in de agenda een half product (d-werk). */
 import { lookAantal, LOOK_PRODUCT_DEEL } from './looks.js';
+/* levering 118 (17 november 2026, proefronde P3-08): de extra hoeken tellen mee in de agenda. */
+import { CATALOG_IMAGES } from './pricing.js';
+/* levering 119 (18 november 2026, proefronde P3-07): de Nederlandse feestdagen uit pricing.js, voor de agenda. */
+import { feestdagenNL } from './pricing.js';
+import { isUitbreidbaar, TELBARE_ANGLE_IDS } from './angles.js';
+
+/* ── EXTRA HOEKEN WEGEN MEE — levering 118 (17 november 2026, proefronde P3-08) ──────────────────────────────
+   Twintig producten met vier extra hoeken zijn 160 beelden, en namen in de agenda evenveel ruimte als twintig
+   zonder (80). De credits rekenden ze wel (EXTRA_CREDITS.photo), de punten niet. De schaal staat in pricing.js
+   boven KIND_PUNTEN: één punt is één afgewerkte foto. Een extra hoek is één foto per product, dus weegt hij wat
+   één beeld van de set weegt: KIND_PUNTEN van de soort gedeeld door de beelden in een set (CATALOG_IMAGES) —
+   vandaag 4 / 4 = 1 punt. Alleen bij een dienst met extra hoeken (isUitbreidbaar, vandaag alleen catalog). */
+export function extraBeeldPunten(service, extraBeelden, style = '') {
+  const n = Math.max(0, Math.floor(Number(extraBeelden) || 0));
+  if (!n || !isUitbreidbaar(service)) return 0;
+  const kind = agendaKind(String(service), style);
+  const set = kind ? puntenVoor(kind, 1, style) : null;
+  if (set === null || !(set > 0)) return 0;
+  return Math.ceil((n * set) / CATALOG_IMAGES);
+}
+
+/** Hoeveel extra hoeken per product een bestelling heeft: dezelfde telling als de prijs (`angle_<id>` in
+ *  functions/api/order.js, TELBARE_ANGLE_IDS). */
+export function extraHoekenVan(details) {
+  const d = parseDetails(details);
+  return TELBARE_ANGLE_IDS.filter((id) => String(d[`angle_${id}`] ?? '').trim() !== '').length;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 · HET PLAFOND
@@ -300,6 +327,25 @@ export function isOpenDay(iso, blackouts = new Set()) {
   return !blackouts.has(iso);
 }
 
+/**
+ * ── FEESTDAGEN STAAN STANDAARD DICHT — levering 119 (18 november 2026, proefronde P3-07) ──────────────────────
+ * De agenda bood 25 en 26 december en 1 januari aan als leverdag; voorrang sloeg ze al over (feestdagenNL in
+ * pricing.js). Lucas koos optie a: standaard dicht in de code, met een uitzondering in /admin als de studio die dag
+ * toch werkt. Dit geeft de feestdagen tussen `van` en `tot` (beide 'YYYY-MM-DD', tot en met), behalve de dagen in
+ * `open` (de uitzonderingen). readCalendar() in src/lib/agenda.js voegt ze bij de dichte dagen, dus de poort, het
+ * formulier (/api/capacity), /admin en Studio volgen vanzelf. Zelfde lijst als de voorwaarden: nieuwjaarsdag, tweede
+ * paasdag, Koningsdag, 5 mei, Hemelvaartsdag, tweede pinksterdag en beide kerstdagen.
+ */
+export function feestdagenTussen(van, tot, open = new Set()) {
+  const uit = new Set();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(van)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(tot)) || van > tot) return uit;
+  const vrij = open instanceof Set ? open : new Set(open || []);
+  for (let jaar = Number(van.slice(0, 4)); jaar <= Number(tot.slice(0, 4)); jaar += 1) {
+    for (const dag of feestdagenNL(jaar)) if (dag >= van && dag <= tot && !vrij.has(dag)) uit.add(dag);
+  }
+  return uit;
+}
+
 /** The ISO day `n` calendar days after `iso`. */
 export function addDays(iso, n) {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -426,10 +472,14 @@ export function offerableWindows({
   blackouts = new Set(),
   limit = 6,
   from = null,
+  extras = 0,
 }) {
   if (!Number.isInteger(products) || products < 1) return [];
-  const punten = puntenVoor(service, products);
-  if (punten === null) return [];
+  const basisPunten = puntenVoor(service, products);
+  if (basisPunten === null) return [];
+  /* levering 118 (17 november 2026, proefronde P3-08): `extras` is het totaal aan extra beelden
+     (extra hoeken × producten); die wegen mee, zie extraBeeldPunten(). */
+  const punten = basisPunten + extraBeeldPunten(service, extras);
   if (punten > ATTENDED_PUNTEN_PER_VENSTER) return [];
 
   const first = firstOfferableDay(today, blackouts);
@@ -469,24 +519,38 @@ export function offerableWindows({
  * het getal meet werk en geen bestanden, en een naam die het tweede belooft komt
  * ooit als aantal foto's op een scherm terecht.
  */
-export function clearedWindows({ today, products, service = 'catalog', booked = {}, blackouts = new Set(), limit = 6, from = null }) {
-  const perProduct = puntenVoor(service, 1);
+export function clearedWindows({ today, products, service = 'catalog', booked = {}, blackouts = new Set(), limit = 6, from = null, extras = 0 }) {
+  /* levering 118 (17 november 2026, proefronde P3-08): met extra hoeken weegt elk product zwaarder, dus past
+     er minder in één venster. `extras` is het totaal (hoeken × producten); per product is dat hun deel. */
+  const extraPerProduct = Number.isInteger(products) && products > 0 ? extraBeeldPunten(service, extras) / products : 0;
+  const perProduct = puntenVoor(service, 1) === null ? null : puntenVoor(service, 1) + extraPerProduct;
   const maxProducts = perProduct === null ? 0 : Math.floor(ATTENDED_PUNTEN_PER_VENSTER / perProduct);
   const leeg = (reason) => ({ windows: [], reason, max: maxProducts, maxPunten: ATTENDED_PUNTEN_PER_VENSTER, service });
 
   if (perProduct === null) return leeg('unweighed');
   if (!Number.isInteger(products) || products < 1) return leeg('invalid');
-  if (puntenVoor(service, products) > ATTENDED_PUNTEN_PER_VENSTER) return leeg('too-large');
+  if (puntenVoor(service, products) + extraBeeldPunten(service, extras) > ATTENDED_PUNTEN_PER_VENSTER) return leeg('too-large');
 
   /* Eén venster méér vragen dan er getoond wordt: zo weet de pagina of "later →"
      iets oplevert zonder een tweede aanroep. Het extra venster gaat er hieronder
      weer af; `more` is wat er van overblijft. */
-  const alle = offerableWindows({ today, products, service, booked, blackouts, limit: limit + 1, from });
+  const alle = offerableWindows({ today, products, service, booked, blackouts, limit: limit + 1, from, extras });
   const windows = alle.slice(0, limit);
   const first = firstOfferableDay(today, blackouts);
   const vanaf = (typeof from === 'string' && from > first) ? from : first;
+  /* levering 118 (17 november 2026, proefronde P3-11): de open dagen die voor DEZE bestelling vol zitten (er past
+     geen dagdeel meer bij), van de eerste getoonde dag tot het eind van het laatste venster (zonder venster: twee
+     weken). Het formulier toont ze als grijze kaart "vol" en zegt bij een venster dat erover springt welke dagen.
+     "Vol" geldt per gewicht: een dag die vol is voor twintig producten, kan vrij zijn voor twee. */
+  const perDag = Math.ceil((puntenVoor(service, products) + extraBeeldPunten(service, extras)) / WINDOW_DAYS);
+  const totDag = windows.length ? windows[windows.length - 1].end : addDays(vanaf, 14);
+  const vol = [];
+  for (let d = vanaf; d <= totDag && vol.length < 31; d = addDays(d, 1)) {
+    if (isOpenDay(d, blackouts) && (booked[d] || 0) + perDag > ATTENDED_PUNTEN_PER_DAG) vol.push(d);
+  }
   return {
     windows,
+    vol,
     /* 'full' alleen als er vanaf de EERSTE dag niets is. Een lege bladzijde
        verderop (from voorbij het laatste vrije venster) is geen volle agenda —
        de pagina toont dan "geen data in deze periode" met een knop terug. */
@@ -630,6 +694,11 @@ export function rowPunten(r = {}) {
     const looks = lookAantal(parseDetails(r.details_json !== undefined ? r.details_json : r.details), aantal);
     /* puntenVoor() telt hele stuks, dus het halve product als punten van één stuk. */
     if (looks > 0) return basis + Math.round(looks * LOOK_PRODUCT_DEEL * puntenVoor(kind, 1, r.style));
+  }
+  /* levering 118 (17 november 2026, proefronde P3-08): extra hoeken × producten, zoals de prijs ze telt. */
+  if (basis !== null && isUitbreidbaar(dienst) && (r.details_json !== undefined || r.details !== undefined)) {
+    const hoeken = extraHoekenVan(r.details_json !== undefined ? r.details_json : r.details);
+    if (hoeken > 0) return basis + extraBeeldPunten(dienst, hoeken * aantal, r.style);
   }
   return basis;
 }

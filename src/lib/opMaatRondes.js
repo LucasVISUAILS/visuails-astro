@@ -12,6 +12,9 @@
 
 import { tekst, aanvraagVan, zetStand } from './opMaat.js';
 import { GRATIS_STIJLRONDES } from '../data/opMaatPrijs.js';
+/* Levering 117 (17 november 2026, proefronde P5-07): "Je eerste voorbeeld staat klaar" aan de klant en "Reactie op
+   voorbeeld" aan de studio. Zonder mail bleef een klaar voorbeeld liggen tot de klant toevallig terugkwam. */
+import { mailVoorbeeldKlaar, mailReactieStudio } from './opMaatMail.js';
 
 export const VOORBEELD_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const VOORBEELD_BYTES = 15 * 1024 * 1024;
@@ -59,15 +62,18 @@ export async function voegVoorbeeldToe(env, id, { r2Key, bestandsnaam = '' }) {
   return { ok: true, ronde };
 }
 
-/** De studio zet de ronde klaar voor de klant: de aanvraag gaat naar `voorstel`. Alleen met beelden in een nieuwe ronde. */
-export async function zetVoorbeeldKlaar(env, id) {
+/** De studio zet de ronde klaar voor de klant: de aanvraag gaat naar `voorstel`. Alleen met beelden in een nieuwe ronde.
+ *  Daarna een mail aan de klant (levering 117); `gemaild` zegt of die de deur uit ging. */
+export async function zetVoorbeeldKlaar(env, id, { origin } = {}) {
   const a = await env.DB.prepare('SELECT stand FROM maat_aanvragen WHERE id = ?').bind(id).first();
   if (!a) return { ok: false, reden: 'weg' };
   if (a.stand !== 'verstuurd') return { ok: false, reden: 'stand' };
   const ronde = await huidigeRonde(env, id);
   const al = await env.DB.prepare("SELECT COUNT(*) AS n FROM maat_besluiten WHERE aanvraag_id = ? AND onderwerp = ?").bind(id, `ronde:${ronde}`).first();
   if (!ronde || Number(al && al.n)) return { ok: false, reden: 'geen-beelden' };
-  return zetStand(env, id, 'voorstel');
+  const r = await zetStand(env, id, 'voorstel');
+  if (!r.ok) return r;
+  return { ...r, ronde, gemaild: await mailVoorbeeldKlaar(env, id, ronde, { origin }) };
 }
 
 /**
@@ -75,7 +81,8 @@ export async function zetVoorbeeldKlaar(env, id) {
  * goed en gaat de aanvraag naar `akkoord`; anders is de studio weer aan zet (`verstuurd`).
  * `beelden`: { [voorbeeldId]: 'goed' | 'aanpassen' }.
  */
-export async function reactieOpRonde(env, customerId, id, { beelden = {}, wel = '', anders = '', blijven = '', goed = false } = {}) {
+/* Levering 117: daarna "Reactie op voorbeeld" aan de studio (`origin` voor de link naar /admin). */
+export async function reactieOpRonde(env, customerId, id, { beelden = {}, wel = '', anders = '', blijven = '', goed = false, origin } = {}) {
   const a = await aanvraagVan(env, customerId, id);
   if (!a) return { ok: false, reden: 'weg' };
   if (a.stand !== 'voorstel') return { ok: false, reden: 'stand' };
@@ -92,6 +99,9 @@ export async function reactieOpRonde(env, customerId, id, { beelden = {}, wel = 
   stmts.push(env.DB.prepare('INSERT INTO maat_besluiten (aanvraag_id, onderwerp, besluit, notitie) VALUES (?, ?, ?, ?)').bind(id, `ronde:${ronde}`, goed ? 'goed' : 'aanpassen', notitie));
   stmts.push(env.DB.prepare("UPDATE maat_aanvragen SET stand = ?, bijgewerkt_op = datetime('now') WHERE id = ? AND stand = 'voorstel'").bind(goed ? 'akkoord' : 'verstuurd', id));
   await env.DB.batch(stmts);
+  const perBeeld = { goed: 0, aanpassen: 0 };
+  for (const v of vb) { const k = beelden && beelden[v.id]; if (k === 'goed' || k === 'aanpassen') perBeeld[k]++; }
+  await mailReactieStudio(env, id, { ronde, goed: !!goed, notitie, beelden: perBeeld }, { origin });
   return { ok: true, ronde, stand: goed ? 'akkoord' : 'verstuurd', gratisOver: Math.max(0, GRATIS_RONDES_TOTAAL - ronde) };
 }
 

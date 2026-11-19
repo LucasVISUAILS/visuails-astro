@@ -51,6 +51,9 @@ const T = v.tekst || {};
 const bespreek = bespreekAbo(lang);
 /* Bij Overstappen alleen de vaste plannen zolang de vlag uit staat. */
 const ovOpties = v.overstap ? v.overstap.opties.filter((o) => ABO_EXTRA_ZICHTBAAR || !o.maat) : [];
+/* levering 119 (18 november 2026, proefronde P9-11): staat er al een overstap klaar, dan is de keuzelijst ingeklapt
+   onder "Toch een ander plan kiezen". Anders las Noor hem als een tweede bevestiging. Zonder script: <details>. */
+const OvWikkel = v.overstap?.klaar ? 'details' : 'div';
 ---
 <StudioLayout tip={st.tip}
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="plan" customer={customer}
@@ -424,6 +427,8 @@ const ovOpties = v.overstap ? v.overstap.opties.filter((o) => ABO_EXTRA_ZICHTBAA
                   </div>
                 )}
                 {v.overstap.mag ? (
+                  <OvWikkel class={v.overstap.klaar ? 'st-boek-eerder st-overstap-anders' : undefined}>
+                  {v.overstap.klaar && <summary class="st-link">{v.overstap.klaar.anders}</summary>}
                   <form method="post" action="/account/plan/overstap" class="st-overstap-form">
                     <p class="st-meta">{v.overstap.lede}</p>
                     <fieldset class="st-bijkoop-keuze st-overstap-keuze">
@@ -452,6 +457,7 @@ const ovOpties = v.overstap ? v.overstap.opties.filter((o) => ABO_EXTRA_ZICHTBAA
                     <div class="st-knoppen"><button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit" set:html={knopInhoud('doorgaan', v.overstap.knop)} /></div>
                     {!ABO_EXTRA_ZICHTBAAR && <p class="st-meta st-k14-bespreek" data-k14-bespreek><span>{bespreek.overstap}</span> <a class="btn btn-2nd btn-sm" data-rol="contact" href={bespreek.href} target="_blank" rel="noopener">{bespreek.knop}<NieuwTabblad lang={lang} /></a></p>}
                   </form>
+                  </OvWikkel>
                 ) : (v.overstap.niet && <p class="st-meta">{v.overstap.niet}</p>)}
               </div>
             )}

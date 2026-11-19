@@ -93,6 +93,10 @@ import {
   AMOUNT, euro, vatLabel, STOCK_OFF_BRAND, STOCK_ON_BRAND,
   reviewClaim, plans,
 } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P6-06 en P6-18): zeggen dat het AI is en wat er gebeurt als het tegenvalt, bij de bestelknop;
+   dezelfde twee regels als op de lookpagina's (AI_REGEL.modellen in styles.js: hier zit geen product van de klant in, AFTERCARE in pricing.js). */
+import { AI_REGEL } from '../data/styles.js';
+import { AFTERCARE } from '../data/pricing.js';
 /* Het woord voor deze beelden komt uit de lexicon en niet uit deze pagina:
    "stock photos" / "stockfoto's", enkelvoud en meervoud op één plek. Zie
    tests/woorden.test.mjs, dat de hele site op dat lijstje nakijkt. */
@@ -469,6 +473,7 @@ const BEELD = {
         {feiten.map(([sterk, rest]) => <li><span><b>{sterk}</b> {rest}</span></li>)}
       </ul>
       <p class="h-vd-wacht h-op" style="--d:5"><span class="h-chip h-pl-tag">{c.soonTag}</span> {c.queueNote}</p>
+      <p class="h-dienst-wacht h-op" style="--d:5">{AI_REGEL.modellen[lang]} {AFTERCARE[lang]}</p>
     </div>
     {kaartBeeld && <KopBeeld {...BEELD} />}
     {kopBeeld && (

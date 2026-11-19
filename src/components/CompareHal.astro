@@ -26,7 +26,7 @@ import '../styles/hal.css';
 import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { waHref } from '../data/whatsapp.js';
 import {
-  SHOOT_DAY, euro, quote, ladderFloor, tierFor,
+  SHOOT_DAY, euro, quote, ladderFloor, tierFor, FORM_MAX_PRODUCTS,
   reviewClaim, turnaround, aftercare,
   vatLabel, clause, CATALOG_IMAGES } from '../data/pricing.js';
 import { localizedPath } from '../i18n/ui.js';
@@ -56,7 +56,14 @@ const shoot = SHOOT_DAY[lang];
 // 'attended': under the new model the service level is a CONSEQUENCE of this
 // count, not a second thing the buyer picked, and deriving it here is what
 // keeps the two facts from being stated as independent.
-const ANCHOR_PRODUCTS = 30;
+/* levering 117 (17 november 2026, proefronde P3-01): het ankeraantal was 30,
+   maar het formulier stopt bij FORM_MAX_PRODUCTS (20); daarboven alleen
+   WhatsApp. Sanne zag "30 producten €1.200" en ontdekte pas in het formulier
+   dat ze die bestelling niet kon plaatsen. Nu is het voorbeeld het grootste
+   aantal dat het formulier aanneemt, uit pricing.js: 20 × €40 = €800. Ook
+   /compare, /nl/compare en /pricing (PricingHal WORKED) rekenen met dit getal.
+   20 ligt nog steeds boven WINDOW_THRESHOLD, dus `tier` blijft hetzelfde. */
+const ANCHOR_PRODUCTS = FORM_MAX_PRODUCTS;
 /* Ronde 8: catalog, en niet meer catalog + lifestyle samen — dat wordt niet
    meer als één dienst verkocht. Dezelfde 30 als de meta-omschrijving. */
 const q = quote('catalog', ANCHOR_PRODUCTS);
@@ -207,7 +214,8 @@ const COPY = {
       'The reschedule when something slips',
       'Evenings culling frames',
     ],
-    weekOrder: 'An order takes minutes of your time, not days — one product or thirty.',
+    /* levering 117 (P3-01): "or thirty" botste met het formulier dat bij twintig stopt. */
+    weekOrder: 'An order takes minutes of your time, not days — one product or twenty.',
 
     winsHead: 'Where a shoot day still wins',
     winsSub: 'If one of these is the job, book the day.',
@@ -333,7 +341,8 @@ const COPY = {
       'Het uitstel als er iets misloopt',
       'Avonden frames schiften',
     ],
-    weekOrder: 'Een bestelling kost je minuten, geen dagen — één product of dertig.',
+    /* levering 117 (P3-01): "of dertig" botste met het formulier dat bij twintig stopt. */
+    weekOrder: 'Een bestelling kost je minuten, geen dagen — één product of twintig.',
 
     winsHead: 'Waar een shootdag nog steeds wint',
     winsSub: 'Is dit de opdracht, boek dan de dag.',

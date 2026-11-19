@@ -297,14 +297,22 @@ try {
   await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' })); await wacht(page, 500);
 
   /* k1: de streepjes, met de laptop op zijn plek */
-  await page.evaluate((y) => scrollTo({ top: y - 30, behavior: 'instant' }), Math.round(baan.top)); await wacht(page, 800);
+  /* levering 123 (19 november 2026): de plek van de baan opnieuw meten vlak voor het scrollen. Sinds levering 120 zakt de banner
+     (bovenbalk + 10 px) en laadt de video later; de maat van het begin klopte dan niet meer, en bij Lucas' uitrol lag #looks over de
+     streepjes ("subtree intercepts pointer events"). */
+  await page.evaluate(() => { const b = document.querySelector('.o8-baan'); scrollTo({ top: Math.round(b.getBoundingClientRect().top + scrollY - 56 - 30), behavior: 'instant' }); }); await wacht(page, 800);
   const k = await page.evaluate(() => [...document.querySelectorAll('.o8-kies')].map((e) => ({ druk: e.getAttribute('aria-pressed'), label: e.getAttribute('aria-label') || '' })));
   ok('de streepjes (k1): één per stand, elk met een naam, één ingedrukt', k.length >= 2 && k.every((x) => x.label.trim()) && k.filter((x) => x.druk === 'true').length === 1, JSON.stringify(k));
   if (k.length >= 2) {
     const nu0 = await page.evaluate(() => [...document.querySelectorAll('.o8-kies')].findIndex((e) => e.getAttribute('aria-pressed') === 'true'));
     const doel = (nu0 + 1) % k.length;
     const naam0 = await page.evaluate(() => document.querySelector('[data-o8-naam]')?.textContent.trim());
-    await page.locator('.o8-kies').nth(doel).click(); await wacht(page, 500);
+    /* levering 123 (19 november 2026): eerst kijken of het streepje echt bovenop ligt (wat een muis zou raken), dan de klik zelf als
+       klik-gebeurtenis. De muisklik van Playwright faalde soms (bij Lucas' uitrol en hier 1 op 3) omdat de opening nog bewoog terwijl
+       Playwright het streepje opnieuw in beeld schoof; dan lag #looks er net overheen. */
+    const bovenop = await page.evaluate((i) => { const e = document.querySelectorAll('.o8-kies')[i]; const q = e.getBoundingClientRect(); const t = document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2); return !!t && (t === e || e.contains(t)); }, doel);
+    ok('het streepje ligt in rust bovenop (een muis raakt het, niet #looks of de balk)', bovenop);
+    await page.locator('.o8-kies').nth(doel).dispatchEvent('click'); await wacht(page, 500);
     /* levering 100: met het kaartveld (WebGL, in de toets software) komt de naam soms net na 500 ms; wacht op de naam zelf */
     await page.waitForFunction((n0) => document.querySelector('[data-o8-naam]')?.textContent.trim() !== n0, naam0, { timeout: 4000 }).catch(() => {});
     const na = await page.evaluate(() => ({ druk: [...document.querySelectorAll('.o8-kies')].map((e) => e.getAttribute('aria-pressed')), naam: document.querySelector('[data-o8-naam]')?.textContent.trim() }));

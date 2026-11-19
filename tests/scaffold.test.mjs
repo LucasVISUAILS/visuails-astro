@@ -336,7 +336,9 @@ console.log('\nhet licentiebestand zegt wat de klant mag, in de taal van de best
     ok(`${taal}: de AI-vermelding staat erbij`, /AI Act/.test(tekst), true);
     ok(`${taal}: met de pagina waar de zin staat`, /ai-act/.test(tekst), true);
     ok(`${taal}: het portfoliovoorbehoud staat erbij`, /portfolio/.test(tekst), true);
-    ok(`${taal}: en dat het intrekbaar is`, /bezwaar|object/.test(tekst), true);
+    /* levering 118 (integratie IA, P6-03): het portfolio is opt-in; de oude toets zocht het bezwaar van de opt-out. */
+    ok(`${taal}: en dat het intrekbaar is`, /intrekken|withdraw/.test(tekst), true);
+    ok(`${taal}: en alleen na een ja (opt-in)`, /als je daar\r?\nna de levering ja op zegt|if you say yes\r?\nafter delivery/.test(tekst) && !/bezwaar|unless you object/.test(tekst), true);
     ok(`${taal}: met de voorwaarden als bron`, /terms/.test(tekst), true);
     ok(`${taal}: de bestelling staat erop`, tekst.includes(ORDER.ref), true);
     ok(`${taal}: en het merk`, tekst.includes('Atelier Noord'), true);

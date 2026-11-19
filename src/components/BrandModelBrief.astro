@@ -58,6 +58,11 @@ import { localizedPath } from '../i18n/ui.js';
 /* Zonder deze regel zijn .paneel, .hoog en .knop lege klassen. */
 import '../styles/stijl22.css';
 import { rolIkoon } from '../data/iconen.js';
+/* levering 118 (17 november 2026, proefronde P4-08): voor het kader bij te vaak versturen. */
+import { waHref } from '../data/whatsapp.js';
+import NieuwTabblad from './NieuwTabblad.astro';
+/* levering 118 (17 november 2026, proefronde P4-09): de termijn voor de eerste richtingen; Lucas kiest het getal in termijnen.js. */
+import { MERKMODEL_RICHTINGEN_WERKDAGEN } from '../data/termijnen.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -104,8 +109,23 @@ const prijs = euro(AMOUNT.brandModel, lang);
 /* O29 (ronde 9): stap 5 noemde alleen "€ 450 excl. btw", en bij Mollie stond
    er € 544,50. Dezelfde regel als in het bestelformulier: wat je daar betaalt. */
 const prijsBijMollie = lang === 'nl'
-  ? `Je betaalt bij Mollie ${euro(withVat(AMOUNT.brandModel), lang)} incl. ${vatPercent()} btw. Met een geldig EU-btw-nummer of buiten de EU: ${prijs}.`
-  : `At Mollie you pay ${euro(withVat(AMOUNT.brandModel), lang)} incl. ${vatPercent()} VAT. With a valid EU VAT number or outside the EU: ${prijs}.`;
+  ? `Je betaalt bij Mollie ${euro(withVat(AMOUNT.brandModel), lang)} incl. ${vatPercent()} btw.`
+  : `At Mollie you pay ${euro(withVat(AMOUNT.brandModel), lang)} incl. ${vatPercent()} VAT.`;
+/* levering 119 (18 november 2026, proefronde L-12): de tweede zin geldt niet voor een Nederlands bedrijf (dat betaalt altijd
+   21 %, ook met een btw-nummer; vatDecision in src/data/vat.js). Hij staat apart, zodat syncBtw() hem bij land NL verbergt. */
+const prijsBuitenNl = lang === 'nl'
+  ? `Met een geldig EU-btw-nummer of buiten de EU: ${prijs}.`
+  : `With a valid EU VAT number or outside the EU: ${prijs}.`;
+
+/* ── INBEGREPEN IN HET ABONNEMENT — levering 117 (17 november 2026, proefronde P5-12) ──
+   Bij Merk (en Pro met een jaar) is het merkmodel inbegrepen. Een ingelogde abonnee zag hier toch
+   € 450 en betaalde dat ook. Het script onderaan vraagt /account/me (window.visAccount): is de klant
+   ingelogd, dan post het formulier naar /account/order (zoals pipeline.js), en zegt /account/me
+   `merkmodelInbegrepen`, dan staat hieronder deze tekst in plaats van de prijs. Wat er echt afgaat,
+   beslist de server (merkmodelInAbonnement in src/lib/slots.js). Zonder script of uitgelogd: de prijs. */
+const inbegrepen = lang === 'nl'
+  ? { kort: 'Inbegrepen in je abonnement', uitleg: 'Je merkmodel zit in je abonnement: je betaalt niets.', knop: 'Bestellen en starten' }
+  : { kort: 'Included in your plan', uitleg: 'Your brand model is part of your plan: you pay nothing.', knop: 'Order and start' };
 
 /* Vier verschillende mensen staan in EXAMPLES op BrandModelPage.astro; hier
    staan er drie, want naast een prijs is een raster van vier al een galerij en
@@ -133,8 +153,11 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   <p class="etiket">{c.eyebrow}</p>
   <h1 class="hoog">{c.h1}</h1>
   <p class="lopend bm-lede">{c.lead}</p>
-  <p class="bm-price-hero">
+  <p class="bm-price-hero" data-bm-geld>
     <strong>{prijs}</strong> <span>{vatLabel('excl', lang)}</span>
+  </p>
+  <p class="bm-price-hero" data-bm-inbegrepen hidden>
+    <strong>{inbegrepen.kort}</strong>
   </p>
 
   {/* ── DRIE GEZICHTEN BIJ HET BEDRAG — 12 september 2026 ──────────────────
@@ -182,6 +205,15 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
         /api/order — en die stuurt naar /start. Gemeten in de doorloop: de
         bestelling stond in de database, de klant stond op de startpagina en
         heeft Mollie nooit gezien. Een gewone verzending volgt de 302 wél. */}
+    {/* levering 118 (17 november 2026, proefronde P4-08): te vaak verstuurd (?error=rate van /api/order, was een witte pagina). initFormRefusal()
+        in interactions.js haalt hidden weg; dezelfde twee wegen als bij de botcheck van het bestelformulier. */}
+    <p class="form-terug" data-form-refusal="rate" role="status" tabindex="-1" hidden>
+      {lang === 'nl'
+        ? 'Je hebt in korte tijd vaak verstuurd, dus is dit niet aangekomen en is er niets afgeschreven. Wacht een paar minuten en probeer het opnieuw, of'
+        : 'You sent this form many times in a short while, so it did not go through and nothing was charged. Wait a few minutes and try again, or'}{' '}
+      <a href={waHref(lang === 'nl' ? 'Hallo VISUAILS, ik probeerde een merkmodel te bestellen op de site en dat lukte niet. Kunnen jullie me helpen?' : 'Hello VISUAILS, I tried to order a brand model on the site and it did not go through. Can you help me?')} target="_blank" rel="noopener">{lang === 'nl' ? 'stuur een WhatsApp' : 'send a WhatsApp'}<NieuwTabblad lang={lang} /></a>{' '}
+      {lang === 'nl' ? 'of mail' : 'or email'} <a href="mailto:hello@visuails.com">hello@visuails.com</a>.
+    </p>
     <form action="/api/order" method="post" class="bm-form" data-bm-form novalidate data-astro-reload>
       <input type="hidden" name="service" value="brand-model" />
       {/* ?soort=merkmodel: de bedankpagina vertelt dan wat er bij een merkmodel gebeurt
@@ -444,13 +476,15 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
       {/* ── STAP 5 · NAKIJKEN EN BETALEN ─────────────────────────────────── */}
       <section class="bm-step" data-bm-step="5">
         <h2 class="bm-h">{c.s5H}</h2>
-        <p class="bm-lead">{c.s5Lead}</p>
+        <p class="bm-lead" data-bm-geld>{c.s5Lead}</p>
 
         <div class="bm-total">
           <span class="bm-total-l">{c.eyebrow}</span>
-          <span class="bm-total-a">{prijs}</span>
-          <span class="bm-total-v">{vatLead(lang)}</span>
-          <span class="bm-total-v">{prijsBijMollie}</span>
+          <span class="bm-total-a" data-bm-geld>{prijs}</span>
+          <span class="bm-total-v" data-bm-geld>{vatLead(lang)}</span>
+          <span class="bm-total-v" data-bm-geld>{prijsBijMollie} <span data-bm-buiten-nl>{prijsBuitenNl}</span></span>
+          <span class="bm-total-a" data-bm-inbegrepen hidden>{inbegrepen.kort}</span>
+          <span class="bm-total-v" data-bm-inbegrepen hidden>{inbegrepen.uitleg}</span>
         </div>
 
         {/* Gevuld door het script uit het formulier zelf. Zonder script blijft
@@ -464,7 +498,12 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
         <div class="bm-after">
           <h3 class="bm-h3">{c.afterH}</h3>
           <ol class="bm-steps">
-            {c.after.map((p) => (<li>{p}</li>))}
+            {/* levering 118 (17 november 2026, proefronde P4-09): de eerste stap noemt nu de termijn ("zodra ze klaar zijn" zei niets). De zin
+                staat hier en niet in brandModelBrief.js, omdat het getal uit termijnen.js komt. */}
+            {[lang === 'nl'
+              ? `Binnen ${MERKMODEL_RICHTINGEN_WERKDAGEN} werkdagen krijg je de eerste richtingen — niet één gezicht maar een paar, zodat je iets hebt om op te reageren.`
+              : `Within ${MERKMODEL_RICHTINGEN_WERKDAGEN} working days you get the first directions — not one face, a few, so you have something to react to.`,
+              ...c.after.slice(1)].map((p) => (<li>{p}</li>))}
           </ol>
         </div>
 
@@ -490,7 +529,7 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
           <input type="hidden" name="consent_version" value={CONSENT_VERSION_BRAND_MODEL} />
         </div>
 
-        <button type="submit" class="knop knop-inkt k-groot bm-submit" data-rol="doorgaan">{c.submit}<Fragment set:html={rolIkoon('doorgaan')} /></button>
+        <button type="submit" class="knop knop-inkt k-groot bm-submit" data-rol="doorgaan"><span data-bm-knop-tekst data-inbegrepen={inbegrepen.knop}>{c.submit}</span><Fragment set:html={rolIkoon('doorgaan')} /></button>
         <p class="bm-legal">
           {c.legal[0]}<a href={lp('/terms')}>{c.legalTerms}</a>{c.legal[1]}
           <a href={lp('/privacy')}>{c.legalPrivacy}</a>{c.legal[2]}
@@ -668,6 +707,9 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
   .bm-paynote { margin-top: .6rem; font-size: var(--h-t-fijn); color: var(--ink-3); line-height: 1.6; max-width: 64ch; }
 
   .bm-nav { display: flex; gap: .7rem; margin-top: 2.2rem; flex-wrap: wrap; }
+  /* levering 119 (18 november 2026, proefronde D1-08): Verder staat rechts, zoals in elk ander formulier (Terug links);
+     de plaats hangt aan de knop zelf, de mintkleur komt uit knoppen.css ([data-bm-next]) */
+  .bm-nav [data-bm-next] { margin-left: auto; }
 
   @media (prefers-reduced-motion: reduce) {
     .bm-chip, .bm-track { transition: none; }
@@ -809,6 +851,8 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
       const soort = !up ? '' : up === HOME_COUNTRY ? 'nl' : isEu(up) ? 'eu' : 'other';
       if (noVat && (soort === 'nl' || soort === 'other')) noVat.checked = false;
       if (noVatRij) noVatRij.hidden = soort === 'nl' || soort === 'other';
+      /* levering 119 (18 november 2026, proefronde L-12): "Met een geldig EU-btw-nummer of buiten de EU: € 450" niet bij land NL */
+      form.querySelectorAll('[data-bm-buiten-nl]').forEach((el) => { el.hidden = soort === 'nl'; });
       if (vatVeld) vatVeld.hidden = soort === 'other';
       if (vat && soort === 'other' && vat.value) vat.value = '';
       const geen = !!(noVat && noVat.checked);
@@ -1049,6 +1093,25 @@ const stappen = [c.s1H, c.s2H, c.s3aH, b.heading, c.s5H];
     syncTak();
     syncBtw();
     toon(1);
+    ingelogd(form);
+  }
+
+  /* ── INGELOGD: VIA /account/order, EN INBEGREPEN ALS HET ABONNEMENT DAT ZEGT ──
+     levering 117 (17 november 2026, proefronde P5-12). De sessiecookie staat op Path=/account en
+     bereikt /api/order niet; zonder deze regel kende de server de abonnee dus nooit. Dezelfde route
+     als pipeline.js (bindPrefill). Lukt /account/me niet, dan blijft alles zoals het was. */
+  function ingelogd(form) {
+    const w = /** @type {any} */ (window);
+    if (typeof w.visAccount !== 'function') return;
+    w.visAccount().then((me) => {
+      if (!me || !me.email || !form.isConnected) return;
+      form.setAttribute('action', '/account/order');
+      if (!me.merkmodelInbegrepen) return;
+      document.querySelectorAll('[data-bm-geld]').forEach((el) => { el.hidden = true; });
+      document.querySelectorAll('[data-bm-inbegrepen]').forEach((el) => { el.hidden = false; });
+      const knop = form.querySelector('[data-bm-knop-tekst]');
+      if (knop && knop.dataset.inbegrepen) knop.textContent = knop.dataset.inbegrepen;
+    }).catch(() => {});
   }
 
   bmBoot();

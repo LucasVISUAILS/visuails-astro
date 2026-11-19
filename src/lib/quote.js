@@ -43,7 +43,7 @@
 import {
   LADDER, ladderRate, OUTFIT_SURCHARGE, extraPhotoRate, MAX_EXTRA_PER_PRODUCT,
   MAX_OUTFIT_PRODUCTS, AMOUNT, VAT_RATE,
-  HOOG_PER_PRODUCT, voorrangBedrag, voorrangKan, LOOK_PRIJS,
+  HOOG_PER_PRODUCT, voorrangBedrag, voorrangKan, LOOK_PRIJS, WINDOW_THRESHOLD,
 } from '../data/pricing.js';
 import { LOOK_MIN, isLookDienst } from '../data/looks.js';
 /* Twee namen voor dezelfde import, met opzet: de controle onderaan vergelijkt
@@ -388,7 +388,11 @@ export function quoteOrder({ service, products, looks = 0, extras = 0, hoogRes =
   /* `agendaDicht` (9 november 2026, ronde 91, C06): een van de twee werkdagen van
      de belofte staat dicht in de agenda (voorrangAgendaOpen() in pricing.js). Dan
      geen voorrang en dus geen toeslag; de aanroeper leest de agenda, deze som niet. */
-  const voorrangKanNu = voorrangKan({ kind, products: n }) && !agendaDicht;
+  /* levering 117 (17 november 2026, proefronde P8-01, keuze a): voorrang alleen onder WINDOW_THRESHOLD
+     producten. Vanaf die grens kiest de klant een leverdatum, en bedankpagina, mail en /admin volgen
+     die datum: wie voorrang én een datum had, betaalde de toeslag voor een belofte ("morgen 17:00")
+     die het systeem niet nakwam. Vanaf de grens is de vroegste datum de snelle keuze. */
+  const voorrangKanNu = voorrangKan({ kind, products: n }) && n < WINDOW_THRESHOLD && !agendaDicht;
   const voorrangEuro = voorrang && voorrangKanNu ? voorrangBedrag(netCents / 100) : 0;
   const netMetVoorrang = netCents + cents(voorrangEuro);
 
@@ -523,8 +527,14 @@ export function quoteTestSample({ vatRate = VAT_RATE } = {}) {
  * zou daar "0 producten" van maken op een factuur van € 544,50. Eén merkmodel is
  * één stuk, en dat is ook wat het is.
  */
-export function quoteBrandModel({ vatRate = VAT_RATE } = {}) {
-  const netCents = cents(AMOUNT.brandModel);
+/* ── INBEGREPEN IN HET ABONNEMENT — levering 117 (17 november 2026, proefronde P5-12) ──
+   /plans en /custom-models zeggen dat het merkmodel bij Merk (en Pro met een jaar) inbegrepen is
+   (hasBrandModel() in plans.js). Een abonnee kreeg bij /start/brand-model toch €450 bij Mollie.
+   Met `inbegrepen: true` is de bestelling €0: dezelfde vorm, met `inbegrepen` erbij zodat /api/order
+   geen betaling aanmaakt en de mail "inbegrepen in je abonnement" zegt. WIE het krijgt, beslist
+   /api/order met merkmodelInAbonnement() in src/lib/slots.js; deze functie rekent alleen. */
+export function quoteBrandModel({ vatRate = VAT_RATE, inbegrepen = false } = {}) {
+  const netCents = inbegrepen ? 0 : cents(AMOUNT.brandModel);
   const effectiveRate = safeRate(vatRate);
   const vatCents = Math.round(netCents * effectiveRate);
   return {
@@ -536,6 +546,7 @@ export function quoteBrandModel({ vatRate = VAT_RATE } = {}) {
     vatCents,
     grossCents: netCents + vatCents,
     vatRate: effectiveRate,
+    ...(inbegrepen ? { inbegrepen: true } : {}),
   };
 }
 
@@ -611,7 +622,9 @@ export function paymentDescription(quote, lang = 'en') {
      checkoutpagina én op het bankafschrift *"VISUAILS — 1 producten,
      undefined"*. Precies de fout die drie regels lager in vijfentwintig regels
      staat beschreven; hier voorkomen in plaats van herhaald. */
-  if (quote.service === 'brand-model') return nl ? 'VISUAILS merkmodel' : 'VISUAILS Brand Model';
+  /* levering 119 (18 november 2026, proefronde L-13): het kenmerk erbij, zoals bij elke andere betaling; dan herkennen
+     Lucas en de boekhouding de betaling in Mollie meteen. Zonder kenmerk (een oude aanroep) blijft het de dienst. */
+  if (quote.service === 'brand-model') return `${nl ? 'VISUAILS merkmodel' : 'VISUAILS Brand Model'}${quote.ref ? ` ${quote.ref}` : ''}`;
   /* Video, om exact dezelfde reden als het merkmodel hierboven: `what` is op
      LADDERNAMEN gesleuteld en video staat niet op de ladder, dus zonder deze
      regel stond er *"VISUAILS — 5 producten, undefined"* op het bankafschrift.

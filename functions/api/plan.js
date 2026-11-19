@@ -59,7 +59,10 @@
  */
 import { withdrawalRecord } from '../../src/data/consent.js';
 import { upsertCustomer } from './order.js';
-import { currentCustomer, setPlanMailCookie } from '../../src/lib/account.js';
+import { currentCustomer, setPlanMailCookie, sendLoginLink } from '../../src/lib/account.js';
+/* levering 118 (L-07): setTerugCookie() via de naamruimte; een ontbrekende export geeft `undefined` in plaats van een
+   fout bij het laden. Sinds de integratie van levering 118 is hij geëxporteerd. Zie de noot bij "EEN BESTAAND ADRES". */
+import * as accountLib from '../../src/lib/account.js';
 import { handleSubscribeStart } from '../../src/lib/subscribe.js';
 import { offsitePage } from '../../src/lib/offsite.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
@@ -84,6 +87,15 @@ function terug(reden, lang, land = '') {
       'referrer-policy': 'same-origin',
     },
   });
+}
+
+/* levering 118 (17 november 2026, proefronde L-07): de inlogmail is al onderweg. Het adres terug naar het formulier
+   krijgt `&inlog=verstuurd` en het gekozen plan erbij (PlanPicker leest ?plan= al, "HET PLAN UIT DE URL"), zodat
+   het formulier de zin bij het e-mailveld kan aanpassen en het plan weer aanstaat. */
+function metInlogVerstuurd(antwoord, plan = '') {
+  const metPlan = /^[a-z]{2,20}$/.test(String(plan || '')) ? `&plan=${plan}` : '';
+  antwoord.headers.set('Location', `${antwoord.headers.get('Location')}${metPlan}&inlog=verstuurd`);
+  return antwoord;
 }
 
 const tekst = (v, max = 200) => String(v || '').trim().slice(0, max);
@@ -226,7 +238,38 @@ export async function onRequestPost(context) {
     const bestaand = env.DB
       ? await env.DB.prepare('SELECT id FROM customers WHERE lower(email) = ?1').bind(email).first().catch(() => null)
       : null;
-    if (bestaand) return terug('account', lang, land);
+    if (bestaand) {
+      /* ── EN DAN METEEN EEN INLOGCODE — levering 118 (17 november 2026, proefronde L-07) ───────────────────
+         Fatima bestelde iets en wilde daarna een abonnement. Ze kreeg "Dit e-mailadres hoort al bij een account.
+         Log in…", met het e-mailveld leeg, en moest zelf de weg naar inloggen zoeken. Nu stuurt deze route
+         meteen de inlogmail (link én code, sendLoginLink() uit account.js, dezelfde als het inlogformulier) en
+         onthoudt een koekje waar ze vandaan kwam (het abonnementsformulier, met het gekozen plan): na de link of
+         de code komt ze daar terug, ingelogd, en gaat het formulier door naar /account/plan/start.
+         Dit verraadt niets nieuws: `?fout=account` zei al dat het adres een account heeft. Wel dezelfde emmer als
+         het inlogformulier (per adres, 5 per kwartier, LOGIN_ACCOUNT_LIMIT in account.js), zodat dit geen
+         omweg is om iemand met inlogmail te overladen. Lukt het niet (emmer vol, account gedeactiveerd, mail
+         hikt), dan de oude melding `account`. */
+      const planKeuze = /^[a-z]{2,20}$/.test(tekst(form.get('plan'), 20)) ? tekst(form.get('plan'), 20) : '';
+      const formulier = `${lang === 'en' ? '/start/plan' : '/nl/start/plan'}${planKeuze ? `?plan=${planKeuze}` : ''}`;
+      let gestuurd = false;
+      const perAdres = await checkRate(env, { key: `account-login|${email}`, action: 'account-login-id', limit: 5, windowSeconds: 900 });
+      if (perAdres.allowed) {
+        gestuurd = await sendLoginLink(env, request, email, lang).catch((e) => {
+          console.error('[abonnement] inlogmail voor een bestaand adres niet verstuurd —', e?.message || e);
+          return false;
+        });
+      }
+      if (!gestuurd) return terug('account', lang, land);
+      /* De reden blijft `account` (die tekst bestaat al op het formulier); `&inlog=verstuurd` zegt erbij dat de
+         mail al onderweg is, zodat PlanPicker de zin daarop kan aanpassen. Zonder die aanpassing ziet de klant
+         de oude zin, en klopt alles nog. */
+      const antwoord = metInlogVerstuurd(terug('account', lang, land), planKeuze);
+      try { antwoord.headers.append('set-cookie', setPlanMailCookie(email)); } catch { /* dan zonder */ }
+      try {
+        if (typeof accountLib.setTerugCookie === 'function') antwoord.headers.append('set-cookie', accountLib.setTerugCookie(formulier));
+      } catch { /* dan zonder: na het inloggen komt ze op /account uit */ }
+      return antwoord;
+    }
 
     let id = null;
     try {

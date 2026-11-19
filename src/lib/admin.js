@@ -74,7 +74,7 @@ import { statPil } from '../data/status.js';
 import { isTestExemplaar } from '../data/aanbevelingen.js';
 /* De fotosoorten met hun Nederlandse naam — zie SHOT_LABEL verderop voor waarom
    dit geen eigen lijstje meer is. */
-import { SHOTS as SHOTS_DATA, contextShotSlot, isRefShotId } from '../data/shots.js';
+import { SHOTS as SHOTS_DATA, contextShotSlot, isRefShotId, MIN_LANGE_ZIJDE } from '../data/shots.js';
 /* ── DE BRIEF PER PRODUCT — 22 september 2026 ────────────────────────────────
    Het bord toont per product niet alleen de vier vakjes die ERUIT moeten, maar
    ook alles wat ERIN kwam: type, uitsnede, gezicht, de foto's van de klant, de
@@ -178,7 +178,7 @@ const SESSION_COOKIE = 'vis_admin';
 
 /** orders.status, in the order the studio actually moves through them. */
 import { sendMail } from './mail.js';
-import { stuurBetaallink as stuurBetaallinkMail } from './betaallink.js';
+import { stuurBetaallink as stuurBetaallinkMail, markeerProefbestelling } from './betaallink.js';
 import { createOrderMolliePayment, refundMolliePayment, mollieKey, mollieKeyProblems, describeHeaders } from './mollie.js';
 import { issueInvoice, issueCreditNote, formatNumber } from './invoice.js';
 /* De boekhouding (8.08, 8 oktober 2026): de stand per document in /admin/facturen,
@@ -214,6 +214,10 @@ import { waNummer, waLink, waTekst, contactKnoppen as waKnoppen, isNederlands, b
 import { offsitePage } from './offsite.js';
 /* De Nu-doen-lijst (4.05): bovenaan het dashboard, "Volgende stap" op de bestelpagina, en het nachtrapport. */
 import { nuDoen, nuDoenHtml, volgendeStapHtml } from './nudoen.js';
+/* levering 118 (17 november 2026, proefronde P8-02): dezelfde toets en hetzelfde bedrag als de regel "Voorrang gemist". */
+import { toeslagGemist, toeslagBedragen, TOESLAG_TERUG_ACTIE } from './nudoen.js';
+/* levering 118 (W1-09): de contactvoorkeur van de klant bij "Wat de klant koos". */
+import { voorkeurLabel } from '../data/contactvoorkeur.js';
 /* Drie vaste redenen voor "geen nieuw beeld nodig" (4.08, V37 = a). */
 import { REVISIE_REDENEN, revisieReden } from '../data/revisieRedenen.js';
 /* De kleur van een product: naam, hex, Pantone (5.03). */
@@ -226,11 +230,17 @@ import { puntenVoor, heeftVoorrang, voorrangDeadline, SAMPLE_SERVICE, REVISIE_DA
    moet dezelfde vertaling gebruiken als de poort, anders zegt de planning iets
    anders dan de agenda. */
 import { rowPunten } from '../data/capacity.js';
+/* levering 119 (18 november 2026, proefronde P3-07): de feestdagen in het raster, met een knop "Toch open". */
+import { feestdagenTussen } from '../data/capacity.js';
 import {
   ATTENDED_PUNTEN_PER_DAG, QUEUE_AIM_DAYS, WINDOW_DAYS,
   addDays, addOpenDays, daysInRange, firstOfferableDay, windowFor,
 } from '../data/capacity.js';
 import { readCalendar, videoVelden, agendaUiterlijk } from './agenda.js';
+/* levering 119 (18 november 2026, proefronde P3-07): een feestdag open- of weer dichtzetten. */
+import { leesFeestdagOpen, zetFeestdagOpen } from './agenda.js';
+/* levering 118 (17 november 2026, proefronde L-16): voorrang loopt vanaf betaald én foto's compleet. */
+import { voorrangVanaf } from './fotosCompleet.js';
 import { videoStyles as VIDEO_STIJLEN_NL } from '../data/videoStyles.nl.js';
 /* Zodat het annuleerregeltje kan zeggen of de klant de bestanden nog heeft. Eén
    waarheid over die vraag; zie de kop van delivery.js. */
@@ -284,14 +294,41 @@ import { beeldAchtergronden } from '../data/beeldachtergrond.js';
    en Studio-links met de taal van de mail (E05). */
 import { vandaagNL } from './nlDag.js';
 import { studioUrl } from './studioLink.js';
+/* levering 119 (18 november 2026, proefronde P9-05): de ene zin over het delen van de privélink. */
+import { deelZin } from './deelLink.js';
 
 /* Tot wanneer een voorrangsbestelling uiterlijk geleverd moet zijn (29 september
    2026) — zie VOORRANG en voorrangDeadline() in src/data/pricing.js. Leeg als er
    nog niet betaald is: de termijn loopt vanaf de betaling. */
 function voorrangTot(order) {
   if (!order?.paid_at) return ' — de termijn loopt vanaf de betaling';
-  const d = voorrangDeadline(order.paid_at);
+  /* levering 118 (17 november 2026, proefronde L-16): vanaf het latere van betaald en foto's compleet. */
+  const start = voorrangVanaf(order);
+  if (!start) return " — de termijn loopt pas als alle foto's binnen zijn";
+  const d = voorrangDeadline(start);
   return d ? ` — uiterlijk <strong>${esc(mailDatum(d.datum, 'nl'))} om ${d.uur}:00</strong>, anders gaat de toeslag terug` : '';
+}
+
+/* ── ONBETAALD MAG NIET OP BETAALD OF VAST LIJKEN — levering 118 (17 november 2026, proefronde W1-01/W1-02) ──
+   Bij een onbetaalde voorrangsbestelling stond "Voorrang — toeslag betaald", en een onbetaalde reservering heette
+   overal "vastgelegd". De betaalstand beslist nu de woorden: "voorrang aangevraagd" met de toeslag erbij, en
+   "gereserveerd tot <datum> · onbetaald". Terugbetaald telt niet als onbetaald (er is wel betaald). */
+const BETAALD_OF_TERUG = ['paid', 'plan', 'credits', 'refunded'];
+export function nogOnbetaald(o) {
+  return !BETAALD_OF_TERUG.includes(String(o?.payment_status || 'unpaid'));
+}
+
+/** De regel voor voorrang, naar de betaalstand. Onbetaald: aangevraagd, met de toeslag uit de opbouw (excl. btw). */
+export function voorrangRegel(order) {
+  if (!nogOnbetaald(order)) return `<strong class="or-voorrang">Voorrang</strong> — toeslag betaald${voorrangTot(order)}`;
+  const toeslag = toeslagBedragen(order?.details_json).net;
+  return `<strong class="or-voorrang">Voorrang aangevraagd</strong>${toeslag > 0 ? ` — toeslag ${esc(mailBedrag(toeslag, 'nl'))} excl. btw` : ''} · <strong>onbetaald</strong>; de termijn loopt pas vanaf de betaling`;
+}
+
+/** Tot wanneer een onbetaalde reservering de dagen vasthoudt (window_expires_at), als "24 november 2026 om 14:05". */
+export function gereserveerdTot(order) {
+  const w = order?.window_expires_at ? when(order.window_expires_at) : '—';
+  return w === '—' ? '' : `${mailDatum(w.slice(0, 10), 'nl')} om ${w.slice(11)}`;
 }
 
 /* De naam van de €1-proef op de schermen van /admin (9 november 2026, ronde 91, w7/w8): het bedrag uit pricing.js,
@@ -596,7 +633,8 @@ async function adminGetInner(context) {
     const revisions = [];
     const [orders, statusCounts, vatHeld, watch, tmWaiting, aandacht, nuLijst] = await Promise.all([
       loadOrders(env, statusFilter, { q, filter, hidden }),
-      loadStatusCounts(env),
+      /* levering 119 (W1-08): de chips tellen met de zoekterm en het filter van de lijst. */
+      loadStatusCounts(env, { q, filter, hidden }),
       loadVatHeld(env),
       loadWatchdogs(env),
       loadTestimonialsWaiting(env),
@@ -813,6 +851,11 @@ async function adminPostInner(context) {
   const weerOpenMatch = path.match(/^\/admin\/orders\/(\d+)\/weer-openen$/);
   if (weerOpenMatch) return handleWeerOpenen(context, Number(weerOpenMatch[1]), admin);
 
+  /* levering 118 (17 november 2026, proefronde P8-02): voorrang gemist, toeslag terugstorten via Mollie. Achter
+     dezelfde poort, met een verplicht vinkje op de pagina. */
+  const toeslagMatch = path.match(/^\/admin\/orders\/(\d+)\/toeslag-terug$/);
+  if (toeslagMatch) return handleToeslagTerug(context, Number(toeslagMatch[1]), admin);
+
   const internalMatch = path.match(/^\/admin\/orders\/(\d+)\/internal$/);
   if (internalMatch) return handleInternalNote(context, Number(internalMatch[1]));
 
@@ -834,6 +877,8 @@ async function adminPostInner(context) {
   /* Alle proefbestellingen in één keer uit de lijsten. Zie handleProefOpruimen()
      voor waarom dit VERBERGEN is en geen verwijderen. */
   if (path === '/admin/proef/opruimen') return handleProefOpruimen(context);
+  /* levering 119 (18 november 2026, proefronde W1-11): testklanten in één keer uit de gewone lijst. */
+  if (path === '/admin/customers/test-opruimen') return handleTestklantenOpruimen(context);
 
   const wipeMatch = path.match(/^\/admin\/customers\/(\d+)\/wipe$/);
   if (wipeMatch) return handleCustomerWipe(context, Number(wipeMatch[1]));
@@ -1620,8 +1665,9 @@ const CANCEL_PAYMENT = ['refund', 'credit', 'none'];
 async function handleOrderCancel(context, orderId) {
   const { request, env } = context;
   const admin = await currentAdmin(context);
+  /* levering 119 (18 november 2026, proefronde A0-01): ook first_name, voor de aanhef in de annuleringsmail. */
   const order = await env.DB.prepare(
-    'SELECT id, ref, status, payment_status, total_cents, vat_cents, refunded_cents, payment_ref, customer_id, email, name, lang, details_json FROM orders WHERE id = ?1'
+    'SELECT id, ref, status, payment_status, total_cents, vat_cents, refunded_cents, payment_ref, customer_id, email, name, first_name, lang, details_json FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
   if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.', { menu: true }) }), 404);
   /* ── EEN KEER ANNULEREN, NIET TWEE KEER — 1 oktober 2026 (ronde 8, A-K1) ──
@@ -2071,6 +2117,7 @@ async function handleProefOpruimen(context) {
   return seeOther('/admin');
 }
 
+
 /**
  * Eén bestelling echt weg, en alleen als er niet betaald is.
  *
@@ -2149,16 +2196,24 @@ async function handleOrderDelete(context, orderId) {
      Dezelfde regel als in EXPIRED_FILES_SQL (src/lib/retention.js): een bestand waar een andere
      bestelling of de lijst van een abonnee naar wijst, blijft staan. De rijen van déze bestelling zijn
      hierboven al weg, dus elke rij die nog naar de sleutel wijst, is van een ander. */
+  /* levering 117 (17 november 2026, proefronde B1-12): geen LIKE meer. Het patroon
+     'intake/' || batch || '/%' is 52 tekens en D1 staat er 50 toe; de vraag faalde dus altijd, de
+     catch hieronder viel stil terug op alleen de bestanden, en de knop wiste foto's waar de lijst
+     van een abonnee nog naar wees. Nu een vergelijking van het begin van de sleutel (zoals in
+     EXPIRED_FILES_SQL), en de terugval geldt alleen nog als plan_queue echt niet bestaat. Bij elke
+     andere fout blijft het bestand staan: liever opslag betalen dan een abonnee zijn foto's kwijt. */
   const nogInGebruik = async (key) => {
     try {
       const rij = await env.DB.prepare(
         `SELECT 1 FROM files WHERE r2_key = ?1 OR preview_key = ?1
          UNION ALL
-         SELECT 1 FROM plan_queue WHERE COALESCE(upload_batch, '') <> '' AND ?1 LIKE 'intake/' || upload_batch || '/%'
+         SELECT 1 FROM plan_queue WHERE COALESCE(upload_batch, '') <> ''
+            AND substr(?1, 1, length(upload_batch) + 8) = 'intake/' || upload_batch || '/'
          LIMIT 1`
       ).bind(key).first();
       return !!rij;
-    } catch {
+    } catch (err) {
+      if (!/no such table/i.test(String(err?.message || err))) return true;
       /* Zonder plan_queue (oude database) alleen de bestanden. */
       const rij = await env.DB.prepare('SELECT 1 FROM files WHERE r2_key = ?1 OR preview_key = ?1 LIMIT 1').bind(key).first().catch(() => null);
       return !!rij;
@@ -2766,7 +2821,7 @@ async function loadOrderFiles(env, orderId) {
      reden als details_json hierboven: het zijn kolommen van de eerste migratie, dus
      ze kunnen niet de oorzaak zijn als de brede query omvalt. Zonder hen zou het
      blok "Wanneer" op deze pagina verdwijnen precies wanneer er iets anders mis is. */
-  const wide = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
+  const wide = `SELECT id, ref, service, status, brand, name, first_name, email, lang, product_count,
                        tier, window_start, window_end,
                        details_json,
                        delivery_mailed_at, redelivery_mailed_at, redelivery_count,
@@ -2775,6 +2830,8 @@ async function loadOrderFiles(env, orderId) {
                        vat_valid, vat_checked_at, vat_consultation, vat_check_name,
                        icp_reported_at, customer_id, payment_status, review_state, review_reason, paid_at,
                        created_at, closed_at, delivered_at, refunded_cents, hidden_at, cancel_reason, cancel_payment,
+                       /* levering 118 (W1-01, P8-02): tot wanneer een reservering geldt, en de Mollie-betaling. */
+                       window_expires_at, payment_ref,
                        COALESCE(testmodus, 0) AS testmodus
                   FROM orders WHERE id = ?1`;
   const narrow = `SELECT id, ref, service, status, brand, name, email, lang, product_count,
@@ -3296,13 +3353,20 @@ export function kleurFeit(waarde) {
  */
 async function klantContact(env, orderId) {
   const c = await env.DB.prepare(
-    `SELECT o.phone AS phone, c.phone AS c_phone, COALESCE(o.country, c.country) AS land, o.reviewed_at AS reviewed_at
+    `SELECT o.phone AS phone, c.phone AS c_phone, COALESCE(o.country, c.country) AS land, o.reviewed_at AS reviewed_at,
+            c.id AS klant_id
        FROM orders o LEFT JOIN customers c ON c.id = o.customer_id WHERE o.id = ?1`
   ).bind(orderId).first().catch(() => null);
+  /* levering 118 (17 november 2026, proefronde W1-09): de contactvoorkeur (migratie 0047) los, zodat een database
+     zonder die kolom de knoppen hierboven niet kwijtraakt. */
+  const vk = c?.klant_id
+    ? await env.DB.prepare('SELECT contact_preference FROM customers WHERE id = ?1').bind(c.klant_id).first().catch(() => null)
+    : null;
   return {
     tel: String(c?.phone || c?.c_phone || '').trim(),
     land: String(c?.land || '').trim().toUpperCase(),
     reviewed_at: c?.reviewed_at || null,
+    voorkeur: vk ? String(vk.contact_preference || 'email') : '',
   };
 }
 
@@ -3424,6 +3488,136 @@ export function weerOpenenBlok(order, { nu = new Date() } = {}) {
   </details>`;
 }
 
+/*
+ * ── VOORRANG GEMIST: DE TOESLAG MET ÉÉN KNOP TERUG — levering 118 (17 november 2026, proefronde P8-02) ──────────
+ * De voorwaarden beloven de toeslag terug als voorrang niet gehaald wordt. "Nu doen" noemde de toeslag excl. btw
+ * met een knop die alleen naar de bestelling linkte; de klant betaalde hem incl. btw en hoorde niets. Nu:
+ * een ingeklapte knop met het bedrag incl. btw, een verplicht vinkje (geen dialoog, /admin heeft geen script), en
+ * dan refundMolliePayment(), een regel op de tijdlijn en een eigen mail aan de klant. De creditnota volgt vanzelf
+ * als Mollie de terugbetaling meldt (de webhook, net als bij annuleren).
+ * Het bedrag: de voorrangsregel uit de opbouw (VOORRANG in pricing.js, bij het bestellen gerekend) plus de btw met
+ * het tarief van de bestelling; zie toeslagBedragen() in nudoen.js. Eén keer: de claim is een regel in admin_log.
+ */
+export function toeslagBlok(order, { stand = '', gestart = false } = {}) {
+  if (!order) return '';
+  const meldingen = {
+    gestart: '<p class="okline" role="status">Toeslag teruggestort via Mollie en de klant is gemaild. De creditnota volgt vanzelf zodra Mollie de terugbetaling meldt.</p>',
+    'gestart-zonder-mail': '<p class="warnline" role="status">Toeslag teruggestort via Mollie, maar de mail aan de klant ging niet weg. Laat het de klant zelf weten.</p>',
+    mislukt: '<p class="warnline is-rood" role="status">Het terugstorten is NIET gelukt (zie het logboek). Probeer het opnieuw, of doe het met de hand in Mollie.</p>',
+    al: '<p class="meta" role="status">Het terugstorten was al gestart; er is niets dubbel gedaan.</p>',
+    'kan-niet': '<p class="warnline" role="status">Hier valt niets terug te storten: niet betaald, al (deels) terugbetaald, of de voorrang is gehaald.</p>',
+  };
+  const melding = meldingen[stand] || '';
+  const gemist = toeslagGemist(order);
+  const kan = gemist && order.payment_status === 'paid' && order.status !== 'cancelled'
+    && !(Number(order.refunded_cents) > 0) && !gestart;
+  if (!kan) return melding ? `<div id="toeslag">${melding}</div>` : '';
+  const b = toeslagBedragen(order.details_json, Number(order.vat_cents) > 0 ? Number(order.vat_rate ?? VAT_RATE) : 0);
+  const beloofd = `${mailDatum(gemist.datum, 'nl')} om ${gemist.uur}:00`;
+  if (!(b.bruto > 0)) {
+    return `<div id="toeslag">${melding}<p class="warnline">Voorrang gemist (beloofd ${esc(beloofd)}). Het bedrag van de toeslag staat niet op deze bestelling (besteld vóór 9 november 2026): stort hem met de hand terug in Mollie.</p></div>`;
+  }
+  const bedrag = esc(mailBedrag(b.bruto, 'nl'));
+  const opbouw = b.btw > 0 ? ` (${esc(mailBedrag(b.net, 'nl'))} toeslag + ${esc(mailBedrag(b.btw, 'nl'))} btw)` : ' (zonder btw)';
+  return `<div id="toeslag">${melding}<details class="ingeklapt toeslag-terug"${stand === 'open' ? ' open' : ''}>
+    <summary class="btn btn-primary btn-sm" data-rol="doorgaan">Toeslag terugstorten (${bedrag}${b.btw > 0 ? ' incl. btw' : ''})${rolIkoon('doorgaan')}</summary>
+    <form class="stack" method="post" action="/admin/orders/${order.id}/toeslag-terug">
+      <p class="meta">Voorrang gemist: beloofd ${esc(beloofd)}, geleverd ${esc(when(order.delivered_at))}. Dan komt de toeslag terug. Mollie stort ${bedrag}${opbouw} terug naar de rekening waarmee de klant betaalde. De klant krijgt daar een mail over; de creditnota volgt vanzelf zodra Mollie de terugbetaling meldt.</p>
+      <label class="vink-rij"><input type="checkbox" name="ja" value="1" required> Ja, ${bedrag} terugstorten</label>
+      <button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit">Nu terugstorten${rolIkoon('doorgaan')}</button>
+    </form>
+  </details></div>`;
+}
+
+async function handleToeslagTerug(context, orderId, admin) {
+  const { request, env } = context;
+  if (!Number.isInteger(orderId)) return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
+  const terug = (uit) => `/admin/orders/${orderId}/files?toeslag=${uit}#toeslag`;
+  const form = await request.formData().catch(() => null);
+  /* Het vinkje is verplicht in het formulier; zonder (een oud tabblad, een losse post) gebeurt er niets. */
+  if (String(form?.get('ja') || '') !== '1') return seeOther(terug('open'));
+  const order = await env.DB.prepare(
+    `SELECT id, ref, status, payment_status, total_cents, vat_cents, vat_rate, refunded_cents, payment_ref, paid_at,
+            delivered_at, details_json, email, name, first_name, lang, customer_id
+       FROM orders WHERE id = ?1`
+  ).bind(orderId).first().catch(() => null);
+  if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.', { menu: true }) }), 404);
+  const gemist = toeslagGemist(order);
+  const b = toeslagBedragen(order.details_json, Number(order.vat_cents) > 0 ? Number(order.vat_rate ?? VAT_RATE) : 0);
+  const betaald = (Number(order.total_cents) || 0) + (Number(order.vat_cents) || 0);
+  if (!gemist || order.payment_status !== 'paid' || order.status === 'cancelled' || Number(order.refunded_cents) > 0
+    || !(b.bruto > 0) || b.bruto > betaald) return seeOther(terug('kan-niet'));
+
+  /* DE CLAIM: één INSERT die alleen slaagt als er nog geen is. Een dubbelklik of een tweede tabblad stort zo niet
+     twee keer; Mollie meldt de terugbetaling pas later, dus refunded_cents is hier nog geen rem. */
+  const detail = `${order.ref}: voorrang gemist (beloofd ${gemist.datum} ${gemist.uur}:00), toeslag ${b.bruto} cent incl. btw (${b.net} excl.) teruggestort`;
+  const claim = await env.DB.prepare(
+    `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+     SELECT ?1, ?2, ?3, ?4, ?5, ?6
+      WHERE NOT EXISTS (SELECT 1 FROM admin_log WHERE order_id = ?4 AND action = ?3)`
+  ).bind(admin?.admin_id ?? admin?.id ?? null, admin?.email || null, TOESLAG_TERUG_ACTIE, order.id, order.customer_id || null, detail)
+    .run().catch((e) => { console.error('[admin] claim toeslag-terug mislukt —', e?.message || e); return null; });
+  if (!claim) return seeOther(terug('mislukt'));
+  if (!(Number(claim?.meta?.changes) > 0)) return seeOther(terug('al'));
+
+  /* Mislukt het storten, dan krijgt de claim een andere naam: de regel "Voorrang gemist" staat er weer, en opnieuw
+     proberen kan. */
+  const mislukt = async (reden) => {
+    await env.DB.prepare(
+      `UPDATE admin_log SET action = ?3, detail = ?4 WHERE order_id = ?1 AND action = ?2`
+    ).bind(order.id, TOESLAG_TERUG_ACTIE, `${TOESLAG_TERUG_ACTIE}.mislukt`, `${order.ref}: toeslag NIET teruggestort — ${String(reden).slice(0, 300)}`)
+      .run().catch(() => {});
+    console.error('[admin] toeslag terugstorten voor', order.ref, 'mislukt —', reden);
+    return seeOther(terug('mislukt'));
+  };
+  const betaalId = order.payment_ref || (await env.DB.prepare(
+    `SELECT external_id FROM payments
+      WHERE order_id = ?1 AND status IN ('paid', 'refunded') AND provider = 'mollie'
+      ORDER BY id DESC LIMIT 1`
+  ).bind(order.id).first().catch(() => null))?.external_id || null;
+  if (!betaalId || !env.MOLLIE_API_KEY) return mislukt('geen Mollie-betaling of geen Mollie-sleutel');
+  try {
+    await refundMolliePayment(env, betaalId, { cents: b.bruto, description: `VISUAILS ${order.ref} — voorrangstoeslag terug` });
+  } catch (e) {
+    return mislukt(e?.message || e);
+  }
+
+  const nl = order.lang !== 'en';
+  const bedragNl = mailBedrag(b.bruto, 'nl');
+  const bedragEn = mailBedrag(b.bruto, 'en');
+  await env.DB.prepare(
+    "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'system')"
+  ).bind(order.id, order.status || 'delivered', tijdlijn(order.lang,
+    `We leverden later dan de voorrang beloofde. De toeslag van ${bedragNl} komt terug; de creditnota volgt zodra de terugbetaling bevestigd is.`,
+    `We delivered later than priority promised. The surcharge of ${bedragEn} is coming back; the credit note follows once the refund is confirmed.`)).run().catch(() => {});
+
+  let gemaild = false;
+  if (order.email) {
+    const taal = nl ? 'nl' : 'en';
+    const beloofd = `${mailDatum(gemist.datum, taal)} ${nl ? 'om' : 'at'} ${gemist.uur}:00`;
+    gemaild = await sendMail(env, {
+      to: order.email,
+      subject: nl ? `Je voorrangstoeslag komt terug — ${order.ref}` : `Your priority surcharge is coming back — ${order.ref}`,
+      html: mailShell({
+        lang: taal,
+        preheader: nl ? `We betalen ${bedragNl} terug.` : `We are refunding ${bedragEn}.`,
+        body: [
+          mailH1(nl ? 'De toeslag komt terug' : 'The surcharge is coming back', mailKenmerk('bestelling', order.ref, taal)),
+          mailP(klantAanhef(order)),
+          mailP(nl
+            ? `Je koos voorrang bij <strong>${esc(order.ref)}</strong>. We beloofden je beelden uiterlijk ${esc(beloofd)}, en dat hebben we niet gehaald. Zoals beloofd krijg je de toeslag terug: <strong>${esc(bedragNl)}</strong>${b.btw > 0 ? ' incl. btw' : ''}.`
+            : `You chose priority on <strong>${esc(order.ref)}</strong>. We promised your images by ${esc(beloofd)}, and we did not make it. As promised, the surcharge comes back: <strong>${esc(bedragEn)}</strong>${b.btw > 0 ? ' incl. VAT' : ''}.`),
+          mailP(nl
+            ? 'Het geld gaat terug naar de rekening waarmee je betaalde. Je bank verwerkt het meestal binnen een paar werkdagen. De creditnota krijg je apart per mail.'
+            : 'The money goes back to the account you paid with. Your bank usually processes it within a few working days. You will receive the credit note by email separately.'),
+        ].join(''),
+      }),
+    }).then(() => !!env.RESEND_API_KEY).catch((e) => { console.error('[admin] mail toeslag-terug niet verstuurd —', e?.message || e); return false; });
+  }
+  if (!gemaild) await logAdmin(env, admin, `${TOESLAG_TERUG_ACTIE}.mail-mislukt`, { orderId: order.id, detail: `${order.ref}: mail over de teruggestorte toeslag niet verstuurd` });
+  return seeOther(terug(gemaild ? 'gestart' : 'gestart-zonder-mail'));
+}
+
 async function handleWeerOpenen(context, orderId, admin) {
   const { request, env } = context;
   if (!Number.isInteger(orderId)) return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
@@ -3476,6 +3670,19 @@ async function renderFiles(context, orderId) {
     if (wo) { order.reopened_at = wo.reopened_at || null; order.revision_round_at = wo.revision_round_at || null; }
   }
   const weerOpenen = weerOpenenBlok(order);
+  /* levering 118 (17 november 2026, proefronde P8-02): voorrang gemist → de toeslag met één knop terugstorten.
+     Of het al gestart is, staat in admin_log (de claim van handleToeslagTerug). */
+  let toeslagHtml = '';
+  {
+    let stand = '';
+    try { stand = new URL(request.url).searchParams.get('toeslag') || ''; } catch { stand = ''; }
+    const gemist = toeslagGemist(order);
+    if (gemist || stand) {
+      const al = gemist ? await env.DB.prepare('SELECT 1 AS er FROM admin_log WHERE order_id = ?1 AND action = ?2 LIMIT 1')
+        .bind(order.id, TOESLAG_TERUG_ACTIE).first().catch(() => null) : null;
+      toeslagHtml = toeslagBlok(order, { stand, gestart: !!al });
+    }
+  }
   /* 4.05: "Volgende stap: …" bovenaan, uit dezelfde Nu-doen-lijst als het
      dashboard en het nachtrapport, voor alleen deze bestelling. */
   const volgendeStap = volgendeStapHtml(order, await nuDoen(env.DB, { orderId: order.id }));
@@ -4364,6 +4571,12 @@ async function renderFiles(context, orderId) {
         <label><input type="radio" name="soort" value="volledig"${d.quote_kind === 'aanbetaling' ? '' : ' checked'}> De volledige prijs</label>
         <label><input type="radio" name="soort" value="aanbetaling"${d.quote_kind === 'aanbetaling' ? ' checked' : ''}> Een aanbetaling &mdash; het restant volgt later</label>
       </fieldset>
+      ${/* levering 117 (17 november 2026, proefronde P4-04): wat de klant krijgt en wanneer. Beide komen in
+          de offertemail, op /o/ en op de factuur; zonder deze twee betaalde de klant zonder te weten wanneer. */ ''}
+      <label>Wat je krijgt
+        <textarea name="inhoud" rows="2" maxlength="400" required placeholder="bijv. 2 Motion-clips van 8 seconden, 9:16, met jullie jas">${esc(String(d.quote_inhoud || ''))}</textarea></label>
+      <label>Klaar op
+        <input name="klaar_op" type="date" required value="${/^\d{4}-\d{2}-\d{2}$/.test(String(d.quote_klaar_op || '')) ? esc(d.quote_klaar_op) : ''}"></label>
       <button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit">${bedrag ? 'Bedrag aanpassen en link opnieuw mailen' : 'Offerte vastleggen en betaallink mailen'}${rolIkoon('doorgaan')}</button>
     </form>
     ${zonderAdres}
@@ -4685,7 +4898,34 @@ async function renderFiles(context, orderId) {
       return `<span class="meta">catalog</span> ${fn(cat)}<br><span class="meta">lifestyle</span> ${fn(ls)}`;
     };
     const verhoudingVan = (id, dienst) => { const r = ratioById(id, dienst); return r ? esc(r.label) : esc(id); };
+    /* ── HOE DE KLANT BEREIKT WIL WORDEN, EN ZIJN FOTO'S — levering 118 (17 november 2026, proefronde W1-09) ──
+       Een klant koos "Telefoon of WhatsApp" en vroeg "kunnen jullie mij bellen?"; op dit scherm stond de voorkeur
+       nergens en zijn vraag onderaan. Nu bovenaan: zijn bericht, hoe hij bereikt wil worden (met een belknop), en
+       of zijn foto's later in Studio komen. */
+    const contactRegel = (() => {
+      if (!contact.voorkeur) return '';
+      const woord = esc(voorkeurLabel(contact.voorkeur, 'nl'));
+      if (contact.voorkeur !== 'whatsapp') return woord;
+      const bel = waLink('fotos', { tel: contact.tel, land: contact.land }).tel;
+      return `<strong>${woord}</strong>${contact.tel ? ` — ${esc(contact.tel)}` : ' — <span class="meta">geen nummer bekend</span>'}${bel ? ` <a class="btn btn-ghost btn-sm" data-rol="contact" href="${esc(bel)}">Bel de klant</a>` : ''}`;
+    })();
+    /* Geen enkele upload is voor ontbreekt.js "onbekend" (null); hier is het gewoon: alles komt later. */
+    const fotoDienst = NASTUUR_DIENSTEN.has(String(order.service || '')) && VOOR_LEVERING.has(String(order.status || ''));
+    const fotoRegel = !fotoDienst ? ''
+      : ontbreekt && ontbreekt.length
+        ? `Later in Studio <span class="meta">— ${esc(ontbreektLabel(ontbreekt))}; zie <a href="#ontbreekt">hieronder</a></span>`
+        : !intake.length ? 'Later in Studio <span class="meta">— nog geen foto’s aangeleverd</span>' : '';
     const rijen = [
+      /* Ronde 9, O39: bij een bestelling die jij namens de klant aanmaakte, is het
+         jouw notitie en niet zijn bericht. Sinds levering 118 (W1-09) bovenaan. */
+      rij(d.placed_by ? 'Jouw notitie (ziet de klant)' : 'Bericht van de klant', berichtRegel),
+      rij('Contact', contactRegel),
+      /* levering 118 (17 november 2026, proefronde N4 B1-01, keuze b): een proef die aangenomen is maar op de nakijklijst
+         hoort (details.proef_twijfel, /api/order) stond alleen in het logboek en de studiomail. Nu ook hier, bovenaan. */
+      rij('Proef', d.proef_twijfel ? `<strong class="or-botcheck" id="proef-twijfel">Nakijken</strong> — mogelijk een tweede proef: ${esc(d.proef_twijfel)}. <span class="meta">Aangenomen; bel of mail even als het hetzelfde bedrijf is.</span>` : ''),
+      rij('Foto’s', fotoRegel),
+      /* levering 118 (17 november 2026, proefronde P2-06): foto's die /api/upload te klein vond (details.te_klein). */
+      rij('Te klein', d.te_klein ? `<span class="pill danger">te klein</span> ${esc(d.te_klein)} <span class="meta">— onder ${MIN_LANGE_ZIJDE} px aan de lange kant; vraag de klant om het origineel</span>` : ''),
       rij('Stijl', stijlRegel()),
       rij('Achtergrond', achtergrondRegel()),
       /* Werklijst 27: per beeld een andere achtergrond, met staal. */
@@ -4698,7 +4938,8 @@ async function renderFiles(context, orderId) {
          staat dat op het bord, in de brief van het product zelf — daar hoort
          het, naast de foto's waar het over gaat. Hier alleen nog wat voor de
          hele bestelling geldt. */
-      rij('Levering', heeftVoorrang(order) ? `<strong class="or-voorrang">Voorrang</strong> — toeslag betaald${voorrangTot(order)}` : ''),
+      /* levering 118 (W1-01): naar de betaalstand; onbetaald heet het "aangevraagd". */
+      rij('Levering', heeftVoorrang(order) ? voorrangRegel(order) : ''),
       /* Namen in plaats van ids ("own" → "Onze eigen webshop") — ronde 9, O5. */
       rij('Kanalen', d.channels ? String(d.channels).split(',').map((c) => { const k = KANALEN.find((x) => x.id === c.trim()); return esc(k ? channelName(k, 'nl') : c.trim()); }).join(', ') : ''),
       /* De bijbestelde hoeken: betaald per foto, dus ze horen in dit overzicht
@@ -4708,9 +4949,6 @@ async function renderFiles(context, orderId) {
          Op het bord staat elke look als eigen rij met zijn twee vakjes. */
       rij('Complete looks', looksVan(d, order.product_count).map((l) => `<strong><a href="#l${esc(l.letter)}">Look ${esc(l.letter)}</a></strong> — ${l.producten.map((n) => `p${n} ${esc(String(d[`product_p${n}`] || '').trim() || `Product ${n}`)}`).join(', ')}${l.notitie ? ` · “${esc(l.notitie)}”` : ''}`).join('<br>')),
       rij('Kledingsoort', d.garment ? esc(garmentVan(String(d.garment)).name.nl) : ''),
-      /* Ronde 9, O39: bij een bestelling die jij namens de klant aanmaakte, is het
-         jouw notitie en niet zijn bericht. */
-      rij(d.placed_by ? 'Jouw notitie (ziet de klant)' : 'Bericht van de klant', berichtRegel),
       /* ── DE BOTCHECK — 8 oktober 2026 (o03) ─────────────────────────────
          Alleen als de bestelling zonder geldige botcheck van Cloudflare is
          doorgelaten (geen token, al gebruikt, of een storing). Niet geweigerd,
@@ -4771,10 +5009,16 @@ async function renderFiles(context, orderId) {
   const wanneerBlok = afgerond
     ? `<p class="muted">Deze bestelling is ${esc(String(STATUS_LABEL[order.status] || order.status).toLowerCase())}; de leverdag verzetten kan niet meer.</p>`
     : `
-  <p class="muted">${heeftVenster
-    ? `Vastgelegd op <strong>${esc(order.window_start)}</strong> of <strong>${esc(order.window_end || order.window_start)}</strong>.`
+  <p class="muted">${/* levering 118 (W1-01/W1-02): onbetaald is gereserveerd (met de vervaldatum), niet vastgelegd. */ heeftVenster
+    ? (nogOnbetaald(order)
+      ? `Gereserveerd op <strong>${esc(order.window_start)}</strong> of <strong>${esc(order.window_end || order.window_start)}</strong> &middot; <strong>onbetaald</strong>. ${gereserveerdTot(order)
+        ? `Wordt er niet betaald, dan komen de dagen vrij op ${esc(gereserveerdTot(order))}.`
+        : 'Er loopt nog geen vervaldatum (bijvoorbeeld omdat de btw-controle nog openstaat).'}`
+      : `Vastgelegd op <strong>${esc(order.window_start)}</strong> of <strong>${esc(order.window_end || order.window_start)}</strong>.`)
     : heeftVoorrang(order)
-      ? `<strong class="or-voorrang">Voorrang</strong> — de klant betaalde de toeslag${voorrangTot(order)}. Geen vastgelegde dagen.`
+      ? (nogOnbetaald(order)
+        ? `${voorrangRegel(order)}. Geen vastgelegde dagen.`
+        : `<strong class="or-voorrang">Voorrang</strong> — de klant betaalde de toeslag${voorrangTot(order)}. Geen vastgelegde dagen.`)
       : 'Geen vastgelegde dagen — deze bestelling telt in de agenda mee als &ldquo;zo snel mogelijk&rdquo;.'}</p>
   <form class="ag-dagform" method="post" action="/admin/orders/${order.id}/window">
     <input type="hidden" name="do" value="verzet">
@@ -4825,6 +5069,16 @@ async function renderFiles(context, orderId) {
     <button class="btn btn-ghost btn-sm" data-rol="terugnemen" type="submit">${rolIkoon('terugnemen')}Terug naar In productie</button>
     <span class="meta">Voor een vergissing: de bestelling staat weer op In productie en de klant ziet dat op zijn tijdlijn. Er gaat geen mail uit; leveren doe je daarna opnieuw met &ldquo;Leveren en klant mailen&rdquo; (dan krijgt de klant weer de mail dat het klaarstaat).</span>
   </form>` : '';
+  /* levering 118 (17 november 2026, proefronde B1-11): mislukte, afgebroken en verlopen betalingen staan nu in
+     `payments` (webhook/mollie.js). Was de laatste poging zo'n uitkomst, dan zegt de regel dat, in plaats van alleen
+     "Betaling staat open". "Laatste poging", want een nieuwe betaling die nog open staat, komt pas met de webhook. */
+  const MISLUKTE_POGING = { failed: 'mislukt', canceled: 'afgebroken', expired: 'verlopen' };
+  const laatstePoging = kanBetaallink
+    ? await env.DB.prepare('SELECT status, created_at FROM payments WHERE order_id = ?1 ORDER BY id DESC LIMIT 1').bind(order.id).first().catch(() => null)
+    : null;
+  const betaalStandRegel = laatstePoging && MISLUKTE_POGING[laatstePoging.status]
+    ? `Betaling staat open &middot; laatste poging ${MISLUKTE_POGING[laatstePoging.status]} (${esc(when(laatstePoging.created_at || ''))})`
+    : 'Betaling staat open';
   const kop = `
   <div class="bestel-kop">
     <p class="meta">${order.customer_id ? `<a href="/admin/customers/${order.customer_id}">${esc(order.brand || order.name || order.email || 'Klant')}</a>` : esc(order.brand || order.name || '')} &middot; ${esc(serviceLabel(order.service, 'nl') || order.service)}${order.product_count ? ` &middot; ${order.product_count} product${order.product_count === 1 ? '' : 'en'}` : ''} &middot; binnen ${esc(when(order.created_at || '').slice(0, 10))}${aanvraagRegel}</p>
@@ -4832,7 +5086,7 @@ async function renderFiles(context, orderId) {
     ${order.status === 'cancelled' ? `<p class="warnline">Geannuleerd${order.cancel_reason ? `: ${esc(order.cancel_reason)}` : ''}${order.cancel_payment ? ` &middot; ${esc(geldTerugStand(order))}` : ''}${leveringIngetrokken(order) && (files || []).some((f) => f.kind === 'delivery') ? ' &middot; de beelden zijn niet meer zichtbaar voor de klant' : ''}.</p>` : ''}
     ${order.status === 'delivered' && !order.delivery_mailed_at ? `<form class="controls" method="post" action="/admin/orders/${order.id}/delivery-mail"><p class="warnline in-grow">Op geleverd gezet, maar de klant heeft de leveringsmail niet gekregen.</p><button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit">Leveringsmail opnieuw proberen${rolIkoon('doorgaan')}</button></form>` : ''}
     ${kanBetaallink ? `<form class="controls" method="post" action="/admin/orders/${order.id}/paylink"><p class="meta in-grow">Nog niet betaald. Kwijt of verlopen? Stuur de klant een nieuwe link.</p><button class="btn btn-sm" data-rol="doorgaan" type="submit">Betaallink opnieuw mailen${rolIkoon('doorgaan')}</button></form>` : ''}
-    ${kanBetaallink && order.service !== 'test-sample' ? `<div class="wa-moment" id="betaling"><span class="meta">Betaling staat open &middot;</span> ${betaalContactRegel(order, contact)}</div>` : ''}
+    ${kanBetaallink && order.service !== 'test-sample' ? `<div class="wa-moment" id="betaling"><span class="meta">${betaalStandRegel} &middot;</span> ${betaalContactRegel(order, contact)}</div>` : ''}
     ${reviewBlok}
     ${weerOpenen}
   </div>`;
@@ -4842,6 +5096,7 @@ ${adminNav('')}
   <h1>${esc(order.ref)}${creditsPil(order)}${terugboekPil(order)}</h1>
   ${volgendeStap}
   ${kop}
+  ${toeslagHtml}
   ${bounceBlok}
   ${chargebackBlok}
   ${tegoedBlok}
@@ -5953,7 +6208,7 @@ async function portalWeight(env, orderId) {
 async function sendDeliveryMail(context, orderId) {
   const { request, env } = context;
   const order = await env.DB.prepare(
-    `SELECT id, ref, email, name, lang, service, details_json, delivery_mailed_at FROM orders WHERE id = ?1`
+    `SELECT id, ref, email, name, first_name, lang, service, details_json, delivery_mailed_at FROM orders WHERE id = ?1`
   ).bind(orderId).first();
   if (!order || !order.email) return false;
   if (order.delivery_mailed_at) return true;
@@ -6258,7 +6513,7 @@ async function handleFreshLink(context, orderId) {
   const { request, env } = context;
 
   const order = await env.DB.prepare(
-    'SELECT id, ref, email, name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1'
+    'SELECT id, ref, email, name, first_name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
   if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.', { menu: true }) }), 404);
 
@@ -6336,9 +6591,17 @@ async function handleFreshLink(context, orderId) {
  * ingetypt — zie de noot bij UPLOAD_DAYS daar, en dezelfde afspraak als in
  * terms.astro.
  */
+/* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam. "Jan Willem de Vries" gaf
+   "Hallo Jan," omdat greeting() het eerste woord van de volle naam neemt. Staat er een voornaam op de bestelling (of
+   de klant), dan die helemaal; alleen bij oude bestellingen zonder voornaam het oude gedrag. */
+export function klantAanhef(order, opties = {}) {
+  const vn = String(order?.first_name || '').trim().replace(/\s+/g, ' ');
+  return vn ? esc(aanhefTekst(vn, order?.lang === 'nl' ? 'nl' : 'en', opties)) : mailGreeting(order?.name, order?.lang, opties);
+}
+
 export function freshLinkEmail({ order, link }) {
   const nl = order.lang === 'nl';
-  const hi = mailGreeting(order.name, order.lang);
+  const hi = klantAanhef(order); // levering 119 (A0-01)
   return mailShell({
     lang: nl ? 'nl' : 'en',
     preheader: nl
@@ -6499,7 +6762,7 @@ async function unannouncedTally(env, orderId, product = null) {
  */
 export function deliveryEmail({ order, link, n, nu = new Date() }) {
   const nl = order.lang === 'nl';
-  const hi = mailGreeting(order.name, order.lang);
+  const hi = klantAanhef(order); // levering 119 (A0-01)
   /* ── DE PROEF EN DE REVISIETERMIJN — 1 oktober 2026 (ronde 8, M-B3, M-C2) ──
      De proefvisual heeft geen goedkeuren en geen revisieronde, en de mail
      beloofde allebei. Een gewone bestelling kreeg geen termijn: de klok van de
@@ -6563,9 +6826,8 @@ export function deliveryEmail({ order, link, n, nu = new Date() }) {
       mailP(bewaarZin),
       // The URL in full under the button, for the same reason the sign-in mail
       // prints it: a client that strips anchors, or a phone-to-desktop hop.
-      mailNote(nl
-        ? `Deze link is de sleutel tot je bestelling — stuur hem gerust door aan een collega die mee moet kijken. <br>${mailLinkUit(link)}`
-        : `That link is the key to the order — pass it on to a colleague who needs to look. <br>${mailLinkUit(link)}`),
+      /* levering 119 (18 november 2026, proefronde P9-05): de ene deelzin (deelLink.js), zoals de bevestiging en /o/. */
+      mailNote(`${esc(deelZin(nl ? 'nl' : 'en'))} <br>${mailLinkUit(link)}`),
       /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
       mailVragen(nl ? 'nl' : 'en', order.ref),
     ].join(''),
@@ -6638,8 +6900,9 @@ async function handleInvoiceRepair(context, orderId) {
   const actie = String(form?.get('action') || '');
   const back = `/admin/orders/${orderId}/files`;
 
+  /* levering 119 (18 november 2026, proefronde A0-01): ook name en first_name, zodat de opnieuw verstuurde factuurmail de klant bij naam noemt. */
   const order = await env.DB.prepare(
-    'SELECT id, ref, email, lang FROM orders WHERE id = ?1'
+    'SELECT id, ref, email, lang, name, first_name, country FROM orders WHERE id = ?1'
   ).bind(orderId).first().catch(() => null);
   if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.', { menu: true }) }), 404);
 
@@ -6693,7 +6956,7 @@ async function handleAnnounceRedelivery(context, orderId) {
     return html(page({ title: 'Admin', body: errorBody('Ongeldig bestelnummer.') }), 400);
   }
   const order = await env.DB.prepare(
-    `SELECT id, ref, email, name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1`
+    `SELECT id, ref, email, name, first_name, lang, status, delivery_mailed_at FROM orders WHERE id = ?1`
   ).bind(orderId).first();
   if (!order) return html(page({ title: 'Admin', body: errorBody('Die bestelling bestaat niet.', { menu: true }) }), 404);
   if (!order.email) return html(page({ title: 'Admin', body: errorBody('Op deze bestelling staat geen e-mailadres.') }), 400);
@@ -6824,7 +7087,7 @@ async function handleAnnounceRedelivery(context, orderId) {
  */
 export function redeliveryEmail({ order, link, n, revisions = 0, note = '', product = null, antwoorden = [] }) {
   const nl = order.lang === 'nl';
-  const hi = mailGreeting(order.name, order.lang);
+  const hi = klantAanhef(order); // levering 119 (A0-01)
   const isRevision = revisions > 0;
   // Gaat het over één product, dan staat dat in de zin. "3 nieuwe beelden" bij
   // een bestelling van dertig producten is waar en nutteloos; "3 nieuwe beelden
@@ -6906,7 +7169,7 @@ export function revisieAntwoordEmail({ order, link, antwoorden = [], note = '' }
       : `Our answer to your revision round for ${order.ref}.`,
     body: [
       mailH1(nl ? 'Antwoord op je revisieronde' : 'An answer to your revision round', mailKenmerk('bestelling', order.ref, nl ? 'nl' : 'en')),
-      mailP(mailGreeting(order.name, order.lang)),
+      mailP(klantAanhef(order)),
       mailP(nl
         ? `We hebben ${n === 1 ? 'naar het beeld gekeken dat je aanmerkte' : `naar de ${n} beelden gekeken die je aanmerkte`}. Dit is ons antwoord.`
         : `We looked at ${n === 1 ? 'the image you flagged' : `the ${n} images you flagged`}. This is our answer.`),
@@ -7102,6 +7365,28 @@ async function loadTestimonialsWaiting(env) {
 /* Hoeveel wachtende bestellingen de zijkolom met knoppen toont (7.05); de rest zit achter "bekijken". */
 const WACHT_LIJST_MAX = 6;
 
+/* levering 119 (18 november 2026, proefronde W1-08): één voorwaarde voor "wacht op betaling", voor het getal onder de
+   lijst én voor het filter ?f=unpaid erachter. Zonder kolomnamen met een tabelletter: werkt in beide queries. */
+const WACHT_OP_BETALING_SQL = `payment_status = 'unpaid' AND total_cents > 0 AND service != 'test-sample' AND status != 'cancelled'
+          AND status IN ('received','in_production','human_check')`;
+
+/* levering 119 (W1-08): de zin onder de lijst zegt waarom het lijstje korter is dan het getal. */
+function wachtOpBetalingZin(a = {}) {
+  const n = Number(a.wachtOpBetaling) || 0;
+  if (!n) return '';
+  const getoond = (a.wachtLijst || []).length;
+  const metLink = Math.max(getoond, Number(a.wachtMetLink ?? getoond) || 0);
+  const controle = Math.max(0, n - metLink);
+  const delen = [`${n} bestelling${n === 1 ? '' : 'en'} wacht${n === 1 ? '' : 'en'} op betaling &mdash; <a href="/admin?f=unpaid">bekijken</a>. Die tellen niet als werk.`];
+  if (getoond) {
+    delen.push(getoond === metLink
+      ? `Hieronder ${getoond === 1 ? 'de bestelling' : `alle ${getoond}`} met een betaallink.`
+      : `Hieronder de ${getoond} oudste met een betaallink; nog ${metLink - getoond} achter &lsquo;bekijken&rsquo;.`);
+  }
+  if (controle) delen.push(`${controle} wacht${controle === 1 ? '' : 'en'} nog op de btw-controle en ${controle === 1 ? 'kreeg' : 'kregen'} nog geen link.`);
+  return `<p class="meta">${delen.join(' ')}</p>`;
+}
+
 /* Wat vandaag aandacht vraagt naast de lijst (ronde 8, A-N13). Elk deel vangt
    zijn eigen fout: een ontbrekende tabel laat het dashboard staan. */
 async function loadAandacht(env) {
@@ -7114,12 +7399,21 @@ async function loadAandacht(env) {
     ).first())?.n) || 0;
   } catch { /* kolom ontbreekt */ }
   try {
+    /* levering 119 (W1-08): dezelfde voorwaarde als ?f=unpaid. */
     uit.wachtOpBetaling = Number((await env.DB.prepare(
-      `SELECT COUNT(*) AS n FROM orders WHERE status IN ('received','in_production','human_check')
-          AND service <> 'test-sample' AND hidden_at IS NULL
-          AND COALESCE(payment_status, 'unpaid') = 'unpaid' AND COALESCE(total_cents, 0) > 0`
+      `SELECT COUNT(*) AS n FROM orders WHERE ${WACHT_OP_BETALING_SQL} AND hidden_at IS NULL`
     ).first())?.n) || 0;
   } catch { /* */ }
+  /* levering 119 (W1-08): hoeveel daarvan een betaallink kregen (niet op de btw-controle), zodat de zin kan zeggen
+     waarom het lijstje hieronder korter is. */
+  if (uit.wachtOpBetaling) {
+    try {
+      uit.wachtMetLink = Number((await env.DB.prepare(
+        `SELECT COUNT(*) AS n FROM orders WHERE ${WACHT_OP_BETALING_SQL} AND hidden_at IS NULL
+            AND (review_state IS NULL OR review_state = 'approved')`
+      ).first())?.n) || 0;
+    } catch { /* kolom ontbreekt: dan zegt de zin alleen het getal */ }
+  }
   /* ── WIE ER WACHT, MET DE DAG EN DE KNOPPEN — 8 oktober 2026 (7.05, moment 1) ──
      Naast het getal de oudste wachtende bestellingen: "dag 5 van 14" en Bel/App/
      Mail met de vaste tekst. Alleen als er ook echt een link is gestuurd (niet
@@ -7127,7 +7421,7 @@ async function loadAandacht(env) {
   if (uit.wachtOpBetaling) {
     try {
       uit.wachtLijst = (await env.DB.prepare(
-        `SELECT o.id, o.ref, o.brand, o.name, o.email, o.lang, o.created_at, o.review_state, o.reviewed_at,
+        `SELECT o.id, o.ref, o.brand, o.name, o.first_name, o.email, o.lang, o.created_at, o.review_state, o.reviewed_at,
                 o.phone AS phone, c.phone AS c_phone, COALESCE(o.country, c.country) AS land
            FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status IN ('received','in_production','human_check')
@@ -7174,7 +7468,40 @@ function klantTabs(actief) {
   return `<nav class="fl-row klant-tabs" aria-label="Klanten, abonnees of op maat">${tab('customers', '/admin/customers', 'Alle klanten')}${tab('abonnees', '/admin/abonnees', 'Abonnees')}${tab('opmaat', '/admin/op-maat', 'Op maat')}</nav>`;
 }
 
+/* levering 119 (18 november 2026, proefronde W1-11): wie een testklant is. Geen echte betaalde bestelling, en
+   wel een testbestelling of testabonnement (aangenomen met een test_-sleutel van Mollie, de PROEF-reeks), of een
+   merk of naam die met TEST begint (zoals de proefpersonen en het contactformulier: "TEST · Pieter"). GLOB is
+   hoofdlettergevoelig en vraagt een niet-letter na TEST, dus "Testament" of "TESTAMENT" telt niet. */
+const TESTKLANT_SQL = `(NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id AND COALESCE(o.testmodus, 0) = 0
+                          AND o.payment_status IN ('paid', 'plan', 'credits', 'refunded'))
+          AND (EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id AND COALESCE(o.testmodus, 0) = 1)
+            OR EXISTS (SELECT 1 FROM subscriptions s WHERE s.customer_id = c.id AND COALESCE(s.testmodus, 0) = 1)
+            OR COALESCE(c.brand, '') = 'TEST' OR COALESCE(c.brand, '') GLOB 'TEST[^A-Za-z]*'
+            OR COALESCE(c.name, '') = 'TEST' OR COALESCE(c.name, '') GLOB 'TEST[^A-Za-z]*'))`;
+
+/* levering 119 (W1-11): de lijst met een vlag is_test. Kent de database testmodus (migratie 0046) of de
+   abonnementen nog niet, dan de oude lijst zonder vlag. */
 async function loadCustomers(env) {
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT c.id, c.email, c.brand, c.name, c.created_at,
+              (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS orders,
+              (SELECT COALESCE(SUM(o.total_cents),0) FROM orders o
+                WHERE o.customer_id = c.id AND o.payment_status = 'paid') AS paid_cents,
+              (SELECT MAX(o.created_at) FROM orders o WHERE o.customer_id = c.id) AS last_order,
+              CASE WHEN ${TESTKLANT_SQL} THEN 1 ELSE 0 END AS is_test
+         FROM customers c
+        ORDER BY last_order IS NULL, last_order DESC, c.id DESC
+        LIMIT 300`
+    ).all();
+    return results || [];
+  } catch {
+    return loadCustomersZonderTest(env);
+  }
+}
+
+/* De lijst zoals hij was vóór levering 119 (zonder is_test). */
+async function loadCustomersZonderTest(env) {
   const { results } = await env.DB.prepare(
     `SELECT c.id, c.email, c.brand, c.name, c.created_at,
             (SELECT COUNT(*) FROM orders o WHERE o.customer_id = c.id) AS orders,
@@ -7195,6 +7522,58 @@ async function loadCustomers(env) {
   return results || [];
 }
 
+/**
+ * levering 119 (18 november 2026, proefronde W1-11): testklanten opruimen.
+ *
+ * VERBERGEN, GEEN WISSEN, om dezelfde reden als bij de knop voor testbestellingen (/admin/proef/opruimen): één
+ * knop die klanten en hun
+ * PROEF-facturen echt weggooit, is niet terug te draaien. Wat hij doet: alle bestellingen van testklanten (zie
+ * TESTKLANT_SQL: zonder echte betaalde bestelling) krijgen hidden_at, en de klantenlijst toont voortaan "Zonder
+ * test" (app_settings klanten_test_verborgen). De klanten blijven bestaan onder "Alleen test", en wie er echt een
+ * kwijt wil, gebruikt de wisknop op de klantpagina. actie=tonen zet de lijst terug op alles.
+ *
+ * levering 119 (18 november 2026, proefronde W1-11, hersteller H10): "weer gewoon tonen" liet de bestellingen verborgen
+ * (N5 zette er 57 met SQL terug). Nu krijgen de bestellingen die het opruimen verbergt één vast merkteken als hidden_at
+ * (de tijd tot op de milliseconde, ook in app_settings klanten_test_verborgen), en tonen maakt hidden_at weer leeg voor
+ * precies die bestellingen. Wat Lucas zelf verborg, heeft een andere tijd en blijft verborgen. Opnieuw opruimen terwijl de
+ * lijst al opgeruimd is, gebruikt hetzelfde merkteken, zodat tonen ook die bestellingen terugzet.
+ */
+async function handleTestklantenOpruimen(context) {
+  const { env, request } = context;
+  const admin = await currentAdmin(context);
+  const form = await request.formData().catch(() => null);
+  const merkteken = String((await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'klanten_test_verborgen'").first().catch(() => null))?.value || '');
+  if (String(form?.get('actie') || '') === 'tonen') {
+    /* levering 119 (W1-11, H10): precies de bestellingen die het opruimen verborg weer tonen. */
+    const terug = merkteken
+      ? await env.DB.prepare('UPDATE orders SET hidden_at = NULL WHERE hidden_at = ?1').bind(merkteken).run().catch(() => null)
+      : null;
+    const teruggezet = Number(terug?.meta?.changes ?? terug?.changes ?? 0) || 0;
+    await env.DB.prepare("DELETE FROM app_settings WHERE key = 'klanten_test_verborgen'").run().catch(() => null);
+    await logAdmin(env, admin, 'customer.test.tonen', { detail: `testklanten weer in de gewone lijst; ${teruggezet} bestelling(en) weer zichtbaar` });
+    return seeOther('/admin/customers?f=alle');
+  }
+  /* levering 119 (W1-11, H10): één merkteken per opruimronde (tot op de milliseconde), zodat "tonen" weet welke het waren. */
+  const teken = /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}$/.test(merkteken)
+    ? merkteken
+    : String((await env.DB.prepare("SELECT strftime('%Y-%m-%d %H:%M:%f', 'now') AS t").first().catch(() => null))?.t || new Date().toISOString().replace('T', ' ').slice(0, 23));
+  const uit = await env.DB.prepare(
+    `UPDATE orders SET hidden_at = ?1
+      WHERE hidden_at IS NULL
+        AND customer_id IN (SELECT c.id FROM customers c WHERE ${TESTKLANT_SQL})`
+  ).bind(teken).run().catch((err) => {
+    console.error('[admin] testklanten opruimen mislukt:', err?.message || err);
+    return null;
+  });
+  const aantal = Number(uit?.meta?.changes ?? uit?.changes ?? 0) || 0;
+  await env.DB.prepare(
+    `INSERT INTO app_settings (key, value) VALUES ('klanten_test_verborgen', ?1)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  ).bind(teken).run().catch(() => null);
+  await logAdmin(env, admin, 'customer.test.hide', { detail: `testklanten uit de lijst; ${aantal} bestelling(en) verborgen` });
+  return seeOther('/admin/customers');
+}
+
 async function renderCustomers(context) {
   const { env } = context;
   /* Na het wissen kwam je hier zonder één woord (24 september 2026). */
@@ -7211,7 +7590,30 @@ async function renderCustomers(context) {
      lijst is de plek waar je het doet. Per klant: openen, onderaan "Deze klant
      wissen (AVG-verzoek)", merknaam overtypen. Facturen blijven, uitgekleed. */
   if (filter === 'bewaartermijn') return renderBewaartermijn(context, gewist);
-  const rows = await loadCustomers(env);
+  const alleRijen = await loadCustomers(env);
+  /* levering 119 (18 november 2026, proefronde W1-11): testklanten herkenbaar en apart. ?f=echt toont alleen echte
+     klanten, ?f=test alleen testklanten, ?f=alle alles. Na "Testklanten opruimen" is "echt" de gewone stand. */
+  const testAantal = alleRijen.filter((r) => Number(r.is_test) === 1).length;
+  let testVerborgen = false;
+  try {
+    testVerborgen = !!(await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'klanten_test_verborgen'").first())?.value;
+  } catch { testVerborgen = false; }
+  const klantFilter = ['echt', 'test', 'alle'].includes(filter) ? filter : (testVerborgen && testAantal ? 'echt' : 'alle');
+  const rows = klantFilter === 'echt' ? alleRijen.filter((r) => Number(r.is_test) !== 1)
+    : klantFilter === 'test' ? alleRijen.filter((r) => Number(r.is_test) === 1)
+    : alleRijen;
+  const klantChip = (k, label, n) => (k === klantFilter
+    ? `<span class="fl-chip is-active" aria-current="true">${label} <span class="fl-n">${n}</span></span>`
+    : `<a class="fl-chip" href="/admin/customers?f=${k}">${label} <span class="fl-n">${n}</span></a>`);
+  const testRij = testAantal ? `<div class="fl-row" aria-label="Testklanten">
+    ${klantChip('alle', 'Alle klanten', alleRijen.length)}
+    ${klantChip('echt', 'Zonder test', alleRijen.length - testAantal)}
+    ${klantChip('test', 'Alleen test', testAantal)}
+    <form class="fl-form" method="post" action="/admin/customers/test-opruimen"><input type="hidden" name="actie" value="${testVerborgen ? 'tonen' : 'opruimen'}"><button class="fl-chip fl-chip-doe" type="submit">${testVerborgen ? 'Testklanten weer gewoon tonen' : `Testklanten opruimen (${testAantal})`}</button></form>
+  </div>
+  <p class="meta">${testVerborgen
+    ? 'Testklanten staan niet in de gewone lijst en hun bestellingen zijn verborgen. Ze zijn er nog: zie Alleen test. Weer gewoon tonen zet ook hun bestellingen terug (niet die je zelf verborg).'
+    : 'Opruimen verbergt de bestellingen van testklanten en haalt ze uit de gewone lijst. Er gaat niets weg en er gaat geen mail uit.'}</p>` : '';
   let overTermijn = 0;
   try { overTermijn = Number((await env.DB.prepare(STALE_ACCOUNTS_COUNT_SQL).first())?.n) || 0; } catch { overTermijn = 0; }
   const body = `
@@ -7219,14 +7621,15 @@ ${adminNav('customers')}
   <h1>Klanten</h1>
   ${klantTabs('customers')}
   ${gewist ? '<p class="okline">De klant is gewist. Bestellingen met een factuur of creditnota zijn bewaard zonder persoonsgegevens; de rest is weg.</p>' : ''}
-  <p class="lede">${rows.length} merk${rows.length === 1 ? '' : 'en'}</p>
+  <p class="lede">${rows.length} merk${rows.length === 1 ? '' : 'en'}${klantFilter === 'echt' && testAantal ? ` &middot; ${testAantal} testklant${testAantal === 1 ? '' : 'en'} niet getoond` : ''}</p>
+  ${testRij}
   ${overTermijn ? `<p class="warnline"><a class="k k-tekst k-klein" href="/admin/customers?f=bewaartermijn" data-rol="navigeren">${bewaartermijnRegel(overTermijn)}${rolIkoon('navigeren')}</a></p>` : ''}
   ${await aboPlafondRegel(context)}
   ${nieuweKlantFormulier()}
   ${rows.length ? `<table class="files">
     <thead><tr><th>Merk</th><th>E-mail</th><th class="num">Bestellingen</th><th class="num">Betaald excl. btw</th><th>Laatste bestelling</th></tr></thead>
     <tbody>${rows.map((r) => `<tr>
-      <td><a href="/admin/customers/${r.id}">${esc(r.brand || r.name || '—')}</a></td>
+      <td><a href="/admin/customers/${r.id}">${esc(r.brand || r.name || '—')}</a>${/* levering 119 (W1-11) */ Number(r.is_test) === 1 ? ' <span class="or-let is-proef">test</span>' : ''}</td>
       <td>${esc(r.email)}</td>
       <td class="num">${r.orders}</td>
       <td class="num">${r.paid_cents ? mailBedrag(r.paid_cents, 'nl') : '—'}</td>
@@ -7695,7 +8098,7 @@ async function handleCustomerCredit(context, customerId) {
       await sendMail(env, {
         to: customer.email,
         subject: lang === 'nl' ? `Er staat ${mailBedrag(cents, 'nl')} tegoed voor je klaar` : `${mailBedrag(cents, 'en')} account balance is waiting for you`,
-        html: tegoedMail({ naam: customer.first_name || customer.name, lang, cents, reden: reason, saldoCents: Number(saldoRij?.n) || cents, studio: studioUrl(origin, '', lang) }),
+        html: tegoedMail({ naam: customer.name, voornaam: customer.first_name, lang, cents, reden: reason, saldoCents: Number(saldoRij?.n) || cents, studio: studioUrl(origin, '', lang) }),
       });
       return seeOther(`/admin/customers/${customerId}?tegoed=gemaild#tegoed`);
     } catch (err) {
@@ -7708,14 +8111,15 @@ async function handleCustomerCredit(context, customerId) {
 }
 
 /** De mail bij een tegoed dat Lucas bijboekte (B33, doorloop 27). */
-export function tegoedMail({ naam, lang = 'nl', cents, reden, saldoCents, studio }) {
+export function tegoedMail({ naam, voornaam = '', lang = 'nl', cents, reden, saldoCents, studio }) {
   const nl = lang !== 'en';
   return mailShell({
     lang: nl ? 'nl' : 'en',
     preheader: nl ? `${mailBedrag(cents, 'nl')} tegoed, voor je volgende bestelling.` : `${mailBedrag(cents, 'en')} account balance, for your next order.`,
     body: [
       mailH1(nl ? 'Er staat tegoed voor je klaar' : 'There is account balance waiting for you', mailKenmerk('tegoed', mailBedrag(cents, nl ? 'nl' : 'en'), nl ? 'nl' : 'en')),
-      mailP(mailGreeting(naam, nl ? 'nl' : 'en')),
+      /* levering 119 (A0-01): de voornaam helemaal, niet het eerste woord ervan. */
+      mailP(klantAanhef({ first_name: voornaam, name: naam, lang: nl ? 'nl' : 'en' })),
       mailQuote(esc(reden)),
       mailP(nl
         ? `We hebben <strong>${esc(mailBedrag(cents, 'nl'))}</strong> tegoed op je account gezet${saldoCents > cents ? `; je hebt nu <strong>${esc(mailBedrag(saldoCents, 'nl'))}</strong>` : ''}. Bestel je ingelogd, dan gaat het vanzelf van het bedrag af. Je hoeft er niets voor te doen.`
@@ -8891,7 +9295,7 @@ async function handleModelStatus({ request, env }, modelId) {
      krijgt één mail met de weg naar zijn model. */
   if (status === 'locked' && model.status !== 'locked' && model.customer_id) {
     const open = await env.DB.prepare(
-      `SELECT id, ref, lang, name, email, brand FROM orders
+      `SELECT id, ref, lang, name, first_name, email, brand FROM orders
         WHERE customer_id = ?1 AND service = 'brand-model' AND payment_status = 'paid'
           AND COALESCE(status, '') NOT IN ('delivered', 'cancelled')
         ORDER BY id DESC`
@@ -8904,7 +9308,7 @@ async function handleModelStatus({ request, env }, modelId) {
           .bind(o.id, nlO ? `Je merkmodel ${model.label || ''} staat klaar en is vastgelegd op je merk.`.replace('  ', ' ') : `Your brand model ${model.label || ''} is ready and tied to your brand.`.replace('  ', ' ')),
       ]).catch((e) => console.error('[admin] merkmodelbestelling niet afgerond —', e?.message || e));
     }
-    const klant = await env.DB.prepare('SELECT email, name, brand FROM customers WHERE id = ?1').bind(model.customer_id).first().catch(() => null);
+    const klant = await env.DB.prepare('SELECT email, name, first_name, brand FROM customers WHERE id = ?1').bind(model.customer_id).first().catch(() => null);
     const naar = (klant && klant.email) || (open[0] && open[0].email) || '';
     if (naar) {
       const lang = open[0] && open[0].lang === 'en' ? 'en' : 'nl';
@@ -8919,7 +9323,7 @@ async function handleModelStatus({ request, env }, modelId) {
           preheader: nl ? 'Vanaf nu te kiezen in elke bestelling.' : 'From now on you can pick it in any order.',
           body: [
             mailH1(nl ? 'Je merkmodel staat klaar' : 'Your Brand Model is ready', naam ? mailKenmerk('merkmodel', naam, lang) : ''),
-            mailP(mailGreeting((klant && klant.name) || (open[0] && open[0].name) || '', lang)),
+            mailP(klantAanhef({ first_name: (klant && klant.first_name) || (open[0] && open[0].first_name) || '', name: (klant && klant.name) || (open[0] && open[0].name) || '', lang })), // levering 119 (A0-01)
             mailP(nl
               ? `${naam ? `<strong>${esc(naam)}</strong>` : 'Je merkmodel'} is af en vastgelegd op ${esc((klant && klant.brand) || 'je merk')}. Vanaf nu staat het als tegel in het bestelformulier en in VISUAILS Studio onder “Je vaste look”: kies het per bestelling, of zet het als standaard voor een dienst. We gebruiken dit gezicht voor geen enkel ander merk.`
               : `${naam ? `<strong>${esc(naam)}</strong>` : 'Your brand model'} is finished and tied to ${esc((klant && klant.brand) || 'your brand')}. From now on it is a tile in the order form and in VISUAILS Studio under “Your look”: pick it per order, or set it as the default for a service. We never use this face for any other brand.`),
@@ -9634,6 +10038,38 @@ function later(waitUntil, promise) {
  * hoort niet in de lijst en niet in de tellingen; hij hoort wél terug te vinden
  * te zijn, anders is verbergen hetzelfde als verwijderen met een omweg.
  */
+/* levering 119 (18 november 2026, proefronde W1-08): de vaste filters (?f=) als losse functie, zodat de lijst én de
+   statuschips erboven met dezelfde voorwaarde tellen. Het commentaar hieronder is ongewijzigd uit loadOrders(). */
+function lijstFilterSql(filter) {
+  const uit = [];
+  if (filter === 'revisions') {
+    uit.push("EXISTS (SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.review_state = 'revision_requested' AND f.superseded_at IS NULL)");
+  } else if (filter === 'unpaid') {
+    // Dezelfde uitsluiting als in de strook hierboven, en om dezelfde reden: een
+    // afgebroken proefvisual is geen openstaande vordering. Staat de uitsluiting maar
+    // op een van de twee plekken, dan wijst de chip een aantal aan en toont de lijst
+    // erachter een ander -- wat erger is dan beide keuzes.
+    /* levering 119 (18 november 2026, proefronde W1-08): precies dezelfde voorwaarde als het getal "N wachten op
+       betaling" (WACHT_OP_BETALING_SQL). Geleverd en niet betaald heeft een eigen chip. */
+    uit.push(WACHT_OP_BETALING_SQL);
+  } else if (filter === 'paid_undelivered') {
+    // WAAR GELD DOORHEEN LOOPT, deel één: betaald en nog niet geleverd. Dat is
+    // een belofte die openstaat, en de enige reden dat die lijst niet bestond
+    // is dat je hem uit twee kolommen moet samenstellen die nooit naast elkaar
+    // stonden.
+    uit.push("payment_status IN ('paid','plan','credits') AND status IN ('received','in_production','human_check')");
+  } else if (filter === 'delivered_unpaid') {
+    // Deel twee, en de duurste: geleverd en nooit betaald. Dit is het enige
+    // filter in dit dashboard dat over verlies gaat in plaats van over werk.
+    uit.push("status = 'delivered' AND payment_status != 'paid' AND total_cents > 0");
+  } else if (filter === 'unannounced') {
+    uit.push(`delivery_mailed_at IS NOT NULL AND EXISTS (
+      SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.kind = 'delivery' AND f.announced_at IS NULL
+         AND f.superseded_at IS NULL)`);
+  }
+  return uit;
+}
+
 async function loadOrders(env, status = '', { q = '', filter = '', hidden = false } = {}) {
   const clauses = [];
   const binds = [];
@@ -9649,29 +10085,8 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
     clauses.push(`(ref LIKE ?${n} OR brand LIKE ?${n} OR email LIKE ?${n} OR name LIKE ?${n})`);
   }
 
-  if (filter === 'revisions') {
-    clauses.push("EXISTS (SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.review_state = 'revision_requested' AND f.superseded_at IS NULL)");
-  } else if (filter === 'unpaid') {
-    // Dezelfde uitsluiting als in de strook hierboven, en om dezelfde reden: een
-    // afgebroken proefvisual is geen openstaande vordering. Staat de uitsluiting maar
-    // op een van de twee plekken, dan wijst de chip een aantal aan en toont de lijst
-    // erachter een ander -- wat erger is dan beide keuzes.
-    clauses.push("payment_status = 'unpaid' AND total_cents > 0 AND service != 'test-sample' AND status != 'cancelled'");
-  } else if (filter === 'paid_undelivered') {
-    // WAAR GELD DOORHEEN LOOPT, deel één: betaald en nog niet geleverd. Dat is
-    // een belofte die openstaat, en de enige reden dat die lijst niet bestond
-    // is dat je hem uit twee kolommen moet samenstellen die nooit naast elkaar
-    // stonden.
-    clauses.push("payment_status IN ('paid','plan','credits') AND status IN ('received','in_production','human_check')");
-  } else if (filter === 'delivered_unpaid') {
-    // Deel twee, en de duurste: geleverd en nooit betaald. Dit is het enige
-    // filter in dit dashboard dat over verlies gaat in plaats van over werk.
-    clauses.push("status = 'delivered' AND payment_status != 'paid' AND total_cents > 0");
-  } else if (filter === 'unannounced') {
-    clauses.push(`delivery_mailed_at IS NOT NULL AND EXISTS (
-      SELECT 1 FROM files f WHERE f.order_id = orders.id AND f.kind = 'delivery' AND f.announced_at IS NULL
-         AND f.superseded_at IS NULL)`);
-  }
+  /* levering 119 (W1-08): de vaste filters staan in lijstFilterSql(), gedeeld met loadStatusCounts(). */
+  clauses.push(...lijstFilterSql(filter));
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const stmt = env.DB.prepare(
@@ -9691,6 +10106,8 @@ async function loadOrders(env, status = '', { q = '', filter = '', hidden = fals
                daarop achterloopt hoort een lege lijst te tonen en geen fout. */
             COALESCE(testmodus, 0) AS testmodus,
             details_json, paid_at,
+            /* levering 118 (W1-02): "gereserveerd tot" op de regel van een onbetaalde reservering. */
+            window_expires_at,
             (SELECT COUNT(*) FROM files f WHERE f.order_id = orders.id) AS file_count
        FROM orders
       ${where}
@@ -9802,13 +10219,26 @@ async function loadOrdersLegacy(env, status = '', q = '') {
  * counts, and it returns a plain object so the renderer can read a status that
  * has no rows as 0 without testing for undefined.
  */
-async function loadStatusCounts(env) {
+async function loadStatusCounts(env, { q = '', filter = '', hidden = false } = {}) {
   const counts = Object.fromEntries(STATUSES.map((s) => [s, 0]));
   // Verborgen bestellingen tellen hier ook niet mee — anders leest de chip
   // "Received 5" boven een lijst van vier, en dan vertrouw je geen van beide.
-  const res = await env.DB.prepare(
-    'SELECT status, COUNT(*) AS n FROM orders WHERE hidden_at IS NULL GROUP BY status'
-  ).all().catch(() => env.DB.prepare('SELECT status, COUNT(*) AS n FROM orders GROUP BY status').all());
+  /* levering 119 (18 november 2026, proefronde W1-08): de chips tellen wat de lijst eronder toont. Op ?f=unpaid
+     stond "Alles 11 · Binnen 11" boven een lijst van 9. Dus dezelfde zoekterm, hetzelfde filter en dezelfde
+     keuze voor verborgen als loadOrders(). */
+  const clauses = [];
+  const binds = [];
+  if (!hidden) clauses.push('hidden_at IS NULL');
+  if (q) {
+    binds.push(`%${q}%`);
+    clauses.push('(ref LIKE ?1 OR brand LIKE ?1 OR email LIKE ?1 OR name LIKE ?1)');
+  }
+  clauses.push(...lijstFilterSql(filter));
+  const telStmt = env.DB.prepare(
+    `SELECT status, COUNT(*) AS n FROM orders ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''} GROUP BY status`
+  );
+  const res = await (binds.length ? telStmt.bind(...binds) : telStmt).all()
+    .catch(() => env.DB.prepare('SELECT status, COUNT(*) AS n FROM orders GROUP BY status').all());
   for (const row of res.results || []) {
     if (Object.prototype.hasOwnProperty.call(counts, row.status)) counts[row.status] = row.n;
   }
@@ -11030,11 +11460,13 @@ ${mistInschrijvingen
 /* De logboekregels in het Nederlands (ronde 8, A-B9): de actie stond er alleen
    als code. De code blijft er klein achter staan, voor wie zoekt. */
 const LOG_LABEL = {
+  /* levering 117 (17 november 2026): P3-10 (te laat betaald, datum leeggemaakt) en P5-12 (merkmodel inbegrepen). */
+  'window.lapsed': 'Leverdatum vervallen na late betaling', 'payment.abonnement': 'Inbegrepen in abonnement',
   'order.cancel': 'Bestelling geannuleerd', 'order.cancel.mail-mislukt': 'Annuleringsmail niet verstuurd', 'order.delete': 'Bestelling verwijderd',
   'order.namens': 'Bestelling namens klant', 'order.refund': 'Terugbetaling gestart', 'order.credit': 'Tegoed geboekt', 'order.credit.failed': 'Tegoed NIET geboekt',
   'order.tegoed-terug': 'Tegoed teruggeboekt', 'order.status': 'Status gewijzigd', 'order.announce': 'Nieuwe beelden gestuurd', 'order.note': 'Mededeling aan klant',
   'order.paylink': 'Betaallink opnieuw gemaild', 'order.paylink.niet': 'Betaallink niet verstuurd', 'order.delivery-mail': 'Levermail verstuurd',
-  'order.delivery-mail.mislukt': 'Levermail mislukt', 'order.proef.hide': 'Testbestellingen verborgen', 'order.proef.annuleer': 'Testbestellingen geannuleerd (vóór live)', 'order.created': 'Bestelling binnen',
+  'order.delivery-mail.mislukt': 'Levermail mislukt', 'order.proef.hide': 'Testbestellingen verborgen', 'customer.test.hide': 'Testklanten opgeruimd', 'customer.test.tonen': 'Testklanten weer getoond', 'order.proef.annuleer': 'Testbestellingen geannuleerd (vóór live)', 'order.created': 'Bestelling binnen',
   'payment.paid': 'Betaald', 'payment.tegoed': 'Betaald met tegoed', 'payment.refund': 'Terugbetaald', 'payment.short': 'Te weinig betaald',
   'payment.dubbel': 'Dubbel betaald — teruggestort', 'payment.op-geannuleerd': 'Betaling op geannuleerde bestelling', 'payment.btw-twijfel': 'Btw nakijken', 'payment.chargeback': 'Terugboeking (chargeback)', 'melding.zet': 'Melding in Studio gezet', 'melding.weg': 'Melding in Studio weggehaald', 'proef.stand': `${PROEF_NAAM} open of dicht gezet`, 'abo.plafond': 'Plafond voor abonnementen gezet', 'proef.wachtlijst-gemaild': 'Wachtlijst van de proef gemaild',
   'payment-link.failed': 'Betaallink niet verstuurd', 'quote': 'Offerte vastgelegd', 'quote.restant': 'Restant gevraagd',
@@ -11046,6 +11478,8 @@ const LOG_LABEL = {
   'plan-week-start': 'Abonnementsweek gestart', 'plan-week-geen-start': 'Week niet gestart', 'plan-slots-correctie': 'Credits bijgesteld',
   'plan-slots-correctie.geweigerd': 'Creditcorrectie geweigerd', 'plan-slots-terug': 'Credits terug na annuleren', 'plan-slots-terug.deels': 'Credits deels terug',
   'plan-slots-terug.mislukt': 'Credits terugboeken mislukt', 'plan.betaling-na-opzeggen': 'Betaling na opzeggen',
+  /* levering 119 (18 november 2026, proefronde P3-07): een feestdag toch open of weer dicht. */
+  'agenda.feestdag': 'Feestdag open of dicht gezet',
   'agenda-dag-dicht': 'Dag dichtgezet', 'agenda-dag-open': 'Dag opengezet', 'agenda-venster-los': 'Datum losgelaten', 'agenda-venster-verzet': 'Datum verzet',
   'maandset.publish': 'Maandset gepubliceerd', 'maandset.unpublish': 'Maandset teruggetrokken', 'maandset.upload': 'Maandset aangevuld',
   'model.delete': 'Model verwijderd', 'model.rename': 'Model hernoemd',
@@ -11061,6 +11495,15 @@ const LOG_LABEL = {
   'studiobrief.proef': 'Proefmail Studiobrief', 'studiobrief.gepland': 'Studiobrief ingepland', 'studiobrief.verstuurd': 'Studiobrief verstuurd',
   'studiobrief.geannuleerd': 'Studiobrief geannuleerd', 'studiobrief.fout': 'Studiobrief niet verstuurd', 'studiobrief.afgemeld': 'Studiobrief: adres afgemeld',
   vat: 'Btw-beslissing',
+  /* levering 118 (W1-06): een bericht via het contactformulier (uit `messages`, geen admin_log-regel). */
+  contact: 'Contactbericht',
+  /* levering 118 (17 november 2026, P8-02): de voorrangstoeslag terugstorten. */
+  'order.toeslag-terug': 'Voorrangstoeslag teruggestort', 'order.toeslag-terug.mislukt': 'Voorrangstoeslag NIET teruggestort',
+  'order.toeslag-terug.mail-mislukt': 'Mail over teruggestorte toeslag niet verstuurd',
+  /* levering 118 (17 november 2026, proefronde B1-11 en B1-01): de regels die de Mollie-webhook en /api/order nu
+     schrijven; zonder label stond de ruwe actie in het logboek. */
+  'payment.failed': 'Betaling mislukt', 'payment.canceled': 'Betaling afgebroken', 'payment.expired': 'Betaling verlopen',
+  'proef.twijfel': 'Proef nakijken (mogelijk tweede)',
 };
 
 /*
@@ -11108,16 +11551,78 @@ ${oud.length ? `<details><summary>Opgezegd en afgelopen (${oud.length})</summary
   return html(page({ title: 'Abonnees', body }));
 }
 
+/* ── WAT ER BINNENKWAM, TERUG TE VINDEN — levering 118 (17 november 2026, proefronde W1-06) ──────────────────
+   Elke nieuwe bestelling stond in het logboek als "Bestelling binnen · order.created", met een Engelse regel
+   ("Order submitted via website (unattended) · 6 files uploaded") en zonder referentie, klant of bedrag. Nu komt
+   dat uit de bestelling zelf (een LEFT JOIN, de logregel blijft wat hij is), en heet een aanvraag zonder prijs
+   "Aanvraag binnen", een bestelling die op de btw-lijst viel "… naar btw-controle", en de €1-proef zo. Berichten
+   van het contactformulier staan er als eigen regel tussen (uit `messages`, alleen gelezen). */
+const LOG_TIER = { attended: 'met leverdatum', unattended: 'wachtrij' };
+/** De Engelse regel van functions/api/order.js (eventNote) in het Nederlands; onbekende stukken blijven staan. */
+export function logNoteNl(tekst) {
+  return String(tekst || '')
+    .replace(/^Order submitted via website \(([\w-]+)\)/, (_, t) => `via de site (${LOG_TIER[t] || t})`)
+    .replace(/window (\S+)→(\S+)/, 'dagen $1 → $2')
+    .replace('window lost to a concurrent booking', 'dag kwijt aan een gelijktijdige boeking')
+    .replace('no window reserved', 'geen dag gereserveerd')
+    .replace(/(\d+) files? uploaded/, (_, n) => `${n} ${n === '1' ? 'bestand' : 'bestanden'} geüpload`)
+    .replace(/upgrade prompt shown \((\d+) products this quarter\)/, 'abonnement voorgesteld ($1 producten dit kwartaal)');
+}
+
+/** Wat er in het logboek staat bij order.created: { label, detail } uit de bestelling (o_*-velden van de JOIN). */
+export function logBinnenRegel(r) {
+  if (!r || r.o_ref == null) return { label: LOG_LABEL['order.created'], detail: logNoteNl(r?.detail) };
+  let d = {};
+  try { d = JSON.parse(r.o_details || '{}') || {}; } catch { d = {}; }
+  const net = Number(r.o_net) || 0;
+  const bruto = net + (Number(r.o_btw) || 0);
+  const aanvraag = net === 0 && (['custom', 'video', 'brand-model'].includes(String(r.o_service || '')) || !!d.request);
+  const label = r.o_service === 'test-sample' ? `${PROEF_NAAM} binnen`
+    : aanvraag ? 'Aanvraag binnen'
+      : r.o_btwcontrole ? 'Bestelling binnen, naar btw-controle' : 'Bestelling binnen';
+  const wat = `${Number(r.o_n) > 0 && r.o_service !== 'test-sample' ? `${Number(r.o_n)} × ` : ''}${serviceLabel(r.o_service, 'nl') || r.o_service || ''}`;
+  const delen = [
+    r.o_ref,
+    r.o_brand || r.o_name || r.o_email || '',
+    wat,
+    bruto > 0 ? `${mailBedrag(bruto, 'nl')}${(Number(r.o_btw) || 0) > 0 ? ' incl. btw' : ''}` : (aanvraag ? 'nog geen prijs' : ''),
+    logNoteNl(r.detail),
+  ].filter(Boolean);
+  return { label, detail: delen.join(' · ') };
+}
+
 async function renderLog({ env }) {
   let rows = [];
   let missing = false;
   try {
+    /* levering 118 (W1-06): met de bestelling erbij; valt de JOIN om (een oude database), dan zoals voorheen. */
     const res = await env.DB.prepare(
+      `SELECT l.id, l.admin_email, l.action, l.order_id, l.customer_id, l.detail, l.created_at,
+              o.ref AS o_ref, o.brand AS o_brand, o.name AS o_name, o.email AS o_email, o.service AS o_service,
+              o.product_count AS o_n, o.total_cents AS o_net, o.vat_cents AS o_btw,
+              o.review_requested_at AS o_btwcontrole, o.details_json AS o_details
+         FROM admin_log l LEFT JOIN orders o ON o.id = l.order_id AND l.action = 'order.created'
+        ORDER BY l.id DESC LIMIT 200`
+    ).all().catch(() => env.DB.prepare(
       `SELECT id, admin_email, action, order_id, customer_id, detail, created_at
          FROM admin_log ORDER BY id DESC LIMIT 200`
-    ).all();
+    ).all());
     rows = res.results || [];
   } catch { missing = true; }
+  /* Het contactformulier, als eigen regels tussen de rest (levering 118, W1-06): binnen dezelfde periode als de
+     getoonde logregels. Geen tabel: dan gewoon niet. */
+  if (!missing) {
+    const vanaf = rows.length >= 200 ? String(rows[rows.length - 1].created_at || '') : '0000';
+    const berichten = await env.DB.prepare(
+      `SELECT id, customer_id, email, name, subject, created_at FROM messages WHERE created_at >= ?1 ORDER BY id DESC LIMIT 200`
+    ).bind(vanaf).all().then((r) => r.results || []).catch(() => []);
+    rows = [...rows, ...berichten.map((m) => ({
+      id: `m${m.id}`, admin_email: null, action: 'contact', order_id: null, customer_id: m.customer_id,
+      detail: [m.subject, m.name, m.email].filter(Boolean).join(' · '), created_at: m.created_at, bericht: true,
+    }))].sort((a, b) => (String(a.created_at) < String(b.created_at) ? 1 : String(a.created_at) > String(b.created_at) ? -1 : 0));
+  }
+  const regel = (r) => (r.action === 'order.created' ? logBinnenRegel(r)
+    : { label: LOG_LABEL[r.action] || LOG_LABEL[String(r.action).split(':')[0]] || r.action, detail: r.detail || '' });
 
   const body = `
 ${adminNav('log')}
@@ -11130,8 +11635,8 @@ ${missing
         ${rows.map((r) => `<tr>
           <td class="muted">${esc(when(r.created_at))}</td>
           <td class="muted log-wie">${esc(r.admin_email || '—')}</td>
-          <td>${esc(LOG_LABEL[r.action] || LOG_LABEL[String(r.action).split(':')[0]] || r.action)} <code class="meta">${esc(r.action)}</code></td>
-          <td>${esc(r.detail || '')}${r.order_id ? ` <a class="k k-tekst k-klein" href="/admin/orders/${r.order_id}/files" data-rol="navigeren">bestelling${rolIkoon('navigeren')}</a>` : ''}${r.customer_id ? ` <a class="k k-tekst k-klein" href="/admin/customers/${r.customer_id}" data-rol="navigeren">klant${rolIkoon('navigeren')}</a>` : ''}</td>
+          <td>${esc(regel(r).label)} <code class="meta">${esc(r.action)}</code></td>
+          <td>${esc(regel(r).detail)}${r.order_id ? ` <a class="k k-tekst k-klein" href="/admin/orders/${r.order_id}/files" data-rol="navigeren">bestelling${rolIkoon('navigeren')}</a>` : ''}${r.customer_id ? ` <a class="k k-tekst k-klein" href="/admin/customers/${r.customer_id}" data-rol="navigeren">klant${rolIkoon('navigeren')}</a>` : ''}${r.bericht ? ` <a class="k k-tekst k-klein" href="/admin/berichten" data-rol="navigeren">bericht${rolIkoon('navigeren')}</a>` : ''}</td>
         </tr>`).join('')}
       </tbody></table>`
     : '<p class="empty">Nog niets gelogd.</p>'}`;
@@ -11882,6 +12387,19 @@ async function handleBlackoutDay(context, admin) {
     return html(page({ title: 'Admin', body: errorBody('Dat is geen datum. Kies een dag met het datumveld.') }), 400);
   }
 
+  /* levering 119 (18 november 2026, proefronde P3-07): een feestdag (Kerst, 1 januari …) staat vanzelf dicht; "Toch open" zet hem open, "Weer dicht"
+     neemt dat terug. Geen rij in blackout_days: de uitzondering staat in app_settings (zetFeestdagOpen). Terug naar
+     de twee weken waarin de dag staat. */
+  if (doen === 'feestdag-open' || doen === 'feestdag-dicht') {
+    const van = String(form?.get('van') || '').trim();
+    const naar = /^\d{4}-\d{2}-\d{2}$/.test(van) ? `/admin/planning?van=${van}#raster` : '/admin/planning#raster';
+    const open = doen === 'feestdag-open';
+    const uit = await zetFeestdagOpen(env, dag, open);
+    if (!uit.ok) return html(page({ title: 'Admin', body: errorBody(uit.fout || 'Dat lukte niet.') }), 400);
+    await logAdmin(env, admin, 'agenda.feestdag', { detail: `${dag} ${open ? 'staat toch open' : 'is weer dicht'} (feestdag)` }).catch(() => {});
+    return seeOther(naar);
+  }
+
   if (doen === 'open') {
     await env.DB.prepare('DELETE FROM blackout_days WHERE day = ?1').bind(dag).run();
     await logAdmin(env, admin, 'agenda-dag-open', { detail: `${dag} staat weer open` }).catch(() => {});
@@ -12166,6 +12684,11 @@ async function handleWindowMove(context, orderId, admin) {
 
 const WEEKDAG = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
 const MAAND = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+/* levering 118 (W1-02): "24 nov" uit 'YYYY-MM-DD…', voor "gereserveerd tot" op het dashboard en de planning. */
+function dagMaandKort(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  return m ? `${Number(m[3])} ${MAAND[Number(m[2]) - 1]}` : '';
+}
 
 function maandagVan(iso) {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -12309,6 +12832,7 @@ async function renderPlanning({ env }, url) {
   let belasting = {};
   let redenen = {};
   let dichteDagen = [];
+  let feestdagOpen = new Set();
   let stuk = false;
   try {
     const [open, kalender, dicht] = await Promise.all([
@@ -12316,6 +12840,8 @@ async function renderPlanning({ env }, url) {
         `SELECT o.id, o.ref, o.brand, o.name, o.email, o.phone, o.service, o.status, o.tier, o.lang,
                 o.product_count, o.window_start, o.window_end, o.created_at, o.payment_status,
                 o.details_json, o.paid_at,
+                /* levering 118 (W1-02): een onbetaalde reservering en een testbestelling herkenbaar op de planning. */
+                o.window_expires_at, COALESCE(o.testmodus, 0) AS testmodus,
                 c.phone AS c_phone, COALESCE(o.country, c.country) AS land
            FROM orders o LEFT JOIN customers c ON c.id = o.customer_id
           WHERE o.status IN (${AGENDA_OPEN.map((_, i) => `?${i + 1}`).join(', ')})
@@ -12338,6 +12864,8 @@ async function renderPlanning({ env }, url) {
     belasting = kalender.booked;
     for (const r of dicht.results || []) redenen[r.day] = r.reason || '';
     dichteDagen = (dicht.results || []).filter((r) => r.day >= vandaag);
+    /* levering 119 (18 november 2026, proefronde P3-07): welke feestdagen Lucas toch openzette (voor de knop "Weer dicht"). */
+    feestdagOpen = await leesFeestdagOpen(env);
   } catch (err) {
     stuk = String(err?.message || '');
   }
@@ -12378,9 +12906,13 @@ async function renderPlanning({ env }, url) {
      is precies wat je wilt bij een handeling die een datum verzet. */
   const chip = (o, rol) => `
 <span class="pl-chip-paar">
-  <a class="pl-chip is-${rol}${o.manier === 'asap' ? ' is-asap' : ''} is-${esc(o.status)}${opgepakt && opgepakt.id === o.id ? ' is-opgepakt' : ''}" href="/admin/orders/${o.id}/files" title="${esc(o.ref)} · ${esc(o.brand || o.name || '')} · ${esc(STATUS_LABEL[o.status] || o.status)}">
+  <a class="pl-chip is-${rol}${o.manier === 'asap' ? ' is-asap' : ''} is-${esc(o.status)}${nogOnbetaald(o) ? ' is-voorlopig' : ''}${opgepakt && opgepakt.id === o.id ? ' is-opgepakt' : ''}" href="/admin/orders/${o.id}/files" title="${esc(o.ref)} · ${esc(o.brand || o.name || '')} · ${esc(STATUS_LABEL[o.status] || o.status)}${nogOnbetaald(o) ? ` · gereserveerd${o.window_expires_at ? ` tot ${esc(gereserveerdTot(o))}` : ''}, onbetaald` : ''}">
     <span class="pl-chip-ref">${esc(o.ref.replace(/^VIS-/, ''))}</span>
     <span class="pl-chip-wat">${esc(o.brand || o.name || '—')} · ${wat(o)}</span>
+    ${/* levering 118 (W1-02): onbetaald (gereserveerd tot …) en test staan op de chip zelf, met de bestaande merktekens. */
+      nogOnbetaald(o) || Number(o.testmodus) === 1
+        ? `<span class="pl-chip-wat">${Number(o.testmodus) === 1 ? '<span class="or-let is-proef">test</span> ' : ''}${nogOnbetaald(o) ? `<span class="or-let is-stil">onbetaald</span>${o.window_expires_at ? ` tot ${esc(dagMaandKort(when(o.window_expires_at)))}` : ''}` : ''}</span>`
+        : ''}
   </a>
   ${['delivered', 'cancelled'].includes(String(o.status)) ? '' : (opgepakt && opgepakt.id === o.id
     ? `<a class="pl-pak is-aan" href="/admin/planning?van=${esc(van)}" title="Loslaten">&times;</a>`
@@ -12435,8 +12967,23 @@ async function renderPlanning({ env }, url) {
     </form>`;
   };
 
+  /* levering 119 (18 november 2026, proefronde P3-07): een feestdag die vanzelf dicht staat (niet door een rij in blackout_days) krijgt
+     "Toch open"; een feestdag die Lucas openzette "Weer dicht". Voorbije dagen geen knop. */
+  const feestdagKnop = (dag, dicht, feestdag) => {
+    if (!feestdag || dag < vandaag || Object.prototype.hasOwnProperty.call(redenen, dag)) return '';
+    const open = !dicht && feestdagOpen.has(dag);
+    if (!dicht && !open) return '';
+    return `<form class="pl-zet" method="post" action="/admin/agenda/dagen">
+      <input type="hidden" name="do" value="${open ? 'feestdag-dicht' : 'feestdag-open'}">
+      <input type="hidden" name="dag" value="${esc(dag)}">
+      <input type="hidden" name="van" value="${esc(van)}">
+      <button class="pl-zet-knop" data-rol="${open ? 'terugnemen' : 'bevestigen'}" type="submit" title="${open ? 'Deze feestdag weer dichtzetten' : 'Deze feestdag toch als leverdag aanbieden'}">${open ? 'Weer dicht' : 'Toch open'}</button>
+    </form>`;
+  };
+
   const cel = (dag) => {
     const k = dagKop(dag);
+    const feestdag = feestdagenTussen(dag, dag).size > 0;
     const bezet = belasting[dag] || 0;
     const vol = Math.min(100, Math.round((bezet / ATTENDED_PUNTEN_PER_DAG) * 100));
     const dicht = blackouts.has(dag);
@@ -12456,9 +13003,10 @@ async function renderPlanning({ env }, url) {
     ${dag === vandaag ? '<span class="pl-dag-nu">vandaag</span>' : ''}
   </div>
   ${dicht
-    ? `<p class="pl-dag-dicht">dicht${redenen[dag] ? ` · ${esc(redenen[dag])}` : ''}</p>`
+    ? `<p class="pl-dag-dicht">dicht${redenen[dag] ? ` · ${esc(redenen[dag])}` : feestdag ? ' · feestdag' : ''}</p>`
     : `<div class="pl-last" title="${bezet} van ${ATTENDED_PUNTEN_PER_DAG} punten vastgelegd"><span data-vol="${Math.round(vol / 10) * 10}"></span></div>
-       <p class="pl-last-n">${bezet} / ${ATTENDED_PUNTEN_PER_DAG} punten</p>`}
+       <p class="pl-last-n">${bezet} / ${ATTENDED_PUNTEN_PER_DAG} punten${feestdag ? ' · feestdag, open' : ''}</p>`}
+  ${feestdagKnop(dag, dicht, feestdag)}
   <div class="pl-chips">${lijst.map(({ o, rol }) => chip(o, rol)).join('')}</div>
   ${neerzetKnop(dag)}
 </div>`;
@@ -12493,7 +13041,7 @@ ${pakBalk}
   <a class="fl-chip" href="/admin/planning?van=${esc(addDays(van, -DAGEN))}">${ikoon('pijl-links')}twee weken terug</a>
   ${van === maandagVan(vandaag) ? '<span class="fl-chip is-active" aria-current="true">Deze twee weken</span>' : '<a class="fl-chip" href="/admin/planning">Deze twee weken</a>'}
   <a class="fl-chip" href="/admin/planning?van=${esc(addDays(van, DAGEN))}">twee weken vooruit${ikoon('pijl')}</a>
-  <span class="meta pl-legenda"><i class="pl-lg is-werk"></i> vastgelegd, in het paar <i class="pl-lg is-af"></i> moet die dag af <i class="pl-lg is-asap"></i> zo snel mogelijk, streefdag <i class="pl-lg is-laat"></i> te laat</span>
+  <span class="meta pl-legenda"><i class="pl-lg is-werk"></i> vastgelegd (of gereserveerd en onbetaald: dan staat het op de chip), in het paar <i class="pl-lg is-af"></i> moet die dag af <i class="pl-lg is-asap"></i> zo snel mogelijk, streefdag <i class="pl-lg is-laat"></i> te laat</span>
 </div>`;
 
   /* ── DE AFLOPENDE LIJST IS WEG — 9 november 2026 (ronde 91, lijst 85 w1 = goed) ──────────────────────────
@@ -12953,6 +13501,9 @@ function vatTerugmelding(request) {
     afgewezen: `<strong>${esc(ref)}</strong> afgewezen — de klant kreeg de mail met de vraag om contact. Hij staat nu onderaan bij "Afgewezen".`,
   }[uit];
   /* Lijst 87 (B09): goedkeuren zonder zakelijke verklaring is geweigerd; er is niets veranderd. */
+  /* levering 117 (P5-04): verleggen zonder notitie wie en hoe is geweigerd. */
+  if (uit === 'hoe') return `<p class="warnline is-rood" role="status"><strong>${esc(ref)}</strong> is NIET verlegd: schrijf erbij hoe je het nummer hebt gecontroleerd.</p>`;
+  if (uit === 'verlegd') return `<p class="okline" role="status"><strong>${esc(ref)}</strong> — nummer met de hand gecontroleerd, btw verlegd (0%). De betaallink is gemaild.</p>`;
   if (uit === 'verklaring') return `<p class="warnline is-rood" role="status"><strong>${esc(ref)}</strong> is NIET goedgekeurd: de klant heeft nog niet bevestigd dat hij als bedrijf bestelt. Vink aan dat hij dat (bijvoorbeeld per mail) bevestigde, of wijs af: dan vraagt de mail erom.</p>`;
   if (uit === 'mislukt') return `<p class="warnline is-rood" role="status"><strong>${esc(ref)}</strong> goedgekeurd, maar de betaallink is NIET verstuurd. Zie het logboek; stuur hem opnieuw vanaf de bestelling.</p>`;
   return zin ? `<p class="okline" role="status">${zin}</p>` : '';
@@ -12967,8 +13518,8 @@ async function renderVatReview({ env, request }) {
               o.country, o.origin_country, o.billing_address, o.brand,
               o.vat_treatment, o.vat_rate, o.vat_cents, o.total_cents,
               o.vat_valid, o.vat_check_name, o.review_state, o.review_reason,
-              o.review_requested_at, o.payment_status, o.details_json,
-              c.email
+              o.review_requested_at, o.payment_status, o.details_json, o.vat_number,
+              c.email, o.customer_id, c.reg_number AS c_reg
          FROM orders o
          LEFT JOIN customers c ON c.id = o.customer_id
         WHERE o.review_state IN ('pending', 'rejected') AND COALESCE(o.status, '') <> 'cancelled' AND o.hidden_at IS NULL
@@ -13046,6 +13597,8 @@ ${missing
     <tr><th>Factuuradres</th><td>${esc(o.billing_address || '—')}</td></tr>
     <tr><th>Reden dat hij hier staat</th><td>${esc(o.review_reason || 'niet vastgelegd')}</td></tr>
     <tr><th>Nu gerekend</th><td>${esc(BEHANDELING[o.vat_treatment] || o.vat_treatment || '—')} · btw ${cents(o.vat_cents)} over ${cents(net)}</td></tr>
+    ${o.vat_number ? `<tr><th>Btw-nummer</th><td><strong>${esc(o.vat_number)}</strong></td></tr>` : ''}
+    ${registratieRij(o)}
     ${zonderVerklaring ? '<tr><th>Zakelijke verklaring</th><td><span class="pill danger">ontbreekt</span> De klant vinkte "ik bestel als bedrijf" niet aan. Zonder die bevestiging beginnen we niet (voorwaarden §10a): goedkeuren kan pas als hij het alsnog bevestigt. Afwijzen vraagt hem erom.</td></tr>' : ''}
   </tbody></table>
 
@@ -13060,14 +13613,32 @@ ${missing
       ${verklaringVink}
       <button class="btn btn-sm" data-rol="bevestigen" type="submit">${rolIkoon('bevestigen')}Btw alsnog rekenen — ${cents(withVat)} erbij</button>
     </form>`}
+    ${/* ── DE DERDE KNOP: NUMMER KLOPT, BTW VERLEGGEN — levering 117 (17 november 2026, proefronde P5-04) ──
+        Formulier en twee mails beloven bij een nummer dat VIES afkeurt: "klopt het toch, dan wordt de btw
+        verlegd". Hier kon alleen 21% goedkeuren of afwijzen. Nu kan Lucas een nummer dat hij met de hand
+        heeft gecontroleerd (VIES later opnieuw, het register van het land, een uittreksel) verleggen, met
+        een verplichte notitie hoe; wie het deed komt uit zijn sessie. Alleen bij een EU-land buiten NL met
+        een btw-nummer, nog niet betaald en nog niet verlegd. Stem dit eerst af met je boekhouder. */
+      (!betaald && kanVerleggen(o)) ? `<form method="post" action="/admin/orders/${o.id}/vat" class="verleg-vorm">
+      <input type="hidden" name="action" value="verleggen">
+      ${verklaringVink}
+      <label class="vink-rij">Hoe gecontroleerd? <input type="text" name="hoe" maxlength="300" required placeholder="bijv. VIES opnieuw op 17-11, of uittreksel register"></label>
+      <button class="btn btn-sm" data-rol="bevestigen" type="submit">${rolIkoon('bevestigen')}Nummer klopt (met de hand gecontroleerd) &mdash; btw verleggen</button>
+    </form>` : ''}
     ${o.review_state === 'rejected' ? '' : `<form method="post" action="/admin/orders/${o.id}/vat">
       <input type="hidden" name="action" value="reject">
       <button class="btn btn-ghost btn-sm" data-rol="terugnemen" type="submit">${rolIkoon('terugnemen')}Afwijzen &mdash; de klant krijgt een mail met de vraag</button>
     </form>`}
   </div>
-  <p class="meta">${alBtw
-    ? `Op deze bestelling staat al ${vatPercent()} btw. De vraag is alleen of de klant een bedrijf is; controleer het KVK-nummer en keur goed of neem contact op.`
-    : `De nettoprijs verandert bij geen van de drie. "Btw alsnog rekenen" zet er ${vatPercent()} bovenop en laat ${esc(cents(net))} staan.`}</p>
+  <p class="meta">${/* levering 118 (17 november 2026, proefronde N3-03): bij een btw-nummer dat VIES afkeurde een eigen zin
+       over de drie knoppen; de algemene zin ("de vraag is alleen of de klant een bedrijf is") alleen zonder btw-nummer. */
+    alBtw && !betaald && kanVerleggen(o)
+    ? `VIES bevestigde btw-nummer ${esc(o.vat_number)} niet, dus staat er nu ${vatPercent()} btw op. "Gegevens kloppen" laat de ${vatPercent()} staan en stuurt de betaallink. "Btw verleggen" zet de btw op 0% (verlegd) als jij het nummer zelf hebt gecontroleerd; je notitie en je naam gaan in het logboek en op de bestelling.${o.review_state === 'rejected' ? '' : ' "Afwijzen" stuurt de klant een mail met de vraag om zijn gegevens; er gaat dan geen betaallink.'}`
+    : alBtw
+      ? (o.vat_number
+        ? `Op deze bestelling staat al ${vatPercent()} btw; btw-nummer ${esc(o.vat_number)} is niet bevestigd. De vraag is alleen of de klant een bedrijf is: kijk naar het registratienummer hierboven en keur goed of neem contact op.`
+        : `Op deze bestelling staat al ${vatPercent()} btw. De vraag is alleen of de klant een bedrijf is: controleer het registratienummer hierboven en keur goed of neem contact op.`)
+      : `De nettoprijs verandert bij geen van de knoppen. "Btw alsnog rekenen" zet er ${vatPercent()} bovenop en laat ${esc(cents(net))} staan.${!betaald && kanVerleggen(o) ? ` "Btw verleggen" zet de btw op 0% (verlegd) voor btw-nummer ${esc(o.vat_number)}; jouw notitie en je naam gaan in het logboek en op de bestelling.` : ''}`}</p>
 </div>`;
       }).join('')
     : '<p class="empty">Niets in behandeling. Elke bestelling met een btw-opgave die we konden nakijken, is gewoon doorgegaan.</p>'}`;
@@ -13092,6 +13663,27 @@ ${missing
  * ze zitten buiten de EU, waar geen register is. De reden die jij hebt gezien blijft
  * in `review_reason` staan en gaat niet mee naar de klant.
  */
+/* ── HET REGISTRATIENUMMER OP DE KAART — levering 118 (17 november 2026, proefronde W1-04) ─────────────────────
+   De kaart zei "controleer het KVK-nummer", maar het nummer stond alleen op de klantkaart. Nu staat het hier: uit
+   de bestelling (details.business_reg, wat de klant bij deze bestelling opgaf), anders van de klant (migratie
+   0043), met de naam van het register van het land en, voor NL en BE, een link om het op te zoeken. */
+const REGISTERS = {
+  NL: { naam: 'KVK', url: (n) => `https://www.kvk.nl/zoeken/?source=all&q=${encodeURIComponent(n)}` },
+  BE: { naam: 'KBO', url: (n) => `https://kbopub.economie.fgov.be/kbopub/zoeknummerform.html?nummer=${encodeURIComponent(n.replace(/\D/g, ''))}&actionLu=Zoek` },
+  DE: { naam: 'Handelsregister' }, AT: { naam: 'Firmenbuch' }, FR: { naam: 'SIREN' }, LU: { naam: 'RCS' },
+};
+export function registratieRij(o) {
+  let d = {};
+  try { d = JSON.parse(o?.details_json || '{}') || {}; } catch { d = {}; }
+  const nr = String(d.business_reg || o?.c_reg || '').trim();
+  const land = String(o?.country || '').trim().toUpperCase();
+  const reg = REGISTERS[land] || { naam: 'handelsregister' };
+  const klant = o?.customer_id ? ` <a class="k k-tekst k-klein" href="/admin/customers/${Number(o.customer_id)}" data-rol="navigeren">klantkaart${rolIkoon('navigeren')}</a>` : '';
+  if (!nr) return `<tr><th>Registratienummer</th><td><span class="pill danger">niet opgegeven</span>${klant}</td></tr>`;
+  const zoek = reg.url ? ` <a class="k k-tekst k-klein" href="${esc(reg.url(nr))}" target="_blank" rel="noopener" data-rol="navigeren">opzoeken bij ${esc(reg.naam)}${rolIkoon('navigeren')}</a>` : '';
+  return `<tr><th>Registratienummer</th><td><strong>${esc(nr)}</strong> <span class="meta">(${esc(land || '—')}: ${esc(reg.naam)})</span>${zoek}${klant}</td></tr>`;
+}
+
 /** Ontbreekt de zakelijke verklaring van de klant (lijst 87, B09)? Alleen 'MISSING' telt: een
  *  oude bestelling zonder het veld, of een versie-id, is geen ontbrekende verklaring. */
 export function verklaringOntbreekt(detailsJson) {
@@ -13100,16 +13692,30 @@ export function verklaringOntbreekt(detailsJson) {
   return d.business_declaration === 'MISSING';
 }
 
+/** levering 117 (P5-04): kan deze bestelling met de hand verlegd worden? Een EU-land buiten NL, een
+ *  btw-nummer op de bestelling, en nog niet verlegd. */
+export function kanVerleggen(o) {
+  const land = String(o?.country || '').trim().toUpperCase();
+  return !!String(o?.vat_number || '').trim() && isEu(land) && land !== HOME_COUNTRY
+    && String(o?.vat_treatment || '') !== 'eu_reverse_charge';
+}
+
 async function handleVatDecision({ request, env }, orderId, admin) {
   const back = '/admin/vat';
   const form = await request.formData();
   const action = String(form.get('action') || '');
-  if (!['approve', 'charge_vat', 'reject'].includes(action)) return seeOther(back);
+  if (!['approve', 'charge_vat', 'reject', 'verleggen'].includes(action)) return seeOther(back);
 
   const order = await env.DB.prepare(
-    'SELECT id, ref, total_cents, vat_cents, status, review_state, lang, email, name, details_json, payment_status FROM orders WHERE id = ?1'
+    'SELECT id, ref, total_cents, vat_cents, status, review_state, lang, email, name, first_name, details_json, payment_status, country, vat_number, vat_treatment FROM orders WHERE id = ?1'
   ).bind(orderId).first();
   if (!order) return seeOther(back);
+  /* levering 117 (P5-04): verleggen alleen waar het kan, nooit op iets wat al betaald is, en nooit zonder notitie. */
+  const hoe = String(form.get('hoe') || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  if (action === 'verleggen') {
+    if (!kanVerleggen(order) || ['paid', 'credits', 'plan'].includes(String(order.payment_status || ''))) return seeOther(back);
+    if (!hoe) return seeOther(`${back}?ref=${encodeURIComponent(order.ref || '')}&uit=hoe`);
+  }
   // Alleen wat nog in behandeling is. Twee tabbladen open hebben mag geen tweede
   // beslissing over dezelfde bestelling opleveren.
   /* ── EN WAT AFGEWEZEN IS, KAN NA HET GESPREK ALSNOG — 1 oktober 2026 (A-K5) ──
@@ -13200,6 +13806,29 @@ async function handleVatDecision({ request, env }, orderId, admin) {
       ? 'Btw-gegevens nagekeken. Op deze bestelling wordt Nederlandse btw gerekend; het bedrag exclusief btw is niet veranderd.'
       : 'VAT details checked. Dutch VAT applies to this order; the amount excluding VAT has not changed.';
     detail = `${order.ref}: ${vatPercent()} btw alsnog gerekend (${vat} cent over ${net} cent)${geenVerklaring ? '; zakelijke verklaring door de klant bevestigd (aangevinkt in /admin)' : ''}`;
+  } else if (action === 'verleggen') {
+    /* levering 117 (17 november 2026, proefronde P5-04): het nummer is met de hand gecontroleerd, de btw
+       wordt verlegd. De nettoprijs blijft; de btw gaat naar 0 met de behandeling 'verlegd', zodat factuur,
+       ICP-opgaaf en e-Boekhouden het lezen als elke andere verlegging. Wie en hoe staan op de bestelling
+       (details_json.btw_handmatig) en in het logboek; vat_consultation blijft leeg, want er is geen
+       VIES-raadplegingsnummer. Dezelfde betaalklok als bij de andere twee goedkeurknoppen. */
+    const wie = String(admin?.email || 'admin').slice(0, 80);
+    statements.push(env.DB.prepare(
+      `UPDATE orders
+          SET review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?2,
+              vat_treatment = 'eu_reverse_charge', vat_rate = 0, vat_cents = 0,
+              vat_valid = 1, vat_checked_at = datetime('now'),
+              details_json = json_set(CASE WHEN json_valid(details_json) THEN details_json ELSE '{}' END,
+                                      '$.btw_handmatig', json_object('door', ?2, 'hoe', ?4, 'op', datetime('now'))),
+              window_expires_at = CASE
+                WHEN window_start IS NOT NULL AND window_expires_at IS NULL
+                THEN datetime('now', ?3) ELSE window_expires_at END
+        WHERE id = ?1 AND review_state IN ('pending', 'rejected')`
+    ).bind(orderId, wie, `+${VENSTER_VASTHOUDEN_DAGEN} days`, hoe));
+    note = nlV
+      ? 'Btw-nummer nagekeken en in orde: de btw is verlegd. Je betaalt het bedrag exclusief btw.'
+      : 'VAT number checked and in order: the VAT is reverse-charged. You pay the amount excluding VAT.';
+    detail = `${order.ref}: btw-nummer ${order.vat_number} met de hand gecontroleerd door ${wie} (${hoe}); btw verlegd, ${order.vat_cents || 0} cent btw eraf${geenVerklaring ? '; zakelijke verklaring door de klant bevestigd (aangevinkt in /admin)' : ''}`;
   } else {
     statements.push(env.DB.prepare(
       `UPDATE orders
@@ -13238,7 +13867,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
      De bevestiging beloofde "binnen een werkdag de betaallink"; bij afwijzen
      kwam er niets, alleen een regel op een tijdlijn die hij niet opent. */
   if (action === 'reject' && order.email) {
-    const hi = mailGreeting(order.name, order.lang);
+    const hi = klantAanhef(order); // levering 119 (A0-01)
     await sendMail(env, {
       to: order.email,
       subject: nlV ? `Een vraag over je btw-gegevens — ${order.ref}` : `A question about your VAT details — ${order.ref}`,
@@ -13262,7 +13891,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
     }).catch((e) => console.error('[admin] btw-vraag niet gemaild —', e?.message || e));
   }
 
-  if (action === 'approve' || action === 'charge_vat') {
+  if (action === 'approve' || action === 'charge_vat' || action === 'verleggen') {
     /* ── HELEMAAL MET TEGOED — 1 oktober 2026 (ronde 8, B-K2) ───────────────
        Dekt het tegoed alles, dan stuurt stuurBetaallink() niets (er valt niets
        te betalen) en annuleerde de cron hem na zeven dagen als "niet betaald".
@@ -13299,7 +13928,7 @@ async function handleVatDecision({ request, env }, orderId, admin) {
       console.error('[admin] betaallink voor bestelling', orderId, 'niet verstuurd —', uitkomst?.mislukt || 'stille uitgang');
       return seeOther(terug('mislukt'));
     }
-    return seeOther(terug('akkoord'));
+    return seeOther(terug(action === 'verleggen' ? 'verlegd' : 'akkoord'));
   }
   return seeOther(terug('afgewezen'));
 }
@@ -13342,14 +13971,22 @@ async function handleQuote({ request, env }, orderId, admin) {
      een tweede mail na een bedragwijziging hetzelfde zegt en de tijdlijn het
      ook weet. Alles wat niet 'aanbetaling' is, is de volledige prijs. */
   const soort = String(form?.get('soort') || '') === 'aanbetaling' ? 'aanbetaling' : 'volledig';
+  /* levering 117 (17 november 2026, proefronde P4-04): "wat je krijgt" en "klaar op". Het formulier vraagt
+     ze verplicht; de server neemt ze over als ze er zijn (een oude tab zonder de velden zet alleen het
+     bedrag, zoals vroeger). Een datum die geen datum is of in het verleden ligt, telt niet. */
+  const inhoud = String(form?.get('inhoud') || '').replace(/\r/g, '').trim().slice(0, 400);
+  const klaarRuw = String(form?.get('klaar_op') || '').trim();
+  const klaarOp = /^\d{4}-\d{2}-\d{2}$/.test(klaarRuw) && klaarRuw >= new Date().toISOString().slice(0, 10) ? klaarRuw : '';
 
   await env.DB.batch([
     env.DB.prepare(
       `UPDATE orders SET total_cents = ?2, vat_cents = ?3, vat_rate = ?4,
               review_state = 'approved', reviewed_at = datetime('now'), reviewed_by = ?5,
-              details_json = json_set(CASE WHEN json_valid(details_json) THEN details_json ELSE '{}' END, '$.quote_kind', ?6)
+              details_json = json_set(CASE WHEN json_valid(details_json) THEN details_json ELSE '{}' END, '$.quote_kind', ?6,
+                                      '$.quote_inhoud', COALESCE(NULLIF(?7, ''), json_extract(CASE WHEN json_valid(details_json) THEN details_json ELSE '{}' END, '$.quote_inhoud')),
+                                      '$.quote_klaar_op', COALESCE(NULLIF(?8, ''), json_extract(CASE WHEN json_valid(details_json) THEN details_json ELSE '{}' END, '$.quote_klaar_op')))
         WHERE id = ?1`
-    ).bind(orderId, net, vat, rate, admin?.email || 'admin', soort),
+    ).bind(orderId, net, vat, rate, admin?.email || 'admin', soort, inhoud, klaarOp),
     env.DB.prepare(
       /* Zie de noot bij dezelfde reparatie in src/lib/betaallink.js. */
       `INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?3, ?2, 'studio')`
@@ -13357,7 +13994,7 @@ async function handleQuote({ request, env }, orderId, admin) {
       ? tijdlijn(order.lang, `Offerte vastgelegd: aanbetaling van ${mailBedrag(net, 'nl')} excl. btw.`, `Quote set: deposit of ${mailBedrag(net, 'en')} excl. VAT.`)
       : tijdlijn(order.lang, `Offerte vastgelegd: ${mailBedrag(net, 'nl')} excl. btw.`, `Quote set: ${mailBedrag(net, 'en')} excl. VAT.`), order.status || 'received'),
   ]);
-  await logAdmin(env, admin, 'quote', { orderId, detail: `${order.ref}: offerte ${net} cent netto, btw ${vat} cent (${soort})` });
+  await logAdmin(env, admin, 'quote', { orderId, detail: `${order.ref}: offerte ${net} cent netto, btw ${vat} cent (${soort})${klaarOp ? `, klaar op ${klaarOp}` : ''}${inhoud ? `, ${inhoud.slice(0, 80)}` : ''}` });
 
   const url = await stuurBetaallink({ request, env }, orderId, { offerte: true }).catch((e) => ({ mislukt: e?.message || String(e) }));
   if (!url || url.mislukt) {
@@ -13408,6 +14045,10 @@ async function handleRestant({ request, env }, orderId, admin) {
     return html(page({ title: 'Admin', body: errorBody(`Het restant is niet aangemaakt: ${esc(e?.message || String(e))}.`) }), 500);
   }
   const rij = await env.DB.prepare('SELECT id FROM orders WHERE ref = ?1').bind(ref).first();
+  /* levering 117 (17 november 2026, proefronde P5-08): een restant krijgt de proefstand zoals elke
+     bestelling (test_-sleutel), en ook als de aanbetaling zelf een proef was. */
+  const ouder = await env.DB.prepare('SELECT testmodus FROM orders WHERE id = ?1').bind(orderId).first().catch(() => null);
+  await markeerProefbestelling(env, rij.id, { ouder: Number(ouder?.testmodus) === 1 });
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?3, ?2, 'studio')`)
       .bind(rij.id, o.lang === 'en' ? `Remainder of ${o.ref}: ${mailBedrag(net, 'en')} excl. VAT.` : `Restant van ${o.ref}: ${mailBedrag(net, 'nl')} excl. btw.`, o.status || 'received'),
@@ -14023,7 +14664,7 @@ function dashboardBody(revisions, orders, modelsByCustomer, counts, statusCounts
        bovenaan zegt wat er open is, en een lege lijst zegt "Niets wacht op jou".
        Alleen als die lijst niet gelezen kon worden, staat de regel er nog. */ ''}
   ${revisions.length || !view.nuLijst?.fout ? '' : `<h2>Revisies</h2>${revisieKort}`}
-  ${aandacht?.wachtOpBetaling ? `<p class="meta">${aandacht.wachtOpBetaling} bestelling${aandacht.wachtOpBetaling === 1 ? '' : 'en'} wacht${aandacht.wachtOpBetaling === 1 ? '' : 'en'} op betaling &mdash; <a href="/admin?f=unpaid">bekijken</a>. Die tellen niet als werk.</p>` : ''}
+  ${/* levering 119 (18 november 2026, proefronde W1-08): het getal en waarom het lijstje korter kan zijn. */ wachtOpBetalingZin(aandacht || {})}
   ${aandacht?.wachtLijst?.length ? `<ul class="db-wacht">${aandacht.wachtLijst.map((o) => `<li><a href="/admin/orders/${o.id}/files#betaling">${esc(o.ref)}</a> <span class="meta">${esc(o.brand || o.name || o.email || '')}</span><div class="wa-moment">${betaalContactRegel(o, { tel: String(o.phone || o.c_phone || '').trim(), land: String(o.land || '').toUpperCase() })}</div></li>`).join('')}</ul>` : ''}
   ${bewakers.length ? `<h2>Bewakers</h2><div class="fl-row">${bewakers.join('')}</div>` : ''}
 </section>`;
@@ -14043,7 +14684,7 @@ ${view.nuLijst ? nuDoenHtml(view.nuLijst) : ''}
 <section class="db-hoofd is-vol">
 <h2>Bestellingen${statusFilter ? ` · ${esc(STATUS_LABEL[statusFilter] || statusFilter)}` : ''}${q ? ` · &ldquo;${esc(q)}&rdquo;` : ''}</h2>
 ${searchRow}
-${statusFilterRow(statusCounts, statusFilter)}
+${statusFilterRow(statusCounts, statusFilter, { q, filter, hidden })}
 ${orders.length
   ? `<div class="or-lijst">
 <div class="or-kop" aria-hidden="true"><span>Referentie</span><span>Merk</span><span>Wat</span><span>Wanneer</span><span>Status</span><span>Betaling</span><span>Bestanden</span></div>
@@ -14072,17 +14713,28 @@ ${rand}`;
  *
  * The active one is a <span> rather than a link to the page you are already on.
  */
-function statusFilterRow(statusCounts, statusFilter) {
+function statusFilterRow(statusCounts, statusFilter, { q = '', filter = '', hidden = false } = {}) {
   if (!statusCounts) return '';
   const total = STATUS_FILTERS.reduce((n, s) => n + (statusCounts[s] || 0), 0);
+  /* levering 119 (18 november 2026, proefronde W1-08): de getallen volgen de zoekterm en het filter, dus de links
+     houden ze ook vast. Zonder filter blijft de link precies /admin?status=… zoals altijd. */
+  const metLijst = (status) => {
+    const u = new URLSearchParams();
+    if (status) u.set('status', status);
+    if (q) u.set('q', q);
+    if (filter) u.set('f', filter);
+    if (hidden) u.set('hidden', '1');
+    const qs = u.toString();
+    return `/admin${qs ? `?${qs}` : ''}`;
+  };
   const chip = (href, label, n, active) => active
     ? `<span class="fl-chip is-active" aria-current="true">${esc(label)} <span class="fl-n">${n}</span></span>`
     : `<a class="fl-chip" href="${esc(href)}">${esc(label)} <span class="fl-n">${n}</span></a>`;
 
   return `<nav class="fl" aria-label="Bestellingen filteren op status">
-    ${chip('/admin', 'Alles', total, !statusFilter)}
+    ${chip(metLijst(''), 'Alles', total, !statusFilter)}
     ${STATUS_FILTERS.map((s) => chip(
-      `/admin?status=${encodeURIComponent(s)}`,
+      metLijst(s),
       STATUS_LABEL[s] || s,
       statusCounts[s] || 0,
       statusFilter === s,
@@ -14159,8 +14811,10 @@ function orderCard(o, models, statusFilter = '') {
       /* De echte termijn (9 november 2026, ronde 91, w1-nawerk): betaald → voorrangDeadline(), zoals Nu doen en de
          planning; nog niet betaald → de termijn loopt nog niet. Hier stond altijd "volgende werkdag". */
       ? `<strong class="or-voorrang">voorrang · ${(() => {
-        const d = o.paid_at ? voorrangDeadline(o.paid_at) : null;
-        return d ? `uiterlijk ${Number(d.datum.slice(8, 10))} ${MAAND[Number(d.datum.slice(5, 7)) - 1]} ${d.uur}:00` : 'na betaling';
+        /* levering 118 (L-16): vanaf het latere van betaald en foto's compleet. */
+        const start = voorrangVanaf(o);
+        const d = start ? voorrangDeadline(start) : null;
+        return d ? `uiterlijk ${Number(d.datum.slice(8, 10))} ${MAAND[Number(d.datum.slice(5, 7)) - 1]} ${d.uur}:00` : o.paid_at ? 'na de foto’s' : 'na betaling';
       })()}</strong>`
       : '<span class="muted">zo snel mogelijk</span>';
   /* ── HET PROEFMERK STAAT NAAST DE ANDERE MERKTEKENS, NIET IN PLAATS ERVAN ──
@@ -14193,7 +14847,10 @@ function orderCard(o, models, statusFilter = '') {
   <summary class="or-rij">
     <span class="or-ref"><span class="ref">${esc(o.ref)}</span>${creditsPil(o)}${terugboekPil(o)}${proefmerk}${merkteken}${mistTeken}</span>
     <span class="or-merk"><strong>${esc(o.brand || '—')}</strong><span class="meta">${esc(o.email)}</span></span>
-    <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(o.tier === 'attended' ? 'vastgelegd' : voorrang ? 'voorrang' : 'wachtrij')}</span></span>
+    <span class="or-wat">${o.product_count ? `${esc(o.product_count)} × ` : ''}${esc(serviceLabel(o.service, 'nl') || o.service)}<span class="meta">${esc(/* levering 118 (W1-01/W1-02): onbetaald is gereserveerd of aangevraagd, niet vastgelegd. */
+      o.tier === 'attended'
+        ? (o.window_start && nogOnbetaald(o) ? `gereserveerd${o.window_expires_at ? ` tot ${dagMaandKort(when(o.window_expires_at))}` : ''} · onbetaald` : 'vastgelegd')
+        : voorrang ? (nogOnbetaald(o) ? 'voorrang aangevraagd' : 'voorrang') : 'wachtrij')}</span></span>
     <span class="or-wanneer">${waar}<span class="meta">binnen ${esc(when(o.created_at).slice(0, 10))}</span></span>
     <span class="or-status">${statPil(o.status, STATUS_LABEL[o.status] || o.status)}</span>
     <span class="or-betaal${o.payment_status === 'paid' || metCreditsBetaald(o) ? '' : ' is-open'}">${esc(({ paid: 'betaald', unpaid: 'onbetaald', plan: 'credits', credits: 'credits', refunded: 'terugbetaald', failed: 'mislukt' })[o.payment_status] || o.payment_status || '')}</span>

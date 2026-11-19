@@ -48,7 +48,19 @@ export async function renderOpMaatAanvraag({ env }, url, id, h) {
   const r = await env.DB.prepare('SELECT a.*, c.brand, c.email, c.country, c.vat_number FROM maat_aanvragen a JOIN customers c ON c.id = a.customer_id WHERE a.id = ?').bind(id).first();
   if (!r) return h.html(h.page({ title: 'Niet gevonden', body: `${h.adminNav('opmaat')}<h1>Deze aanvraag bestaat niet</h1><p><a href="/admin/op-maat">Terug</a></p>` }), 404);
   const inhoud = leesJson(r.inhoud_json, {});
-  const merk = await merkVan(env, r.customer_id);
+  /* levering 118 (17 november 2026, proefronde P12-02): het merk zoals het was bij het versturen (migratie 0074), niet
+     het profiel van nu; een bureau kan het merkblok intussen voor een ander klantmerk hebben ingevuld. */
+  const merkKopie = r.merk_json ? leesJson(r.merk_json, null) : null;
+  const merk = merkKopie || await merkVan(env, r.customer_id);
+  /* levering 118 (proefronde P5-10): weet het account geen land of btw-nummer (de klant vinkte "Bewaar gegevens" niet
+     aan), dan die van zijn laatste betaalde bestelling, met het kenmerk erbij. Anders stond hier "Nederland (geen land
+     bekend)" voor een Belgisch bedrijf, en een offerte met 21% kan achteraf niet meer verlegd worden. */
+  const laatste = (!r.country || !r.vat_number)
+    ? await env.DB.prepare("SELECT ref, country, vat_number FROM orders WHERE customer_id = ? AND payment_status = 'paid' AND (country IS NOT NULL OR vat_number IS NOT NULL) ORDER BY COALESCE(paid_at, created_at) DESC, id DESC LIMIT 1").bind(r.customer_id).first().catch(() => null)
+    : null;
+  const landStandaard = r.country || (laatste && laatste.country) || '';
+  const btwStandaard = r.vat_number || (laatste && laatste.vat_number) || '';
+  const uitBestelling = laatste && ((!r.country && laatste.country) || (!r.vat_number && laatste.vat_number)) ? laatste.ref : '';
   const sch = schatting(r.dienst, inhoud);
   const refs = await referentiesVan(env, id);
   const besl = await besluitenVan(env, id);
@@ -83,8 +95,9 @@ export async function renderOpMaatAanvraag({ env }, url, id, h) {
   <input type="hidden" name="do" value="offerte">
   <label>Regels, één per regel: naam;bedrag, in hele euro's exclusief btw. Begint met ${off ? 'de vorige offerte' : 'de schatting'}. <textarea name="regels" rows="10" required>${e(off ? off.regels.map((x) => `${x.naam};${x.bedrag}`).join('\n') : regels)}</textarea></label>
   <label>Mailadres voor de offerte en de betaallink <input type="email" name="email" required maxlength="200" value="${e((off && off.email) || r.email || '')}"></label>
-  <label>Land (beslist de btw) ${landKeuze((off && off.land) || r.country || '')}</label>
-  <label>Btw-nummer (alleen nodig bij een ander EU-land; wordt bij VIES gecontroleerd) <input type="text" name="btw" maxlength="20" value="${e((off && off.btwNummer) || r.vat_number || '')}"></label>
+  <label>Land (beslist de btw) ${landKeuze((off && off.land) || landStandaard)}</label>
+  <label>Btw-nummer (alleen nodig bij een ander EU-land; wordt bij VIES gecontroleerd) <input type="text" name="btw" maxlength="20" value="${e((off && off.btwNummer) || btwStandaard)}"></label>
+  ${!off && uitBestelling ? `<p class="meta">Land en btw-nummer uit ${e(uitBestelling)}, de laatste betaalde bestelling: het account zelf heeft ze niet. Kijk ze na.</p>` : ''}
   <p class="meta">De klant betaalt nu de helft, de rest bij levering. Met de regels hierboven: nu ${g(voorbeeldBedrag.aanbetaling)} excl. btw, later ${g(voorbeeldBedrag.rest)}. De btw volgt land en btw-nummer zoals bij elke bestelling: Nederland 21%, een ander EU-land met een geldig nummer verlegd, buiten de EU geen btw.</p>
   <button class="btn btn-primary btn-sm" data-rol="doorgaan" type="submit">${off ? 'Nieuwe offerte mailen' : 'Offerte mailen'}</button>
 </form>` : '';
@@ -93,11 +106,12 @@ export async function renderOpMaatAanvraag({ env }, url, id, h) {
 <p><a href="/admin/op-maat">← Op maat</a></p>
 <h1>#${id} · ${e(DIENST_NAAM.nl[r.dienst])} · ${e(r.brand || r.email)}</h1>
 <p class="lede">${e(STAND_NL[r.stand] || r.stand)}${ronde ? ` · ronde ${ronde} van ${GRATIS_RONDES_TOTAAL} gratis` : ''}</p>
-${klaar ? `<p class="okline">${e({ beeld: 'Het beeld staat bij de ronde.', klaar: 'De ronde staat klaar voor de klant.', offerte: 'De offerte is gemaild. De klant kan in Studio akkoord geven of een aanpassing vragen.', offerteNietGemaild: 'De offerte staat in Studio, maar de mail ging niet weg. Kijk bij de mail-instellingen, of stuur de klant zelf een bericht.', link: 'De betaallink is opnieuw gemaild.', stand: 'De stand is aangepast.' }[klaar] || 'Gedaan.')}</p>` : ''}
+${klaar ? `<p class="okline">${e({ beeld: 'Het beeld staat bij de ronde.', klaar: 'De ronde staat klaar voor de klant. Hij kreeg er een mail over.', klaarNietGemaild: 'De ronde staat klaar in Studio, maar de mail aan de klant ging niet weg. Kijk bij de mail-instellingen, of stuur de klant zelf een bericht.', offerte: 'De offerte is gemaild. De klant kan in Studio akkoord geven of een aanpassing vragen.', offerteNietGemaild: 'De offerte staat in Studio, maar de mail ging niet weg. Kijk bij de mail-instellingen, of stuur de klant zelf een bericht.', link: 'De betaallink is opnieuw gemaild.', stand: 'De stand is aangepast.', standGemaild: 'De aanvraag is gesloten. De klant kreeg een mail dat hij is afgerond; de bestelling staat in Studio onder Bestellingen.' }[klaar] || 'Gedaan.')}</p>` : ''}
 ${fout ? `<p class="warnline">${e(fout)}</p>` : ''}
 <h2>Schatting</h2>
 <table class="tabel">${sch.regels.map((g) => `<tr><td>${e(regelNaam(g.id))}</td><td>${e(g.uitleg || '')}</td><td>€${g.bedrag}</td></tr>`).join('')}<tr><th>Totaal</th><td></td><th>€${sch.totaal}</th></tr></table>
 <h2>Wat de klant invulde</h2>
+${merkKopie ? '<p class="meta">Het merk zoals het was bij het versturen.</p>' : r.stand !== 'concept' ? '<p class="meta">Het merkprofiel van nu: deze aanvraag is verstuurd vóór levering 118 en heeft geen eigen kopie van het merk.</p>' : ''}
 <table class="tabel">${waarden({ merk }).map(rij).join('')}${waarden(inhoud).map(rij).join('')}</table>
 ${refs.length ? `<h2>Referenties</h2><div class="maat-beelden">${refs.map((x) => `<figure><img src="/admin/op-maat/beeld/referentie/${x.id}" alt="" loading="lazy" width="200"><figcaption>${e((x.wat || []).join(', '))}${x.notitie ? ` · ${e(x.notitie)}` : ''}</figcaption></figure>`).join('')}</div>` : ''}
 <h2>Voorbeelden</h2>
@@ -152,10 +166,12 @@ export async function handleOpMaatPost({ request, env }, admin, id, h) {
     return terug('klaar=beeld');
   }
   if (doen === 'klaar') {
-    const r = await zetVoorbeeldKlaar(env, id);
+    /* Levering 117 (17 november 2026, proefronde P5-07): de klant krijgt "Je eerste voorbeeld staat klaar"; ging die
+       mail niet weg, dan zegt dit scherm dat. */
+    const r = await zetVoorbeeldKlaar(env, id, { origin: new URL(request.url).origin });
     if (!r.ok) return fout(r.reden === 'geen-beelden' ? 'Zet eerst beelden bij een nieuwe ronde.' : `Kan niet (${r.reden}).`);
-    await h.logAdmin(env, admin, 'opmaat.ronde', { customerId: a.customer_id, detail: `#${id}` });
-    return terug('klaar=klaar');
+    await h.logAdmin(env, admin, 'opmaat.ronde', { customerId: a.customer_id, detail: `#${id}${r.gemaild ? '' : ' (mail niet verstuurd)'}` });
+    return terug(r.gemaild ? 'klaar=klaar' : 'klaar=klaarNietGemaild');
   }
   if (doen === 'offerte') {
     const r = await stuurOfferte(env, id, { regels: leesRegels(form.get('regels')), email: form.get('email'), land: form.get('land'), btwNummer: form.get('btw') }, { origin: new URL(request.url).origin });
@@ -170,10 +186,11 @@ export async function handleOpMaatPost({ request, env }, admin, id, h) {
     return terug('klaar=link');
   }
   if (doen === 'stand') {
-    const r = await zetStand(env, id, String(form.get('naar') || ''));
+    /* levering 118 (17 november 2026, proefronde P5-09): sluiten na betalen mailt de klant; dit scherm zegt of dat lukte. */
+    const r = await zetStand(env, id, String(form.get('naar') || ''), { origin: new URL(request.url).origin });
     if (!r.ok) return fout(`Die stand kan vanaf hier niet (${STAND_NL[a.stand]}).`);
-    await h.logAdmin(env, admin, 'opmaat.stand', { customerId: a.customer_id, detail: `#${id} ${form.get('naar')}` });
-    return terug('klaar=stand');
+    await h.logAdmin(env, admin, 'opmaat.stand', { customerId: a.customer_id, detail: `#${id} ${form.get('naar')}${r.gemaild ? ' (klant gemaild)' : ''}` });
+    return terug(r.gemaild ? 'klaar=standGemaild' : 'klaar=stand');
   }
   return fout('Onbekende actie.');
 }

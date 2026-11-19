@@ -385,7 +385,9 @@ const looks = ORDERABLE.map((s) => {
     padding: .15rem .5rem;
     border-radius: var(--hoek-knop);
     background: var(--ink);
-    color: var(--accent);
+    /* levering 118 (17 november 2026, proefronde P1-05): in de hal is --accent gelijk aan de inkt, dus stond hier zwart
+       op zwart (1 : 1). Wat gekozen is, is inkt met witte tekst (de ontwerptaal). */
+    color: #fff;
     font-family: var(--font-mono);
     font-size: var(--h-t-label);
     letter-spacing: .06em;

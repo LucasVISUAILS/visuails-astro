@@ -1,4 +1,10 @@
-Levering 116: /start in twee stappen (lijst 126). Eerst wat je nodig hebt: vijf soorten zoals Wat we maken op de voorpagina (productfoto's, lifestyle, video, hooks, eigen look), elk met waarvoor, een zin en de vanafprijs, en één rij met merkmodel, abonnement, de €1-proef en App ons. Daarna alleen de looks van die soort, met Andere soort kiezen; de stap volgt het anker (#catalog, #lifestyle, #video), dus de terugknop werkt en het werkt zonder script (start-126.css). De kopfoto, de strook Zo gaat het en de band Op maat zijn weg. Bestel dit bij Eigen look op de voorpagina gaat naar /start/custom-look. Op de telefoon begint de veegrij met looks weer links: de eerste look stond half buiten beeld. Alles in kladblok/LEVERING-116.md.
+Leveringen 118 tot en met 122: de proefronde (lijst 127), de nieuwe videokop en de nieuwe kopletter.
+
+- 118: de middenpunten uit de proefronde (zie kladblok/LEVERING-118.md).
+- 119: de lage en kleine punten uit de proefronde (zie kladblok/LEVERING-119.md).
+- 120: de kop op de homepagevideo in VISUAILS Display 2 Light. Eén titel met een korte zin, links naast de telefoon. De kleur volgt het beeld en wisselt zo weinig mogelijk (zie kladblok/LEVERING-120.md).
+- 121: alle andere koppen in VISUAILS Display 2 Medium, in gewone schrijfwijze. Gemeten op 88 pagina's en 7 breedtes (zie kladblok/LEVERING-121.md).
+- 122: het cijfer in het aantal-veld van het bestelformulier ook in Display 2 Medium; de oude Bold wordt nergens meer vooraf geladen (zie kladblok/LEVERING-122.md).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01KvAD67bpn75MaPgCp82Lyw

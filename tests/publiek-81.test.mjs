@@ -15,6 +15,7 @@
  *       500; de marge 120 · 75 · 20 px; tussen de secties alleen de maten van de schaal; de opening van een
  *       dienstpagina houdt haar eigen marge (de laptop staat op de grond, tests/grond-79);
  *   3 · Hoe het werkt speelt als je erheen scrolt, en bij minder beweging staat het eindbeeld er meteen.
+ *   levering 121 (19 november 2026, lijst 134): de koppen staan in VISUAILS Display 2 Medium, zonder hoofdletters; toets 2 vraagt dat nu.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -104,7 +105,7 @@ async function open(ctx, pad) {
   const fouten = [];
   page.on('pageerror', (e) => fouten.push(String(e).slice(0, 200)));
   await page.goto(BASIS + pad, { waitUntil: 'load' });
-  await page.evaluate(() => Promise.all([document.fonts.load('700 40px "VISUAILS Display"'), document.fonts.load('370 16px "DM Sans"'), document.fonts.ready]));
+  await page.evaluate(() => Promise.all([document.fonts.load('500 40px "VISUAILS Display 2"'), document.fonts.load('370 16px "DM Sans"'), document.fonts.ready]));
   await page.waitForTimeout(150);
   return { page, fouten };
 }
@@ -142,7 +143,8 @@ for (const breed of [1440, 900, 390]) {
     if (m.zij) mis.zij.push(pad);
     koppen += m.koppen.length;
     for (const k of m.koppen) {
-      if (k.kop && k.tt !== 'uppercase') mis.hoofd.push(`${pad} «${k.t}»`);
+      /* levering 121 (19 november 2026, lijst 134): de koppen in gewone schrijfwijze (was: hoofdletters) */
+      if (k.kop && k.tt !== 'none') mis.hoofd.push(`${pad} «${k.t}»`);
       if (k.regels > 2) mis.regels.push(`${pad} [${k.regels}] «${k.t}»`);
     }
     if (m.body !== '370' || m.dik.length) mis.dik.push(`${pad} body ${m.body} ${m.dik.slice(0, 3).join(', ')}`);
@@ -154,7 +156,7 @@ for (const breed of [1440, 900, 390]) {
     await page.close();
   }
   ok(`${breed}: niets schuift zijwaarts (${PAGINAS.length} pagina's)`, !mis.zij.length, mis.zij.join(' '));
-  ok(`${breed}:   elke kop in de kopletter in hoofdletters (${koppen} koppen)`, koppen >= 50 && !mis.hoofd.length, mis.hoofd.slice(0, 4).join(' | '));
+  ok(`${breed}:   elke kop in de kopletter, zonder hoofdletters (levering 121; ${koppen} koppen)`, koppen >= 50 && !mis.hoofd.length, mis.hoofd.slice(0, 4).join(' | '));
   ok(`${breed}:   elke kop hoogstens twee regels`, !mis.regels.length, mis.regels.slice(0, 4).join(' | '));
   ok(`${breed}:   lopende tekst 370; nergens DM Sans op 400 of 500`, !mis.dik.length, mis.dik.slice(0, 3).join(' | '));
   ok(`${breed}:   de marge ${RAND[breed]} px; de opening van een dienstpagina houdt de hare`, !mis.rand.length, mis.rand.join(' | '));

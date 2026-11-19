@@ -36,7 +36,7 @@
 // since two people can be looking at the same last window at the same instant.
 // Nothing here is a reservation. The reservation is orders.window_start.
 
-import { readCalendar } from '../../src/lib/agenda.js';
+import { readCalendar, leesFeestdagOpen } from '../../src/lib/agenda.js';
 import { vandaagNL } from '../../src/lib/nlDag.js';
 import { viaRandCache } from '../../src/lib/edgeCache.js';
 import { puntenVoor, voorrangWerkdagen, voorrangAgendaOpen } from '../../src/data/pricing.js';
@@ -78,9 +78,25 @@ export async function onRequestGet(context) {
   const gevraagdeDienst = url.searchParams.get('service') || 'catalog';
   const service = puntenVoor(gevraagdeDienst, 1) === null ? 'catalog' : gevraagdeDienst;
   const from = geldigeVanaf(url.searchParams.get('from'), todayUTC()) || '';
+  /* levering 118 (17 november 2026, proefronde P3-08): de extra beelden horen in de cachesleutel, anders krijgt een
+     bestelling met hoeken het antwoord van een zonder. */
+  /* levering 119 (18 november 2026, proefronde P3-07, hersteller H10): de vensters rekenden al met "Toch open", maar het
+     antwoord stond een minuut in de randcache onder een sleutel zonder die uitzondering. Wie vlak voor "Toch open" dezelfde
+     vraag stelde (N5: 12 producten vanaf 23 december), kreeg daarna nog een minuut 25 en 26 december dicht; met een ander
+     aantal of een andere startdag (een nieuwe sleutel) niet. Nu zitten de open feestdagen in de sleutel: één kleine vraag
+     op app_settings (één rij), de zware agendavragen blijven in de cache. Bij "Weer dicht" geldt hetzelfde. */
+  const feestdagOpen = [...(await leesFeestdagOpen(context.env))].sort().join(',');
   return viaRandCache(context, 'capacity',
-    { products, service, from, dag: todayUTC() },
+    { products, service, from, extras: extrasVan(url), dag: todayUTC(), open: feestdagOpen },
     () => capaciteit(context));
+}
+
+/* levering 118 (17 november 2026, proefronde P3-08): `extras` = extra beelden (hoeken × producten), zoals het formulier
+   ze telt; ze wegen mee (extraBeeldPunten() in src/data/capacity.js). Geknipt, zodat de cachesleutel begrensd blijft
+   (zie de noot bij capaciteit()): hooguit vier hoeken per product. */
+function extrasVan(url) {
+  const n = Number.parseInt(url.searchParams.get('extras') ?? '0', 10) || 0;
+  return Math.max(0, Math.min(n, 4 * (MAX_PRODUCTS_ANY_SERVICE + 1)));
 }
 
 async function capaciteit({ request, env }) {
@@ -118,6 +134,8 @@ async function capaciteit({ request, env }) {
   const gevraagdeDienst = url.searchParams.get('service') || 'catalog';
   const service = puntenVoor(gevraagdeDienst, 1) === null ? 'catalog' : gevraagdeDienst;
   const today = todayUTC();
+  /* levering 118 (P3-08): extra beelden wegen mee; zie extrasVan(). */
+  const extras = extrasVan(url);
 
   // Tier 0 does not use the gate at all. It is not "cleared for nothing" and it
   // is not full — it is a different service model, and saying so with its own
@@ -165,7 +183,7 @@ async function capaciteit({ request, env }) {
      dag". De cache-sleutel groeit hiermee met hooguit zestig waarden per
      aantal — zie de noot over normaliseren hierboven. */
   const from = geldigeVanaf(url.searchParams.get('from'), today);
-  const gate = clearedWindows({ today, products, service, booked, blackouts, from });
+  const gate = clearedWindows({ today, products, service, booked, blackouts, from, extras });
 
   return json({
     ok: true,
@@ -179,7 +197,10 @@ async function capaciteit({ request, env }) {
     reason: gate.reason,
     max: gate.max,
     maxPunten: gate.maxPunten,
-    windows: gate.windows.map((w) => ({ start: w.start, end: w.end })),
+    /* levering 118 (17 november 2026, proefronde P3-11): per venster de dagen zelf, en de volle dagen ertussen, zodat
+       het formulier een grijze kaart "vol" en "(29–30 vol)" kan tonen in plaats van ze stil over te slaan. */
+    windows: gate.windows.map((w) => ({ start: w.start, end: w.end, days: w.days })),
+    vol: gate.vol || [],
     from: gate.from,
     earlier: !!gate.earlier,
     more: !!gate.more,

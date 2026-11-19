@@ -391,10 +391,12 @@ body.studio.st-hal input[type="checkbox"], body.studio.st-hal input[type="radio"
    DE LUCHT, één stap op de 4 : 3-schaal (docs/RUIMTE-EN-RUST.md §2): de zijmarge 40 → 51 (telefoon 17,6 → 21),
    boven de kop 36 → 51, onder de kop 32 → 38, tussen de blokken 40 → 51, onderaan 64 → 90, tussen de
    bestellingen 20 → 28. Binnen een kaart verandert niets. */
-@font-face { font-family: 'VISUAILS Display'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay-Bold.woff2) format('woff2'); }
+/* levering 121 (19 november 2026, lijst 134): de paginakop in VISUAILS Display 2 Medium 500, gewone schrijfwijze, spatiëring
+   −0,025 em, regelafstand 1,0 (zoals de grote koppen van de site, hal.css); was Display Bold in hoofdletters */
+@font-face { font-family: 'VISUAILS Display 2'; font-style: normal; font-weight: 500; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay2-Medium.woff2) format('woff2'); }
 body.studio.st-hal { font-weight: 370; --st-pad: 51px; }
-body.studio.st-hal .st-h1 { font-family: 'VISUAILS Display', var(--h-letter); font-weight: 700; text-transform: uppercase; letter-spacing: -.01em; line-height: .92; text-wrap: balance; }
-body.studio.st-hal .st-h1 .l { font-weight: 700; }
+body.studio.st-hal .st-h1 { font-family: 'VISUAILS Display 2', var(--h-letter); font-weight: 500; text-transform: none; letter-spacing: -.025em; line-height: 1; text-wrap: balance; }
+body.studio.st-hal .st-h1 .l { font-weight: 500; }
 body.studio.st-hal .st-top { padding-top: 51px; }
 body.studio.st-hal .st-main { padding-top: 38px; padding-bottom: 90px; gap: 51px; }
 body.studio.st-hal .st-bestellingen { gap: 28px; }

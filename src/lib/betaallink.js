@@ -28,9 +28,66 @@ import {
   kenmerk as mailKenmerk,
   terugval as mailTerugval,
   C as MAILKLEUR,
+  rows as mailRows,
+  datum as mailDatum,
 } from './mailTemplate.js';
 import { BETALEN_NA_BTW_AKKOORD, VERVAL_DAG } from '../data/termijnen.js';
+/* levering 118 (17 november 2026, proefronde W2-10): een EU-klant zonder btw-nummer krijgt zijn eigen zin. */
+import { vatPercent } from '../data/pricing.js';
+import { isEu, HOME_COUNTRY } from '../data/vat.js';
 import { DIENST_NAAM as OP_MAAT_NAAM } from '../data/opMaat.js';
+import { isTestmodus } from './mollie.js';
+/* levering 118 (proefronde P4-06): de bestelpagina voor de factuurgegevens. */
+import { mintToken, hashToken, portalUrl } from './token.js';
+
+/**
+ * ── WAT JE KRIJGT EN WANNEER: DE AFSPRAAK IN DE OFFERTE ──────────────────────
+ * levering 117 (17 november 2026, proefronde P4-04). Het offerteformulier in /admin
+ * had alleen een bedrag; de mail zei "zoals besproken", zonder datum of inhoud, en
+ * /o/ en Studio verwezen naar "de levertijd uit de offerte" die er niet was. Nu zet
+ * Lucas er twee velden bij (details_json.quote_inhoud en .quote_klaar_op), en deze
+ * ene functie leest ze voor de mail, /o/ (portal.js) en de factuur (invoice.js).
+ * Geeft { inhoud, klaarOp, klaarOpTekst }; leeg waar niets is ingevuld.
+ */
+export function offerteAfspraak(details, lang = 'nl') {
+  let d = details;
+  if (typeof d === 'string') { try { d = JSON.parse(d || '{}') || {}; } catch { d = {}; } }
+  if (!d || typeof d !== 'object') d = {};
+  const inhoud = String(d.quote_inhoud || '').trim().slice(0, 400);
+  const klaarOp = /^\d{4}-\d{2}-\d{2}$/.test(String(d.quote_klaar_op || '')) ? String(d.quote_klaar_op) : '';
+  return { inhoud, klaarOp, klaarOpTekst: klaarOp ? mailDatum(klaarOp, lang === 'en' ? 'en' : 'nl') : '' };
+}
+
+/**
+ * ── ELKE NIEUWE BESTELLING KRIJGT DE PROEFSTAND OP DEZELFDE MANIER ─────────────
+ * levering 117 (17 november 2026, proefronde P5-08). De regel "aangenomen met een
+ * test_-sleutel = proefbestelling" stond alleen in /api/order. Een bestelling uit
+ * een op-maatofferte (src/lib/opMaatOfferte.js) en een restant (-R…) uit /admin
+ * kregen hem niet, en een testbetaling gaf daar factuur VIS-2026-0001: de eerste
+ * van de echte reeks. Nu roept elke plek waar een bestelling ontstaat deze ene
+ * functie aan (tests/levering-117-testmodus.test.mjs zoekt ze allemaal op).
+ *
+ * `ouder`: een restant hoort bij zijn aanbetaling. Was die een proef, dan het
+ * restant ook, ook als de live-sleutel er intussen in staat.
+ *
+ * STAAT HIER EN NIET IN invoice.js: invoice.js leest met opzet nooit de sleutel
+ * (de proefstand komt van de bestelling, zie tests/invoice-issue.test.mjs). Dit is
+ * het moment waarop een bestelling ontstaat, net als de betaallink hieronder.
+ *
+ * Werpt niet: een ontbrekende migratie 0046 laat een aangenomen bestelling niet
+ * alsnog omvallen (zelfde keuze als in /api/order). Geeft terug of het gezet is.
+ */
+export async function markeerProefbestelling(env, orderId, { ouder = false } = {}) {
+  if (!orderId || !env?.DB) return false;
+  if (!isTestmodus(env) && !ouder) return false;
+  try {
+    await env.DB.prepare('UPDATE orders SET testmodus = 1 WHERE id = ?1').bind(orderId).run();
+    return true;
+  } catch (err) {
+    console.error('[betaallink] proefstand niet gezet:', err?.message || err);
+    return false;
+  }
+}
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
@@ -42,7 +99,8 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
     return null;
   }
   const o = await env.DB.prepare(
-    `SELECT id, ref, email, name, vat_number, address_line1, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, window_start, window_expires_at, details_json, created_at, reviewed_at, review_state
+    /* levering 119 (18 november 2026, proefronde A0-01): first_name erbij (na name), voor de aanhef. */
+    `SELECT id, ref, email, name, first_name, vat_number, country, address_line1, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, window_start, window_expires_at, details_json, created_at, reviewed_at, review_state
        FROM orders WHERE id = ?1`
   ).bind(orderId).first();
   if (!o || !o.email) return null;
@@ -104,7 +162,23 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
      voor het bedrag zoals het dan op de rij staat — dezelfde route als de
      knop "Opnieuw betalen" op de bedankpagina. De webhook koppelt op `ref`,
      dus welke betaling slaagt maakt niet uit. */
-  const url = `${origin}/api/order-pay?ref=${encodeURIComponent(o.ref)}&lang=${lang}`;
+  let url = `${origin}/api/order-pay?ref=${encodeURIComponent(o.ref)}&lang=${lang}`;
+  /* ── EERST DE FACTUURGEGEVENS — levering 118 (17 november 2026, proefronde P4-06) ──
+     Een offerte zonder adres ging zo naar Mollie, en de factuur ging uit met alleen een naam. Dan gaat de knop naar
+     de bestelpagina (/o/<token>#factuur): adres en zakelijke verklaring, en daar de knop Betalen. Een nieuw token,
+     zoals elke mail met een bestelpagina (betaalMailContext in invoiceMail.js); lukt dat niet, dan de oude route. */
+  /* Ook de herinnering van dag 3 bij een aanvraag (video, eigen look, op maat): die gaat met `herinnering`, niet `offerte`. */
+  const isAanvraagOrder = (() => { try { return !!String((JSON.parse(o.details_json || '{}') || {}).request || '').trim(); } catch { return false; } })();
+  const zonderAdres = (offerte || (herinnering && isAanvraagOrder)) && !String(o.address_line1 || '').trim();
+  if (zonderAdres) {
+    try {
+      const token = mintToken();
+      await env.DB.prepare('INSERT INTO order_tokens (order_id, token_hash) VALUES (?1, ?2)').bind(o.id, await hashToken(token)).run();
+      url = `${portalUrl(token, origin)}#factuur`;
+    } catch (err) {
+      console.warn('[betaallink] geen bestelpagina voor de factuurgegevens van', o.ref, '—', err?.message || err);
+    }
+  }
 
   const euro = (c) => mailBedrag(c, lang);
   const bedrag = euro(teBetalen);
@@ -124,6 +198,11 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
   const opgegevenBtw = String(o.vat_number || '').trim();
   const euBtwNietBevestigd = !offerte && !herinnering && !btwErbij && (Number(o.vat_cents) || 0) > 0
     && !!opgegevenBtw && !/^NL/i.test(opgegevenBtw);
+  /* levering 118 (17 november 2026, proefronde W2-10): een EU-klant buiten Nederland die géén btw-nummer invulde, las
+     "Alles klopt" bij 21% btw. Nu dezelfde zin als in de bevestigmail van /api/order. */
+  const landBtw = String(o.country || '').toUpperCase();
+  const euZonderNummer = !offerte && !herinnering && !btwErbij && (Number(o.vat_cents) || 0) > 0
+    && !opgegevenBtw && !!landBtw && landBtw !== HOME_COUNTRY && isEu(landBtw);
   const offerteSoort = !offerte ? '' : restant
     ? (lang === 'nl'
       ? `<strong>Dit is het restant</strong> van ${esc(d.restant_van || '')}, na je aanbetaling. Daarna is alles betaald.`
@@ -141,12 +220,13 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
       : `<strong>This is the full price</strong> — nothing is added later.`);
   /* Ronde 9 (F44): een aanvraag vraagt geen adres. Zonder adres staat op de
      factuur alleen een naam; Studio (Je gegevens) is waar hij het kwijt kan. */
-  const adresVraag = offerte && !String(o.address_line1 || '').trim()
+  /* levering 118 (proefronde P4-06): de knop gaat dan eerst langs de factuurgegevens; dat zegt deze zin. */
+  const adresVraag = zonderAdres
     ? (lang === 'nl'
-      ? `Wil je je factuuradres op de factuur? Vul het in bij <a href="${studioUrl(origin, '/details', 'nl')}" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Je gegevens</a> vóór je betaalt.`
-      : `Want your billing address on the invoice? Fill it in at <a href="${studioUrl(origin, '/details', 'en')}" style="color:${MAILKLEUR.head};font-weight:700">VISUAILS Studio → Your details</a> before you pay.`)
+      ? 'Na de knop vul je eerst je factuuradres in en bevestig je dat je zakelijk bestelt. Daarna betaal je.'
+      : 'After the button you first fill in your billing address and confirm you are ordering as a business. Then you pay.')
     : '';
-  const verklaring = !verklaringOntbreekt ? '' : (lang === 'nl'
+  const verklaring = !verklaringOntbreekt || zonderAdres ? '' : (lang === 'nl'
     ? `VISUAILS levert uitsluitend aan bedrijven. Met je betaling bevestig je dat je deze opdracht als bedrijf geeft, en dat we meteen mogen beginnen. Bestel je vanuit een ander EU-land met een btw-nummer? Stuur het ons vóór je betaalt; dan passen we de btw aan.`
     : `VISUAILS supplies businesses only. By paying you confirm you place this order as a business, and that we may start straight away. Ordering from another EU country with a VAT number? Send it to us before you pay and we adjust the VAT.`);
   await sendMail(env, {
@@ -178,7 +258,7 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
              bij een offerte "Referentie": het is hetzelfde nummer als in de aanvraag. */
           mailKenmerk('bestelling', o.ref, lang)),
         /* De aanhef met voornaam, zoals in elke andere klantmail (ronde 9, O21). */
-        mailP(mailGreeting(o.name, lang)),
+        mailP(mailGreeting(o.name, lang, { voornaam: o.first_name })), /* levering 119 (A0-01): het veld Voornaam */
         /* Bij een OFFERTE (eigen look, video) is dit de eerste keer dat de klant
            een bedrag ziet; de tekst zegt dus wat het is en dat betalen het akkoord
            is. Niets begint voordat er betaald is — dezelfde belofte als op de
@@ -187,10 +267,11 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
           ? (lang === 'nl'
             ? `Je bestelling <strong>${esc(o.ref)}</strong> staat nog open: er is nog niet betaald. Wil je hem nog? Dan is dit de link.${vasthoudenTot ? ` Je leverdatum houden we vast tot <strong>${esc(vasthoudenTot)}</strong>; daarna komen die dagen weer vrij.` : ''}${vervalOp ? ` Betaal je niet, dan vervalt de bestelling na <strong>${esc(vervalOp)}</strong>.` : ''} Wil je hem niet meer, dan hoef je niets te doen: er wordt niets in rekening gebracht.`
             : `Your order <strong>${esc(o.ref)}</strong> is still open: it has not been paid yet. Still want it? This is the link.${vasthoudenTot ? ` We hold your delivery date until <strong>${esc(vasthoudenTot)}</strong>; after that those days are released.` : ''}${vervalOp ? ` If it stays unpaid, the order lapses after <strong>${esc(vervalOp)}</strong>.` : ''} If you no longer want it, there is nothing to do: nothing is charged.`)
+          /* levering 118 (17 november 2026, proefronde N3-01): zonder "zoals besproken"; vaak was er geen gesprek. */
           : offerte
           ? (lang === 'nl'
-            ? `Hieronder staat de prijs voor <strong>${esc(o.ref)}</strong>, zoals besproken. ${offerteSoort} Betalen is je akkoord — daarna gaan we voor je aan het werk.`
-            : `Below is the price for <strong>${esc(o.ref)}</strong>, as discussed. ${offerteSoort} Paying is your go-ahead — we start on it straight after.`)
+            ? `Hieronder staat de prijs voor <strong>${esc(o.ref)}</strong>${offerteAfspraak(d, lang).inhoud || offerteAfspraak(d, lang).klaarOp ? ', met wat je krijgt en wanneer het klaar is' : ''}. ${offerteSoort} Betalen is je akkoord — daarna gaan we voor je aan het werk.`
+            : `Below is the price for <strong>${esc(o.ref)}</strong>${offerteAfspraak(d, lang).inhoud || offerteAfspraak(d, lang).klaarOp ? ', with what you get and when it is ready' : ''}. ${offerteSoort} Paying is your go-ahead — we start on it straight after.`)
           : btwErbij
           ? (lang === 'nl'
             ? `We hebben de gegevens bij <strong>${esc(o.ref)}</strong> nagekeken. Op basis van wat we konden controleren, rekenen we toch ${Math.round(Number(o.vat_rate) * 100) || 21}% btw: ${euro(btw)} bovenop het bedrag dat je bij het bestellen zag. Klopt dat niet — heb je bijvoorbeeld een geldig btw-nummer? Beantwoord deze mail, dan kijken we het na en passen we het aan vóór je betaalt.`
@@ -203,9 +284,23 @@ export async function stuurBetaallink(env, orderId, { origin, offerte = false, h
           ? (lang === 'nl'
             ? `We hebben de gegevens bij <strong>${esc(o.ref)}</strong> nagekeken. Je btw-nummer konden we bij de Europese controle (VIES) niet bevestigen, dus op deze bestelling staat Nederlandse btw (${Math.round(Number(o.vat_rate) * 100) || 21}%). Is je nummer wel geldig? Beantwoord deze mail vóór je betaalt, dan controleren we het opnieuw en wordt de btw verlegd. Anders kun je nu betalen — daarna begint de productie meteen.`
             : `We have checked the details on <strong>${esc(o.ref)}</strong>. We could not confirm your VAT number with the European check (VIES), so Dutch VAT (${Math.round(Number(o.vat_rate) * 100) || 21}%) is on this order. Is your number valid? Reply to this mail before you pay and we check it again and reverse-charge the VAT. Otherwise you can pay now — production starts straight after.`)
+          : euZonderNummer
+          ? (lang === 'nl'
+            ? `We hebben de gegevens bij <strong>${esc(o.ref)}</strong> nagekeken. Je vulde geen btw-nummer in, dus rekenen we ${vatPercent()} Nederlandse btw. Heb je er wel een? Beantwoord dan deze mail vóór je betaalt. Anders kun je nu betalen — daarna begint de productie meteen.`
+            : `We have checked the details on <strong>${esc(o.ref)}</strong>. You did not fill in a VAT number, so we charge ${vatPercent()} Dutch VAT. Do you have one? Just reply to this email before you pay. Otherwise you can pay now — production starts straight after.`)
           : (lang === 'nl'
             ? `We hebben de gegevens bij <strong>${esc(o.ref)}</strong> nagekeken. Alles klopt, dus je kunt nu betalen — daarna begint de productie meteen.`
             : `We have checked the details on <strong>${esc(o.ref)}</strong>. Everything is in order, so you can pay now — production starts straight after.`)),
+        /* levering 117 (P4-04): wat de klant krijgt en wanneer het klaar is, uit het offerteformulier. */
+        ...(() => {
+          if (!offerte) return [];
+          const af = offerteAfspraak(d, lang);
+          const paren = [
+            af.inhoud ? [lang === 'nl' ? 'Wat je krijgt' : 'What you get', esc(af.inhoud).replace(/\n/g, '<br>')] : null,
+            af.klaarOp ? [lang === 'nl' ? 'Klaar op' : 'Ready on', esc(af.klaarOpTekst)] : null,
+          ].filter(Boolean);
+          return paren.length ? [mailRows(paren)] : [];
+        })(),
         verklaring ? mailP(verklaring) : '',
         adresVraag ? mailP(adresVraag) : '',
         mailPayPanel({

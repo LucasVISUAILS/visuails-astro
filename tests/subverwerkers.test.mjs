@@ -78,7 +78,9 @@ console.log('\nde datum "laatst gewijzigd"');
   ok('als tekst, Nederlands', lijstGewijzigdOp('nl'), '9 november 2026');
   ok('als tekst, Engels', lijstGewijzigdOp('en'), '9 November 2026');
   ok('de subverwerkers (met beeld) houden hun eigen datum', lijstGewijzigdOp('nl', 'subverwerkers'), '11 oktober 2026');
-  ok('… en dat is ook de datum op de verwerkersovereenkomst', lijstRegel('en', 'subverwerkers').includes('11 October 2026'), true);
+  /* levering 119 (18 november 2026, proefronde P6-14): op de pagina's staat nog maar één datum, die van de hele lijst;
+     de verwerkersovereenkomst zegt erbij dat zij alleen de partijen met beeld toont. */
+  ok('… maar de verwerkersovereenkomst toont dezelfde datum als het privacybeleid', lijstRegel('en', 'subverwerkers').includes('9 November 2026') && !lijstRegel('en', 'subverwerkers').includes('11 October 2026'), true);
   ok('de regel boven de lijst noemt hem', lijstRegel('nl').includes(lijstGewijzigdOp('nl')), true);
   /* Een gewijzigde lijst is een gewijzigd document: de datum bovenaan de twee
      pagina's mag niet ouder zijn dan de lijst die ze afdrukken. */
@@ -138,7 +140,8 @@ console.log('\nde gebouwde pagina\'s tonen de lijst en de datum');
     const priv = { en: readFileSync(pad('privacy'), 'utf8'), nl: readFileSync(pad('nl/privacy'), 'utf8') };
     for (const lang of ['en', 'nl']) {
       /* ronde 91 (E17): de overeenkomst noemt de datum van de SUBverwerkers (e-Boekhouden en VIES zijn ontvangers, geen subverwerkers) */
-      ok(`${lang}: de overeenkomst toont de datum`, vwo[lang].includes(lijstGewijzigdOp(lang, 'subverwerkers')), true);
+      /* levering 119 (proefronde P6-14): één datum, dezelfde als het privacybeleid */
+      ok(`${lang}: de overeenkomst toont de datum`, vwo[lang].includes(lijstGewijzigdOp(lang)), true);
       ok(`${lang}: het privacybeleid ook`, priv[lang].includes(lijstGewijzigdOp(lang)), true);
       for (const s of subverwerkers(lang)) {
         const naam = s.naam.replace(/&/g, '&amp;');

@@ -78,6 +78,8 @@ export function fontFaces() {
     '@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans/dm-sans-latin-ext.woff2) format("woff2"); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }',
     '@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans/dm-sans-latin.woff2) format("woff2"); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }',
     '@font-face { font-family: "VISUAILS Display"; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay-Bold.woff2) format("woff2"); }',
+    /* levering 121 (19 november 2026, lijst 134): de paginakop van de privélink staat nu in VISUAILS Display 2 Medium (public/portal.css) */
+    '@font-face { font-family: "VISUAILS Display 2"; font-style: normal; font-weight: 500; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay2-Medium.woff2) format("woff2"); }',
   ];
   return regels.join('\n') + '\n';
 }

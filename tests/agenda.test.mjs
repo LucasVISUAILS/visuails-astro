@@ -371,6 +371,11 @@ console.log('\nde site zegt "dagen" waar de agenda dagen bedoelt');
          vijf werkdagen waarbinnen je de modelaanbieders krijgt: een termijn voor
          een verzoek, net als in de verwerkersovereenkomst. */
       /\/start\/(catalog|lifestyle|complete)\//, /\/pricing\//, /\/terms\//, /\/privacy\//,
+      /* levering 118 (17 november 2026, P4-09): een merkmodel heeft een vaste termijn ("de eerste richtingen binnen
+         MERKMODEL_RICHTINGEN_WERKDAGEN werkdagen", src/data/termijnen.js), gerekend vanaf de betaling. Dat is een afspraak
+         over één betaald ontwerp, geen studiodag in de gedeelde agenda: /admin plant hem met werkdagenNa() (ma–vr) in
+         src/lib/agenda.js, dus "dagen" zou hier juist iets anders zeggen dan de planning. */
+      /\/start\/brand-model\//, /\/custom-models\//,
     ];
     const paginas = globSync('dist/**/*.html').map((p) => p.replace(/\\/g, '/'));
     check('er zijn genoeg pagina’s doorzocht', paginas.length > 50, true);

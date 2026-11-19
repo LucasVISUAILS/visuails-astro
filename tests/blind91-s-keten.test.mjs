@@ -211,8 +211,13 @@ if (!chromium || !fs.existsSync(paginaNl) || !fs.existsSync(paginaEn)) {
   try {
     for (const [lang, pagina, woord] of [['nl', paginaNl, 'Btw-nummer'], ['en', paginaEn, 'VAT number']]) {
       const html = fs.readFileSync(pagina, 'utf8');
-      const label = (html.match(/<label for="pl-vat"[\s\S]*?<\/label>/) || [])[0] || '';
-      ok(`S05 (${lang}) het gebouwde label heeft vraagteken en uitleg (anders toetst dit niets)`, /uitleg-mark/.test(label) && /uitleg-paneel/.test(label));
+      const gebouwd = (html.match(/<label for="pl-vat"[\s\S]*?<\/label>/) || [])[0] || '';
+      /* levering 119 (18 november 2026, proefronde P11-11, integrator I9): het vraagteken staat nu NAAST het label (C1), dus
+         het gebouwde label heeft geen vraagteken meer. Dit pinde dat het erin stond. labelTekst() blijft getoetst op het
+         gebouwde label met het vraagteken en de uitleg er weer in gezet, zoals vóór 119. */
+      ok(`S05 (${lang}) P11-11: het gebouwde label heeft geen vraagteken en uitleg meer`, !!gebouwd && !/uitleg-mark/.test(gebouwd) && !/uitleg-paneel/.test(gebouwd));
+      const label = gebouwd.replace(/<\/label>$/, `<button type="button" class="uitleg-mark">?</button><span class="uitleg-paneel" popover="auto">Uitleg over ${woord}: alleen als je bedrijf er een heeft.</span></label>`);
+      ok(`S05 (${lang}) met het vraagteken erin gezet (anders toetst dit niets)`, /uitleg-mark/.test(label) && /uitleg-paneel/.test(label));
       const page = await browser.newPage();
       /* De markup van het gebouwde formulier, met "optioneel" zichtbaar zoals in de live test. */
       await page.setContent(`<!doctype html><meta charset="utf-8"><body>${label.replace(/<script[\s\S]*?<\/script>/g, '').replace(' data-pl-vat-opt hidden', ' data-pl-vat-opt')}<input id="pl-vat" name="vat" value="NL000000000B01"></body>`);

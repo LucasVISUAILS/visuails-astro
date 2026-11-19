@@ -11,7 +11,7 @@
  *   · de staffel als TABEL (tarievenkaart = tabellaire data), met de rijlabels
  *     van één soort en de controle dat beide soorten op dezelfde aantallen
  *     breken — zie de noot in PricingPage.astro;
- *   · drie uitgerekende aantallen (5, 14, 30) met catalog als hoofdbedrag;
+ *   · drie uitgerekende aantallen (5, 14, 20 = FORM_MAX_PRODUCTS) met catalog als hoofdbedrag;
  *   · "het tarief is het tarief", de aanbevelingen (rendert niets zolang er
  *     geen is), het merkmodel met de zwevende notitie (tests/notitie), video op
  *     aanvraag, de kleinere posten, en de band naar /plans met id="plans";
@@ -27,9 +27,13 @@ import '../styles/hal.css';
 import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import {
   LADDER, ladderRate, quote, euro, vatLabel, AMOUNT, TEST_SAMPLE,
-  PLAN_AMOUNT, CUSTOM_CREDITS_MIN, customCreditsTotal,
+  PLAN_AMOUNT, CUSTOM_CREDITS_MIN, customCreditsTotal, FORM_MAX_PRODUCTS,
   extraPhotoRate, EXTRA_PHOTO_LADDER, LOOK_PRIJS,
   RESOLUTIE, VIDEO_OP_AANVRAAG, HOOG_PER_PRODUCT, VOORRANG,
+  /* levering 119 (18 november 2026, proefronde P6-24): de grens van voorrang noemt geen clips zolang video op aanvraag is. */
+  voorrangGrens,
+  /* levering 118 (17 november 2026, proefronde P8-06): de ene zin over voorrang. */
+  voorrangBelofte,
   CATALOG_IMAGES, LIFESTYLE_IMAGES,
 } from '../data/pricing.js';
 import { countedShort, setSize } from '../data/lexicon.js';
@@ -59,7 +63,10 @@ for (const id of KIND_IDS) {
   const vorm = (k: string) => LADDER[k].map(([lo, hi]: [number, number | null]) => `${lo}:${hi}`).join(',');
   if (vorm(id) !== vorm('catalog')) throw new Error(`PricingHal.astro: de staffel van "${id}" breekt niet op dezelfde aantallen als catalog.`);
 }
-const WORKED = [5, 14, 30];
+/* levering 117 (17 november 2026, proefronde P3-01): het grootste voorbeeld was 30
+   producten (€1.200), maar het formulier stopt bij FORM_MAX_PRODUCTS (20); daarboven
+   alleen WhatsApp. Nu 20 × €40 = €800, hetzelfde aantal als /compare. */
+const WORKED = [5, 14, FORM_MAX_PRODUCTS];
 const maatVanaf = customCreditsTotal(CUSTOM_CREDITS_MIN).total;
 
 const COPY = {
@@ -72,7 +79,8 @@ const COPY = {
     tabelSub: 'The rate applies to every product in the order.',
     een: `One product = ${setSize('catalog', CATALOG_IMAGES, 'en')} (catalog) or ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')} in one styled look (lifestyle)`,
     producten: 'Products', per: 'per product',
-    soort: { catalog: ['Catalog set', setSize('catalog', CATALOG_IMAGES, 'en')], lifestyle: ['Lifestyle carousel', countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')] },
+    /* levering 118 (17 november 2026, proefronde P2-10): de dienst heet overal Catalog en Lifestyle, zoals in het menu en de mails. */
+    soort: { catalog: ['Catalog', setSize('catalog', CATALOG_IMAGES, 'en')], lifestyle: ['Lifestyle', countedShort('lifestyle', LIFESTYLE_IMAGES, 'en')] },
     somKop: ['What that', 'comes to.'], eenheid: 'products', alsLifestyle: 'as lifestyle carousels',
     /* Levering 58 (afvinklijst 37, b-korting): "No discounts, no packages" botste met een plan
        dat 30 tot 40% goedkoper is en met korting bij bijkopen. Nu zegt de zin waar het wel kan. */
@@ -93,7 +101,8 @@ const COPY = {
       ['Extra catalog angle', `${e(extraPhotoRate(1))} to ${e(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2])} per photo, falling with your count`, 'A side or a second detail, per product.', '/per-product'],
       ['Complete look', lookCopy('en').prijs(e(LOOK_PRIJS)), 'Two or three pieces from your order, worn together by one model, plus two images of the whole look.', '/lifestyle'],
       ['A look of your own', 'On request', 'One design fee and one correction round, then from the ordinary rate.', '/start/custom-look'],
-      ['Priority delivery', `${Math.round(VOORRANG.deel * 100)}% of the order, ${e(VOORRANG.bodem)} to ${e(VOORRANG.plafond)}`, `Paid on a working day before ${VOORRANG.bestelVoorUur}:00, delivered by ${VOORRANG.klaarUur}:00 the next working day — or the surcharge comes back. Up to ${VOORRANG.maxProducten} products or ${VOORRANG.maxClips} clips.`, '/start'],
+      /* levering 118 (17 november 2026, proefronde P8-06): de belofte uit voorrangBelofte(), met Dutch time en "otherwise the working day after". */
+      ['Priority delivery', `${Math.round(VOORRANG.deel * 100)}% of the order, ${e(VOORRANG.bodem)} to ${e(VOORRANG.plafond)}`, `${voorrangBelofte('en', true)}. Up to ${voorrangGrens('en')}.`, '/start'],
       ['Higher resolution', `${e(HOOG_PER_PRODUCT)} per lifestyle product`, `All four lifestyle images at ${RESOLUTIE.hoog} px on the long edge instead of ${RESOLUTIE.standaard}, for print or a large screen.`, '/lifestyle'],
       ['Hooks', `From ${e(AMOUNT.hooks)} a hook, on request`, 'A short vertical video that runs into the post below.', '/hooks'],
       ['Editions', `${e(AMOUNT.editions)} a month after a one-time ${e(AMOUNT.editionsSetup)} — coming soon`, 'Monthly on-brand visuals without your product, on top of a plan.', '/editions'],
@@ -116,7 +125,8 @@ const COPY = {
     tabelSub: 'Het tarief geldt voor elk product in de bestelling.',
     een: `Eén product = ${setSize('catalog', CATALOG_IMAGES, 'nl')} (catalog) of ${countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')} in één gestylede look (lifestyle)`,
     producten: 'Producten', per: 'per product',
-    soort: { catalog: ['Catalogset', setSize('catalog', CATALOG_IMAGES, 'nl')], lifestyle: ['Lifestyle\u00ADcarrousel', countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')] },
+    /* levering 118 (17 november 2026, proefronde P2-10): zie de Engelse tegenhanger. */
+    soort: { catalog: ['Catalog', setSize('catalog', CATALOG_IMAGES, 'nl')], lifestyle: ['Lifestyle', countedShort('lifestyle', LIFESTYLE_IMAGES, 'nl')] },
     somKop: ['Wat dat', 'wordt.'], eenheid: 'producten', alsLifestyle: 'als lifestylecarrousels',
     tarief: ['Het tarief op deze pagina is het tarief.', 'Geen kortingscodes, geen acties. Minder per product betaal je alleen met', 'een abonnement', '.', ` Wil je het werk eerst zien? Daarvoor is de proef van ${sample.price}.`],
     vergelijk: 'Een shootdag, afgezet tegen een bestelling',
@@ -135,7 +145,8 @@ const COPY = {
       ['Extra cataloghoek', `${e(extraPhotoRate(1))} tot ${e(EXTRA_PHOTO_LADDER[EXTRA_PHOTO_LADDER.length - 1][2])} per foto, dalend met je aantal`, 'Een zijkant of tweede detail, per product.', '/per-product'],
       ['Complete look', lookCopy('nl').prijs(e(LOOK_PRIJS)), 'Twee of drie stukken uit je bestelling, samen gedragen door één model, plus twee beelden van de hele look.', '/lifestyle'],
       ['Een eigen look', 'Op aanvraag', 'Eén ontwerpbedrag en één correctieronde, daarna vanaf het gewone tarief.', '/start/custom-look'],
-      ['Voorrang bij levering', `${Math.round(VOORRANG.deel * 100)}% van de bestelling, ${e(VOORRANG.bodem)} tot ${e(VOORRANG.plafond)}`, `Betaald op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 — of de toeslag komt terug. Tot ${VOORRANG.maxProducten} producten of ${VOORRANG.maxClips} clips.`, '/start'],
+      /* levering 118 (17 november 2026, proefronde P8-06): de belofte uit voorrangBelofte(), met Nederlandse tijd en "anders de werkdag daarna". */
+      ['Voorrang bij levering', `${Math.round(VOORRANG.deel * 100)}% van de bestelling, ${e(VOORRANG.bodem)} tot ${e(VOORRANG.plafond)}`, `${voorrangBelofte('nl', true)}. Tot ${voorrangGrens('nl')}.`, '/start'],
       ['Hogere resolutie', `${e(HOOG_PER_PRODUCT)} per lifestyleproduct`, `Alle vier de lifestylebeelden op ${RESOLUTIE.hoog} px aan de lange zijde in plaats van ${RESOLUTIE.standaard}, voor print of een groot scherm.`, '/lifestyle'],
       ['Hooks', `Vanaf ${e(AMOUNT.hooks)} per hook, op aanvraag`, 'Een korte verticale video die doorloopt in de post eronder.', '/hooks'],
       ['Editions', `${e(AMOUNT.editions)} per maand na een eenmalige ${e(AMOUNT.editionsSetup)} — binnenkort`, 'Maandelijks merkbeeld zonder je product, bovenop een abonnement.', '/editions'],
@@ -158,7 +169,8 @@ const KB_LAAG = LADDER.catalog[LADDER.catalog.length - 1];
 const KB_EEN = LADDER.catalog[0];
 const BEELD = {
   soort: 'getal' as const,
-  label: nl ? 'Catalogset · per product' : 'Catalog set · per product',
+  /* levering 118 (17 november 2026, proefronde P2-10): Catalog, de naam van de dienst. */
+  label: 'Catalog · per product',
   href: '#pr-ladder', linkNaam: nl ? 'Naar de prijslijst' : 'To the price list',
   voor: nl ? 'vanaf' : 'from', getal: euro(KB_LAAG[2], lang), eenheid: 'per product',
   voet: nl ? `Vanaf ${KB_LAAG[0]} producten, ${vatLabel('excl', 'nl')}. Eén product: ${euro(KB_EEN[2], lang)}.`

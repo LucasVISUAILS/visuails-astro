@@ -291,8 +291,13 @@ console.log('\nde licentie die de klant ons geeft staat in de voorwaarden, met z
    * nooit over bronmateriaal, en voor een product dat nog niet uit is geldt een
    * opt-IN. De rest van de zin blijft een opt-out, want anders is er geen portfolio.
    */
-  ok('EN het portfolio gaat alleen over geleverde visuals', /<em>delivered visuals<\/em> — never your source material/i.test(TERMS.en), true);
-  ok('NL idem', /<em>geleverde visuals<\/em> — nooit jouw bronmateriaal/i.test(TERMS.nl), true);
+  /* levering 118 (17 november 2026, proefronde P6-03, keuze a): het portfolio is nu overal opt-in, ook voor de
+     productfoto's, zoals de vraag na de levering (feedback.js) en privacy §2 het al deden. Hier stond de oude opt-out
+     ("never your source material", "tenzij je ons schriftelijk vraagt") vastgepind. */
+  ok('EN het portfolio is opt-in', /Our portfolio — only if you say yes/.test(TERMS.en) && /If you say nothing or rather not, we show nothing/.test(TERMS.en), true);
+  ok('NL idem', /Ons portfolio — alleen als jij ja zegt/.test(TERMS.nl) && /Zeg je niets of liever niet, dan laten wij niets zien/.test(TERMS.nl), true);
+  ok('EN geen opt-out meer', /unless you tell us in writing not to/i.test(TERMS.en), false);
+  ok('NL idem', /tenzij je ons schriftelijk vraagt dat niet te doen/i.test(TERMS.nl), false);
   ok('EN een nog niet uitgebracht product is opt-in', /not yet publicly available/i.test(TERMS.en), true);
   ok('NL idem', /nog niet openbaar te koop/i.test(TERMS.nl), true);
 
@@ -735,11 +740,14 @@ console.log('\nde cookieverklaring noemt elke cookie die de code zet');
        De regel is op 24 augustus juist WEGGEHAALD, en de uitleg daarvan noemt
        het cookie bij naam. Zonder die uitsluiting bewaakt deze telling de
        verantwoording in plaats van de pagina. */
-    const totaal = namen.size + (pagina.includes('vis_admin') ? 1 : 0);
-    const woord = { 2: '(two|twee)', 3: '(three|drie)', 4: '(four|vier)', 5: '(five|vijf)', 6: '(six|zes)' }[totaal];
-    if (woord) {
-      ok(`${kort} telt er ${totaal}`, new RegExp(`all ${woord}|alle ${woord}`, 'i').test(pagina), true);
-    }
+    /* ── GEEN TELWOORD MEER — levering 119 (18 november 2026, proefronde P6-10) ──────────
+       Deze telling las alleen account.js, portal.js en consent.js. vis_in en vis_tips komen uit
+       src/data/cookies.js en staan op de pagina als {INGELOGD_COOKIE} en {TIPS_COOKIE}, dus telde hij
+       er vier en eiste hij "alle vier" onder een lijst van zes (en de kop zei "vijf"). De pagina noemt
+       nu geen aantal meer; de lijst telt zelf. Deze toets eist dat er geen telwoord terugkomt. */
+    ok(`${kort} noemt geen aantal cookies`,
+      /\b(all|alle) (two|three|four|five|six|seven|twee|drie|vier|vijf|zes|zeven)\b|There are (two|three|four|five|six|seven)\b|Het zijn er (twee|drie|vier|vijf|zes|zeven)\b/i.test(pagina), false);
+    ok(`${kort} zegt dat de lijst compleet is`, /That is all of them|Dat zijn ze allemaal/.test(pagina), true);
   }
 
   /* ── DEZE CONTROLE LAS DE BRON, EN DAT WERD ZIJN EIGEN VAL — 23 aug 2026 ──

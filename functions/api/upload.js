@@ -53,6 +53,8 @@ import {
   duimKeyVoor,
   isDuimKey,
   isWebpKop,
+  beeldAfmeting,
+  teKleinVoorStudio,
 } from '../../src/lib/uploads.js';
 import { isShotId } from '../../src/data/shots.js';
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
@@ -204,6 +206,15 @@ export async function onRequestPost(context) {
     return json({ ok: false, error: 'bad-type', accepted: Object.keys(UPLOAD_TYPES) }, 400);
   }
 
+  /* ── TE KLEIN: MARKEREN, NIET WEIGEREN — levering 118 (17 november 2026, proefronde P2-06) ──
+     Het formulier keurt de maat (keurBeeld() in shots.js), maar "Opnieuw" stuurde een geweigerde foto toch. De server
+     leest nu de afmeting uit de kop (beeldAfmeting() in uploads.js) en zet `klein` in de customMetadata; /admin en de
+     studiomail zeggen het. Niet te lezen (HEIC, een rare kop): niets, zoals voorheen. 256 KB is genoeg voor de
+     SOF-marker achter een EXIF-blok met voorbeeldje. */
+  let afmeting = null;
+  try { afmeting = beeldAfmeting(new Uint8Array(await file.slice(0, 256 * 1024).arrayBuffer())); } catch { afmeting = null; }
+  const teKlein = teKleinVoorStudio(afmeting);
+
   /* De daggrenzen (zie UPLOAD_DAG bovenaan). Pas hier, na alle controles op het
      bestand zelf: wat geweigerd wordt, telt niet mee. Eerst de nieuwe batch,
      dan bestanden, dan bytes; de eerste die vol is, stopt het. */
@@ -218,16 +229,16 @@ export async function onRequestPost(context) {
     const botcheck = botcheckBesluit((await controleerBotcheck(env, { token: typeof token === 'string' ? token : '', ip })).stand);
     if (botcheck === 'weiger') return json({ ok: false, error: 'botcheck' }, 403);
     const nieuw = await checkRate(env, { ip, action: 'upload-batch-dag', limit: UPLOAD_DAG.batches, windowSeconds: DAG });
-    if (!nieuw.allowed) return dagLimiet(nieuw);
+    if (!nieuw.allowed) return dagLimiet(nieuw, 'bestellingen');
     if (botcheck === 'streng') {
       const streng = await checkRate(env, { ip, action: 'upload-batch-zonder-botcheck', limit: UPLOAD_DAG.batchesZonderBotcheck, windowSeconds: DAG });
-      if (!streng.allowed) return dagLimiet(streng);
+      if (!streng.allowed) return dagLimiet(streng, 'bestellingen');
     }
   }
   const stuks = await checkRate(env, { ip, action: 'upload-bestanden-dag', limit: UPLOAD_DAG.bestanden, windowSeconds: DAG });
-  if (!stuks.allowed) return dagLimiet(stuks);
+  if (!stuks.allowed) return dagLimiet(stuks, 'bestanden');
   const zwaar = await checkRate(env, { ip, action: 'upload-bytes-dag', limit: UPLOAD_DAG.bytes, windowSeconds: DAG, gewicht: bytes });
-  if (!zwaar.allowed) return dagLimiet(zwaar);
+  if (!zwaar.allowed) return dagLimiet(zwaar, 'bytes');
 
   // The count comes from R2 rather than from the client, and it also supplies
   // the ordering number below.
@@ -270,6 +281,8 @@ export async function onRequestPost(context) {
         // no header on every object in a 140-file batch.
         ...(product ? { product } : {}),
         ...(shot ? { shot } : {}),
+        /* levering 118 (P2-06): een te kleine foto, met zijn maat ("600x450"); listBatch() geeft hem door. */
+        ...(teKlein ? { klein: '1', px: `${afmeting.breed}x${afmeting.hoog}` } : {}),
       },
     });
   } catch {
@@ -384,8 +397,13 @@ export async function onRequestGet(context) {
 /* Een eigen code en GEEN `rate`: pipeline.js probeert `rate` vanzelf opnieuw,
    en dat heeft bij een daggrens geen zin. 429, want het is een grens en geen
    fout in het bestand. */
-function dagLimiet(teller) {
-  return json({ ok: false, error: 'dag-limiet', retryAfter: teller.retryAfter }, 429, {
+/* levering 118 (17 november 2026, proefronde P9-09): de grens zelf blijft (Lucas koos "streng blijven" tot
+   Turnstile live aan staat), maar het antwoord zegt nu WELKE grens vol is: `bestellingen` (nieuwe uploadbatches
+   per dag, zonder botcheck vijf), `bestanden` of `bytes`. De melding op het formulier zegt nu "bij een grote
+   bestelling", en de gewone oorzaak is het eerste: een paar kleine bestellingen op één dag vanaf één
+   internetaansluiting. Met `grens` kan de pagina dat zeggen. */
+function dagLimiet(teller, grens = '') {
+  return json({ ok: false, error: 'dag-limiet', retryAfter: teller.retryAfter, ...(grens ? { grens } : {}) }, 429, {
     'retry-after': String(teller.retryAfter || DAG),
   });
 }

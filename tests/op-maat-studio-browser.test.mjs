@@ -92,10 +92,13 @@ try {
   {
     const p = await nieuw(1280);
     await p.goto(`${studio.url}/account/op-maat?dienst=catalog`, { waitUntil: 'load' });
-    await wachtOpslag(p);
-    ok('een nieuwe aanvraag: de link wordt ?id=', /\/account\/op-maat\?id=\d+$/.test(p.url()), true);
+    /* levering 119 (18 november 2026, proefronde P12-09, integrator I9): alleen kijken maakt geen aanvraag meer; de eerste
+       wijziging wel. Dit pinde de oude stand (meteen opslaan bij het openen). */
+    await p.waitForTimeout(800);
+    ok('alleen kijken: nog geen aanvraag, de link blijft ?dienst=catalog (P12-09)', /\/account\/op-maat\?dienst=catalog$/.test(p.url()), true);
     await p.click('.om-stap >> nth=2');
     await wachtOpslag(p);
+    ok('na de eerste wijziging een nieuwe aanvraag: de link wordt ?id=', /\/account\/op-maat\?id=\d+$/.test(p.url()), true);
     await p.fill('[data-rij="soorten"] [data-veld="aantal"]', '3');
     /* lijst 113: de stand per groep; de top in drie kwart (geen standaard, dus c-pose) */
     await p.click('[data-groep="top"] input[value="driekwart"]', { force: true });
@@ -133,7 +136,8 @@ try {
   for (const [dienst, breed] of [['hooks', 1280], ['video', 390], ['lifestyle', 390]]) {
     const p = await nieuw(breed);
     await p.goto(`${studio.url}/account/op-maat?dienst=${dienst}`, { waitUntil: 'load' });
-    await wachtOpslag(p);
+    /* levering 119 (P12-09): bij het openen wordt niets opgeslagen; hier stond wachtOpslag(). */
+    await p.waitForTimeout(500);
     if (dienst !== 'lifestyle') {
       ok(`${dienst}: de vragen staan pas open bij "bedenk het voor mij"`, await p.evaluate(() => getComputedStyle(document.querySelector('.om-als-ons')).display), 'none');
       await p.click('input[name="idee"][value="ons"]', { force: true });
@@ -146,7 +150,9 @@ try {
       await p.click('[data-rij-erbij="shots"]');
       await p.waitForTimeout(700); await wachtOpslag(p);
       const regels = await p.evaluate(() => [...document.querySelectorAll('#om-regels p')].map((x) => x.textContent));
-      ok('video: een extra shot en een crane staan in de schatting', regels.some((r) => /Extra shots/.test(r)) && regels.some((r) => /Camerabewegingen.*€40/.test(r)), true);
+      /* levering 119 (18 november 2026): Lucas besloot dat de klant bij video (op aanvraag) geen bedrag ziet; dit pinde "€40" bij de crane. */
+      ok('video: een extra shot en een crane staan in de keuzes, zonder bedrag', regels.some((r) => /Extra shots/.test(r)) && regels.some((r) => /^Camerabewegingen$/.test(r)) && regels.every((r) => !/€/.test(r)), true);
+      ok('video: de prijs heet "op aanvraag"', await p.evaluate(() => document.getElementById('om-totaal').textContent), 'op aanvraag');
     }
     const v = await vorm(p);
     ok(`${dienst} op ${breed}: geen zachte hoek, geen kleine tekst, geen horizontale scroll`, [v.zacht, v.klein, v.breed], [[], [], false]);

@@ -58,7 +58,11 @@ try {
   console.log('\n1 · de groepen van zijn producten');
   const p = await nieuw(metGL, 1280);
   await p.goto(`${studio.url}/account/op-maat?dienst=catalog`, { waitUntil: 'load' });
-  await wachtOpslag(p);
+  /* levering 119 (18 november 2026, P12-09): alleen kijken maakt geen aanvraag meer, dus bij het openen is er geen "Opgeslagen";
+     hier stond wachtOpslag(). Nu wachten tot de 3D-module de groepen zet; de eerste wijziging (een rij erbij, hieronder) maakt
+     de aanvraag, en daarna wacht opslaan() wel op de opslag. */
+  await p.waitForFunction(() => [...document.querySelectorAll('#om-standen [data-groep]')].some((g) => !g.hidden), null, { timeout: 15000 });
+  ok('alleen kijken: nog geen aanvraag, de link blijft ?dienst=catalog (P12-09)', /\/account\/op-maat\?dienst=catalog$/.test(p.url()), true);
   ok('met één T-shirt staat alleen Top er', await zichtbareGroepen(p), ['top']);
   ok('de eerste hoek is de standaard, en staat aan', await p.evaluate(() => { const r = document.querySelector('[data-groep="top"] input:checked'); return [r.value, !!r.closest('.om-pil').querySelector('.om-std')]; }), ['voorkant', true]);
   await p.click('[data-rij-erbij="soorten"]');
@@ -66,6 +70,7 @@ try {
   await p.click('[data-rij-erbij="soorten"]');
   await p.selectOption('[data-rij="soorten"] [data-rij-item]:nth-child(3) [data-veld="soort"]', 'hoodie');
   await opslaan(p);
+  ok('na de eerste wijziging is er een aanvraag: de link wordt ?id= (P12-09)', /\/account\/op-maat\?id=\d+$/.test(p.url()), true);
   ok('een schoen erbij: Top en Shoes, in de volgorde headwear … shoes', await zichtbareGroepen(p), ['top', 'shoes']);
   ok('bij Top de namen van zijn producten', await p.textContent('[data-groep="top"] [data-groep-namen]'), 'T-shirt · Hoodie');
 

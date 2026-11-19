@@ -260,7 +260,8 @@ for (const [url, taal] of [['/nl/start/catalog', 'nl'], ['/start/catalog', 'en']
       ok(`${tag}: ${n} kaarten in de pagina, één in beeld`, [vorm.inDom, vorm.kaarten], [n, 1]);
       ok(`${tag}: één knop voor de foto's, bij het product in beeld`, vorm.knoppen, 1);
       ok(`${tag}: Vorig en Volgend product alleen bij meer dan één`, vorm.bladeren, n > 1);
-      ok(`${tag}: de tipbalk staat onderin`, vorm.tipbalk, true);
+      /* levering 118 (17 november 2026, proefronde P2-05): de tipbalk staat nu in de pagina boven de vakken; alleen het label klopte niet meer. */
+      ok(`${tag}: de tipbalk staat er`, vorm.tipbalk, true);
       ok(`${tag}: geen gezicht open in stap 2`, vorm.gezichten, 0);
       ok(`${tag}: geen tippaneel en geen "Wat je opstuurt"`, [vorm.tips, vorm.wjo, vorm.volgende], [false, false, false]);
       ok(`${tag}: geen "Sla deze over"`, vorm.overslaan, 0);

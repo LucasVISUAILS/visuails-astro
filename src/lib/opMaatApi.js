@@ -27,15 +27,26 @@ import {
 } from './opMaat.js';
 import { toelichtingNodig } from './opMaat.js';
 import { schatting, regelNaam } from '../data/opMaatPrijs.js';
+/* levering 119 (18 november 2026, besluit Lucas na proefronde P5-16): video is op aanvraag, ook in de schatting van Studio. */
+import { VIDEO_OP_AANVRAAG } from '../data/pricing.js';
 import { voorbeeldenVan, huidigeRonde, reactieOpRonde, GRATIS_RONDES_TOTAAL } from './opMaatRondes.js';
 import { offerteVoorScherm, akkoordEnBetaallink, vraagAanpassing } from './opMaatOfferte.js';
+import { merkmodelInAbonnement } from './slots.js';
 
 const metNamen = (sch, taal) => ({ ...sch, regels: sch.regels.map((r) => ({ ...r, naam: regelNaam(r.id, taal) })) });
+/* levering 119 (18 november 2026, besluit Lucas na proefronde P5-16): Lucas: geen bedrag per seconde voor de klant zolang video op aanvraag is. Dan gaan alleen de namen
+   van de keuzes naar het scherm (geen bedrag, geen uitleg met bedragen, geen totaal); de prijs komt in de offerte.
+   /admin (adminOpMaat.js) en de offerte rekenen nog gewoon met schatting(). */
+const voorKlant = (sch, taal) => (sch.dienst === 'video' && VIDEO_OP_AANVRAAG
+  ? { dienst: sch.dienst, opAanvraag: true, producten: sch.producten, regels: sch.regels.map((r) => ({ id: r.id, naam: regelNaam(r.id, taal) })), totaal: null, aanbetaling: null }
+  : metNamen(sch, taal));
 
-/** Heeft de klant al een klaar merkmodel? Dan kost "nieuw merkmodel" in de schatting niets (lijst 109). */
+/** Heeft de klant al een klaar merkmodel? Dan kost "nieuw merkmodel" in de schatting niets (lijst 109).
+ *  Levering 117 (17 november 2026, proefronde P5-12, met bouwer BA): ook niet als zijn abonnement een merkmodel
+ *  inbegrepen heeft dat hij nog niet besteld heeft (merkmodelInAbonnement() in src/lib/slots.js). */
 async function heeftMerkmodel(env, cid) {
   const r = await env.DB.prepare("SELECT 1 AS x FROM custom_models WHERE customer_id = ? AND status != 'in_design' LIMIT 1").bind(cid).first().catch(() => null);
-  return !!r;
+  return !!r || !!(await merkmodelInAbonnement(env, cid));
 }
 
 function json(body, status = 200) {
@@ -47,8 +58,9 @@ const uit = (r) => json(r, r.ok ? 200 : (STATUS[r.reden] || 400));
 async function volledig(env, customerId, id) {
   const a = await aanvraagVan(env, customerId, id);
   if (!a) return null;
-  const merk = await merkVan(env, customerId);
-  return { aanvraag: a, merk, referenties: (await referentiesVan(env, id)).map(({ r2Key, ...r }) => r), besluiten: await besluitenVan(env, id), ontbreekt: ontbreekt(a.dienst, a.inhoud, merk), schatting: metNamen(schatting(a.dienst, a.inhoud, { merkmodelBetaald: await heeftMerkmodel(env, customerId) }), a.taal), toelichting: toelichtingNodig(a.dienst, a.inhoud),
+  /* levering 118 (17 november 2026, proefronde P12-02): een verstuurde aanvraag houdt het merk van toen. */
+  const merk = a.merk || await merkVan(env, customerId);
+  return { aanvraag: a, merk, referenties: (await referentiesVan(env, id)).map(({ r2Key, ...r }) => r), besluiten: await besluitenVan(env, id), ontbreekt: ontbreekt(a.dienst, a.inhoud, merk), schatting: voorKlant(schatting(a.dienst, a.inhoud, { merkmodelBetaald: await heeftMerkmodel(env, customerId) }), a.taal), toelichting: toelichtingNodig(a.dienst, a.inhoud),
     /* Lijst 112, schermen 9 en 10: de voorbeelden (zonder R2-sleutel), de ronde en de offerte. */
     voorbeelden: (await voorbeeldenVan(env, id).catch(() => [])).map((v) => ({ id: v.id, ronde: v.ronde, url: `/account/op-maat/beeld/${v.id}` })),
     ronde: await huidigeRonde(env, id).catch(() => 0), gratisRondes: GRATIS_RONDES_TOTAAL,
@@ -104,8 +116,9 @@ export async function onRequestPost({ request, env }) {
       if (!r.ok) return uit(r);
       return json({ ok: true, ...(await volledig(env, cid, id)) });
     }
-    case 'verstuur': return uit(await verstuur(env, cid, id));
-    case 'reactie': return uit(await reactieOpRonde(env, cid, id, { beelden: b.beelden, wel: b.wel, anders: b.anders, blijven: b.blijven, goed: b.goed === true }));
+    /* Levering 117 (17 november 2026, proefronde P5-07): verstuur en reactie mailen; de link in de mail gaat naar deze site. */
+    case 'verstuur': return uit(await verstuur(env, cid, id, { origin: new URL(request.url).origin }));
+    case 'reactie': return uit(await reactieOpRonde(env, cid, id, { beelden: b.beelden, wel: b.wel, anders: b.anders, blijven: b.blijven, goed: b.goed === true, origin: new URL(request.url).origin }));
     /* De offerte (15 november 2026): akkoord maakt de bestelling en stuurt de betaallink; of de klant vraagt een aanpassing. */
     case 'offerte-akkoord': return uit(await akkoordEnBetaallink(env, cid, id, { zakelijk: b.zakelijk === true, origin: new URL(request.url).origin }));
     case 'offerte-aanpassen': return uit(await vraagAanpassing(env, cid, id, b.tekst));

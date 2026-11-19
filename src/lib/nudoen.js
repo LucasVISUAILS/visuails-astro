@@ -54,7 +54,9 @@ import { waLink, REVIEW_GEVRAAGD } from './waLink.js';
 import { serviceLabel } from '../data/services.js';
 import { knopInhoud } from '../data/iconen.js';
 import { agendaUiterlijk } from './agenda.js';
-import { heeftVoorrang, voorrangDeadline } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde L-16): voorrang loopt vanaf betaald én foto's compleet. */
+import { voorrangVanaf } from './fotosCompleet.js';
+import { heeftVoorrang, voorrangDeadline, VAT_RATE } from '../data/pricing.js';
 
 /** De vaste volgorde. */
 /* 'abonnement' (15 oktober 2026, v31-abonnees = a): een terugboeking, een mislukte
@@ -187,6 +189,15 @@ const OPEN_REVISIE = `f.order_id = o.id AND f.review_state = 'revision_requested
 const ANTWOORD_ONVERSTUURD = `r.order_id = o.id AND r.resolved_at IS NOT NULL AND COALESCE(r.resolution_note, '') <> ''
             AND r.resolved_at > COALESCE(o.redelivery_mailed_at, o.delivery_mailed_at, '0000')`;
 
+/* levering 118 (17 november 2026, proefronde P8-02): de toeslag terugstorten gaat met één knop in /admin
+   (handleToeslagTerug in admin.js). De claim daarvan is een regel in admin_log met deze actie; zodra die er
+   staat, is de regel "Voorrang gemist" weg (ook vóór Mollie de terugbetaling meldt), zodat er niet twee keer
+   gestort wordt. Mislukt het storten, dan wordt de actie hernoemd en staat de regel er weer. */
+export const TOESLAG_TERUG_ACTIE = 'order.toeslag-terug';
+/* Het btw-tarief van de bestelling in honderdsten van een procent (2100 = 21%), 0 als er geen btw op staat
+   (verlegd of buiten de EU). In n2, zodat de knop het bedrag incl. btw kan noemen. */
+const TOESLAG_TARIEF_SQL = `CASE WHEN COALESCE(o.vat_cents, 0) > 0 THEN CAST(ROUND(COALESCE(o.vat_rate, ${VAT_RATE}) * 10000) AS INTEGER) ELSE 0 END`;
+
 /* ?1 = foto's ontbreken vóór dit moment, ?2 = afgerond na dit moment,
    ?3 = REVIEW_GEVRAAGD, ?4 = één bestelling (of NULL voor alles). */
 /* D1 STAAT HOOGSTENS VIJF DELEN IN ÉÉN UNION TOE ("too many terms in compound
@@ -250,11 +261,12 @@ export const NU_DOEN_SQL_DELEN = Object.freeze([`SELECT * FROM (
    WHERE v.klaar_at IS NULL AND o.hidden_at IS NULL AND COALESCE(o.status, '') <> 'cancelled' AND ${EEN}
    GROUP BY o.id
   UNION ALL
-  SELECT ${kol('toeslag', { sleutel: 'o.delivered_at', extra: 'o.delivered_at' })}
+  SELECT ${kol('toeslag', { sleutel: 'o.delivered_at', extra: 'o.delivered_at', n2: TOESLAG_TARIEF_SQL })}
     ${VAN}
    WHERE o.delivered_at IS NOT NULL AND o.paid_at IS NOT NULL AND o.payment_status = 'paid'
      AND COALESCE(o.refunded_cents, 0) = 0 AND COALESCE(o.status, '') <> 'cancelled' AND o.hidden_at IS NULL
-     AND json_extract(o.details_json, '$.voorrang') IN ('1', 1, 'on', 'true') AND ${EEN}
+     AND json_extract(o.details_json, '$.voorrang') IN ('1', 1, 'on', 'true')
+     AND NOT EXISTS (SELECT 1 FROM admin_log l WHERE l.order_id = o.id AND l.action = '${TOESLAG_TERUG_ACTIE}') AND ${EEN}
 ) LIMIT 400`]);
 
 
@@ -356,14 +368,14 @@ export async function nuDoen(db, { nu = Date.now(), orderId = null } = {}) {
      als die er is. */
   rijen = rijen.filter((r) => {
     if (r.soort !== 'toeslag') return true;
-    if (!heeftVoorrang(r)) return false;
-    const d = voorrangDeadline(r.paid_at);
-    const grens = d ? amsterdamMs(d.datum, d.uur) : NaN;
-    const geleverd = stempelMs(r.extra);
-    if (!Number.isFinite(grens) || !Number.isFinite(geleverd) || geleverd <= grens) return false;
-    r.uiterlijk = d.datum;
-    r.uur = d.uur;
-    r.n = toeslagCents(r.details_json);
+    const gemist = toeslagGemist({ ...r, delivered_at: r.extra });
+    if (!gemist) return false;
+    r.uiterlijk = gemist.datum;
+    r.uur = gemist.uur;
+    /* levering 118 (P8-02): n = de toeslag excl. btw (zoals voorheen), n2 = hetzelfde incl. btw (wat er terug moet). */
+    const b = toeslagBedragen(r.details_json, (Number(r.n2) || 0) / 10000);
+    r.n = b.net;
+    r.n2 = b.bruto;
     return true;
   });
 
@@ -399,7 +411,9 @@ export async function nuDoen(db, { nu = Date.now(), orderId = null } = {}) {
     .filter((r) => r.soort !== 'fotos' || r.ontbreekt)
     /* In productie alleen vanaf "morgen af" of te laat (Lucas' keuze bij w1); op de bestelpagina altijd. */
     .filter((r) => r.soort !== 'productie' || id !== null || (r.uiterlijk && r.uiterlijk <= morgen))
-    .map((r) => ({ ...r, details_json: undefined, n: Number(r.n) || 0, n2: Number(r.n2) || 0, extra: r.extra == null ? null : String(r.extra) }))
+    /* levering 118 (17 november 2026, proefronde N4 B1-01): een proef op de nakijklijst (details.proef_twijfel) neemt zijn
+       reden mee; soortLabel/watTekst/knopVoor maken er "Proef nakijken" van. */
+    .map((r) => ({ ...r, proefTwijfel: proefTwijfelVan(r.details_json), details_json: undefined, n: Number(r.n) || 0, n2: Number(r.n2) || 0, extra: r.extra == null ? null : String(r.extra) }))
     .sort((a, b) => {
       const s = rang(a) - rang(b);
       if (s) return s;
@@ -427,6 +441,14 @@ export async function nuDoen(db, { nu = Date.now(), orderId = null } = {}) {
   return { regels, fout: null };
 }
 
+/* levering 118 (17 november 2026, proefronde N4 B1-01): de reden uit details.proef_twijfel, of null. */
+function proefTwijfelVan(detailsJson) {
+  try {
+    const d = JSON.parse(detailsJson || '{}') || {};
+    return typeof d.proef_twijfel === 'string' && d.proef_twijfel.trim() ? d.proef_twijfel.trim().slice(0, 200) : null;
+  } catch { return null; }
+}
+
 /* ── DATUMS IN NEDERLANDSE TIJD ───────────────────────────────────────────── */
 
 /** 'YYYY-MM-DD' en een uur in Nederlandse tijd → ms (UTC). Voor de voorrangsgrens (B16). */
@@ -437,6 +459,36 @@ export function amsterdamMs(dag, uur) {
     .formatToParts(new Date(gok)).map((x) => [x.type, x.value]));
   const alsUtc = Date.parse(`${d.year}-${d.month}-${d.day}T${d.hour}:${d.minute}:00Z`);
   return gok - (alsUtc - gok);
+}
+
+/**
+ * levering 118 (17 november 2026, proefronde P8-02): is de voorrang van deze bestelling gemist? Betaald, voorrang,
+ * en geleverd (delivered_at) na voorrangDeadline(). Geeft { datum, uur } van de belofte, of null. Dezelfde toets
+ * voor Nu doen en voor de knop "Toeslag terugstorten" in admin.js, zodat die twee het nooit oneens zijn.
+ */
+export function toeslagGemist(o) {
+  if (!o || !heeftVoorrang(o) || !o.paid_at) return null;
+  /* levering 118 (L-16): de belofte telt vanaf het latere van betaald en foto's compleet; nooit compleet = nooit gemist. */
+  const start = voorrangVanaf(o);
+  if (!start) return null;
+  const d = voorrangDeadline(start);
+  const grens = d ? amsterdamMs(d.datum, d.uur) : NaN;
+  const geleverd = stempelMs(o.delivered_at);
+  if (!Number.isFinite(grens) || !Number.isFinite(geleverd) || geleverd <= grens) return null;
+  return { datum: d.datum, uur: d.uur };
+}
+
+/**
+ * levering 118 (P8-02): wat er terug moet. `net` is de voorrangsregel uit de opbouw (quoteOrder() met VOORRANG uit
+ * pricing.js, bewaard bij het bestellen); de btw erover met het tarief van de bestelling (0 bij verlegd of buiten
+ * de EU), afgerond op een cent zoals quoteOrder() dat doet. Geen opbouw (een bestelling van vóór 9 november
+ * 2026): alles 0, en dan is er geen knop; terugstorten gaat dan met de hand in Mollie.
+ */
+export function toeslagBedragen(detailsJson, btwTarief = 0) {
+  const net = toeslagCents(detailsJson);
+  const tarief = Number(btwTarief) > 0 ? Number(btwTarief) : 0;
+  const btw = net > 0 ? Math.round(net * tarief) : 0;
+  return { net, btw, bruto: net + btw };
 }
 
 /** De voorrangstoeslag in centen (excl. btw) uit de opbouw van de bestelling, of 0 als die er niet is. */
@@ -511,7 +563,8 @@ export function soortLabel(r) {
     case 'toeslag': return 'Voorrang gemist';
     case 'leveren': return r.n2 > 0 ? 'Revisie afgehandeld' : 'Nieuwe beelden';
     case 'revisie': return 'Revisie';
-    case 'oppakken': return r.voorrang ? 'Voorrang, niet opgepakt' : 'Betaald, niet opgepakt';
+    /* levering 118 (N4 B1-01): een betaalde proef op de nakijklijst eerst nakijken, dan pas oppakken */
+    case 'oppakken': return r.proefTwijfel ? 'Proef nakijken' : r.voorrang ? 'Voorrang, niet opgepakt' : 'Betaald, niet opgepakt';
     case 'productie': return r.voorrang ? 'Voorrang, in productie' : 'In productie';
     case 'fotos': return 'Foto’s ontbreken';
     case 'formaten': return 'PNG/WebP gevraagd';
@@ -529,14 +582,17 @@ export function watTekst(r, nu = Date.now()) {
   const g = geleden(r.datum, nu);
   switch (r.soort) {
     case 'btw': return g ? `aangevraagd ${g}` : 'wacht op je oordeel';
-    case 'toeslag': return `beloofd ${r.uiterlijk ? `${WEEKDAG[new Date(`${r.uiterlijk}T12:00:00Z`).getUTCDay()]} ${korteDatum(r.uiterlijk, 'nl')} om ${r.uur}:00` : 'eerder'}, geleverd ${geleden(r.extra, nu) || 'later'}; toeslag ${r.n > 0 ? `${euroNl(r.n)} excl. btw ` : ''}terugbetalen`;
+    /* levering 118 (P8-02): het bedrag incl. btw erachter; met de hand overtikken van het bedrag excl. btw gaf te weinig terug. */
+    case 'toeslag': return `beloofd ${r.uiterlijk ? `${WEEKDAG[new Date(`${r.uiterlijk}T12:00:00Z`).getUTCDay()]} ${korteDatum(r.uiterlijk, 'nl')} om ${r.uur}:00` : 'eerder'}, geleverd ${geleden(r.extra, nu) || 'later'}; toeslag ${r.n > 0 ? `${euroNl(r.n)} excl. btw ` : ''}terugbetalen${r.n2 > r.n ? ` (${euroNl(r.n2)} incl. btw)` : ''}`;
     case 'leveren': return r.n > 0 ? `${beelden(r.n)}, nog niet gestuurd` : 'geen nieuw beeld nodig, het antwoord is nog niet gestuurd';
     case 'revisie': return `${r.n} beeld${r.n === 1 ? '' : 'en'}${g ? `, gevraagd ${g}` : ''}`;
     case 'oppakken': {
       const hoe = ['plan', 'credits'].includes(r.betaling) ? 'met credits' : 'betaald';
       const af = afTekst(r, nu);
-      if (r.extra && r.manier === 'datum') return `vaste dag ${korteDatum(r.extra, 'nl')}, ${hoe}${af ? `; ${af}` : ''}`;
-      return `${g ? `${hoe} ${g}` : hoe}${af ? `; ${af}` : ''}`;
+      /* levering 118 (N4 B1-01): de reden van de nakijklijst erachter */
+      const twijfel = r.proefTwijfel ? `; mogelijk een tweede proef (${r.proefTwijfel})` : '';
+      if (r.extra && r.manier === 'datum') return `vaste dag ${korteDatum(r.extra, 'nl')}, ${hoe}${af ? `; ${af}` : ''}${twijfel}`;
+      return `${g ? `${hoe} ${g}` : hoe}${af ? `; ${af}` : ''}${twijfel}`;
     }
     case 'productie': return afTekst(r, nu) || 'opgepakt';
     case 'formaten': {
@@ -589,8 +645,16 @@ export function knopVoor(r, plek = 'dashboard', origin = '') {
   const pad = (anker) => (hier ? `#${anker}` : `${best}#${anker}`);
   switch (r.soort) {
     case 'btw': return { label: 'Beoordelen', href: `${origin}/admin/vat` };
-    /* De terugbetaling zelf doe je in Mollie (of bij de bestelling); de regel verdwijnt als Mollie hem meldt. */
-    case 'toeslag': return { label: 'Toeslag terugbetalen', href: best };
+    /* levering 118 (17 november 2026, proefronde P8-02): de knop opent het blok "Toeslag terugstorten" op de
+       bestelpagina, al uitgeklapt; daar bevestig je en stort /admin het via Mollie terug. Het nachtrapport (een mail)
+       houdt een link. Zonder bekend bedrag (geen opbouw): de bestelling, en terugstorten met de hand in Mollie. */
+    case 'toeslag': {
+      const bedrag = r.n2 > 0 ? r.n2 : r.n;
+      const open = `${best}?toeslag=open#toeslag`;
+      if (plek === 'rapport') return { label: 'Toeslag terugbetalen', href: open };
+      if (!(bedrag > 0)) return { label: 'Toeslag terugbetalen', href: best };
+      return { label: `Toeslag terugstorten (${euroNl(bedrag)}${r.n2 > r.n ? ' incl. btw' : ''})`, href: hier ? '?toeslag=open#toeslag' : open };
+    }
     case 'leveren': {
       /* "sturen" en niet "melden" (9 november 2026, ronde 91, w7): één woord per ding. Leveren heet de
          eerste keer "Leveren en klant mailen", daarna "Nieuwe beelden sturen". "Leverkeuring" (In controle)
@@ -619,6 +683,9 @@ export function knopVoor(r, plek = 'dashboard', origin = '') {
          het een link naar het lijstje. */
       /* Het statuslijstje (#status) is weg (w4): de link opent de bestelpagina, waar Oppakken bovenaan staat. */
       if (plek === 'rapport') return { label: 'Oppakken', href: best };
+      /* levering 118 (N4 B1-01): een proef op de nakijklijst opent op het dashboard eerst de bestelpagina (de regel "Proef"
+         bovenaan); daar is Oppakken de volgende stap. */
+      if (r.proefTwijfel && plek === 'dashboard') return { label: 'Nakijken', href: `${best}#proef-twijfel` };
       return { label: 'Oppakken', href: `/admin/orders/${r.id}/status`, post: true, velden: { status: 'in_production', back: 'files' } };
     /* In productie (w1): staan er al beelden in het bord, dan is de volgende stap leveren; anders het bord. */
     case 'productie': return r.n > 0 ? { label: 'Leveren', href: pad('melden') } : { label: 'Naar het bord', href: pad('bord') };
@@ -647,7 +714,7 @@ export const NIETS_WACHT_UITLEG = 'Nieuwe bestellingen komen hier vanzelf bij.';
 
 /* Knoppensysteem (lijst 88): ergens heen gaan is Navigeren (een lijn met de schuine pijl, nooit inkt); de rest is
    de stap zelf (Doorgaan, vol, de pijl erachter). */
-const NAAR_ELDERS = new Set(['Naar het bord', 'Revisie openen', 'Formaten', 'Bekijken', 'Openen']);
+const NAAR_ELDERS = new Set(['Naar het bord', 'Revisie openen', 'Formaten', 'Bekijken', 'Openen', 'Nakijken']);
 function knopHtml(k, klasse = 'btn btn-primary btn-sm') {
   const rol = NAAR_ELDERS.has(k.label) ? 'navigeren' : 'doorgaan';
   const kl = rol === 'navigeren' ? klasse.replace('btn-primary', 'btn-ghost') : klasse;

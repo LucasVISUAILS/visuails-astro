@@ -15,6 +15,8 @@
  *   4 · in de browser (NL en EN, 1440 en 390): de koppen in VISUAILS Display Bold, beide tonen 700,
  *       de tekst in DM Sans; de kop van de opening op hoogstens twee regels en binnen zijn vak, en hij
  *       verspringt niet bij het laden; de beelden van de video komen met ?v= binnen.
+ *   levering 121 (19 november 2026, lijst 134): de koppen staan nu in VISUAILS Display 2 Medium 500, zonder hoofdletters; de
+ *   toetsen 2 (de regels), 3 (vooraf geladen) en 4 (in de browser) vragen dat nu. De Bold blijft als bestand (1).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -57,8 +59,11 @@ ok('studio-hal.css en gedeeld.css: DM Sans', faces(studio).map(fam).filter((f) =
 ok('  nergens nog een @font-face voor Instrument Sans', ![hal, studio, gedeeld].some((c) => faces(c).some((f) => fam(f) === 'Instrument Sans')));
 ok('de tekstletter van de site, Studio, /admin, de kaarten en de privélink is DM Sans',
   /--h-letter:\s*'DM Sans'/.test(hal) && /--h-letter:\s*'DM Sans'/.test(studio) && ['public/admin.css', 'public/account.css', 'public/portal.css'].every((p) => /--h-letter:\s*"DM Sans"/.test(lees(p))));
-ok('de grote koppen (.h-kop en de kop van de opening) in de kopletter, 700',
-  /--h-kopletter:\s*'VISUAILS Display'/.test(hal) && /\.hal \.h-kop \{ font-family: var\(--h-kopletter\); font-weight: 700;/.test(hal) && /\.o-kop \{[^}]*font: 700 [^;]*var\(--h-kopletter/.test(lees('src/styles/opening.css')));
+/* levering 121 (19 november 2026, lijst 134): de kopletter is VISUAILS Display 2 Medium 500 (was Display Bold 700); het blok
+   "levering 121" onderaan hal.css zet hem voor elke kop (tests/levering-121-koppen) */
+ok('de koppen in de kopletter: --h-kopletter is VISUAILS Display 2, Medium 500 als @font-face, het blok van levering 121 zet 500',
+  /--h-kopletter:\s*'VISUAILS Display 2'/.test(hal) && faces(hal).some((f) => fam(f) === 'VISUAILS Display 2' && /font-weight:\s*500;/.test(f) && /VISUAILSDisplay2-Medium\.woff2/.test(f))
+  && /font-family: var\(--h-kopletter\) !important; font-weight: 500 !important; text-transform: none !important;/.test(hal));
 
 /* ── 3 · de voorpagina ───────────────────────────────────────────────────── */
 console.log('\n3 · de voorpagina');
@@ -68,7 +73,8 @@ const V = openingVersie();
 ok(`het teken is tien tekens hex (${V})`, /^[0-9a-f]{10}$/.test(V));
 for (const [taal, pad] of [['en', 'index.html'], ['nl', 'nl/index.html']]) {
   const h = fs.readFileSync(path.join(DIST, pad), 'utf8');
-  ok(`${taal}: DM Sans en VISUAILS Display vooraf geladen`, /<link rel="preload"[^>]+\/fonts\/dm-sans\/dm-sans-latin\.woff2/.test(h) && /<link rel="preload"[^>]+\/fonts\/visuails-display\/VISUAILSDisplay-Bold\.woff2/.test(h));
+  /* levering 121: Medium vooraf (de koppen), niet meer Bold (die alleen nog in de werkplaats) */
+  ok(`${taal}: DM Sans en VISUAILS Display 2 Medium vooraf geladen (Bold niet)`, /<link rel="preload"[^>]+\/fonts\/dm-sans\/dm-sans-latin\.woff2/.test(h) && /<link rel="preload"[^>]+\/fonts\/visuails-display\/VISUAILSDisplay2-Medium\.woff2/.test(h) && !/<link rel="preload"[^>]+VISUAILSDisplay-Bold/.test(h));
   /* levering 80: de opening (HalOpening80.astro) draagt het teken op de sectie zelf */
   ok(`${taal}: de opening draagt het teken (data-o-v; sinds 80 HalOpening80)`, new RegExp(`<section class="o8[^"]*" data-o8 data-o-v="${V}"`).test(h));
   /* alleen echte adressen (met .avif of .webp); de standen in de JSON staan zonder extensie, het script
@@ -119,7 +125,7 @@ try {
         window.addEventListener('load', () => { kijk(); setTimeout(kijk, 600); });
       });
       await page.goto(BASIS + pad, { waitUntil: 'load' });
-      await page.evaluate(() => document.fonts.load('700 40px "VISUAILS Display"'));
+      await page.evaluate(() => document.fonts.load('500 40px "VISUAILS Display 2"'));
       await page.waitForTimeout(900);
       if (breed === 1440) { await page.mouse.wheel(0, 600); await page.waitForTimeout(900); }
       const m = await page.evaluate(() => {
@@ -127,22 +133,25 @@ try {
         /* levering 80: de titel staat in het midden (HalOpening80.astro), altijd op twee regels; "binnen zijn
            vak" is: binnen het venster */
         const k = document.querySelector('#b94-h1'), tekst = { getBoundingClientRect: () => ({ right: document.documentElement.clientWidth }) };
-        /* levering 114: binnen de grote regel staan op de telefoon twee delen (.b94-deel); per regel één top, op 4 px afgerond */
-        const regels = (e) => { const tops = new Set(); for (const s of [...e.querySelectorAll('span')].filter((x) => !x.querySelector('span'))) { const rg = document.createRange(); rg.selectNodeContents(s); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top / 4)); } return tops.size; };
+        /* levering 114: binnen de grote regel staan op de telefoon twee delen (.b94-deel); per regel één top, op 4 px afgerond.
+           levering 120: de titel is gewone tekst zonder spans: de Range over de hele kop */
+        const regels = (e) => { const tops = new Set(); const rg = document.createRange(); rg.selectNodeContents(e); for (const q of rg.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top / 4)); return tops.size; };
         const koppen = [...document.querySelectorAll('.h-kop')];
         return {
           body: cs(document.body).fontFamily.split(',')[0].replace(/"/g, ''),
           kop: cs(k).fontFamily.split(',')[0].replace(/"/g, ''), kopGewicht: cs(k).fontWeight,
-          hKop: koppen.length > 0 && koppen.every((e) => /^"?VISUAILS Display/.test(cs(e).fontFamily) && cs(e).fontWeight === '700' && [...e.querySelectorAll('.l')].every((l) => cs(l).fontWeight === '700')),
-          geladen: document.fonts.check('700 40px "VISUAILS Display"') && document.fonts.check('400 16px "DM Sans"'),
-          regels: regels(k), breekt: !!k.querySelector('.b94-breekt') && innerWidth <= 760, past: k.getBoundingClientRect().right <= tekst.getBoundingClientRect().right + 1 && k.getBoundingClientRect().left >= 0,
+          /* levering 121: elke .h-kop in VISUAILS Display 2 Medium 500, beide tonen, zonder hoofdletters */
+          hKop: koppen.length > 0 && koppen.every((e) => /^"VISUAILS Display 2"/.test(cs(e).fontFamily) && cs(e).fontWeight === '500' && cs(e).textTransform === 'none' && [...e.querySelectorAll('.l')].every((l) => cs(l).fontWeight === '500')),
+          geladen: document.fonts.check('500 40px "VISUAILS Display 2"') && document.fonts.check('400 16px "DM Sans"'),
+          regels: regels(k), past: k.getBoundingClientRect().right <= tekst.getBoundingClientRect().right + 1 && k.getBoundingClientRect().left >= 0,
           maten: window.__maten,
         };
       });
       const vast = new Set(m.maten).size === 1;
-      /* levering 110 (lijst 119 tot 122): de hoofdkop van de voorpagina staat in VISUAILS Display Blok; de andere koppen (.h-kop) blijven VISUAILS Display */
-      ok(`${taal} ${breed}: tekst DM Sans, hoofdkop VISUAILS Display Blok ${m.kopGewicht}, alle .h-kop in VISUAILS Display 700 (beide tonen), letters geladen`, m.body === 'DM Sans' && m.kop === 'VISUAILS Display Blok' && m.kopGewicht === '700' && m.hKop && m.geladen, JSON.stringify(m));
-      ok(`${taal} ${breed}:   de kop op ${m.regels} regel(s) en binnen zijn vak`, m.regels === (m.breekt ? 3 : 2) && m.past, JSON.stringify(m));
+      /* levering 110 (lijst 119 tot 122): de hoofdkop van de voorpagina stond in VISUAILS Display Blok; levering 120 (lijst 130
+         en 132): in VISUAILS Display 2 Light (300), één titel van hoogstens twee regels; de andere koppen (.h-kop) blijven VISUAILS Display */
+      ok(`${taal} ${breed}: tekst DM Sans, hoofdkop VISUAILS Display 2 ${m.kopGewicht}, alle .h-kop in VISUAILS Display 2 500 (beide tonen, levering 121), letters geladen`, m.body === 'DM Sans' && m.kop === 'VISUAILS Display 2' && m.kopGewicht === '300' && m.hKop && m.geladen, JSON.stringify(m));
+      ok(`${taal} ${breed}:   de kop op ${m.regels} regel(s) (hoogstens twee) en binnen zijn vak`, m.regels >= 1 && m.regels <= 2 && m.past, JSON.stringify(m));
       ok(`${taal} ${breed}:   verspringt niet bij het laden (${[...new Set(m.maten)].join(' → ')} px)`, vast, m.maten.join(', '));
       const zonder = beelden.filter((u) => !u.endsWith(`?v=${V}`));
       const reeks = beelden.filter((u) => /\/f\/\d{3}\.avif/.test(u));

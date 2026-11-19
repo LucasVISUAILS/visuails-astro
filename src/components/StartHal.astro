@@ -79,6 +79,8 @@ import { localizedPath } from '../i18n/ui.js';
 import { kleiner, beeldMaat } from '../lib/beeldAanwezig.js';
 import { halV } from '../data/beeldVersie.js';
 import { videoPrijsLabel, AMOUNT } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P8-08): voorrang zichtbaar vóór het formulier; de regel en de getallen komen uit pricing.js. */
+import { voorrangTip } from '../data/pricing.js';
 import '../styles/start-126.css';
 
 interface Props { lang: 'en' | 'nl'; }
@@ -119,6 +121,8 @@ const groepen = (await Promise.all((['catalog', 'lifestyle'] as const).map(async
     kort: d.kort[lang],
     vanaf: euro(ladderFloor(id), lang),
     abo: aboVanafPerProduct(id),
+    /* levering 118 (17 november 2026, proefronde P2-12 keuze a): de uitleg direct onder het vanaf-bedrag, alleen voor deze dienst. */
+    ladder: eenProductRegel(lang, [id]),
     stand: productStand(id),
     looks: await Promise.all(data.filter(bestelbaar).map((s: any) => naarLook(s, id))),
   };
@@ -150,13 +154,13 @@ const COPY = {
     waText: "Hello VISUAILS, I'm not sure which look fits my products.",
     aboRegel: (b: string) => `Or from ${b} per product with a plan`,
     beeldPil: 'Images',
-    videoPil: 'Video', videoH: ['Video.', 'On request.'], videoLead: 'Pick a style and send a short brief; we reply with a price and a date.', videoCta: 'Ask about a video', videoMeer: 'See',
+    videoPil: 'Video', videoH: ['Video.', 'On request.'], videoLead: 'Pick a style and send a short brief; we reply with a price and a date.', videoCta: 'Ask about a video', videoMeer: 'See', videoKies: 'Pick this style',
     afterPil: 'After you press it', afterH: ['Five steps,', 'then it’s with us.'],
     afterLead: 'Video and custom work start with a short brief; we reply with a price and a date.',
     steps: ['Order', 'Your photos', 'Your details', 'Timing', 'Confirm'],
     facts: [
       ['You pay at the end', 'Nothing is charged before the checkout.'],
-      [`From ${WINDOW_THRESHOLD} products, you pick the date`, `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: you pick a date, reserved when you order and fixed once you pay.`],
+      [`From ${WINDOW_THRESHOLD} products, you pick the date`, `Under ${WINDOW_THRESHOLD} products: ${clause(t0.queue.en).toLowerCase()}. From ${WINDOW_THRESHOLD}: you pick a date, held once you order and fixed once you pay.`],
       ['Then you approve image by image', 'Approve, ask for a change, download.'],
     ],
   },
@@ -178,13 +182,13 @@ const COPY = {
     waText: 'Hallo VISUAILS, ik weet niet zeker welke look bij mijn producten past.',
     aboRegel: (b: string) => `Of vanaf ${b} per product met een abonnement`,
     beeldPil: 'Beeld',
-    videoPil: 'Video', videoH: ['Video.', 'Op aanvraag.'], videoLead: 'Kies een stijl en stuur een korte briefing; wij antwoorden met een prijs en een datum.', videoCta: 'Vraag een video aan', videoMeer: 'Bekijk',
+    videoPil: 'Video', videoH: ['Video.', 'Op aanvraag.'], videoLead: 'Kies een stijl en stuur een korte briefing; wij antwoorden met een prijs en een datum.', videoCta: 'Vraag een video aan', videoMeer: 'Bekijk', videoKies: 'Kies deze stijl',
     afterPil: 'Nadat je erop drukt', afterH: ['Vijf stappen,', 'dan ligt het bij ons.'],
     afterLead: 'Video en maatwerk beginnen met een korte briefing; wij antwoorden met een prijs en een datum.',
     steps: ['Bestelling', 'Je foto’s', 'Jouw gegevens', 'Levertijd', 'Bevestigen'],
     facts: [
       ['Je betaalt aan het eind', 'Er wordt niets afgeschreven vóór de checkout.'],
-      [`Vanaf ${WINDOW_THRESHOLD} producten kies je de datum`, `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: je kiest een datum, gereserveerd zodra je bestelt en vast zodra je betaalt.`],
+      [`Vanaf ${WINDOW_THRESHOLD} producten kies je de datum`, `Onder ${WINDOW_THRESHOLD} producten: ${clause(t0.queue.nl).toLowerCase()}. Vanaf ${WINDOW_THRESHOLD}: je kiest een datum, vastgehouden zodra je bestelt en vast zodra je betaalt.`],
       ['Daarna keur je beeld voor beeld goed', 'Goedkeuren, een aanpassing vragen, downloaden.'],
     ],
   },
@@ -196,12 +200,15 @@ const c = COPY[lang];
    voorpagina (VoorpaginaHal COPY.diensten), met erboven waarvoor je het gebruikt. */
 const eigenLook = (nl ? lifestyleNl : lifestyleEn).find((s: any) => s.slug === 'custom');
 const SOORT = nl ? {
-  pil: 'Start', h1: ['Wat heb je nodig?', 'Daarna kies je de look.'], lede: 'Kies wat je wilt laten maken. Er wordt niets afgeschreven tot je betaalt.',
+  /* levering 118 (17 november 2026, proefronde N4 koppen): "Daarna kies je de look." werd "Dan kies je de look."; op 320 px liep
+     de kop over drie regels (gemeten: breedte / 11,67 nodig, nu / 9,66). Zelfde zin als de Engelse "Then pick the look." */
+  pil: 'Start', h1: ['Wat heb je nodig?', 'Dan kies je de look.'], lede: 'Kies wat je wilt laten maken. Er wordt niets afgeschreven tot je betaalt.',
   stappen: ['Wat', 'Look', 'Bestellen'], stapLabel: 'Waar je bent', terug: 'Andere soort kiezen', kiesLook: 'Kies een look',
   ook: 'Ook', merkmodel: 'Je eigen merkmodel', abo: 'Een abonnement',
   soorten: [
-    { id: 'catalog', voor: 'Voor je webshop', naam: 'Productfoto’s', zin: 'Voorkant, achterkant, detail en op model.', prijs: `vanaf ${euro(ladderFloor('catalog'), 'nl')} per product`, href: '#catalog', beeld: 'prod' },
-    { id: 'lifestyle', voor: 'Voor social en je webshop', naam: 'Lifestyle', zin: 'Je product in een sfeer, vier beelden in één look.', prijs: `vanaf ${euro(ladderFloor('lifestyle'), 'nl')} per product`, href: '#lifestyle', beeld: 'life' },
+    /* levering 118 (17 november 2026, proefronde P2-10): één naam per dienst, overal Catalog. P2-12 (keuze a): onder het vanaf-bedrag wat één product kost. */
+    { id: 'catalog', voor: 'Voor je webshop', naam: 'Catalog', zin: 'Voorkant, achterkant, detail en op model.', prijs: `vanaf ${euro(ladderFloor('catalog'), 'nl')} per product`, uitleg: eenProductRegel('nl', ['catalog']), href: '#catalog', beeld: 'prod' },
+    { id: 'lifestyle', voor: 'Voor social en je webshop', naam: 'Lifestyle', zin: 'Je product in een sfeer, vier beelden in één look.', prijs: `vanaf ${euro(ladderFloor('lifestyle'), 'nl')} per product`, uitleg: eenProductRegel('nl', ['lifestyle']), href: '#lifestyle', beeld: 'life' },
     { id: 'video', voor: 'Voor Reels en je webshop', naam: 'Video', zin: 'Een korte, verticale clip van je product.', prijs: videoPrijsLabel('nl'), href: '#video', beeld: 'video' },
     { id: 'hooks', voor: 'Voor advertenties', naam: 'Hooks', zin: 'Een clip van 6 tot 8 seconden die stopt met scrollen.', prijs: `vanaf ${euro(AMOUNT.hooks, 'nl')} per hook`, href: lp('/hooks'), beeld: 'afspelen' },
     { id: 'eigen', voor: 'Voor je eigen wereld', naam: 'Eigen look', zin: 'Samen met ons bedacht, rond je product.', prijs: String(eigenLook?.priceTrust || '').toLowerCase(), href: lp('/start/custom-look'), beeld: 'potlood' },
@@ -211,8 +218,9 @@ const SOORT = nl ? {
   stappen: ['What', 'Look', 'Order'], stapLabel: 'Where you are', terug: 'Pick another kind', kiesLook: 'Pick a look',
   ook: 'Also', merkmodel: 'Your own brand model', abo: 'A monthly plan',
   soorten: [
-    { id: 'catalog', voor: 'For your shop', naam: 'Product photos', zin: 'Front, back, detail and on model.', prijs: `from ${euro(ladderFloor('catalog'), 'en')} per product`, href: '#catalog', beeld: 'prod' },
-    { id: 'lifestyle', voor: 'For social and your shop', naam: 'Lifestyle', zin: 'Your product in a setting, four images in one look.', prijs: `from ${euro(ladderFloor('lifestyle'), 'en')} per product`, href: '#lifestyle', beeld: 'life' },
+    /* levering 118 (17 november 2026, proefronde P2-10 en P2-12): see the Dutch. */
+    { id: 'catalog', voor: 'For your shop', naam: 'Catalog', zin: 'Front, back, detail and on model.', prijs: `from ${euro(ladderFloor('catalog'), 'en')} per product`, uitleg: eenProductRegel('en', ['catalog']), href: '#catalog', beeld: 'prod' },
+    { id: 'lifestyle', voor: 'For social and your shop', naam: 'Lifestyle', zin: 'Your product in a setting, four images in one look.', prijs: `from ${euro(ladderFloor('lifestyle'), 'en')} per product`, uitleg: eenProductRegel('en', ['lifestyle']), href: '#lifestyle', beeld: 'life' },
     { id: 'video', voor: 'For reels and your shop', naam: 'Video', zin: 'A short, vertical clip of your product.', prijs: videoPrijsLabel('en'), href: '#video', beeld: 'video' },
     { id: 'hooks', voor: 'For ads', naam: 'Hooks', zin: 'A 6 to 8 second clip that stops the scroll.', prijs: `from ${euro(AMOUNT.hooks, 'en')} per hook`, href: lp('/hooks'), beeld: 'afspelen' },
     { id: 'eigen', voor: 'For a world of your own', naam: 'Your own look', zin: 'Thought up together with us, around your product.', prijs: String(eigenLook?.priceTrust || '').toLowerCase(), href: lp('/start/custom-look'), beeld: 'potlood' },
@@ -240,7 +248,7 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
     <section class="st2-soort" id="kies" aria-labelledby="st2-kop">
       <header class="st2-kop">
         <ol class="st2-stappen" role="list" aria-label={SOORT.stapLabel}>{stapRij(0).map((t) => <li aria-current={t.nu ? 'step' : undefined}><span>{t.nr}</span>{t.n}</li>)}</ol>
-        <h1 id="st2-kop" class="h-kop h-h1"><span class="l">{SOORT.h1[0]}</span> <span>{SOORT.h1[1]}</span></h1>
+        <h1 id="st2-kop" class="h-kop h-h1" tabindex="-1"><span class="l">{SOORT.h1[0]}</span> <span>{SOORT.h1[1]}</span></h1>
         <p class="h-lede">{SOORT.lede}</p>
       </header>
       <ul class="st2-tegels" role="list">
@@ -256,7 +264,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
               <span class="st2-voor">{t.voor}</span>
               <span class="st2-naam">{t.naam}<span set:html={ik('rechts')} /></span>
               <span class="st2-zin">{t.zin}</span>
-              <span class="st2-prijs">{t.prijs}</span>
+              {/* levering 118 (17 november 2026, proefronde P2-12): de uitleg in hetzelfde blok, zodat de telefoonopmaak (4 rijen naast het beeld) blijft. */}
+              <span class="st2-prijs">{t.prijs}{'uitleg' in t && t.uitleg && <span class="st2-uitleg">{t.uitleg}</span>}</span>
             </a>
           </li>
         ))}
@@ -284,12 +293,17 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
             <ol class="st2-stappen" role="list">{stapRij(1).map((t) => <li aria-current={t.nu ? 'step' : undefined}><span>{t.nr}</span>{t.n}</li>)}</ol>
           </nav>
         <div class="h-st-groep-kop h-in">
-          <h2 id={`st-g-${g.id}`} class="h-kop h-h3">{g.naam}. <span class="l">{g.kort}.</span></h2>
+          {/* levering 118 (17 november 2026, proefronde P11-04): in stap 2 is dit de kop van wat je ziet (stap 1 is dan
+              weg), dus niveau 1 voor de schermlezer; tabindex -1 omdat de focus er bij de stapwissel naartoe gaat. Een
+              echte h1 zou er drie in de HTML geven (tests/paginakeuring: één h1 per pagina). */}
+          <h2 id={`st-g-${g.id}`} class="h-kop h-h3" aria-level="1" tabindex="-1">{g.naam}. <span class="l">{g.kort}.</span></h2>
           <span class={`h-chip h-st-eigen is-${g.stand}`}><i set:html={eigenVorm(g.stand)} />{PRODUCT_COPY[lang][g.stand]}</span>
         </div>
         {/* Alleen op de telefoon: de prijs één keer boven de rij (b-start). */}
         <div class="h-st-groep-prijs">
           <p class="h-st-tarief" data-vis-klant="niet-abonnee"><span>{c.vanaf}</span> <b>{g.vanaf}</b> <span>{c.per}</span></p>
+          {/* levering 118 (17 november 2026, proefronde P2-12): direct onder het vanaf-bedrag. */}
+          <p class="h-st-tarief-uitleg" data-vis-klant="niet-abonnee">{g.ladder}</p>
           {g.abo && <p class="h-st-abo" data-vis-klant="niet-abonnee"><a href={lp('/plans')}>{c.aboRegel(euro(g.abo, lang))}<span set:html={ik('pijl')} /></a></p>}
           {SERVICE_CREDITS[g.id] && <p class="h-st-tarief" data-vis-klant="abonnee" hidden><b>{SERVICE_CREDITS[g.id]} credits</b> <span>{c.perCredits}</span></p>}
         </div>
@@ -306,6 +320,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
                 <p class="h-st-zin">{l.zin}</p>
                 {/* Een abonnee bestelt met credits (15 oktober 2026): dan die prijs. */}
                 <p class="h-st-tarief" data-vis-klant="niet-abonnee"><span>{c.vanaf}</span> <b>{g.vanaf}</b> <span>{c.per}</span></p>
+                {/* levering 118 (17 november 2026, proefronde P2-12): direct onder het vanaf-bedrag. */}
+                <p class="h-st-tarief-uitleg" data-vis-klant="niet-abonnee">{g.ladder}</p>
                 {/* 15 oktober 2026 (k-klant): wat het met een abonnement kost, in euro's.
                     Alleen voor wie geen abonnement heeft. */}
                 {g.abo && <p class="h-st-abo" data-vis-klant="niet-abonnee"><a href={lp('/plans')}>{c.aboRegel(euro(g.abo, lang))}<span set:html={ik('pijl')} /></a></p>}
@@ -344,6 +360,8 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
 
     <div class="h-st-onder st-onder h-in">
       <p class="h-st-regel"><span class="h-cirkel h-cirkel-mini h-cirkel-mist" aria-hidden="true" set:html={ik('info')} /><span>{c.ladder} <a class="h-st-link" href={lp('/pricing')}>{c.ladderCta}</a></span></p>
+      {/* levering 118 (17 november 2026, proefronde P8-08): voorrang stond op /start nergens. */}
+      <p class="h-st-btw">{voorrangTip(lang)}</p>
       <p class="h-st-btw">{vatLead(lang)} <Note lang={lang} term={nl ? vatLabel('excl', lang) : 'VAT'} wide>{vatDetail(lang)}</Note></p>
     </div>
 
@@ -357,17 +375,22 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
       </nav>
     <header class="h-st-band-kop h-in">
       <p class="h-pil"><span>{c.videoPil}</span></p>
-      <h2 id="st-video" class="h-kop h-h3">{c.videoH[0]} <span class="l">{c.videoH[1]}</span></h2>
+      {/* levering 118 (proefronde P11-04): zie de kop van de groepen hierboven. */}
+      <h2 id="st-video" class="h-kop h-h3" aria-level="1" tabindex="-1">{c.videoH[0]} <span class="l">{c.videoH[1]}</span></h2>
       <p class="h-st-band-lead">{c.videoLead}</p>
     </header>
     <ul class="h-st-vk" role="list">
       {VIDEO.map((v, i) => (
         <li class="h-in" style={`--d:${i}`}>
-          <a class="h-st-vk-a" href={lp(`/video/${v.slug}`)}>
+          {/* levering 118 (17 november 2026, proefronde P4-02): de kaart is de keuze en opent de aanvraag met deze stijl al
+              gekozen (?style=, initAanvraagKeuze in interactions.js); de infopagina is een kleine link eronder. Jordi tikte
+              op de kaart en zat drie schermen verkeerd. */}
+          <a class="h-st-vk-a" href={`${lp(door('video')!.bestel)}?style=${encodeURIComponent(v.slug)}`} data-st-video-kies={v.slug}>
             <b>{v.naam}</b>
             <span class="h-st-vk-zin">{v.zin}</span>
-            <span class="h-st-vk-voet"><span>{v.prijs}</span><span class="h-st-vk-meer">{c.videoMeer}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></span></span>
+            <span class="h-st-vk-voet"><span>{v.prijs}</span><span class="h-st-vk-meer">{c.videoKies}<span class="h-cirkel h-cirkel-klein" aria-hidden="true" set:html={ik('rechts')} /></span></span>
           </a>
+          <a class="st2-vk-bekijk" href={lp(`/video/${v.slug}`)}>{c.videoMeer}<span class="sr-only"> {v.naam}</span></a>
         </li>
       ))}
     </ul>
@@ -404,7 +427,45 @@ const DRIE = (n: number) => String(n).padStart(2, '0');
   }
   volgLook();
   document.addEventListener('astro:page-load', volgLook);
-  /* lijst 126: een stap wisselen begint bovenaan de pagina, niet bij het anker onder de balk */
-  addEventListener('hashchange', () => { if (/^#(kies|catalog|lifestyle|video)$/.test(location.hash)) setTimeout(() => scrollTo({ top: 0 }), 0); });
+  /* ── WELKE STAP, OOK ZONDER :target — levering 118 (17 november 2026, proefronde P10-07 en P11-04) ──────────────
+     De stap volgde alleen :target (start-126.css). Komt de pagina terug via de ClientRouter (terug uit het formulier),
+     dan zet Astro de adresbalk op /start#lifestyle met pushState/scrollherstel, en dat zet :target niet: je zag stap 1.
+     Nu zet dit script data-stap op .st2 uit de hash; de CSS volgt dan data-stap, en zonder script blijft :target.
+     Vóór de wissel van de pagina (astro:before-swap), zodat het scrollherstel de goede stap meet. Bij een stapwissel
+     binnen de pagina gaat de focus naar de kop van de nieuwe stap, anders hoort een schermlezer niets. */
+  const STAPPEN = ['kies', 'catalog', 'lifestyle', 'video'];
+  const stapVan = (hash: string) => { const h = String(hash || '').replace(/^#/, ''); return STAPPEN.includes(h) ? h : 'kies'; };
+  const KOP: Record<string, string> = { kies: 'st2-kop', catalog: 'st-g-catalog', lifestyle: 'st-g-lifestyle', video: 'st-video' };
+  function zetStap(hash: string, root: ParentNode = document) {
+    const st = root.querySelector<HTMLElement>('.st2');
+    if (st) st.dataset.stap = stapVan(hash);
+    return st;
+  }
+  zetStap(location.hash);
+  document.addEventListener('astro:before-swap', (e: any) => { if (e.newDocument) zetStap(e.to?.hash || '', e.newDocument); });
+  document.addEventListener('astro:page-load', () => zetStap(location.hash));
+  /* een klik op een soort of op "Andere soort kiezen": meteen de stap zetten, vóór de ankersprong */
+  /* lijst 126: een stap wisselen begint bovenaan de pagina, niet bij het anker onder de balk; de focus op de nieuwe kop */
+  function naarKop(stap: string) {
+    setTimeout(() => {
+      scrollTo({ top: 0 });
+      document.getElementById(KOP[stap])?.focus({ preventScroll: true });
+    }, 0);
+  }
+  document.addEventListener('click', (e) => {
+    const a = (e.target as Element | null)?.closest?.('.st2 a[href^="#"]') as HTMLAnchorElement | null;
+    if (!a || !STAPPEN.includes(a.hash.slice(1))) return;
+    zetStap(a.hash);
+    /* levering 118 (17 november 2026, proefronde N4 P11-04): de ClientRouter handelt deze ankerklik af met pushState,
+       zonder hashchange; de focus bleef dan op BODY (klik en Enter). Nu zet de klik zelf de focus op de nieuwe kop, na de
+       sprong van de router (setTimeout). Met een toets erbij (nieuw tabblad) gebeurt hier niets. */
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    naarKop(stapVan(a.hash));
+  });
+  addEventListener('popstate', () => zetStap(location.hash));
+  addEventListener('hashchange', () => {
+    if (!zetStap(location.hash)) return;
+    naarKop(stapVan(location.hash));
+  });
   if (/^#(catalog|lifestyle|video)$/.test(location.hash)) { requestAnimationFrame(() => scrollTo({ top: 0 })); addEventListener('load', () => setTimeout(() => scrollTo({ top: 0 }), 0), { once: true }); }
 </script>

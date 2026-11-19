@@ -108,8 +108,18 @@ const paren = lijst.regels.map((r) => `${r.soort}:${r.ref.slice(-2)}`);
    af zolang ze op dezelfde UTC-dag binnenkwamen; dan gaat de vaste dag (37) voor. Alleen tussen 00:00 en 03:00 UTC ligt
    39 een dag eerder en moet hij eerder af. De toets hing van het uur af waarop hij draaide; nu rekent hij dat mee. */
 const zelfdeDag = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10) === new Date(Date.now() - 1 * 3600e3).toISOString().slice(0, 10);
-const oppak = zelfdeDag ? ['oppakken:36', 'oppakken:38', 'oppakken:37', 'oppakken:39'] : ['oppakken:36', 'oppakken:38', 'oppakken:39', 'oppakken:37'];
-ok('de volgorde van de regels', paren, [
+const oppak = zelfdeDag ? ['oppakken:38', 'oppakken:37', 'oppakken:39'] : ['oppakken:38', 'oppakken:39', 'oppakken:37'];
+/* levering 118 (integratie IA, P4-09): 36 is een merkmodel. Dat moest "af morgen" (binnen + 1) en stond daardoor vooraan;
+   nu plant het op de betaling + MERKMODEL_RICHTINGEN_WERKDAGEN werkdagen (agendaUiterlijk), en waar het dan staat
+   hangt van de weekdag af waarop de toets draait. Dus: de volgorde zonder 36, en de dag van 36 apart. */
+{
+  const { MERKMODEL_RICHTINGEN_WERKDAGEN } = await import('../src/data/termijnen.js');
+  const { werkdagenNa } = await import('../src/lib/agenda.js');
+  const r36 = lijst.regels.find((r) => r.id === 36);
+  const betaald36 = new Date(Date.now() - 50 * 3600e3).toISOString().slice(0, 10);
+  ok('merkmodel 36: af op de betaling + de termijn in werkdagen (P4-09)', r36 && r36.uiterlijk, werkdagenNa(betaald36, MERKMODEL_RICHTINGEN_WERKDAGEN));
+}
+ok('de volgorde van de regels', paren.filter((p) => p !== 'oppakken:36'), [
   'btw:31', 'leveren:33', 'revisie:35', 'revisie:34',
   'productie:32', ...oppak, 'offerte:40', 'review:41',
 ]);
@@ -118,7 +128,7 @@ ok('één regel per bestelling: 38 draagt foto’s vragen als "ook"', lijst.rege
 const groep = (s) => (s === 'productie' ? 'oppakken' : s);
 ok('de soorten volgen NU_DOEN_SOORTEN', [...new Set(lijst.regels.map((r) => groep(r.soort)))], [...new Set(NU_DOEN_SOORTEN.map(groep))].filter((s) => lijst.regels.some((r) => groep(r.soort) === s)));
 ok('revisies: de oudste eerst (35 vóór 34)', paren.indexOf('revisie:35') < paren.indexOf('revisie:34'));
-ok('oppakken: op de dag waarop het af moet, dan een vaste dag, dan de oudste', paren.filter((p) => p.startsWith('oppakken')), oppak);
+ok('oppakken: op de dag waarop het af moet, dan een vaste dag, dan de oudste', paren.filter((p) => p.startsWith('oppakken') && p !== 'oppakken:36'), oppak); /* 36: zie P4-09 hierboven */
 ok('foto\'s ontbreken: pas na een dag (39 is van vandaag)', paren.includes('fotos:39'), false);
 ok('foto\'s ontbreken telt twee foto\'s bij 38', lijst.regels.find((r) => r.id === 38).daarna.find((d) => d.soort === 'fotos').n, 2);
 ok('onbetaald staat er niet in (42)', lijst.regels.some((r) => r.id === 42), false);

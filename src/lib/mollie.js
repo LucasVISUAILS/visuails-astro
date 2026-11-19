@@ -211,7 +211,7 @@ export async function createTestSampleMolliePayment(env, { ref, lang, successUrl
  * found in a bank reconciliation weeks later.
  */
 export async function createOrderMolliePayment(env, {
-  ref, lang, successUrl, webhookUrl, valueEuros, grossCents, description, excludeIdeal, buitenEu = false,
+  ref, lang, successUrl, webhookUrl, valueEuros, grossCents, description, excludeIdeal, buitenEu = false, voorrang = false,
 }) {
   const asCents = Math.round(Number(valueEuros) * 100);
   if (!Number.isFinite(asCents) || asCents !== Math.round(Number(grossCents))) {
@@ -224,7 +224,17 @@ export async function createOrderMolliePayment(env, {
   // it here gives a message that names the order instead of a raw 422.
   if (asCents < 1) throw new Error(`mollie: refusing to create a payment of ${valueEuros} for ${ref}`);
 
-  return createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal, buitenEu });
+  /* levering 118 (17 november 2026, proefronde L-16): bij voorrang alleen directe betaalmiddelen. Een overboeking komt
+     pas na een dag of twee binnen, en de belofte telt vanaf de betaling: dan haalt de studio de dag nooit. */
+  const methods = voorrang ? voorrangMethods({ excludeIdeal, buitenEu }) : undefined;
+  return createMolliePayment(env, { ref, lang, successUrl, webhookUrl, valueEuros, description, excludeIdeal, buitenEu, methods });
+}
+
+/** levering 118 (L-16): de witte lijst bij voorrang; dezelfde regels voor iDEAL en buiten de EU, zonder overboeking.
+ *  Een middel dat in het account niet aanstaat, slaat Mollie over (zie de noot hieronder). */
+export function voorrangMethods({ excludeIdeal = false, buitenEu = false } = {}) {
+  const basis = excludeIdeal ? (buitenEu ? BUITEN_EU_METHODS : NON_NL_METHODS) : ['ideal', 'applepay', ...NON_NL_METHODS];
+  return basis.filter((m) => m !== 'banktransfer');
 }
 
 /*
@@ -343,9 +353,16 @@ export async function createMollieCustomer(env, { customerId, email, name }) {
  * verschil is opzettelijk en het is de reden dat recordPaid() in de webhook deze
  * betaling niet als een verdwaalde bestelling behandelt.
  */
+/* levering 119 (18 november 2026, proefronde P5-15): de middelen voor een eerste abonnementsbetaling zonder iDEAL
+   (verlegde btw of buiten de EU, zie excludeIdeal hieronder). Een eerste betaling (`first`) moet een mandaat kunnen
+   afgeven, dus alleen kaart en Bancontact; buiten de EU alleen de kaart (Bancontact werkt alleen met een EU-bank).
+   Een vooruitbetaald jaar (`oneoff`) mag de hele lijst van een gewone 0%-betaling. */
+export const EERSTE_METHODS_ZONDER_IDEAL = ['creditcard', 'bancontact'];
+export const EERSTE_METHODS_BUITEN_EU = ['creditcard'];
+
 export async function createFirstPayment(env, {
   subscriptionRef, mollieCustomerId, valueEuros, description, lang, successUrl, webhookUrl,
-  oneOff = false,
+  oneOff = false, excludeIdeal = false, buitenEu = false,
 }) {
   const cents = Math.round(Number(valueEuros) * 100);
   if (!Number.isFinite(cents) || cents < 1) {
@@ -380,6 +397,13 @@ export async function createFirstPayment(env, {
     webhookUrl,
     locale: lang === 'nl' ? 'nl_NL' : 'en_GB',
     metadata: { sub_ref: String(subscriptionRef) },
+    /* levering 119 (P5-15): bij verlegde btw of buiten de EU geen iDEAL, net als bij een bestelling
+       (createMolliePayment). paymentMismatch() in vat.js noemt iDEAL op 0% achteraf verdacht. */
+    ...(excludeIdeal ? {
+      method: oneOff
+        ? (buitenEu ? BUITEN_EU_METHODS : NON_NL_METHODS)
+        : (buitenEu ? EERSTE_METHODS_BUITEN_EU : EERSTE_METHODS_ZONDER_IDEAL),
+    } : {}),
   });
 }
 

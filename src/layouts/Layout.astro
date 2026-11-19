@@ -139,9 +139,12 @@ import { WOORDMERK, WOORDMERK_LIJNEN, WOORDMERK_SNEDE as WS, WOORDMERK_UITLOOP a
    (public/fonts/dm-sans/) en VISUAILS Display Bold voor de grote koppen (public/fonts/visuails-display/).
    Allebei vooraf geladen: de kop is op bijna elke pagina het grootste wat er bij het laden staat. */
 const LETTER_HAL = '/fonts/dm-sans/dm-sans-latin.woff2';
-const KOPLETTER_HAL = '/fonts/visuails-display/VISUAILSDisplay-Bold.woff2';
-/* levering 110: de blokletter van de hoofdkop op de voorpagina (1,7 kB), alleen daar vooraf geladen (banner-94.css) */
-const KOPBLOK = '/fonts/visuails-display/VISUAILSDisplayBlok-Bold.woff2';
+/* levering 121 (19 november 2026, lijst 134): alle koppen staan nu in VISUAILS Display 2 Medium; die laden we vooraf. De Bold
+   alleen nog in de werkplaats (het cijfer in het aantal-veld van het bestelformulier, werkplaats.css) */
+const KOPLETTER_HAL = '/fonts/visuails-display/VISUAILSDisplay2-Medium.woff2';
+/* levering 110: de blokletter van de hoofdkop op de voorpagina (1,7 kB), alleen daar vooraf geladen (banner-94.css).
+   levering 120 (19 november 2026, lijst 132): de hoofdkop staat nu in VISUAILS Display 2 Light (28 kB); die laden we hier */
+const KOPBLOK = '/fonts/visuails-display/VISUAILSDisplay2-Light.woff2';
 
 interface Props {
   title: string;
@@ -253,13 +256,20 @@ const title = titel;
 // Custom events (CTA clicks, "how did you find us?") are wired via track() in
 // interactions.js and start reporting the moment a tool that supports them
 // (e.g. Plausible/Umami) is added.
-const CF_ANALYTICS_TOKEN = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN ?? '';
+/* levering 118 (17 november 2026, proefronde P6-09): de waarde uit .env wordt schoongemaakt. Spaties, een regeleinde of
+   aanhalingstekens rond de sleutel (een veelgemaakte fout in .env) gaan eraf; is wat overblijft geen sleutel (alleen letters,
+   cijfers, - en _, 16 – 128 tekens), dan blijft hij leeg en laadt er niets, in plaats van een beacon met een kapotte sleutel.
+   Waar Lucas hem zet: PUBLIC_CF_ANALYTICS_TOKEN in .env in de projectmap, daarna UITROLLEN.bat (LIVE-STAPPEN.md, 6c). */
+const CF_RUW = String(import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN ?? '').trim().replace(/^["']|["']$/g, '').trim();
+const CF_ANALYTICS_TOKEN = /^[A-Za-z0-9_-]{16,128}$/.test(CF_RUW) ? CF_RUW : '';
 
 // Language is derived from the URL: /nl/... → Dutch, else English.
 const path = Astro.url.pathname;
 /* De melding onderin het scherm (KlantMelding.astro, 14 oktober 2026): niet
    tijdens het bestellen, niet op de proef zelf en niet op de bedankpagina. */
 const meldingHier = !/^\/(nl\/)?(start|test-sample|thank-you)(\/|$)/.test(path);
+/* levering 118 (17 november 2026, proefronde T1-03): de pagina's waar de groene kaart (het doek) het eerste beeld is */
+const proefKaartBoven = /^\/(nl\/)?test-sample\/?$/.test(path);
 /* De zwevende WhatsApp-knop — levering 58 (afvinklijst 37, b-wa): niet op /contact, waar hij
    over de knop "Chat on WhatsApp" lag die hetzelfde doet, en niet in het bestelformulier, waar
    WhatsApp al in de tekst staat (en straks bij Hulp nodig?). Op de telefoon pas na één scherm
@@ -400,6 +410,12 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  {/* levering 119 (18 november 2026, proefronde P9-08): een afgebroken view transition (van Studio, met
+      @view-transition, naar een pagina zonder) gaf "Transition was aborted" als onafgevangen fout. pagereveal komt
+      vóór de eerste weergave, dus vóór de module-scripts: daarom hier inline, als eerste. Alleen de beloften van de
+      overgang worden afgevangen; elke andere fout blijft zichtbaar. De CSP-hash komt vanzelf uit de build
+      (scripts/csp-scripts.mjs). Studio zelf heeft geen script (CSP default-src 'none'); de bestemming vangt het. */}
+  <script is:inline>addEventListener('pagereveal',function(e){var v=e.viewTransition;if(v){['ready','finished','updateCallbackDone'].forEach(function(k){v[k]&&v[k].catch(function(){})})}});</script>
   {/* ── DE TAAL VAN DE BEZOEKER, EN DAT DE SITE HEM ONTHOUDT — 23 sep 2026 ──
       Lucas: *"visuails.com landt op Engels, ook voor een Nederlander"*, en *"ik wil
       dat de website onthoudt wanneer de klant de pagina in het Nederlands heeft
@@ -429,11 +445,77 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       window.__visEerste = window.__visEerste || location.pathname;
       if (window.__visTaal) return;
       window.__visTaal = 1;
+      /* levering 118 (17 november 2026, proefronde P4-03 en P7-01): wat je in een formulier typte, gaat mee naar de andere
+         taal. Was: "Wissel je in een aanvraagformulier van taal, dan is alles leeg" (video, contact, eigen look, merkmodel),
+         en de taalknop in de kop van het bestelformulier (.wk-taal, niet in .lang-switch) nam ?style= niet mee.
+         Nu: elke taallink (a[hreflang] naar een pad op deze site), en vlak voor het wisselen een momentopname van de velden
+         die je veranderde, in sessionStorage (alleen dit tabblad, hoogstens 10 minuten, weg zodra hij is teruggezet). Op de
+         pagina in de andere taal vult hetzelfde formulier (zelfde plek op de pagina, zelfde action) zich weer, en krijgt
+         elk veld een input- en change-signaal, zodat de scripts van het formulier meedoen. Niet mee: wachtwoorden,
+         bestanden, verborgen velden (botcheck, sleutels), en het bestelformulier (data-pipeline), dat zijn eigen concept
+         bewaart. */
+      var CONCEPT = 'vis-taal-concept';
+      var kaal = function (p) { return String(p || '/').replace(/^\/nl(?=\/|$)/, '') || '/'; };
+      var velden = function (f) {
+        return Array.prototype.filter.call(f.elements, function (v) {
+          var t = (v.type || '').toLowerCase();
+          return v.name && !v.disabled && !/^(hidden|file|password|submit|button|reset|image)$/.test(t) && !/^(cf-turnstile|_|company_hp|website_hp)/.test(v.name);
+        });
+      };
+      var formulieren = function () {
+        return Array.prototype.filter.call(document.querySelectorAll('main form'), function (f) {
+          return (f.getAttribute('method') || '').toLowerCase() !== 'dialog' && !f.hasAttribute('data-pipeline');
+        });
+      };
+      var bewaar = function () {
+        try {
+          var lijst = [];
+          formulieren().forEach(function (f, i) {
+            var anders = [];
+            velden(f).forEach(function (v) {
+              var t = (v.type || '').toLowerCase();
+              if (t === 'checkbox' || t === 'radio') { if (v.checked !== v.defaultChecked) anders.push([v.name, t, v.value, v.checked]); }
+              else if (v.tagName === 'SELECT') { var d = Array.prototype.some.call(v.options, function (o) { return o.selected !== o.defaultSelected; }); if (d) anders.push([v.name, 'select', v.value]); }
+              else if (v.value !== v.defaultValue) anders.push([v.name, 'tekst', v.value]);
+            });
+            if (anders.length) lijst.push({ i: i, actie: f.getAttribute('action') || '', velden: anders });
+          });
+          if (lijst.length) sessionStorage.setItem(CONCEPT, JSON.stringify({ pad: kaal(location.pathname), tijd: Date.now(), formulieren: lijst }));
+        } catch (fout) { /* geen opslag (privévenster): dan wisselt de taal zoals vroeger */ }
+      };
+      var terug = function () {
+        var ruw = null;
+        try { ruw = sessionStorage.getItem(CONCEPT); } catch (fout) { return; }
+        if (!ruw) return;
+        try {
+          var c = JSON.parse(ruw);
+          if (!c || c.pad !== kaal(location.pathname) || Date.now() - c.tijd > 600000) { if (c && Date.now() - c.tijd > 600000) sessionStorage.removeItem(CONCEPT); return; }
+          sessionStorage.removeItem(CONCEPT);
+          var fs = formulieren();
+          (c.formulieren || []).forEach(function (o) {
+            var f = fs[o.i];
+            if (!f || (f.getAttribute('action') || '') !== o.actie) return;
+            o.velden.forEach(function (r) {
+              var lijst = velden(f).filter(function (v) { return v.name === r[0]; });
+              var v = null;
+              if (r[1] === 'checkbox' || r[1] === 'radio') { v = lijst.filter(function (x) { return x.value === r[2]; })[0]; if (v) v.checked = !!r[3]; }
+              else { v = lijst[0]; if (v) v.value = r[2]; }
+              if (!v) return;
+              v.dispatchEvent(new Event('input', { bubbles: true }));
+              v.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+          });
+        } catch (fout) { /* een kapotte momentopname: niets terugzetten */ }
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', terug); else terug();
+      document.addEventListener('astro:page-load', terug);
       document.addEventListener('click', function (e) {
-        var a = e.target && e.target.closest ? e.target.closest('.lang-switch a[hreflang]') : null;
+        var a = e.target && e.target.closest ? e.target.closest('a[hreflang]') : null;
         if (!a) return;
         var l = a.getAttribute('hreflang');
         if (l !== 'nl' && l !== 'en') return;
+        if ((a.getAttribute('href') || '').charAt(0) !== '/') return;
+        bewaar();
         document.cookie = 'vis_lang=' + l + '; Max-Age=' + taalMaxAge + '; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
         /* Doorloop 27 (B37): de zoekstring en het anker gaan mee. Zonder dit
            werd /nl/thank-you/?soort=contact&ok=1 de kale /thank-you/ (met de
@@ -476,7 +558,14 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
     ? <link rel="preload" as="font" type="font/woff2" href={LETTER_HAL} crossorigin="anonymous" />
     : <link rel="preload" as="font" type="font/woff2" href={archivoRoman} crossorigin="anonymous" />}
   {huid === 'hal' && <link rel="preload" as="font" type="font/woff2" href={KOPLETTER_HAL} crossorigin="anonymous" />}
+  {/* levering 122 (19 november 2026): de Bold wordt nergens meer vooraf geladen; ook het aantal-veld staat nu in Display 2 Medium */}
   {voorlader && <link rel="preload" as="font" type="font/woff2" href={KOPBLOK} crossorigin="anonymous" />}
+  {/* levering 118 (17 november 2026, proefronde T1-03): op de proefpagina is de groene kaart bovenaan het grootste beeld
+      (LCP), en zijn twee achtergrondbeelden (kaart-115.css) vond de browser pas na het stijlblad (op Slow 4G na 2,9 s).
+      Nu staan ze in de kop, met voorrang, zodat ze tegelijk met het stijlblad binnenkomen. Alleen daar: elders staat de
+      kaart onder de vouw en zou dit de beelden bovenaan ophouden. */}
+  {huid === 'hal' && proefKaartBoven && <link rel="preload" as="image" type="image/webp" href="/img/doek/stuk-0.webp" fetchpriority="high" />}
+  {huid === 'hal' && proefKaartBoven && <link rel="preload" as="image" type="image/webp" href="/img/doek/korrel.webp" fetchpriority="high" />}
   {/* The heading face IS the LCP element on most pages — same measured
        reasoning as the Archivo preload above. Anybody is deliberately NOT
        preloaded: it draws one word, below the fold on every page but the
@@ -628,6 +717,10 @@ const jsonLd = graphJson({ path: base, lang, url: canonical, title, description,
       user had no way past them — the site had no in-page anchor at all. Visually
       hidden until focused, which is the only state it needs to exist in. */}
 <a class="skip-link" href="#main">{t('nav_skip')}</a>
+{/* levering 118 (17 november 2026, proefronde P11-01): de cookiebalk direct na de skiplink, zodat hij de tweede tabstop is.
+    Hij stond onderaan <body>: op de voorpagina 106 tabs ver, en onderweg kregen knoppen áchter de balk de focus. Hij staat
+    vast onderin het scherm (position: fixed), dus waar hij in de html staat verandert niets aan wat je ziet. */}
+<CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
 {voorlader && <Voorlader80 />}
 
   {/* SVG sprite — product-scene placeholder symbols, the chrome gradients and
@@ -928,38 +1021,42 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
       <nav aria-label={t('nav_primary')} class="primary-nav">
         <ul class="nav-links">
           <li class="has-menu">
-            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_drops')}
+            <button type="button" class="nav-trigger" aria-expanded="false" aria-controls="nav-m-wat">{t('nav_drops')}
               <svg class="ik i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.uitklap} /></svg>
             </button>
-            <div class="nav-menu" role="menu">
+            {/* levering 118 (17 november 2026, proefronde P11-03, keuze a): een gewone uitklapper, geen role="menu". Een menu belooft
+                een schermlezer pijltjestoetsen en een eigen focus, en die waren er niet; "uitgeklapt" bleef bovendien "nee" terwijl het
+                paneel openstond. Nu: een knop met aria-expanded en aria-controls, en daarin gewone links (het script onderaan dit
+                bestand houdt aria-expanded gelijk aan wat je ziet). */}
+            <div class="nav-menu" id="nav-m-wat">
               {/* ── EEN ITEM ZONDER href IS GEEN LINK ─────────────────────────────
                   Een dienst die er nog niet is, heeft geen pagina om naartoe te
                   gaan. Dan hoort er ook geen <a> te staan: een link die naar
                   niets wijst, of naar `#`, is een klik die niets doet en waar de
                   bezoeker zelf moet raden waarom.
 
-                  `role="menuitem"` blijft, want het is nog steeds een item in dit
-                  menu, en `aria-disabled` zegt tegen een schermlezer wat de grijze
-                  tint tegen een oog zegt. `tabindex="-1"` haalt hem uit de
-                  toetsenbordronde: er is niets te activeren. */}
+                  `aria-disabled` zegt tegen een schermlezer wat de grijze tint
+                  tegen een oog zegt. Een <span> is geen tabstop, dus er is niets
+                  te activeren. (Levering 118, P11-03: `role="menuitem"` en
+                  `tabindex="-1"` zijn weg, met het menupatroon.) */}
               {dropRijen.map((g) => (
                 <div class="mi-groep">
                   <p class="mi-groep-kop" aria-hidden="true">{g.kop}</p>
                   {g.items.map((s) => (s.href
-                    ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                    ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>
                         <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                       </a>
-                    : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
+                    : <span class="mi-off" aria-disabled="true">
                         <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
                       </span>
                   ))}
                 </div>
               ))}
               {dropLos.map((s) => (s.href
-                ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>
                     <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                   </a>
-                : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
+                : <span class="mi-off" aria-disabled="true">
                     <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
                   </span>
               ))}
@@ -976,10 +1073,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               gingen eruit (1.11); drie items in twee kolommen is een rij van
               twee en een wees eronder. */}
           <li class="has-menu">
-            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_how')}
+            <button type="button" class="nav-trigger" aria-expanded="false" aria-controls="nav-m-hoe">{t('nav_how')}
               <svg class="ik i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.uitklap} /></svg>
             </button>
-            <div class="nav-menu nav-menu-1kol" role="menu">
+            <div class="nav-menu nav-menu-1kol" id="nav-m-hoe">
               {/* ── DEZELFDE UITGESCHAKELDE VORM ALS BIJ `drops` — 26 aug 2026 ──
                   Deze lijst rendeerde ALTIJD een `<a href>`, ook voor een item
                   zonder pagina. `/demo` stond zo op elke pagina van de site: 90
@@ -993,10 +1090,10 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
                   net als Editions en Hooks. Komt /demo er (zie
                   PLAN-DEMO-SPEL.md), dan is het één `href` terugzetten. */}
               {how.map((s) => (s.href
-                ? <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                ? <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>
                     <span class="mi-title">{s.title}{s.soon && <em class="mi-soon">{typeof s.soon === 'string' ? s.soon : t('nav_soon')}</em>}</span><span class="mi-desc">{s.desc}</span>
                   </a>
-                : <span class="mi-off" role="menuitem" aria-disabled="true" tabindex="-1">
+                : <span class="mi-off" aria-disabled="true">
                     <span class="mi-title">{s.title}<em class="mi-soon">{t('nav_soon')}</em></span><span class="mi-desc">{s.desc}</span>
                   </span>
               ))}
@@ -1017,12 +1114,12 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
               een zwevend paneel: één vorm voor elke uitklapper, ook voor wie met
               het toetsenbord of op een tablet komt. */}
           <li class="has-menu">
-            <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">{t('nav_pricing')}
+            <button type="button" class="nav-trigger" aria-expanded="false" aria-controls="nav-m-prijs">{t('nav_pricing')}
               <svg class="ik i" viewBox="0 0 24 24" style="width:14px;height:14px" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d={IKOON.uitklap} /></svg>
             </button>
-            <div class="nav-menu nav-menu-1kol" role="menu">
+            <div class="nav-menu nav-menu-1kol" id="nav-m-prijs">
               {prijzen.map((s) => (
-                <a href={lp(s.href)} role="menuitem" aria-current={isActive(s.href) ? 'page' : undefined}>
+                <a href={lp(s.href)} aria-current={isActive(s.href) ? 'page' : undefined}>
                   <span class="mi-title">{s.title}</span><span class="mi-desc">{s.desc}</span>
                 </a>
               ))}
@@ -1577,7 +1674,9 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
         <Studiobrief lang={lang} bron="voet" vorm={huid === 'hal' ? 'licht' : 'donker'} />
       </div>
       <div class="footer-bottom">
-        <span>&copy; {year} VISUAILS &middot; KVK 99742993 &middot; {lang === 'nl' ? 'btw' : 'VAT'} NL005407575B96</span>
+        {/* levering 119 (18 november 2026, proefronde P7-09): in het Engels zegt "KVK" een buitenlander niets; daar staat
+            wat het is (Chamber of Commerce), de afkorting tussen haakjes */}
+        <span>&copy; {year} VISUAILS &middot; {lang === 'nl' ? 'KVK' : 'Chamber of Commerce (KVK)'} 99742993 &middot; {lang === 'nl' ? 'btw' : 'VAT'} NL005407575B96</span>
         <span style="display:flex;gap:1.2rem;flex-wrap:wrap">
           <a href={lp('/privacy')}>{t('foot_privacy')}</a>
           <a href={lp('/terms')}>{t('foot_terms')}</a>
@@ -1639,7 +1738,7 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   </footer>
   )}
 
-  <CookieConsent lang={lang} policyHref={lp('/cookie-policy')} />
+  {/* De cookiebalk stond hier; sinds levering 118 (P11-01) staat hij bovenaan <body>, na de skiplink. */}
   {/* De proefkaart (de zwevende "Probeer VISUAILS · €1"-popup) is weg sinds
       8 oktober 2026, punt 1.06: de proef begint nu bij een look, met een
       stille knop op elke lookkaart en lookpagina. */}
@@ -1793,6 +1892,59 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
     const boot = () => initConsent(window.__VIS_CF_TOKEN);
     boot();
     document.addEventListener('astro:page-load', boot);
+  </script>
+  <script>
+    /* levering 118 (17 november 2026, proefronde P11-03): aria-expanded van de drie uitklappers (en het menu achter je
+       initiaal) zegt wat je ziet. interactions.js zet hem bij een klik en bij Escape; het paneel gaat ook open onder de muis
+       en blijft open zolang de focus erin staat (Layout, .nav-menu:focus-within). Na elke van die gebeurtenissen kijkt dit
+       naar de echte stand. En wie met Tab het paneel uit loopt, sluit het: anders bleef het open over de pagina staan. */
+    const STAND = '.site-header .has-menu';
+    const isOpen = (li: Element) => !li.classList.contains('esc-closed') && (li.classList.contains('menu-open') || li.matches(':hover') || !!li.querySelector('.nav-menu:focus-within'));
+    const zetStand = () => {
+      for (const li of document.querySelectorAll(STAND)) {
+        const knop = li.querySelector(':scope > .nav-trigger');
+        if (knop) knop.setAttribute('aria-expanded', String(isOpen(li)));
+      }
+    };
+    const straks = () => setTimeout(zetStand, 0);
+    ['click', 'keydown', 'focusin'].forEach((t) => document.addEventListener(t, straks));
+    document.addEventListener('focusout', (e) => {
+      const li = e.target instanceof Element ? e.target.closest(STAND) : null;
+      if (!li) return;
+      setTimeout(() => {
+        if (!li.contains(document.activeElement)) li.classList.remove('menu-open');
+        zetStand();
+      }, 0);
+    });
+    document.addEventListener('pointerover', (e) => { if (e.target instanceof Element && e.target.closest('.site-header')) straks(); });
+    document.addEventListener('pointerout', (e) => { if (e.target instanceof Element && e.target.closest('.site-header')) straks(); });
+    document.addEventListener('astro:page-load', zetStand);
+  </script>
+  <script>
+    /* levering 118 (17 november 2026, proefronde P11-01): na een keuze in de cookiebalk de focus terug. De balk verdwijnt
+       (consent.js zet hem op hidden) en de knop waar je op drukte verdwijnt mee; de focus viel dan op <body> en de volgende
+       Tab begon weer bovenaan. Nu gaat hij terug naar waar hij vandaan kwam (meestal de skiplink), en anders naar het begin
+       van de pagina (#main). Dit luistert op het document, dus ná consent.js, die op de knoppen zelf luistert. */
+    let ccVan: HTMLElement | null = null;
+    document.addEventListener('focusin', (e) => {
+      const bar = document.getElementById('cc-bar');
+      if (!bar || !(e.target instanceof Node) || !bar.contains(e.target)) return;
+      const van = (e as FocusEvent).relatedTarget;
+      if (van instanceof HTMLElement && !bar.contains(van) && !van.closest('#cc-prefs')) ccVan = van;
+    });
+    document.addEventListener('click', (e) => {
+      const k = e.target instanceof Element ? e.target.closest('[data-cc="accept"], [data-cc="reject"], [data-cc="save"]') : null;
+      if (!k) return;
+      const bar = document.getElementById('cc-bar');
+      setTimeout(() => {
+        if (!bar || !bar.hidden) return;
+        const a = document.activeElement;
+        if (a && a !== document.body && !bar.contains(a) && !a.closest('#cc-prefs')) return;
+        const doel = ccVan && ccVan.isConnected ? ccVan : document.getElementById('main');
+        doel?.focus({ preventScroll: true });
+        ccVan = null;
+      }, 0);
+    });
   </script>
   {huid === 'kantig' && <HuidKantig />}
 </body>
@@ -2196,7 +2348,11 @@ M9532 2693 c-5 -10 -24 -63 -42 -118 -40 -122 -221 -644 -283 -815 -25 -69
   .mobile-signout .nav-signout-btn { font-size: var(--h-t-klein); }
   .has-menu { position: relative; }
   .nav-menu { position: absolute; top: calc(100% + 10px); left: 0; min-width: 470px; background: var(--menu-surface); border: 1px solid var(--line); padding: .6rem; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), visibility var(--dur-2) var(--ease); box-shadow: 6px 6px 0 0 rgb(var(--scrim) / 0.16); border-radius: var(--r-kaart); }
-  .has-menu:hover .nav-menu, .has-menu:focus-within .nav-menu, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+  /* levering 118 (17 november 2026, proefronde P11-03): de focus op de KNOP opent het paneel niet meer, alleen de focus ÍN het
+     paneel houdt het open (.nav-menu:focus-within, was .has-menu:focus-within). Met het toetsenbord: Tab naar de knop, Enter
+     opent (menu-open, aria-expanded "true"), Tab loopt door de links, en wie verder tabt sluit het (het script onderaan).
+     Wie niet opent, tabt in één stap naar de volgende knop in plaats van door elk item. De muis opent het nog steeds. */
+  .has-menu:hover .nav-menu, .has-menu .nav-menu:focus-within, .has-menu.menu-open .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   /* ── ESCAPE MOET HET PANEEL OOK ECHT DICHT DOEN ─────────────────────────────
      9 augustus 2026, gemeten: na Escape stond `aria-expanded` op false en het paneel
      nog op `opacity: 1`. De regel hierboven houdt het open zolang de focus ergens in

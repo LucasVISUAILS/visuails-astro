@@ -63,6 +63,9 @@ export const NU_TEKST = {
       awaiting_payment: 'Je bestelling is binnen, maar nog niet betaald. Zodra de betaling binnen is, plannen we hem in.',
       btwLijst: 'Je bestelling is binnen. We kijken eerst je btw-gegevens na; daarna sturen we je de betaallink — meestal binnen een werkdag.',
       received: 'We hebben je bestelling en je bestanden binnen. We plannen hem in.',
+      /* levering 118 (17 november 2026, proefronde N4 #8): "en je bestanden" klopte niet bij een bestelling zonder foto's
+         ("Later in Studio"). Dan deze zin, met de knop naar de fotovakken. */
+      receivedZonderFotos: 'We hebben je bestelling binnen, maar nog geen foto’s. Voeg ze toe, dan plannen we hem in.',
       request: 'Dit is een aanvraag, nog geen bestelling. We antwoorden schriftelijk met een voorstel en een prijs — meestal binnen een werkdag.',
       requestPaid: 'Je offerte is betaald. We werken je aanvraag uit en laten je weten zodra er iets te bekijken is.',
       brandModel: 'We hebben je merkmodelbestelling binnen. We maken je kandidaten en laten je weten wanneer je kunt kiezen.',
@@ -110,6 +113,8 @@ export const NU_TEKST = {
     aanmerkZin: (n) => (n === 1 ? 'Klopt er iets niet, vink het aan en schrijf erbij wat er anders moet.' : 'Klopt er iets niet, vink die aan en schrijf erbij wat er anders moet.'),
     revisieBijna: 'Je revisieronde loopt bijna af. Klopt alles, keur je beelden dan goed; klopt er iets niet, vink het aan en schrijf erbij wat er anders moet.',
     proef: 'Je proefset staat klaar om te downloaden.',
+    /* levering 118 (17 november 2026, proefronde P4-10): een afgerond merkmodel; dezelfde zin als Studio en /o/. */
+    merkmodelVast: 'Je merkmodel staat vast. Het is alleen van jou, en je kiest het bij je volgende bestelling.',
     verwijderdBijna: 'Je beelden gaan binnenkort van deze pagina. Download ze vóór die tijd.',
     zonderScore: 'Afgerond — dank je. Je beelden staan klaar om te downloaden.',
 
@@ -132,6 +137,8 @@ export const NU_TEKST = {
       awaiting_payment: 'Your order is in, but not paid yet. Once the payment comes through we schedule it in.',
       btwLijst: 'Your order is in. We first check your VAT details; then we send you the payment link — usually within one working day.',
       received: 'We have your order and your files. We are scheduling it in.',
+      /* levering 118 (N4 #8): no photos yet ("Later in Studio") */
+      receivedZonderFotos: 'We have your order, but no photos yet. Add them, and we schedule it in.',
       request: 'This is a request, not an order yet. We reply in writing with a proposal and a price — usually within a working day.',
       requestPaid: 'Your quote is paid. We are working out your request and will let you know as soon as there is something to look at.',
       brandModel: 'We have your brand model order. We are making your candidates and will let you know when you can choose.',
@@ -168,6 +175,7 @@ export const NU_TEKST = {
     aanmerkZin: (n) => (n === 1 ? 'If something is off, tick it and write what should change.' : 'If something is off, tick those and write what should change.'),
     revisieBijna: 'Your revision round is nearly over. If everything is right, approve your images; if something is off, tick it and write what should change.',
     proef: 'Your test sample is ready to download.',
+    merkmodelVast: 'Your brand model is locked. It is yours alone, and you can choose it in your next order.',
     verwijderdBijna: 'Your images leave this page soon. Download them before then.',
     zonderScore: 'Complete — thank you. Your images are ready to download.',
 
@@ -344,8 +352,17 @@ export function nuZin(o, ctx = {}, lang = 'nl') {
   if (!isAfgerond(o) && ctx.eersteMist) {
     return uit('fotoMist', t.nuMist(ctx.eersteMist.vak, ctx.eersteMist.product), ['fotos']);
   }
+  /* levering 118 (17 november 2026, proefronde N4 #8): nog geen enkele foto ("Later in Studio"). ontbreekt.js zegt dan
+     "onbekend" (null), en de zin viel terug op "je bestelling en je bestanden binnen". `ctx.geenFotos` zet de aanroeper
+     (Studio: er kunnen foto's bij en er is er nog geen). */
+  if (!isAfgerond(o) && ctx.geenFotos && status === 'received') {
+    return uit('fotoMist', t.flow.receivedZonderFotos, ['fotos']);
+  }
 
   if (isAfgerond(o)) {
+    /* levering 118 (17 november 2026, proefronde P4-10): een merkmodel levert geen beelden om te downloaden of goed te
+       keuren; het staat vast. Zonder knoppen. */
+    if (o.service === 'brand-model') return uit('merkmodelVast', t.merkmodelVast);
     const geleverd = files.filter((f) => f.kind !== 'upload' && !f.superseded_at);
     if (geleverd.length && !levend.length) return uit('afgerondVerlopen', t.flow.closedExpired);
     /* De tevredenheidsvraag staat de eerste VRAAG_DAGEN na het afronden vooraan,

@@ -39,7 +39,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { isWellFormedToken, mintToken } from './token.js';
-import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT, isShotId } from '../data/shots.js';
+import { SHOTS_PER_PRODUCT, MAX_REF_PER_PRODUCT, isShotId, MIN_LANGE_ZIJDE } from '../data/shots.js';
 import { MAX_PRODUCTS_ANY_SERVICE } from '../data/capacity.js';
 /* De extra foto’s hebben sinds 8 augustus 2026 een eigen upload-vakje, dus tellen
    ze mee in het plafond hieronder. Uit pricing.js en niet overgetypt: dat is ook
@@ -260,8 +260,26 @@ export async function listBatch(env, batch, limit = MAX_BATCH_FILES + 1) {
   try {
     /* Lijst 87 (D13): de duimpjes staan ernaast en tellen niet mee; de lijst haalt er dus ruim
        genoeg op voor elk origineel met zijn duimpje (R2 geeft er hoogstens 1000 per keer). */
-    const listed = await env.UPLOADS.list({ prefix: batchPrefix(batch), limit: Math.min(1000, limit * 2), include: ['customMetadata'] });
-    const objecten = listed?.objects || [];
+    /* levering 117 (17 november 2026, proefronde B1-06): doorbladeren tot alles binnen is.
+       Met include: ['customMetadata'] geeft R2 hoogstens 100 objecten per keer, ook als je om meer
+       vraagt, en zet dan `truncated` met een `cursor`. Hier werd alleen de eerste bladzijde gelezen:
+       bij 20 producten × 3 foto's (60 foto's + 60 duimpjes) kwamen er 50 bij de bestelling en viel
+       de rest stil weg. Nu volgen we de cursor tot R2 zegt dat het klaar is, of tot er genoeg
+       originelen zijn. Hoogstens 50 bladzijden, zodat een kapotte cursor nooit eindeloos doorloopt. */
+    const objecten = [];
+    let cursor;
+    for (let blad = 0; blad < 50; blad++) {
+      const listed = await env.UPLOADS.list({
+        prefix: batchPrefix(batch),
+        limit: Math.min(1000, limit * 2),
+        include: ['customMetadata'],
+        ...(cursor ? { cursor } : {}),
+      });
+      objecten.push(...(listed?.objects || []));
+      if (objecten.filter((o) => !isDuimKey(o.key)).length >= limit) break;
+      if (!listed?.truncated || !listed?.cursor || listed.cursor === cursor) break;
+      cursor = listed.cursor;
+    }
     const duimen = new Set(objecten.filter((o) => isDuimKey(o.key)).map((o) => o.key));
     return objecten.filter((o) => !isDuimKey(o.key)).slice(0, limit).map((o) => ({
       key: o.key,
@@ -270,6 +288,9 @@ export async function listBatch(env, batch, limit = MAX_BATCH_FILES + 1) {
       product: safeProduct(o.customMetadata?.product),
       shot: isShotId(o.customMetadata?.shot) ? o.customMetadata.shot : '',
       preview: duimen.has(duimKeyVoor(o.key)) ? duimKeyVoor(o.key) : '',
+      /* levering 118 (17 november 2026, proefronde P2-06): /api/upload markeert een te kleine foto (zie
+         beeldAfmeting()); alleen als dat zo is, zodat de rest van de lijst er hetzelfde uitziet. */
+      ...(o.customMetadata?.klein === '1' ? { klein: true, px: /^\d{1,5}x\d{1,5}$/.test(o.customMetadata?.px || '') ? o.customMetadata.px : '' } : {}),
     }));
   } catch {
     return [];
@@ -417,4 +438,61 @@ export function uploadFormatsSentence(lang = 'en') {
   const laatste = lijst[lijst.length - 1];
   const rest = lijst.slice(0, -1).join(', ');
   return lang === 'nl' ? `${rest} of ${laatste}` : `${rest} or ${laatste}`;
+}
+
+/*
+ * ── DE AFMETING UIT DE KOP VAN HET BESTAND — levering 118 (17 november 2026, proefronde P2-06) ──
+ * Het formulier weigert een foto onder MIN_LANGE_ZIJDE (keurBeeld() in shots.js), maar "Opnieuw" stuurde hem toch,
+ * en de server keek niet naar de afmeting. Nu leest /api/upload de breedte en hoogte uit de eerste bytes: JPEG
+ * (SOF0/1/2), PNG (IHDR) en WebP (VP8, VP8L, VP8X). HEIC en AVIF slaan we over: hun maat staat diep in de doos-
+ * structuur, en een telefoonfoto in die vormen is vrijwel altijd groot genoeg. Niet weigeren, alleen markeren:
+ * /admin en de studiomail zeggen "te klein", en de studio vraagt het origineel.
+ * Geeft { breed, hoog } of null als het niet te lezen is.
+ */
+export function beeldAfmeting(b) {
+  if (!b || b.length < 24) return null;
+  const u16 = (i) => (b[i] << 8) | b[i + 1];
+  const u16le = (i) => b[i] | (b[i + 1] << 8);
+  const u24le = (i) => b[i] | (b[i + 1] << 8) | (b[i + 2] << 16);
+  const u32 = (i) => ((b[i] << 24) >>> 0) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];
+  /* PNG: de handtekening, dan IHDR met breedte en hoogte. */
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) {
+    const breed = u32(16); const hoog = u32(20);
+    return breed > 0 && hoog > 0 ? { breed, hoog } : null;
+  }
+  /* JPEG: door de segmenten tot een SOF-marker (C0..CF, behalve C4 DHT, C8 en CC DAC). */
+  if (b[0] === 0xFF && b[1] === 0xD8) {
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xFF) { i += 1; continue; }
+      const m = b[i + 1];
+      if (m === 0xFF) { i += 1; continue; }
+      if (m === 0xD8 || m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
+      if (m === 0xD9 || m === 0xDA) return null;
+      const lengte = u16(i + 2);
+      if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) {
+        const hoog = u16(i + 5); const breed = u16(i + 7);
+        return breed > 0 && hoog > 0 ? { breed, hoog } : null;
+      }
+      if (lengte < 2) return null;
+      i += 2 + lengte;
+    }
+    return null;
+  }
+  /* WebP: RIFF....WEBP, dan VP8 (lossy), VP8L (lossless) of VP8X (uitgebreid). */
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) {
+    const soort = String.fromCharCode(b[12], b[13], b[14], b[15]);
+    if (soort === 'VP8 ' && b.length >= 30) return { breed: u16le(26) & 0x3FFF, hoog: u16le(28) & 0x3FFF };
+    if (soort === 'VP8L' && b.length >= 25) {
+      const v = b[21] | (b[22] << 8) | (b[23] << 16) | (b[24] << 24);
+      return { breed: (v & 0x3FFF) + 1, hoog: ((v >>> 14) & 0x3FFF) + 1 };
+    }
+    if (soort === 'VP8X' && b.length >= 30) return { breed: u24le(24) + 1, hoog: u24le(27) + 1 };
+  }
+  return null;
+}
+
+/** levering 118 (P2-06): is deze afmeting te klein voor de studio? Dezelfde grens als keurBeeld() in shots.js. */
+export function teKleinVoorStudio(afm) {
+  return !!afm && Math.max(afm.breed, afm.hoog) > 0 && Math.max(afm.breed, afm.hoog) < MIN_LANGE_ZIJDE;
 }

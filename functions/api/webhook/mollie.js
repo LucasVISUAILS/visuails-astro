@@ -68,10 +68,14 @@ import { issueInvoice, issueCreditNote, issueSubscriptionInvoice } from '../../.
 import { mailInvoice, mailSubscriptionInvoice } from '../../../src/lib/invoiceMail.js';
 /* B04 (doorloop 27): de bevestiging die wacht op de betaalstatus. */
 import { leesUitgesteld, wisUitgesteld, stuurUitgesteld } from '../../../src/lib/uitgesteld.js';
+/* levering 118 (P1-10): geen betaalmail voor een proef als het bedrijf er al een betaalde heeft. */
+import { proefGebruikt } from '../../../src/lib/proefGebruikt.js';
 /* De direct-inlogknop in de welkomstmail van een abonnement (24 september 2026). */
 import { welkomLink } from '../../../src/lib/account.js';
 import { mailCreditNote, mailOngewensteBetaling, mailIncassoMislukt, mailBetalingOntvangen, mailTermijnTeruggeboekt } from '../../../src/lib/cancelMail.js';
 import { vulVasteLookAan } from '../../../src/lib/vasteLook.js';
+import { verlopenVensterPastNog } from '../../../src/lib/agenda.js';
+import { notifyDatumVervallen, mailKlantDatumVervallen, mailKlantProefDubbel } from '../../../src/lib/notify.js';
 import { notifyBtwTwijfel, notifyPaid, notifyPaymentFailed, notifySampleBlocked, notifySubscriptionFailed, notifySubscriptionRefunded, notifySubscriptionStarted, notifyOngewensteBetaling, notifyChargeback, notifyTermijnTeruggeboekt } from '../../../src/lib/notify.js';
 /* Of Mollie het zelf heeft opgegeven. Zie de kop van recordSubscriptionFailed()
    hieronder: het verschil tussen 'morgen weer' en 'hier stopt het' hoort uit
@@ -86,7 +90,7 @@ import { boekTermijnBij, vervalTermijn, bevriesTermijn, ontdooiTermijn } from '.
 import { bijkoopId, verwerkBijkoop } from '../../../src/lib/bijkopen.js';
 import { planName } from '../../../src/data/planNames.js';
 import { SAMPLE_SERVICE, spaarPlafond } from '../../../src/data/pricing.js';
-import { bedrag as mailBedrag } from '../../../src/lib/mailTemplate.js';
+import { bedrag as mailBedrag, datum as mailDatum } from '../../../src/lib/mailTemplate.js';
 /* De boekhouding (8.08, 8 oktober 2026): na het antwoord, nooit ervoor. Zie
    boekhoudingAchteraf() en de kop van src/lib/eboekhouden.js. */
 import { boekhoudingAchteraf } from '../../../src/lib/eboekhouden.js';
@@ -328,18 +332,21 @@ export async function onRequestPost({ request, env, waitUntil }) {
       const ref = payment?.metadata?.order_ref || '';
       try {
         const row = ref
-          ? await env.DB.prepare('SELECT id, payment_status, status FROM orders WHERE ref = ?1').bind(ref).first()
+          ? await env.DB.prepare('SELECT id, payment_status, status, customer_id, service, email, phone, details_json FROM orders WHERE ref = ?1').bind(ref).first()
           : null;
         if (row?.id) {
           /* Ook een mislukte betaling komt in `payments` (status letterlijk, zoals
              de tabel belooft): dan kan /api/order-status meteen zeggen dat de
              betaling niet doorging, in plaats van tien seconden "even kijken".
              Elke lezer van deze tabel filtert op paid/refunded. */
-          await env.DB.prepare(
+          /* levering 118 (B1-11): `changes` zegt of dit de eerste aflevering van deze betaling is. Mollie biedt
+             dezelfde webhook soms vaker aan; dan geen tweede regel in het logboek. */
+          const nieuweUitkomst = await env.DB.prepare(
             `INSERT OR IGNORE INTO payments (order_id, provider, external_id, status, amount_cents, currency)
              VALUES (?1, 'mollie', ?2, ?3, ?4, ?5)`
           ).bind(row.id, payment.id, payment.status, mollieAmountToCents(payment.amount) ?? 0,
-            (payment.amount?.currency || 'EUR').toUpperCase()).run().catch(() => {});
+            (payment.amount?.currency || 'EUR').toUpperCase()).run()
+            .then((r) => Number(r?.meta?.changes) > 0).catch(() => false);
           /* Niet melden als er al betaald is, of als de bestelling geannuleerd
              is (ronde 8, M-B5): elke klik op /api/order-pay maakt een nieuwe
              betaling, en elke die later verloopt gaf een "niet gelukt", ook
@@ -354,8 +361,51 @@ export async function onRequestPost({ request, env, waitUntil }) {
           }
           /* B04: de bevestiging die op de uitkomst wachtte, gaat nu alsnog uit —
              met de betaalknop. Eén keer: daarna staat hij niet meer in R2. */
+          let klantGemaild = false;
+          let proefAlGebruikt = null;
           if (row.payment_status !== 'paid' && row.status !== 'cancelled') {
-            await stuurUitgesteld(env, ref);
+            /* ── GEEN BETAALKNOP VOOR EEN TWEEDE PROEF — levering 118 (17 november 2026, proefronde P1-10) ──
+               Een verlopen proef kreeg de betaalmail, ook als dit bedrijf intussen al een betaalde proef had.
+               Betaalde de klant dan, dan stortte deze webhook de euro terug en annuleerde hij de proef. Nu eerst
+               dezelfde toets als het formulier (proefGebruikt, alleen de harde treffers): al een betaalde proef,
+               dan gaat de bewaarde mail weg zonder verstuurd te worden. */
+            if (row.service === SAMPLE_SERVICE) {
+              let reg = '';
+              try { reg = JSON.parse(row.details_json || '{}').business_reg || ''; } catch { reg = ''; }
+              const toets = await proefGebruikt(env, { email: row.email || '', phone: row.phone || '', reg, behalve: row.id }).catch(() => null);
+              if (toets?.checked && toets.used > 0) proefAlGebruikt = toets;
+            }
+            if (proefAlGebruikt) {
+              await wisUitgesteld(env, ref);
+            } else {
+              klantGemaild = await stuurUitgesteld(env, ref);
+            }
+          }
+          /* ── ELKE UITKOMST VASTGELEGD — levering 118 (17 november 2026, proefronde B1-11) ─────────────────
+             Live zette Mollie een betaling op verlopen, en /admin zei nog "Betaling staat open": geen regel op
+             de tijdlijn, geen regel in het logboek, en alleen de eerste mislukking per etmaal gaf een mail. Nu
+             schrijft elke mislukte, afgebroken of verlopen betaling (één keer per Mollie-betaling) een regel in
+             admin_log (action 'payment.failed' | 'payment.canceled' | 'payment.expired') en een interne regel
+             op de tijdlijn (order_events, actor 'intern': alleen in /admin, niet bij de klant). Hoe /admin het
+             toont, is van /admin; zie de notities van levering 118. */
+          if (nieuweUitkomst) {
+            const woord = ({ failed: 'mislukt', canceled: 'afgebroken', expired: 'verlopen' })[payment.status] || payment.status;
+            const bedrag = mollieAmountToCents(payment.amount);
+            const tijd = new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' });
+            const vervolg = row.payment_status === 'paid' ? 'De bestelling was al betaald (met een andere betaling); er hoeft niets te gebeuren.'
+              : row.status === 'cancelled' ? 'De bestelling is geannuleerd; er hoeft niets te gebeuren.'
+                : proefAlGebruikt ? 'Geen nieuwe betaallink: dit bedrijf had al een betaalde proef.'
+                  : klantGemaild ? `De klant kreeg om ${tijd} de mail "Nog niet betaald" met een nieuwe betaalknop.`
+                    : 'Geen nieuwe mail aan de klant (die had de betaalknop al).';
+            const regel = `Betaling ${woord} bij Mollie (${payment.id}${bedrag !== null ? `, ${mailBedrag(bedrag, 'nl')}` : ''}). Er is niets afgeschreven. ${vervolg}`;
+            await env.DB.prepare(
+              `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+               VALUES (NULL, NULL, ?1, ?2, ?3, ?4)`
+            ).bind(`payment.${payment.status}`, row.id, row.customer_id || null, regel).run()
+              .catch((e) => console.error('[mollie-webhook] logboekregel betaling niet geschreven —', e?.message || e));
+            await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+              .bind(row.id, row.status || 'received', regel, 'intern').run()
+              .catch((e) => console.error('[mollie-webhook] tijdlijnregel betaling niet geschreven —', e?.message || e));
           }
         }
       } catch (err) {
@@ -585,7 +635,7 @@ async function termijnTeruggeboekt(env, payment, mode, { sub, cents, terug }) {
   });
   /* B19 (doorloop 27): en de klant, met de vraag of het klopt. */
   await mailTermijnTeruggeboekt(env, {
-    subId: sub.id, ref: sub.ref || '', email: klant?.email, name: klant?.first_name || klant?.name || klant?.brand || '',
+    subId: sub.id, ref: sub.ref || '', email: klant?.email, name: klant?.first_name || klant?.name || klant?.brand || '', voornaam: klant?.first_name || '', /* A0-01 */
     terugCents: terug, origin: env.PUBLIC_ORIGIN || 'https://visuails.com',
   });
 }
@@ -978,7 +1028,7 @@ async function recordSubscriptionPaid(env, payment, mode, { subRef = null } = {}
         const loginLink = eerste ? await welkomLink(env, wie.customer_id, lang, env.PUBLIC_ORIGIN || 'https://visuails.com') : '';
         /* Wat er bij deze termijn boven het spaarplafond verviel (15 oktober 2026). */
         const vervallen = geboekt?.ok ? Number(geboekt.boven) || 0 : 0;
-        await mailSubscriptionInvoice(env, { sub: wie, customer: { email: wie.email, lang, name: wie.first_name || wie.name || '', country: wie.country || '' }, invoice: factuur, planNaam: naam, credits, eerste, loginLink, vervallen, plafond: vervallen ? spaarPlafond(credits) : 0 });
+        await mailSubscriptionInvoice(env, { sub: wie, customer: { email: wie.email, lang, name: wie.first_name || wie.name || '', first_name: wie.first_name || '', country: wie.country || '' }, invoice: factuur, planNaam: naam, credits, eerste, loginLink, vervallen, plafond: vervallen ? spaarPlafond(credits) : 0 });
       }
       if (eerste) {
         /* 0% buiten de EU zonder beoordeling vooraf (29 september 2026): het
@@ -1045,8 +1095,9 @@ async function recordSubscriptionFailed(env, payment, mode) {
   let sub;
   try {
     sub = await env.DB.prepare(
+      /* levering 119 (18 november 2026, proefronde A0-01): ook c.first_name, voor de aanhef in de mail over de mislukte incasso. */
       `SELECT s.id, s.ref, s.plan, s.status, s.mollie_customer_id, s.mollie_subscription_id,
-              c.email, c.brand, c.name
+              c.email, c.brand, c.name, c.first_name
          FROM subscriptions s
          LEFT JOIN customers c ON c.id = s.customer_id
         WHERE s.mollie_subscription_id = ?1`
@@ -1130,7 +1181,7 @@ async function recordSubscriptionFailed(env, payment, mode) {
      opgezegd is: dan valt er niets te herstellen. */
   if (sub.status !== 'cancelled') {
     await mailIncassoMislukt(env, {
-      subId: sub.id, ref: sub.ref || '', email: sub.email, name: sub.name || sub.brand || '',
+      subId: sub.id, ref: sub.ref || '', email: sub.email, name: sub.name || sub.brand || '', voornaam: sub.first_name || '', /* A0-01 */
       bedragCents: cents, gestopt, origin: env.PUBLIC_ORIGIN || 'https://visuails.com',
     });
   }
@@ -1508,7 +1559,7 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
            mailt de nachtelijke taak hem zodra die hem alsnog uitgeeft. Best effort,
            binnen dezelfde try: de boeking hierboven is al gedaan. */
         if (note && note.status === 'issued') {
-          const wie = await env.DB.prepare('SELECT ref, email, lang, name FROM orders WHERE id = ?1')
+          const wie = await env.DB.prepare('SELECT ref, email, lang, name, first_name FROM orders WHERE id = ?1') /* A0-01: first_name voor de aanhef */
             .bind(order.id).first().catch(() => null);
           if (wie) await mailCreditNote(env, { order: wie, note });
         }
@@ -1709,13 +1760,46 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
      werkdag later. Nu payment.paidAt van Mollie zelf (de betaling is net bij Mollie
      opgehaald, niet uit de body), als SQLite-UTC; zonder bruikbare paidAt, of met een
      paidAt in de toekomst, blijft het datetime('now'). */
-  await env.DB.prepare(
+  /* ── TE LAAT BETAALD EN DE DAG IS WEG — levering 117 (17 november 2026, proefronde P3-10) ──
+     Na de betaaltermijn telt de agenda een reservering niet meer mee, en de nachtelijke taak maakt de
+     datum pas later leeg. Betaalde de klant in dat gat (zijn herinneringslink werkt nog), dan hield hij
+     hier de datum, ook als een ander die dagen intussen had geboekt: de planning stond dan op 120 van
+     80 punten, zonder melding. Nu toetsen we de agenda opnieuw. Past het nog, dan houdt hij de datum
+     (window_expires_at gaat zoals altijd naar NULL, en hij telt weer mee). Past het niet meer, dan gaat
+     de datum in DEZELFDE update leeg en krijgen jij en de klant hieronder een bericht. Kan de agenda
+     niet gelezen worden, dan blijft het zoals het was. */
+  const venster = await verlopenVensterPastNog(env, order.id).catch((e) => {
+    console.warn('[mollie-webhook] agenda niet te lezen voor', ref, '—', e?.message || e);
+    return null;
+  });
+  const datumWeg = !!(venster && venster.verlopen && venster.past === false);
+  const betaaldGezet = await env.DB.prepare(
     `UPDATE orders SET payment_status = 'paid', payment_provider = 'mollie', payment_ref = ?1, paid_at = COALESCE(?3, datetime('now')),
-                       window_expires_at = NULL
+                       window_expires_at = NULL,
+                       window_start = CASE WHEN ?4 = 1 THEN NULL ELSE window_start END,
+                       window_end = CASE WHEN ?4 = 1 THEN NULL ELSE window_end END
      WHERE id = ?2 AND payment_status NOT IN ('paid', 'refunded')`
   )
-    .bind(payment.id, order.id, betaalMoment(payment))
+    .bind(payment.id, order.id, betaalMoment(payment), datumWeg ? 1 : 0)
     .run();
+  if (datumWeg && Number(betaaldGezet?.meta?.changes ?? 1) > 0) {
+    const nlK = order.lang !== 'en';
+    const { start: vs, end: ve } = venster.venster;
+    const wanneerIn = (taal) => (ve && ve !== vs ? `${mailDatum(vs, taal)} – ${mailDatum(ve, taal)}` : mailDatum(vs, taal));
+    const wanneer = wanneerIn(nlK ? 'nl' : 'en');
+    await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+      .bind(order.id, order.status || 'received', nlK
+        ? `Leverdatum ${wanneer} vervallen: de betaaltermijn was voorbij en de dagen zijn intussen geboekt. We spreken een nieuwe datum met je af.`
+        : `Delivery date ${wanneer} lapsed: the payment period had passed and the days have since been booked. We will agree a new date with you.`, 'system')
+      .run().catch((e) => console.error('[mollie-webhook] tijdlijnregel datum-vervallen mislukt —', e?.message || e));
+    await env.DB.prepare(
+      `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+       VALUES (NULL, NULL, 'window.lapsed', ?1, ?2, ?3)`
+    ).bind(order.id, order.customer_id || null, `${ref}: betaald na de betaaltermijn; ${wanneerIn('nl')} was intussen geboekt, datum leeggemaakt`)
+      .run().catch(() => {});
+    await notifyDatumVervallen(env, { orderId: order.id, venster: venster.venster });
+    await mailKlantDatumVervallen(env, { orderId: order.id, venster: venster.venster });
+  }
   /* Het verrekende tegoed afboeken, nu de rest betaald is (29 september 2026).
      Zie src/lib/tegoedVerrekening.js. Mislukt het, dan staat het in het log en
      is de betaling niet minder verwerkt. */
@@ -1895,6 +1979,9 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
         /* B04: de bevestiging die op deze betaling wachtte, klopt niet meer
            (de proef is geannuleerd). Weg ermee; de terugkeerpagina zegt het. */
         await wisUitgesteld(env, ref);
+        /* levering 118 (17 november 2026, proefronde P1-10): de klant krijgt nu ook een mail over de annulering
+           en de terugbetaling. */
+        await mailKlantProefDubbel(env, { orderId: order.id, earlierRef: earlier.ref, refunded });
 
         /* Hier stopt het. Geen notifyPaid (dat is het sein om te beginnen) en geen
            factuur (die zou meteen gecorrigeerd moeten worden). Wat de bezoeker te
@@ -1991,7 +2078,8 @@ async function recordRefundOnPayment(env, orderId, externalId, refunded) {
     const invoice = await issueInvoice(env, order.id);
     if (invoice) {
       const full = await env.DB.prepare(
-        'SELECT ref, email, name, lang, service, window_start, window_end, country FROM orders WHERE id = ?1'
+        /* levering 119 (18 november 2026, proefronde A0-01): ook first_name, voor de aanhef in de betaalmail. */
+        'SELECT ref, email, name, first_name, lang, service, window_start, window_end, country FROM orders WHERE id = ?1'
       ).bind(order.id).first();
       if (full) full.noNext = full.service === SAMPLE_SERVICE;
       /* B04: wachtte de bevestiging op deze betaling, dan krijgt de betaalmail

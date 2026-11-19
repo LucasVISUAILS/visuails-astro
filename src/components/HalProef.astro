@@ -65,7 +65,9 @@ const altRol = /\/start|test-sample|^#/.test(alt.href) ? 'doorgaan' : (extern &&
   <span class="h-korrel" aria-hidden="true"></span>
   <div class="h-proef-woord" data-vis-proefwoord>
     <p class="h-pil h-pil-donker"><span>{pil}</span></p>
-    <h2 id={id} class="h-kop h-proef-kop"><span class="l">{kop[0]}</span> <span class="d">{kop[1]}</span> <span class="h-een">{sample.price}</span></h2>
+    {/* levering 118 (17 november 2026, proefronde D1-05): één korte kop voor alle €1-blokken. De eigen kopzin per pagina liep
+        met de grote €1 naar 3 tot 5 regels; de prop `kop` wordt hier niet meer gelezen (de pagina's hoeven niet mee). */}
+    <h2 id={id} class="h-kop h-proef-kop"><span class="l">{nl ? 'Eerst' : 'See it'}</span> <span class="d">{nl ? 'zien?' : 'first?'}</span> <span class="h-een">{sample.price}</span></h2>
     <p class="h-proef-zin">{zin}</p>
     <p class="h-acties">
       <a class="h-knop k k-vol k-wit" data-rol="doorgaan" href={lp('/test-sample')} data-vis-uit>{sample.cta}<Fragment set:html={rolIkoon('doorgaan')} /></a>

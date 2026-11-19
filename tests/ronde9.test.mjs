@@ -247,7 +247,8 @@ console.log('\nF40, O21 · na betalen van een offerte: hoe komen de foto\'s bij 
   /* Punt 7.01 (8 oktober 2026): de "Wat nu"-zin is het blok "Zo gaat het verder" geworden. */
   /* 17 oktober 2026: zonder naam toch de aanhef, als "Hi," — de vorm van greeting() in elke andere klantmail. */
   ok('catalog: "What happens next" uit verder.js, zonder naam alleen "Hello,"', /What happens next/.test(c) && /check every image before it reaches you/.test(c) && />Hello,<\/p>/.test(c));
-  ok('webhook leest de naam', /SELECT ref, email, name, lang, service, window_start, window_end(, country)? FROM orders/.test(lees('functions/api/webhook/mollie.js')));
+  /* levering 119 (18 november 2026, proefronde A0-01, integrator I9): de webhook leest ook first_name, voor de aanhef. */
+  ok('webhook leest de naam', /SELECT ref, email, name,( first_name,)? lang, service, window_start, window_end(, country)? FROM orders/.test(lees('functions/api/webhook/mollie.js')));
   const po = lees('src/lib/portal.js');
   ok('portaal: eigen lege staat voor video en eigen look', /emptyOfferte:/.test(po) && /emptyRequest:/.test(po) && /o\.payment_status,/.test(po));
   ok('Studio: levertijd uit de offerte', /fOfferte: 'Levertijd zoals afgesproken in de offerte/.test(lees('src/lib/account.js')));
@@ -301,7 +302,9 @@ console.log('\nF43, F44 · de factuur van een offerte');
   ok('catalog ongewijzigd', c.lines[0].description === 'Catalog — 3 producten', c.lines[0].description);
   const inv = lees('src/lib/invoice.js');
   ok('F44: zonder adres op de bestelling het adres van de klant', /if \(!snap\.customer\.address\.length && order\.customer_id\)/.test(inv));
-  ok('F44: admin waarschuwt, de offertemail wijst naar Je gegevens', /Geen factuuradres bij deze aanvraag/.test(lees('src/lib/admin.js')) && /const adresVraag = offerte && !String\(o\.address_line1/.test(lees('src/lib/betaallink.js')));
+  /* levering 118 (integratie IA, P4-06): de offertemail wijst niet meer naar Je gegevens maar naar de factuurstap op
+     de bestelpagina (/o/<token>#factuur); de zin heet nog adresVraag en hangt aan zonderAdres. */
+  ok('F44: admin waarschuwt, de offertemail vraagt het adres vóór het betalen', /Geen factuuradres bij deze aanvraag/.test(lees('src/lib/admin.js')) && /const zonderAdres = \(offerte[^;]*\) && !String\(o\.address_line1/.test(lees('src/lib/betaallink.js')) && /const adresVraag = zonderAdres/.test(lees('src/lib/betaallink.js')));
 }
 
 console.log('\nO26–O28 · admin en levermail bij video');

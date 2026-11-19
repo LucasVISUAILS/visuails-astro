@@ -64,7 +64,8 @@ body.hal {
      public/fonts/visuails-display/; de @font-face bij IBM Plex Mono hieronder). Urbanist blijft als
      terugval. Was Instrument Sans (levering 76, Lijst 58: a). */
   --h-letter: 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
-  --h-kopletter: 'VISUAILS Display', 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+  /* levering 121 (19 november 2026, lijst 134): de kopletter is VISUAILS Display 2 (Medium 500, de face bij IBM Plex Mono hieronder; was VISUAILS Display Bold) */
+  --h-kopletter: 'VISUAILS Display 2', 'DM Sans', 'Urbanist Variable', 'Urbanist', ui-sans-serif, system-ui, sans-serif;
   --h-zacht: cubic-bezier(.22, .8, .2, 1);
   --h-veer: cubic-bezier(.34, 1.4, .5, 1);
   --h-korrel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='k'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1.5 0 0 0 -.25  1.5 0 0 0 -.25  1.5 0 0 0 -.25  0 0 0 0 1'/></filter><rect width='100%' height='100%' filter='url(%23k)'/></svg>");
@@ -464,8 +465,10 @@ body.hal .sb .sb-veld button:hover { background: var(--h-blauw); }
 /* … en op het violet van de voet (schema A): kop en zin wit, het veld wit met zwarte
    letters en een grijze voorbeeldtekst (6,19:1), de knop zwart */
 body.hal .site-footer .sb .sb-kop { color: #FFFFFF; }
-body.hal .site-footer .sb .sb-zin { color: rgba(255, 255, 255, .9); }
-body.hal .site-footer .sb .sb-noot { color: rgba(255, 255, 255, .82); }
+/* levering 118 (17 november 2026, proefronde D1-03): de Studiobrief staat op een stuk van het doek; wit op 90 en 82 % haalde
+   4,1 – 4,4 : 1 op de lichte plekken. Nu wit (met de donkerdere laag van kaart-115.css 5,8 : 1). */
+body.hal .site-footer .sb .sb-zin { color: #FFFFFF; }
+body.hal .site-footer .sb .sb-noot { color: #FFFFFF; }
 body.hal .site-footer .sb .sb-noot a { color: #FFFFFF; }
 body.hal .site-footer .sb .sb-veld input { border-color: #FFFFFF; color: var(--h-inkt); }
 body.hal .site-footer .sb .sb-veld input::placeholder { color: var(--h-inkt-3); }
@@ -2366,6 +2369,11 @@ html body.hal .h-form .s22 .btn { font: 600 var(--h-t-klein)/1 var(--h-letter); 
 @media (max-width: 640px) {
   .hal .h-ts-open .h-proef-kop .l, .hal .h-ts-open .h-proef-kop .d { font-size: min(1em, calc((100vw - 120px) / 9.4)); }
   .hal #ug-slot .l, .hal #ug-slot .d { font-size: min(1em, calc((100vw - 76px) / 11.3)); }   /* zonder :is() (tests/live-qa-51) */
+  /* levering 118 (17 november 2026, proefronde N4 koppen): het blok is nu het venster min 128 px (twee keer 22 px binnen
+     het kader van de foto), en de Nederlandse kop is langer dan de Engelse. Gemeten (twee regels, zonder de €1): NL
+     "Probeer VISUAILS met | één product voor" vraagt breedte / 10,48, EN 8,75. Op /nl dus / 10,6 (18,1 px op 320,
+     24,7 px op 390); de Engelse houdt de regel hierboven. */
+  html[lang="nl"] body.hal .h-ts-open .h-proef-kop .l, html[lang="nl"] body.hal .h-ts-open .h-proef-kop .d { font-size: min(1em, calc((100vw - 128px) / 10.6)); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2496,6 +2504,10 @@ html body.hal .h-form-aanvraag .hold-fact dt { font: 600 13.5px/1.45 var(--h-let
   html body.hal .h-form:not(.h-ts-form) .s22 .hoog { font-size: 36px; }
   html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-2 { font-size: 30px; }
   html body.hal .h-form:not(.h-ts-form) .s22 .hoog.hoog-3 { font-size: 24px; }
+  /* levering 118 (17 november 2026, proefronde N4 koppen): /nl/start/brand-model ("Één gezicht, alleen voor jou gemaakt.")
+     liep op 320 en 360 px over drie regels op 36 px. Gemeten: twee regels vragen breedte / 9,51; het vak is het venster
+     min 32 px. Nu / 9,7: 29,7 px op 320, 33,8 op 360, en 36 vanaf 381 px zoals het was. */
+  html body.hal .h-form-merkmodel:not(.h-ts-form) .s22 .bm-kop .hoog { font-size: min(36px, calc((100vw - 32px) / 9.7)); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -4357,6 +4369,9 @@ body.hal .btn { border-radius: var(--hoek-knop); }
 @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans/dm-sans-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF; }
 @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans/dm-sans-latin.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 @font-face { font-family: 'VISUAILS Display'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay-Bold.woff2) format('woff2'); }
+/* levering 121 (19 november 2026, lijst 134): VISUAILS Display 2 Medium voor alle koppen (de Bold hierboven staat er alleen nog voor het
+   cijfer in het aantal-veld van het bestelformulier, werkplaats.css: formulieren veranderen niet; de Light 300 van de videokop staat in banner-94.css) */
+@font-face { font-family: 'VISUAILS Display 2'; font-style: normal; font-weight: 500; font-display: swap; src: url(/fonts/visuails-display/VISUAILSDisplay2-Medium.woff2) format('woff2'); }
 
 /* De vaste breedte-letter (v34-mono = a): IBM Plex Mono, zelf gehost in
    public/fonts/ibm-plex-mono/ (OFL), alleen Latijn, 500 en 600. */
@@ -5018,7 +5033,7 @@ html body.hal .h-lk-slot {
 }
 html body.hal .h-lk-slot .h-kop, html body.hal .h-lk-slot .h-kop .d { color: #FFFFFF; }
 html body.hal .h-lk-slot .h-kop .l { color: rgba(255, 255, 255, .72); }
-html body.hal .h-lk-slot .h-lk-queue, html body.hal .h-lk-slot p:not(.h-pil):not(.h-acties) { color: rgba(255, 255, 255, .86); }
+html body.hal .h-lk-slot .h-lk-queue, html body.hal .h-lk-slot p:not(.h-pil):not(.h-acties) { color: #FFFFFF; }   /* levering 118 (D1-02): was wit op 86 % */
 html body.hal .h-lk-slot .h-feiten li { background: rgba(255, 255, 255, .1); color: #FFFFFF; box-shadow: none; }
 html body.hal .h-lk-slot .h-feiten li::before, html body.hal .h-lk-slot .h-feiten li svg { color: #FFFFFF; }
 html body.hal .h-lk-slot .h-pil, html body.hal .h-lk-slot p.h-pil { color: #FFFFFF; background: none; }
@@ -5032,7 +5047,7 @@ html body.hal .h-lk-slot .h-knop-lijn { --h-rand: rgba(255, 255, 255, .7); box-s
 html body.hal .h-lk-slot .h-knop-lijn:hover { background-color: #FFFFFF; color: var(--h-inkt); }
 html body.hal .h-lk-slot :focus-visible { outline-color: var(--h-blauw-licht); }
 html body.hal .h-lk-slot a:not(.h-knop) { color: #FFFFFF; }
-html body.hal .h-lk-slot .h-lk-diensten, html body.hal .h-lk-slot .h-lk-diensten .svcsw-k { color: rgba(255, 255, 255, .86); }
+html body.hal .h-lk-slot .h-lk-diensten, html body.hal .h-lk-slot .h-lk-diensten .svcsw-k { color: #FFFFFF; }   /* levering 118 (D1-02): was wit op 86 % */
 html body.hal .h-lk-slot .h-lk-diensten .svcsw-dot { color: rgba(255, 255, 255, .5); }
 html body.hal .h-lk-slot .h-lk-diensten .svcsw-a { color: #FFFFFF; text-decoration-color: rgba(255, 255, 255, .45); }
 html body.hal .h-lk-slot .h-lk-diensten .svcsw-a:hover { text-decoration-color: currentColor; }
@@ -5890,7 +5905,10 @@ html body.hal .h-pagina:not(.h-voor) .h-kop.h-h3 { font-size: min(2.222vw, 32px)
 }
 /* het slot van /ai-act (Vragen over hoe dit voor jouw merk uitpakt?): met de marge van 20 px op 341 – 360 px drie
    regels; 7 vw (gemeten: hoogstens 0,93 × 26 op 341 px) */
-@media (max-width: 380px) { html body.hal .h-jur-tekst .jur-uit h2 { font-size: min(7vw, 26px); } }
+/* levering 118 (17 november 2026, proefronde N4 koppen): de Engelse ("Questions about how this works out for your brand?")
+   liep op 320 px nog over drie regels (22,4 px in 244 px). Gemeten: twee regels vragen breedte / 11,09 (NL 10,61); het vak
+   is het venster min 76 px. Op 320 px nu 21,6 px. */
+@media (max-width: 380px) { html body.hal .h-jur-tekst .jur-uit h2 { font-size: min(7vw, 26px, calc((100vw - 76px) / 11.3)); } }
 /* de kop naast het logboek op /studio ("Every approval and revision stays readable afterwards."): daar is de kolom
    0,36 × de breedte; gemeten past hij op twee regels tot 2,44 vw (1180 px: 28,8). 2,4 vw, hoogstens 34. */
 @media (min-width: 901px) { html body.hal .h-pagina:not(.h-voor) .h-sd-log-tekst .h-kop.h-h3 { font-size: min(2.4vw, 34px); } }
@@ -6503,4 +6521,211 @@ html body.hal .h-melding-proef .h-melding-sluit:hover { background: rgba(9, 13, 
 @media (max-width: 600px) {
   html body.hal .h-melding-proef:not([hidden]) { max-width: none; grid-template-columns: minmax(0, 1fr) 44px 32px; padding: 8px 8px 8px 16px; gap: 8px; }
   html body.hal .h-melding-proef .h-melding-kop { white-space: normal; }
+}
+
+/* ═══ LEVERING 118 · ONTWERP, TOEGANKELIJKHEID EN SNELHEID (17 november 2026, proefronde) ═══════════════════════════════
+   Alles van bouwer BF in één blok; per regel het punt uit de proefronde. Kleuren alleen uit de tokens van nu (kleur-100.css):
+   inkt #090D0B is de focusrand op wit (19,6 : 1), mint #3DFFB0 op inkt. In hoog contrast de systeemkleuren. */
+
+/* P11-02 · de focusrand in de uitklappers: in de balk is hij mint (op inkt 15 : 1), maar het paneel is wit en daar haalde
+   mint 1,30 : 1. In het paneel nu inkt, zoals elders op de witte pagina (19,6 : 1). */
+/* levering 118 (integratie IB): zonder :is() en zonder komma's tussen haakjes, de huisregel van dit bestand (tests/live-qa-51,
+   tests/hal-voorbeeld leest de kiezers per komma). Zelfde kiezers, uitgeschreven. */
+html body.hal .site-header .nav-menu a:focus-visible:not(#k):not(#k):not(#k),
+html body.hal .site-header .nav-menu button:focus-visible:not(#k):not(#k):not(#k) { outline-color: #090D0B !important; }
+
+/* T1-07 · de schuifstroken (Lifestyle, merkmodel, en het beeldpaar op een lookpagina zodra dat een tabstop is) krijgen een
+   zichtbare focusrand, 2 px inkt, binnen de strook (een rand erbuiten valt weg tegen overflow van de sectie) */
+html body.hal .h-strook:focus-visible,
+html body.hal .h-bm-uit:focus-visible,
+html body.hal .h-lk-held:focus-visible { outline: 2px solid #090D0B; outline-offset: -2px; }
+
+/* P2-03 en P2-09 · koppen krimpen niet meer onder een ondergrens als je inzoomt. Hun maat staat in vw, en bij 200 % zoom op
+   een telefoon is het venster 195 css-px breed: een h3 werd 8,97 px, de h1 14,43 px, kleiner dan de tekst eronder (17 px).
+   Alleen onder 341 px (daar mogen koppen drie regels, zie hierboven), zodat de gemeten twee regels van 341 – 1920 blijven
+   staan: op 320 – 340 px veranderen de maten hoogstens van 23,7 naar 26 (h1), 20,2 naar 22 (h2) en 14,7 naar 18 (h3). */
+@media (max-width: 340px) {
+  html body.hal .h-pagina:not(.h-voor) .h-kop.h-h1 { font-size: clamp(26px, 7.4vw, 44px); }
+  html body.hal .h-pagina:not(.h-voor) .h-kop.h-h2 { font-size: clamp(22px, 6.3vw, 32px); }
+  html body.hal .h-pagina:not(.h-voor) .h-kop.h-h3 { font-size: clamp(18px, 4.6vw, 23px); }
+  /* de voorpagina (P2-09): de kop onder de video (was 11,07 px). levering 120 (19 november 2026, lijst 132): de regel voor de
+     aanloop van de bannerkop is weg; de bannerkop heeft geen aanloop meer (één titel, banner-94.css) */
+  html body.hal .ov110 .ov110-kop { font-size: max(18px, min(48px, calc(100cqw / 14))); }
+}
+
+/* D1-01 · zonder WebGL tekende een canvas het negatief van de video in de letters; daarna stond de kop daar effen: inkt met
+   een witte rand. levering 120 (19 november 2026, lijst 132): de WebGL-kop en zijn twee lagen zijn weg; de kop is gewone tekst
+   in één kleur die met de video meeloopt (banner-94.css, HalBanner94.astro). De regels voor b94-effen zijn weg. */
+
+/* D1-05 · de grote €1 stak 6 – 8 px links buiten de kolom van de kop (een negatieve marge die de letter verder schoof dan zijn
+   eigen witruimte); nu begint hij op de kolom */
+html body.hal.hal.hal.hal .h-proef .h-een,
+html body.hal.hal.hal.hal .h-ts-open .h-een { margin-left: 0; }
+
+/* P11-07, P11-08, P11-09 · hoog contrast (Windows, forced-colors). Daar zet de browser achtergronden weg; wat gekozen is,
+   leunde op een achtergrond en verdween. */
+@media (forced-colors: active) {
+  /* een keuze met een verborgen rondje of vinkje in zijn label (de verhouding, de achtergrond per hoek, de look, een vak):
+     het gekozen label krijgt een rand in Highlight */
+  html body.hal label:has(> input[type="radio"]:checked),
+  html body.hal label:has(> input[type="checkbox"]:checked) { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* een gekozen knop (de verhouding 1:1 · 4:5 · 3:4 in het overzicht, de achtergrondkleur): aria-pressed, aria-checked */
+  html body.hal main [aria-pressed="true"],
+  html body.hal main [aria-checked="true"],
+  html body.hal main .is-gekozen { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* de schakelaar voor voorrang: een rand, en aan is Highlight met het bolletje in HighlightText */
+  html body.hal .wk-schuif { forced-color-adjust: none; background: Canvas !important; border: 1px solid CanvasText; }
+  html body.hal .wk-schuif::after { forced-color-adjust: none; background: CanvasText !important; }
+  html body.hal :has(> input:checked) > .wk-schuif { background: Highlight !important; border-color: Highlight; }
+  html body.hal :has(> input:checked) > .wk-schuif::after { background: HighlightText !important; }
+  /* de stap waar je bent (de rail van het bestelformulier, de stappen op /start): onderstreept */
+  /* het attribuut twee keer: dezelfde zwaarte (0,2,0) als .pl-rail-item.is-current, zoals in de :is() hiervoor */
+  html body.hal [aria-current="step"][aria-current="step"],
+  html body.hal .pl-rail-item.is-current { text-decoration: underline 3px !important; text-underline-offset: 5px; }
+  /* velden en vakken tekenden hun vorm met een schaduw of een vlak: een rand */
+  html body.hal main input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]):not([type="range"]),
+  html body.hal main textarea,
+  html body.hal main select,
+  html body.hal main .pu-slot-btn { border: 1px solid CanvasText !important; }
+  /* het logo: wit op de zwarte balk en voet, die hier Canvas worden (wit op wit). Alleen herkleuren. */
+  html body.hal .site-header .hal-wm:not(#k):not(#k),
+  html body.hal .site-header .hal-wm *:not(#k):not(#k),
+  html body.hal .site-header .brand-mark:not(#k):not(#k),
+  html body.hal .site-header .brand-mark *:not(#k):not(#k),
+  html body.hal .site-footer .hal-wm:not(#k):not(#k),
+  html body.hal .site-footer .hal-wm *:not(#k):not(#k),
+  html body.hal .site-footer .brand-mark:not(#k):not(#k),
+  html body.hal .site-footer .brand-mark *:not(#k):not(#k) { fill: CanvasText !important; }
+  /* levering 118 (17 november 2026, proefronde N4 P11-07): ook de V in de balk van de werkplaats (WkBalk); die bleef donker
+     op de zwarte Canvas (±3,3 : 1) */
+  html body.hal .wk-merk .hal-vm:not(#k):not(#k),
+  html body.hal .wk-merk .hal-vm *:not(#k):not(#k) { fill: CanvasText !important; }
+  /* levering 118 (N4 P11-07) zette hier de witte rand van de bannerkop (b94-effen) op 0. levering 120: die rand bestaat
+     niet meer (de kop is gewone tekst; de browser zet zelf een vlak in Canvas achter de tekst). */
+  /* de focusrand van de stroken */
+  html body.hal .h-strook:focus-visible,
+  html body.hal .h-bm-uit:focus-visible,
+  html body.hal .h-lk-held:focus-visible { outline-color: Highlight; }
+}
+
+/* ═══ LEVERING 119 · KOPPEN HOOGSTENS TWEE REGELS (18 november 2026, proefronde D1-07, bouwer C4) ═══════════════════════════
+   Gemeten op de gebouwde site van levering 118 (alle 78 pagina's NL en EN, 14 breedtes van 320 tot 1440 px, met de regels
+   hieronder erbij gezet): 0 koppen op drie regels (de bannerkop van de voorpagina telt de kleine aanloop "Jouw modemerk" als
+   eigen regel, daarna twee). Waren 31 metingen met drie regels, op 320 – 340 px (waar BF in levering 118 een ondergrens van
+   22 px voor h2 zette) en op 768, 901 – 1440 px. Per kop de grootste maat die op twee regels past, gemeten in de browser; de
+   maat is "de breedte van de kolom / k", met k iets groter dan gemeten (± 2 %), en nooit groter dan de maat die er stond.
+   Waar de kolom een eigen breedte heeft (een rastervak), is die kolom de container (container-type: inline-size) en rekent
+   de kop met 100cqw; in het slot is de breedte 88vw − 75,25 px (gemeten op 320 – 600 px). Ondergrens 18 px (h3 17 px): nooit
+   kleiner dan de tekst eronder. */
+
+/* het slot onderaan de lookpagina's, /editions, /models en /custom-models: "Ontwerp het gezicht van jouw merk." en "Kies een
+   gezicht, start een bestelling." vragen breedte / 10,64 en / 10,48; op 320 px 18,8 px (was 22, drie regels), op 341 20,4 */
+@media (max-width: 900px) {
+  html body.hal .h-pagina:not(.h-voor) .h-lk-slot .h-kop.h-h2 { font-size: max(18px, min(6.3vw, 32px, calc((88vw - 75.25px) / 11))); }
+}
+/* /how-it-works "Gemaakt met AI. Tot in detail nagekeken." (de tweede zin op één regel): kolom / 12,04 gemeten; liep op 320 en
+   op 1138 – 1180 px over drie regels */
+html body.hal .h-hw-hand-tekst { container-type: inline-size; }
+html body.hal .h-pagina:not(.h-voor) .h-hw-hand-tekst .h-kop.h-h2 { font-size: min(2.963vw, 42.67px, calc(100cqw / 12.4)); }
+@media (max-width: 900px) {
+  html body.hal .h-pagina:not(.h-voor) .h-hw-hand-tekst .h-kop.h-h2 { font-size: max(18px, min(6.3vw, 32px, calc(100cqw / 12.4))); }
+}
+/* /nl/models "Inbegrepen, niet iets wat je erbij moet kopen.": kolom / 12,24; drie regels op 320 – 340 en 901 – 960 px.
+   De Engelse ("Included, not upsold.") is kort en houdt zijn maat. */
+html body.hal .h-md-inc-tekst { container-type: inline-size; }
+html[lang="nl"] body.hal .h-pagina:not(.h-voor) .h-md-inc-tekst .h-kop.h-h2 { font-size: min(2.963vw, 42.67px, calc(100cqw / 12.6)); }
+@media (max-width: 900px) {
+  html[lang="nl"] body.hal .h-pagina:not(.h-voor) .h-md-inc-tekst .h-kop.h-h2 { font-size: max(18px, min(6.3vw, 32px, calc(100cqw / 12.6))); }
+}
+/* /studio "Every approval and revision stays readable afterwards.": kolom / 14,5; op 320 px 17 px (paste tot 17,1) */
+html body.hal .h-sd-log-tekst { container-type: inline-size; }
+@media (max-width: 340px) {
+  html body.hal .h-pagina:not(.h-voor) .h-sd-log-tekst .h-kop.h-h3 { font-size: max(17px, min(18px, calc(100cqw / 14.9))); }
+}
+/* /guides de kaarten ("From photo to publish — how it works", "AI-tools of een studio die het voor je doet"): kaart / 10,02;
+   drie regels op 641 – 780 en rond 1138 px */
+html body.hal .h-gd-kaart { container-type: inline-size; }
+html body.hal .h-gd-kaart .h-gd-titel { font-size: min(26px, calc(100cqw / 10.3)); }
+@media (max-width: 640px) {
+  html body.hal .h-gd-kaart .h-gd-titel { font-size: min(23px, calc(100cqw / 10.3)); }
+}
+/* /test-sample de kop ("Probeer VISUAILS met één product voor €1"): "met één product voor" past op één regel tot kolom / 11,42.
+   Op 901 – 1440 px stonden er drie of vier regels boven de €1; nu twee (1440: 40 px, was 48). De €1 houdt zijn maat. Onder
+   641 px gelden de regels van 25 oktober en levering 118 (hierboven). */
+@media (min-width: 641px) {
+  html body.hal .h-ts-open > .h-proef-woord { container-type: inline-size; }
+  html body.hal .h-ts-open .h-proef-kop .l { font-size: min(1em, calc(100cqw / 11.7)); }
+  html body.hal .h-ts-open .h-proef-kop .d { font-size: min(1em, calc(100cqw / 11.7)); }
+}
+/* /editions "Two sets, and only one of them costs anything." (/ 12,54) en /upload-guidelines "Which photo becomes which
+   image." (/ 11,31): de kop naast de zin, op 901 – 960 px drie regels */
+html body.hal .h-sec-kop > div:has(> #ed-vgl) { container-type: inline-size; }
+html body.hal .h-sec-kop > div:has(> #ug-paren) { container-type: inline-size; }
+@media (min-width: 901px) {
+  html[lang="en"] body.hal .h-pagina:not(.h-voor) #ed-vgl.h-kop.h-h2 { font-size: min(2.963vw, 42.67px, calc(100cqw / 12.9)); }
+  html[lang="en"] body.hal .h-pagina:not(.h-voor) #ug-paren.h-kop.h-h2 { font-size: min(2.963vw, 42.67px, calc(100cqw / 11.6)); }
+}
+
+/* levering 119 (18 november 2026, proefronde D1-07, hersteller H10): nog vijf koppen op drie regels op 320 – 360 px (N5, met
+   opacity 0 meegeteld en de Engelse voorpagina met een Engelse browser). De kolom is daar 100vw − 40 px (gemeten op 320, 340,
+   360, 375). Per kop de grootste maat op twee regels, gemeten in de browser in stappen van 0,1 px: kolom / k met k
+   = /about 11,11 · /editions 11,72 · /hooks 11,29 · /nl/upload-guidelines 11,45 · #m8-kop (EN) 8,05; hier ± 2 % groter. Nooit
+   groter dan de maat die er stond; op 320 – 340 px wijkt de ondergrens 26 van P2-03 hiervoor (nu 18, nooit kleiner dan de tekst). */
+@media (max-width: 374px) {
+  html[lang="en"] body.hal .h-pagina.h-ab:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(44px, 7.4vw, calc((100vw - 40px) / 11.35))); }
+  html[lang="en"] body.hal .h-pagina.h-ed:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(44px, 7.4vw, calc((100vw - 40px) / 11.95))); }
+  html[lang="en"] body.hal .h-pagina.h-hk:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(44px, 7.4vw, calc((100vw - 40px) / 11.5))); }
+  html[lang="nl"] body.hal .h-pagina.h-ug:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(44px, 7.4vw, calc((100vw - 40px) / 11.65))); }
+  html[lang="en"] body.hal .h-voor #m8-kop.sk-kop.h-kop { font-size: max(18px, min(40px, calc((100vw - 40px) / 8.2))); }
+}
+@media (max-width: 340px) {
+  html[lang="en"] body.hal .h-pagina.h-ab:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(26px, calc((100vw - 40px) / 11.35))); }
+  html[lang="en"] body.hal .h-pagina.h-ed:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(26px, calc((100vw - 40px) / 11.95))); }
+  html[lang="en"] body.hal .h-pagina.h-hk:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(26px, calc((100vw - 40px) / 11.5))); }
+  html[lang="nl"] body.hal .h-pagina.h-ug:not(.h-voor) .h-kop.h-h1 { font-size: max(18px, min(26px, calc((100vw - 40px) / 11.65))); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   levering 121 (19 november 2026, lijst 134): alle koppen in VISUAILS Display 2 Medium 500, in gewone schrijfwijze
+   Lucas koos versie c: elke kop op de site in VISUAILS Display 2 Medium (500), zonder hoofdletters; alleen de videokop
+   (.b94-kop, Light 300, banner-94.css) blijft zoals hij is. Hier op één plek, zodat de vele oude regels (Bold 700,
+   uppercase, regelafstand 0,92 in sectiekop-96, voorpagina-80, maken-80, hoe-80, onder-video-110, werkplaats en hierboven)
+   niet elk apart hoeven: de letter, het gewicht, de schrijfwijze, de spatiëring en de regelafstand van een kop staan hier.
+   De maten (font-size) blijven per kop zoals ze waren.
+   - klein (de proef: 20 – 28 px): regelafstand 1,2, spatiëring −0,005 em. Dat is de standaard voor elke kop.
+   - groot (sectiekoppen en paginakoppen, ± 30 px en groter): regelafstand 1,0, spatiëring −0,025 em.
+   Niet: de mono-labels (h2.h-pil, IBM Plex Mono, hoofdletters), wat alleen voor een schermlezer is (.sr-only), en de
+   kleine dingen in een kop (het nummer van een juridisch deel, de uitlegknop, het sterretje): die houden hun eigen letter.
+   Knoppen, formulieren (de velden en het cijfer in het aantal-veld) en lopende tekst veranderen niet.
+   Zonder :is() (tests/live-qa-51): elke kiezer staat er voluit.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+html body.hal h1:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal h2:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal h3:not(.b94-kop):not(.h-pil):not(.sr-only),
+html body.hal h4:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal h5:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal h6:not(.b94-kop):not(.h-pil):not(.sr-only),
+html body.hal .h-kop:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal .sb-kop:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal .h-pk-naam:not(.b94-kop):not(.h-pil):not(.sr-only),
+html body.hal .h-st-stap-naam:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal .h-hw-dienst-naam:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal .h-md-deur-kop:not(.b94-kop):not(.h-pil):not(.sr-only),
+html body.hal .h-dienst-extra-kop:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal .h-ed-vgl-kop:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal .st2-naam:not(.b94-kop):not(.h-pil):not(.sr-only),
+html body.hal .h-gl-naam:not(.b94-kop):not(.h-pil):not(.sr-only), html body.hal .w8-woord:not(.b94-kop):not(.h-pil):not(.sr-only),
+html body.hal .h-kop .l, html body.hal .h-kop .d, html body.hal .pl-h .l,
+html body.hal .pl-h .d, html body.hal .h-dienst-extra-kop .l, html body.hal .h-dienst-extra-kop .d,
+html body.hal .pl-h > span:not([class]) {
+  font-family: var(--h-kopletter) !important; font-weight: 500 !important; text-transform: none !important;
+  letter-spacing: -.005em !important; line-height: 1.2 !important;
+}
+html body.hal .h-kop:not(.b94-kop), html body.hal .pl-h, html body.hal h1.hoog,
+html body.hal h2.hoog:not(.hoog-3), html body.hal .ov110-kop, html body.hal .h-jur-tekst .jur-uit h2,
+html body.hal .w8-woord, html body.hal .h-stap-naam, html body.hal .h-pr-kaart-naam,
+html body.hal .h-bewijs-kop, html body.hal .ps-sum-naam, html body.hal .h-pk-naam,
+html body.hal .h-kop .l, html body.hal .h-kop .d, html body.hal .pl-h .l,
+html body.hal .pl-h .d, html body.hal .pl-h > span:not([class]) {
+  letter-spacing: -.025em !important; line-height: 1 !important;
+}
+/* de grote €1 in de proefkop: hij erfde de kopletter met gewicht 300 (en kreeg zo de enige face, Bold); nu Medium zoals de kop */
+html body.hal .h-kop .h-een { font-weight: 500; }
+/* levering 121 (19 november 2026, lijst 134): twee koppen die op 320 px over drie regels liepen (gemeten, tests/levering-121-koppen-browser):
+   - /nl/lifestyle, "Voeg een consistent model toe." in de modelkaart (kolom 144 px): 18 → 17 px (de breedste regel 139 px);
+   - /test-sample, de stapnamen "Wij maken het", "Keur goed en download" (17 px, kolom 74 px naast het nummer): de maat blijft,
+     het streepje tussen 03 en / 04 wordt 24 px (was 48), zodat de naam 98 px krijgt. Geen tekst veranderd. */
+@media (max-width: 339px) {
+  html body.hal .h-pagina:not(.h-voor) .h-ls-model .h-kop.h-h3 { font-size: 17px; }
+  html body.hal .h-ts-stappen .h-nr i { width: 24px; }
 }

@@ -63,7 +63,8 @@ ok('NL: één zin', /Cloudflare, waar de site draait, bewaart korte tijd \(enkel
 ok('EN: één zin', /Cloudflare, where the site runs, keeps logs of requests to the site for a short time \(a few days\)/.test(tekst('src/pages/privacy.astro')));
 
 console.log('De datum van de documenten');
-ok('voorwaarden, privacy en cookiebeleid staan op november 2026', ['terms', 'privacy', 'cookie-policy'].every((k) => LAATST_BIJGEWERKT[k] === '2026-11'), JSON.stringify(LAATST_BIJGEWERKT));
+/* levering 117: voorwaarden en privacy staan sinds 17 november op de dag ('2026-11-17'); nog steeds november */
+ok('voorwaarden, privacy en cookiebeleid staan op november 2026', ['terms', 'privacy', 'cookie-policy'].every((k) => LAATST_BIJGEWERKT[k].startsWith('2026-11')), JSON.stringify(LAATST_BIJGEWERKT));
 
 console.log(`\n${goed} goed, ${fout} fout`);
 if (fout) process.exit(1);

@@ -55,9 +55,10 @@ rij('4K (alleen lifestyle): €10 per product', P.HOOG_PER_PRODUCT, 10);
 rij('Resolutie: 2048 px standaard, 4096 hoog', [P.RESOLUTIE.standaard, P.RESOLUTIE.hoog], [2048, 4096]);
 /* Levering 60 (afvinklijst 38): de outfit is de complete look, € 50 en 4 credits per look. */
 rij('Complete look: €50 per look, 4 credits', [P.LOOK_PRIJS, P.LOOK_CREDITS], [50, 4]);
-rij('Voorrang: 20%, min €50, max €250, tot 20 producten/10 clips, vóór 15:00 → vóór 17:00',
+/* Levering 117 (17 november 2026, P8-01 = a): voorrang alleen onder de datumgrens, dus tot 9 producten (was 20). */
+rij('Voorrang: 20%, min €50, max €250, tot 9 producten/10 clips, vóór 15:00 → vóór 17:00',
   [P.VOORRANG.deel, P.VOORRANG.bodem, P.VOORRANG.plafond, P.VOORRANG.maxProducten, P.VOORRANG.maxClips, P.VOORRANG.bestelVoorUur, P.VOORRANG.klaarUur],
-  [0.2, 50, 250, 20, 10, 15, 17]);
+  [0.2, 50, 250, 9, 10, 15, 17]);
 rij('Probeer VISUAILS: €1 (+ btw)', P.AMOUNT.testSample, 1);
 rij('Video motion / lifestyle-video: €100 / €150 intern, op aanvraag', [P.AMOUNT.video, P.AMOUNT.videoLifestyle, Boolean(P.VIDEO_OP_AANVRAAG)], [100, 150, true]);
 rij('Hooks: vanaf €120, variant €50', [P.AMOUNT.hooks, P.AMOUNT.hooksVariant], [120, 50]);

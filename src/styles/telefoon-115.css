@@ -28,6 +28,15 @@
     .h-st-vk-meer, .h-st-looks, .h-strook, .h-faq-index-lijst, .h-pr-een, .h-pr-prijs, .h-ov-ctrl-stand, .ps-term-kop, .ps-sum-los, .h-nr, .h-pil):not(#k) {
     justify-content: center;
   }
+  /* levering 119 (18 november 2026, proefronde D1-11): vier rijen die op de computer uit elkaar staan (space-between) en op de
+     telefoon afbreken; de afgebroken knop of het blok stond dan links (gemeten op 390 px: "See all ten" op /custom-models 87 px
+     links van het midden, "Bespreek met ons" op /plans 73 px, de pil "Van jouw eigen productfoto's" in stap 2 van /start, de
+     rij "Ook" in stap 1 van /start). Afgebroken staan ze in het midden. */
+  html body.hal .h-pagina:not(.h-voor) :is(.h-bm-bieb, .h-pl-maat, .h-st-groep-kop, .h-st-ook, .h-st-ook-rij):not(#k):not(#k) { justify-content: center; }
+  /* levering 119 (18 november 2026, proefronde P1-02): in deze kolom staat alles in het midden (align-items: center, punt 3), en
+     dan was de beeldhouder van een look zo breed als zijn foto: 0 px zolang die (lazy) nog niet geladen was. Op /start zag je
+     naast Dunes alleen "Directe…" in een leeg vlak. De houder neemt de breedte van de kaart; 4 : 5 geeft hem zijn hoogte. */
+  html body.hal .h-pagina:not(.h-voor) .h-st-look > .h-st-beeld:not(#k):not(#k) { align-self: stretch; }
   /* levering 116: een veegrij niet in het midden. Breder dan het scherm zou hij links even ver uitsteken als rechts, en
      dat stuk kun je niet terugvegen: de eerste look op /start, /catalog en /lifestyle stond half buiten beeld. */
   html body.hal .h-pagina:not(.h-voor) .h-st-looks[data-st-rij]:not(#k):not(#k) { justify-content: flex-start; }
@@ -53,7 +62,10 @@
 
   /* een rij met een nummer of icoon voor de tekst (de drie stappen bovenaan /start, de noot met de i): het nummer boven, de tekst
      eronder, alles in het midden; anders staat het nummer links en de tekst in het midden */
-  html body.hal .h-pagina:not(.h-voor) :is(.h-st-kort-rij > li, .h-st-regel, .h-pr-tarief-zin):not(#k):not(#k) { flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+  /* levering 119 (18 november 2026, proefronde D1-07 en D1-11): ook de controlekaart met het rondje (.h-bm-check, /custom-models,
+     /models, /upload-guidelines). Naast het rondje bleef 150 px voor de kop: "Gecontroleerd op bestaande gezichten" liep op
+     320 – 359 px over drie regels; eronder krijgt hij de hele kaart (192 px op 320) en past hij op twee. */
+  html body.hal .h-pagina:not(.h-voor) :is(.h-st-kort-rij > li, .h-st-regel, .h-pr-tarief-zin, .h-bm-check):not(#k):not(#k) { flex-direction: column; align-items: center; text-align: center; gap: 8px; }
   html body.hal .h-pagina:not(.h-voor) .h-st-kort-rij > li > span:last-child:not(#k) { display: grid; justify-items: center; }
   html body.hal .h-pagina:not(.h-voor) .h-pr-tarief-wegen:not(#k):not(#k) { flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
   /* de Studiobrief in een kaart (Editions, Gidsen): ook in het midden; het invulveld zelf blijft links */

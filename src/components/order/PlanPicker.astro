@@ -149,6 +149,20 @@ const foutTekst = FOUTEN[fout] || '';
    beschikbaarheidsregel. De termijn is die van het contactformulier ("meestal
    binnen het uur; buiten openingstijden de volgende ochtend"): het woord
    "werkdag" hoort op deze pagina niet (tests/agenda.test.mjs). */
+/* ── levering 118 (17 november 2026, proefronde L-07): EEN BEKEND ADRES KRIJGT METEEN EEN INLOGCODE ──────────────
+   /api/plan stuurt bij een adres dat al een account heeft nu zelf de inlogmail (link én code) en komt terug met
+   ?fout=account&inlog=verstuurd. Dan staat de zin bij het e-mailveld (niet bovenaan tussen de voordelen) met een klein
+   codeveld; de code gaat naar /account/code, en die stuurt na inloggen terug naar dit formulier (koekje vs_terug). */
+const INLOG = nl ? {
+  zin: 'Dit e-mailadres hoort al bij een account. We stuurden je net een inlogmail met een code. Vul de code hieronder in, of klik op de knop in de mail; daarna sluit je hier je abonnement af.',
+  codeLabel: 'Code uit de mail',
+  knop: 'Inloggen',
+} : {
+  zin: 'This email address already has an account. We just sent you a sign-in email with a code. Enter the code below, or click the button in the email; then you finish your plan here.',
+  codeLabel: 'Code from the email',
+  knop: 'Sign in',
+};
+
 const NAKIJKEN = nl ? {
   tekst: 'Je aanvraag is binnen en er is niets afgeschreven. Je koos een land buiten de EU terwijl je vanuit de EU afsluit, dus kijken we je gegevens eerst even na. We laten je weten hoe je verder kunt, meestal binnen het uur; buiten openingstijden de volgende ochtend.',
   sneller: 'Sneller geregeld?',
@@ -343,11 +357,15 @@ for (const p of planList) {
       : (nl
         ? `Na deze eerste maand schrijven we elke maand automatisch ${euro(cents / 100, lang)} ${excl} af (${incl(cents)} met ${pct}% btw in Nederland), tot je opzegt. Opzeggen kan elke maand, zelf in VISUAILS Studio.`
         : `After this first month we charge ${euro(cents / 100, lang)} ${excl} (${incl(cents)} with ${pct}% VAT in the Netherlands) automatically every month until you cancel. You can cancel any month, yourself, in VISUAILS Studio.`);
+    /* levering 119 (18 november 2026, proefronde L-09): het getoonde maandbedrag (op een vooruitbetaald jaar op € 5 afgerond)
+       is ook het bedrag waarmee de besparing hieronder rekent, zodat los − gemiddeld = besparing klopt voor wie narekent
+       (merk, 12 maanden: € 2.880 − € 1.410 = € 1.470; was € 1.472, gerekend met het exacte gemiddelde € 1.408,33) */
+    const getoondCents = tt.prepaid ? Math.round(cents / 100 / 5) * 5 * 100 : cents;
     varianten.push({
       plan: p.id, term: t, naam: planName(p.id, lang), kop: kopVan(p.id), verleng,
       /* Lijst 111 (15 november 2026, vooruit = a): op een vooruitbetaald jaar is het maandbedrag een gemiddelde
          (€ 7.900 / 12 = € 658,33). Op de plaat op € 5 afgerond met "gemiddeld" erbij; het exacte totaal staat eronder. */
-      bedrag: euro(tt.prepaid ? Math.round(cents / 100 / 5) * 5 : cents / 100, lang),
+      bedrag: euro(getoondCents / 100, lang),
       eenheid: tt.prepaid ? (nl ? 'per maand, gemiddeld' : 'a month on average') : (nl ? 'per maand' : 'per month'),
       /* Op een vooruitbetaald jaar staat het maandbedrag er als VERGELIJKING —
          de klant rekent in maanden — maar wat hij afrekent is het jaar, dus dat
@@ -367,7 +385,7 @@ for (const p of planList) {
          niet uit de tabel. */
       bespaar: besp
         ? (() => {
-          const verschil = Math.round(besp.onLadder * 100) - cents;
+          const verschil = Math.round(besp.onLadder * 100) - getoondCents;
           if (verschil <= 0) return undefined;
           return nl ? `Je bespaart ${euro(verschil / 100, lang)}` : `You save ${euro(verschil / 100, lang)}`;
         })()
@@ -475,6 +493,9 @@ const c = nl ? {
     'Je credits staan meteen klaar.',
     'Je bestelt via het gewone formulier, wanneer je wilt, en betaalt met je credits.',
   ],
+  /* levering 118 (17 november 2026, proefronde L-08): bij 12 maanden vooruit is er geen machtiging; deze zin
+     vervangt dan de eerste regel van "Wat er nu gebeurt" (de CSS bij .ps-nu-vooruit). */
+  nuVooruit: 'Je betaalt het hele jaar nu via Mollie. Er is geen machtiging.',
   mandateNote: 'Met een machtiging mogen wij het maandbedrag via je bank incasseren (SEPA), zoals bij een energieleverancier. Je geeft hem af met de betaling van je eerste maand en kunt hem altijd intrekken.',
   /* "Naar de machtiging" klopte niet voor het vooruitbetaalde jaar, dat er
      geen heeft (1 oktober 2026). Betalen doe je bij alle drie. */
@@ -619,6 +640,8 @@ const c = nl ? {
     'Your credits are ready straight away.',
     'You order through the regular form, whenever you like, and pay with your credits.',
   ],
+  /* levering 118 (proefronde L-08): zie de Nederlandse tegenhanger. */
+  nuVooruit: 'You pay the whole year now through Mollie. There is no mandate.',
   mandateNote: 'A mandate lets your bank pay us monthly (SEPA direct debit), like an energy supplier. You give it with your first month’s payment and can withdraw it any time.',
   submit: 'Continue to payment',
   cancelNote: 'Whatever you had made stays yours.',
@@ -797,6 +820,9 @@ const kaarten = planList.map((p) => {
         werkt de gegevens bij en start daarna dezelfde motor
         (handleSubscribeStart). Zonder script verandert er niets en werkt de
         publieke weg zoals hij altijd deed — één van de twee is altijd goed. */}
+    {/* levering 118 (17 november 2026, proefronde L-07): het codeformulier staat los (een formulier in een formulier kan niet); de velden ervan
+        staan bij het e-mailveld en horen er via form="ps-codeform" bij. */}
+    <form id="ps-codeform" method="post" action="/account/code" data-ps-codeform></form>
     <form method="post" action="/api/plan" class="plan-form" data-ps-form>
       <input type="hidden" name="lang" value={lang} />
 
@@ -1096,6 +1122,20 @@ const kaarten = planList.map((p) => {
                 <input type="tel" name="phone" required data-melding={c.errTelefoon} autocomplete="tel" placeholder="+31 6 …" maxlength="40" />
               </label>
             </div>
+            {/* levering 118 (17 november 2026, proefronde L-07): de melding en de code bij het e-mailveld. Het script onderaan zet hem aan bij
+                ?fout=account&inlog=verstuurd en vult het e-mailadres in vlak voor het versturen. */}
+            <div class="ps-inlogcode" data-ps-inlogcode role="status" tabindex="-1" hidden>
+              <p>{INLOG.zin}</p>
+              <input type="hidden" name="lang" value={lang} form="ps-codeform" />
+              <input type="hidden" name="email" value="" form="ps-codeform" data-ps-code-email />
+              <div class="ps-inlogcode-rij">
+                <label class="ps-veld">
+                  <span>{INLOG.codeLabel}</span>
+                  <input type="text" name="code" form="ps-codeform" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,9}" maxlength="9" placeholder="000000" data-ps-code />
+                </label>
+                <button class="knop knop-lijn" data-rol="doorgaan" type="submit" form="ps-codeform">{INLOG.knop}<Fragment set:html={rolIkoon('doorgaan')} /></button>
+              </div>
+            </div>
 
             {/* De contactvoorkeur, uit dezelfde bron als het bestelformulier. */}
             <fieldset class="ps-voorkeur">
@@ -1199,9 +1239,13 @@ const kaarten = planList.map((p) => {
           <fieldset class="ps-set ps-bevestig">
             <legend><span class="ps-n">4</span>{c.stap5}</legend>
             <div class="ps-nu">
-              <p class="ps-sum-h">{c.nuH} <Note lang={lang} term={nl ? 'machtiging' : 'the mandate'}>{c.mandateNote}</Note></p>
+              <p class="ps-sum-h">{c.nuH} <span class="ps-nu-maand"><Note lang={lang} term={nl ? 'machtiging' : 'the mandate'}>{c.mandateNote}</Note></span></p>
+              {/* levering 118 (17 november 2026, proefronde L-08): de eerste regel hangt af van de termijn. Bij vooruit
+                  noemde hij een machtiging, terwijl de regel bij de knop zegt dat er daarna niets meer wordt afgeschreven. */}
               <ol class="ps-nu-list">
-                {c.nu.map((z) => <li>{z}</li>)}
+                {c.nu.map((z, i) => i === 0
+                  ? <Fragment><li class="ps-nu-maand">{z}</li><li class="ps-nu-vooruit" data-ps-nu-vooruit>{c.nuVooruit}</li></Fragment>
+                  : <li>{z}</li>)}
               </ol>
             </div>
 
@@ -1520,6 +1564,26 @@ const kaarten = planList.map((p) => {
     /* Selector-injectie is hier net zo goed injectie: een reden als "a],[b" zou
        anders elk foutblok tegelijk aanzetten. Alleen letters, en verder niets. */
     if (!/^[a-z]+$/.test(reden)) return;
+    /* levering 118 (17 november 2026, proefronde L-07): de inlogmail is al verstuurd; de zin en het codeveld staan bij het e-mailveld. */
+    var inlog = document.querySelector('[data-ps-inlogcode]');
+    if (reden === 'account' && inlog && new URLSearchParams(location.search).get('inlog') === 'verstuurd') {
+      inlog.hidden = false;
+      var codeVeld = inlog.querySelector('[data-ps-code]');
+      if (codeVeld) codeVeld.required = true;
+      var codeForm = document.getElementById('ps-codeform');
+      if (codeForm && !codeForm.dataset.psGebonden) {
+        codeForm.dataset.psGebonden = '1';
+        codeForm.addEventListener('submit', function (e) {
+          var mail = document.querySelector('[data-ps-email]');
+          var waarde = mail ? String(mail.value || '').trim() : '';
+          if (!waarde) { e.preventDefault(); if (mail) { mail.focus(); if (mail.reportValidity) mail.reportValidity(); } return; }
+          var h = document.querySelector('[data-ps-code-email]');
+          if (h) h.value = waarde;
+        });
+      }
+      inlog.focus();
+      return;
+    }
     var el = document.querySelector('[data-plan-fout="' + reden + '"]');
     if (!el) return;
     el.hidden = false;
@@ -1814,6 +1878,13 @@ const kaarten = planList.map((p) => {
   .ps-plan-jaar { font-size: var(--h-t-fijn); color: var(--accent-bright, var(--accent)); }
   /* De beschikbaarheid (24 september 2026). Geen violet: dit is informatie,
      geen actie. Een vol plan blijft leesbaar maar is zichtbaar niet te kiezen. */
+  /* levering 118 (17 november 2026, proefronde L-07): de inlogcode bij het e-mailveld. Inkt op wit, 13,5–15 px; een rij (12) en geen eigen kleur. */
+  .ps-inlogcode { display: grid; gap: .7rem; margin: .9rem 0 0; padding: .9rem 1rem; border: 1px solid var(--ink); border-radius: 12px; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink); }
+  .ps-inlogcode[hidden] { display: none; }
+  .ps-inlogcode p { margin: 0; }
+  .ps-inlogcode:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .ps-inlogcode-rij { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .7rem 1rem; }
+  .ps-inlogcode-rij .ps-veld { flex: 1 1 12rem; }
   .ps-plek { margin: 1.5rem 0 1.25rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: 999px; font-size: var(--h-t-klein); color: var(--ink-2); }
   .ps-plek.is-deels, .ps-plek.is-niets { color: var(--ink); border-color: currentColor; }
   .ps-plan-vol { display: inline-block; align-self: flex-start; justify-self: start; width: fit-content; margin-top: .45rem; padding: .15rem .55rem; border: 1px solid currentColor; border-radius: var(--hoek-knop); font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink); }
@@ -1984,6 +2055,14 @@ const kaarten = planList.map((p) => {
   .ps-nu { display: grid; gap: .6rem; }
   .ps-nu-list { margin: 0; padding: 0 0 0 1.2rem; display: grid; gap: .4rem; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink-2); }
   .ps-nu-list li::marker { font-weight: 800; color: var(--ink); }
+  /* levering 118 (17 november 2026, proefronde L-08): zonder :has() blijft de maandzin staan (zoals voorheen);
+     met :has() en 12 maanden vooruit (en geen abonnement op maat, dat altijd maandelijks loopt) de vooruitzin. */
+  .ps-nu-vooruit { display: none; }
+  @supports selector(:has(input)) {
+    .plan-form:has([name="term"][value="prepaid"]:checked):not(:has([name="plan"][value="maat"]:checked)) .ps-nu-vooruit { display: list-item; }
+    .plan-form:has([name="term"][value="prepaid"]:checked):not(:has([name="plan"][value="maat"]:checked)) li.ps-nu-maand { display: none; }
+    .plan-form:has([name="term"][value="prepaid"]:checked):not(:has([name="plan"][value="maat"]:checked)) span.ps-nu-maand { display: none; }
+  }
   .ps-sum .btn-block { width: 100%; margin-top: .2rem; }
   .ps-sum-meta { margin: 0; font-size: var(--h-t-fijn); line-height: 1.5; color: var(--ink-2); }
   .ps-verleng p { margin: 0; font-size: var(--h-t-klein); line-height: 1.5; color: var(--ink); text-wrap: pretty; }
@@ -2012,16 +2091,21 @@ const kaarten = planList.map((p) => {
   .ps-veld-label { font-size: var(--h-t-fijn); font-weight: 600; color: var(--ink-2); }
   .ps-opt { font-style: normal; font-weight: 400; color: var(--ink-2); }
   .ps-consent.ps-klein { font-size: var(--h-t-fijn); margin-top: .15rem; }
-  .ps-veld input, .ps-veld select {
+  /* levering 118 (17 november 2026, proefronde L-06): de veldstijl raakte ook het vinkje "Ik heb geen btw-nummer"
+     (een lege pil van 316 × 44 px, het label woord voor woord eronder). Nu alleen tekstvelden en keuzelijsten. */
+  .ps-veld input:not([type=checkbox]), .ps-veld select {
     font: inherit; font-size: var(--h-t-klein); color: var(--ink);
     background: var(--surface, #fff);
     border: 1px solid var(--line-strong); border-radius: 999px;
     padding: .55rem .7rem; min-height: 44px; width: 100%;
   }
-  .ps-veld input:focus-visible, .ps-veld select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .ps-veld input:not([type=checkbox]):focus-visible, .ps-veld select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  /* levering 119 (18 november 2026, proefronde D1-10): de plaatshouder ("+31 6 …", "000000") had het browsergrijs
+     (2,8 – 3,4 : 1 gemeten); nu het grijs van de andere formulieren (--ink-3 is hier #5E6461: 5,9 : 1 op wit) */
+  .ps-veld input:not([type=checkbox])::placeholder { color: var(--ink-3); opacity: 1; }
   /* iOS zoomt in op velden onder 16 px (1 oktober 2026); zie stijl22.css. */
   @media (max-width: 760px), (pointer: coarse) {
-    .ps-veld input, .ps-veld select { font-size: var(--h-t-lopend); }
+    .ps-veld input:not([type=checkbox]), .ps-veld select { font-size: var(--h-t-lopend); }
   }
   .ps-geg-slot { margin: .4rem 0 0; font-size: var(--h-t-fijn); line-height: 1.6; color: var(--ink-2); }
   /* De honeypot: uit beeld, niet uit de boom weggehaald met display:none — een

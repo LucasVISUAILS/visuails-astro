@@ -38,10 +38,11 @@ import {
   CATALOG_IMAGES, LIFESTYLE_IMAGES, VIDEO_OP_AANVRAAG, RESOLUTIE,
 } from '../data/pricing.js';
 import { PRODUCTS_PER_DAY, QUEUE_FLOOR_PER_DAY, WINDOW_DAYS } from '../data/capacity.js';
-import { WALK_COPY, WALK_SERVICES, DEMO_BACKGROUNDS } from '../data/demo.js';
+import { WALK_COPY, WALK_SERVICES } from '../data/demo.js';
 import { ingestuurd, geleverd } from '../data/voorbeeldset.js';
 import { REQUIRED_SHOT_IDS } from '../data/shots.js';
 import { localizedPath } from '../i18n/ui.js';
+import { background, DEFAULT_ID } from '../data/backgrounds.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -55,8 +56,9 @@ const fase = (id: string) => t.fasen[id] || { n: '', duur: '', h: '' };
 const EX_FULL = 30;
 const EX_CATALOG = CATALOG_IMAGES * EX_FULL;
 const EX_LIFESTYLE = LIFESTYLE_IMAGES * EX_FULL;
-const achtergronden = DEMO_BACKGROUNDS.map((b: any) => t.backgroundNames[b.id] || b.id);
-const lijst = (xs: string[]) => xs.slice(0, -1).join(', ') + (nl ? ' of ' : ' or ') + xs[xs.length - 1];
+/* levering 119 (18 november 2026, proefronde P6-15): de klant kiest wit of elke eigen kleur (zoals /catalog en de FAQ),
+   niet een van de drie demokleuren. De naam van wit komt uit backgrounds.js. */
+const WIT = background(DEFAULT_ID)?.name[lang] || (nl ? 'Wit' : 'White');
 const DIENST_PAD: Record<string, string> = { catalog: '/catalog', lifestyle: '/lifestyle', video: '/video' };
 /* Stap 1 toont de verplichte foto's, zoveel als shots.js er verplicht stelt. */
 const FOTOS_IN = ingestuurd(lang).slice(0, REQUIRED_SHOT_IDS.length);
@@ -80,7 +82,7 @@ const COPY = {
     goedgekeurd: (n: number) => `${n} of ${n} approved`,
     dienstenH: 'Per service',
     kiest: {
-      catalog: `Background: ${lijst(achtergronden)}`,
+      catalog: `Background: ${WIT}, or any colour you name`,
       lifestyle: 'A look from the range',
       video: VIDEO_OP_AANVRAAG ? 'On request' : 'A style from the range',
     },
@@ -103,7 +105,7 @@ const COPY = {
     terugZin: `From ${WINDOW_THRESHOLD} products we reserve your days in the calendar, so the date goes in writing.`,
     terug: [
       ['Your launch date', 'The day the collection goes live. We count back from here.'],
-      ['Your reserved date', `From ${WINDOW_THRESHOLD} products, reserved when you order and fixed once you have paid. Only force majeure can move it.`],
+      ['Your reserved date', `From ${WINDOW_THRESHOLD} products, held once you order and fixed once you have paid. Only force majeure can move it.`],
       ['Your upload day', 'The day you send the photos. Your part is done.'],
     ],
 
@@ -153,7 +155,7 @@ const COPY = {
     goedgekeurd: (n: number) => `${n} van ${n} goedgekeurd`,
     dienstenH: 'Per dienst',
     kiest: {
-      catalog: `Achtergrond: ${lijst(achtergronden)}`,
+      catalog: `Achtergrond: ${WIT}, of elke kleur die je opgeeft`,
       lifestyle: 'Een look uit de reeks',
       video: VIDEO_OP_AANVRAAG ? 'Op aanvraag' : 'Een stijl uit de reeks',
     },
@@ -163,7 +165,7 @@ const COPY = {
 
     planPil: 'Planning',
     planKop: ['Je ziet alleen dagen', 'die nog vrij zijn.'],
-    planZin: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum. De agenda toont alleen dagen met ruimte. Je datum is gereserveerd zodra de bestelling binnen is, en ligt vast zodra je hebt betaald.`,
+    planZin: `Vanaf ${WINDOW_THRESHOLD} producten kies je in het formulier een leverdatum. De agenda toont alleen dagen met ruimte. Je datum is vastgehouden zodra de bestelling binnen is, en ligt vast zodra je hebt betaald.`,
     regelsH: 'De vier regels waar de planning op draait',
     agendaKnop: 'Bekijk de agenda',
     regels: [
@@ -176,7 +178,7 @@ const COPY = {
     terugZin: `Vanaf ${WINDOW_THRESHOLD} producten houden we je dagen vrij in de agenda, dus de datum staat op papier.`,
     terug: [
       ['De dag dat je live gaat', 'De dag dat de collectie online staat. Daar rekenen we vanaf terug.'],
-      ['Je vastgezette datum', `Vanaf ${WINDOW_THRESHOLD} producten, gereserveerd zodra je bestelt en vast zodra je hebt betaald. Alleen overmacht kan hem nog verzetten.`],
+      ['Je vastgezette datum', `Vanaf ${WINDOW_THRESHOLD} producten, vastgehouden zodra je bestelt en vast zodra je hebt betaald. Alleen overmacht kan hem nog verzetten.`],
       ['Je uploaddag', 'De dag dat jij de foto’s stuurt. Jouw deel is klaar.'],
     ],
 

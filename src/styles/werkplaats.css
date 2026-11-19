@@ -186,7 +186,9 @@ html body.werkplaats.hal .of-werk .wk-blok-aantal .pl-qty-n {
      alleen het vlak dat je kunt aantikken groeit (23 + 2 × 10,5 = 44). */
   field-sizing: content; width: auto; min-width: .7ch; max-width: calc(2.6ch + 21px); height: auto; min-height: 0; margin: 0 -10.5px; padding: 0 16.5px; border: 0; border-radius: 999px;
   background: none; box-shadow: none; text-align: left;
-  font: 700 36px/1.1 var(--h-kopletter, var(--h-letter)); letter-spacing: -.01em; color: var(--h-inkt); font-variant-numeric: tabular-nums;
+  /* levering 121 (19 november 2026, lijst 134): het cijfer in dit veld blijft VISUAILS Display Bold (formulieren veranderen niet); --h-kopletter is nu Display 2
+     levering 122 (19 november 2026, Lucas "ga door" op vraag 2 van 121): ook dit cijfer nu VISUAILS Display 2 Medium, zoals de koppen; zo laadt de site de Bold nergens meer */
+  font: 500 36px/1.1 'VISUAILS Display 2', var(--h-letter); letter-spacing: -.005em; color: var(--h-inkt); font-variant-numeric: tabular-nums;
   -moz-appearance: textfield; appearance: textfield;
 }
 /* zonder field-sizing (Firefox, oudere Safari): twee cijfers breed */
@@ -298,6 +300,11 @@ html body.werkplaats.hal .of-werk .wk-hoeken {
   background: rgba(9, 13, 11, .42);
 }
 html body.werkplaats.hal .of-werk .wk-hoeken[hidden] { display: none; }
+/* levering 118 (17 november 2026, proefronde P3-05): het paneel is een <dialog> in de bovenste laag (showModal). Geen rand of
+   eigen maten van de browser; het dimmen doet het venster zelf (hetzelfde inkt op 42 %), dus de ::backdrop blijft leeg. */
+html body.werkplaats.hal .of-werk dialog.wk-hoeken { width: 100%; height: 100%; max-width: none; max-height: none; border: 0; color: var(--h-inkt); }
+html body.werkplaats.hal .of-werk dialog.wk-hoeken:not([open]) { display: none; }
+html body.werkplaats.hal .of-werk dialog.wk-hoeken::backdrop { background: transparent; }
 html body.werkplaats.hal .of-werk .wk-hoeken-in {
   width: min(720px, 100%); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow: auto;
   padding: 24px; border-radius: var(--r-kaart); background: var(--h-wit); box-shadow: none;
@@ -463,6 +470,8 @@ html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-name:focus-vis
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-soort { grid-column: 2; grid-row: 1; align-self: stretch; }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-soort-sel { width: 100%; max-width: none; height: 52px; min-height: 52px; border-radius: 999px; font-size: 15px; }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-state { grid-column: 1 / -1; grid-row: 2; font-size: var(--h-t-fijn); color: var(--h-inkt-3); }
+/* levering 118 (17 november 2026, proefronde P2-05): een mislukte foto bovenaan het product, rood met een woord (#B3261E op wit 6,5 : 1). */
+html body.werkplaats.hal .of-werk .pu-cards .pu-card.has-fout .pu-head .pu-state { color: #B3261E; font-weight: 600; }
 html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-weg { grid-column: 1 / -1; grid-row: 3; }
 html body.werkplaats.hal .of-werk .pu-kies-knop {
   display: inline-flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; border: 0; border-radius: 999px;
@@ -508,16 +517,18 @@ html body.werkplaats.hal .of-werk .wk-blader-i { display: inline-flex; }
 html body.werkplaats.hal .of-werk .wk-blader-i .ik { width: 16px; height: 16px; }
 html body.werkplaats.hal .of-werk .wk-blader-t { font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt-3); }
 
-/* De tipbalk: onder de werkkolom, nooit over "Wat je krijgt" (b-tips). */
+/* De tipbalk: onder de werkkolom, nooit over "Wat je krijgt" (b-tips).
+   levering 118 (17 november 2026, proefronde P2-05): niet meer vast onderin maar in de pagina boven de uploadvakken; bij 200 % zoom
+   dekte hij alles tussen de balken af, en op 1440 een uploadfout. Eén tip, die niet vanzelf wisselt (bindWkTips). */
 html body.werkplaats.hal .of-werk .wk-tipbalk {
-  position: fixed; z-index: 25; bottom: 20px;
-  left: calc(max(0px, (100% - 1280px) / 2) + var(--wk-rand));
-  width: calc(min(100%, 1280px) - 2 * var(--wk-rand) - var(--wk-zij) - var(--wk-gap));
+  position: static; width: auto;
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center;
   max-width: none; margin: 0; padding: 12px 12px 12px 16px; border-radius: var(--r-kaart); background: var(--h-inkt); color: var(--h-wit);
   box-shadow: none;
 }
 html body.werkplaats.hal .of-werk .wk-tipbalk[hidden] { display: none; }
+/* levering 118 (P2-05): de tip wisselt niet meer vanzelf, dus er is niets te pauzeren. */
+html body.werkplaats.hal .of-werk .wk-tipbalk [data-wk-tip-pauze] { display: none; }
 html body.werkplaats.hal .of-werk .wk-tip-l { display: flex; align-items: center; gap: 8px; font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--h-lijn-sterk); }
 html body.werkplaats.hal .of-werk .wk-tip-li { display: inline-flex; }
 html body.werkplaats.hal .of-werk .wk-tip-li .ik { width: 14px; height: 14px; }
@@ -539,12 +550,16 @@ html body.werkplaats.hal .of-werk .wk-tip-k:focus-visible { outline: 2px solid v
 
 /* ── DE BALK ONDERAAN BESTAAT ALLEEN OP DE TELEFOON ─────────────────────── */
 html body.werkplaats.hal .of-werk .wk-onder { display: none; }
+/* levering 118 (17 november 2026, proefronde P1-06): het blok "Welke verhouding?" in stap 1 alleen waar "Wat je krijgt" onder de
+   stap valt (tot 900 px); breder staat dezelfde keuze naast het formulier. */
+html body.werkplaats.hal .of-werk .wk-blok-vorm { display: none; }
 
 /* ── TUSSEN 900 EN 1180: SMALLER RECHTS ─────────────────────────────────── */
 @media (max-width: 1180px) {
   html body.werkplaats.hal .of-werk { --wk-zij: 320px; --wk-rand: 28px; --wk-gap: 40px; }
   html body.werkplaats.hal .of-werk .wk-balk .pl-rail-item { padding: 0 12px 0 10px; }
-  html body.werkplaats.hal .of-werk .wk-hulp-t { display: none; }
+  /* levering 118 (17 november 2026, proefronde T1-06): visueel verborgen in plaats van display:none, zodat de schermlezer "Hulp nodig?" blijft zeggen. */
+  html body.werkplaats.hal .of-werk .wk-hulp-t { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   html body.werkplaats.hal .of-werk .wk-stijlen { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -729,6 +744,11 @@ html body.werkplaats.hal .of-werk .wk-lookregel small { display: block; margin-t
   html body.werkplaats.hal .of-werk .wk-onder-som b { font: 600 22px/1.1 var(--h-letter); letter-spacing: -.01em; color: var(--h-inkt); }
   html body.werkplaats.hal .of-werk .wk-onder-som span { font: 600 var(--h-t-label)/1 var(--h-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--h-inkt-3); }
   html body.werkplaats.hal .of-werk .wk-verder-onder { width: auto; height: 52px; }
+  /* levering 118 (P1-06): het blok met de verhouding, en in "Wat je krijgt" niet nog eens dezelfde knoppen. */
+  html body.werkplaats.hal .of-werk .wk-blok-vorm { display: block; }
+  html body.werkplaats.hal .of-werk .wk-krijg .wk-vormen { display: none; }
+  /* levering 118 (P1-06): "Nog 2 keuzes": de pijl wijst omlaag (90° gedraaid), want de knop scrolt eerst naar het volgende blok. */
+  html body.werkplaats.hal .of-werk .wk-verder-onder.is-omlaag svg { transform: rotate(90deg); }
   html body.werkplaats.hal .of-werk .pu-cards .pu-slots,
   html body.werkplaats.hal .of-werk .pu-cards .pu-card.is-uitleg .pu-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   html body.werkplaats.hal .of-werk .pu-cards .pu-slots .pu-slot .pu-slot-btn { width: 100%; }
@@ -740,12 +760,14 @@ html body.werkplaats.hal .of-werk .wk-lookregel small { display: block; margin-t
   html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-soort { grid-column: 1; grid-row: 2; }
   html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-state { grid-row: 3; }
   html body.werkplaats.hal .of-werk .pu-cards .pu-card .pu-head .pu-weg { grid-row: 4; }
-  html body.werkplaats.hal .of-werk .wk-tipbalk { left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); width: auto; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); grid-template-columns: minmax(0, 1fr) auto; padding: 10px 10px 10px 14px; }
+  /* levering 118 (P2-05): de balk staat in de pagina, dus geen vaste plek boven de onderbalk meer. */
+  html body.werkplaats.hal .of-werk .wk-tipbalk { grid-template-columns: minmax(0, 1fr) auto; padding: 10px 10px 10px 14px; }
   html body.werkplaats.hal .of-werk .wk-tip-l,
   html body.werkplaats.hal .of-werk .wk-tip-stip,
   html body.werkplaats.hal .of-werk [data-wk-tip-pauze] { display: none; }
   html body.werkplaats.hal .of-werk .wk-tip-t { font-size: var(--h-t-fijn); }
-  html body.werkplaats.hal .of-werk .pl-step[data-pl-step="2"] { padding-bottom: 140px; }
+  /* levering 118 (P2-05): 104 px is genoeg voor de onderbalk (52 px knop + 2 × 12 px rand); de vaste tipbalk erboven is weg. */
+  html body.werkplaats.hal .of-werk .pl-step[data-pl-step="2"] { padding-bottom: 104px; }
   /* Het oude vastgeplakte totaal van stap 1 (OrderFlow.astro, onder 780 px) is hier de balk onderaan geworden. */
   html body.werkplaats.hal .of-werk .pl-total-bar { position: static; }
 }
@@ -782,3 +804,27 @@ html body.werkplaats.hal .of-werk .wk-lookregel small { display: block; margin-t
   html body.werkplaats.hal .of-werk .wk-krijg .bo-tegel { transition: none; }
   html body.werkplaats.hal .of-werk .wk-tip-t.is-in { animation: none; }
 }
+
+/* levering 118 (17 november 2026, proefronde P12-05): "Wijzig" achter de regel "Factuur aan" op het bevestigscherm.
+   Een tekstlink in inkt (18,3 : 1 op wit), 13,5 px, met een raakvlak van 24 px hoog. */
+html body.werkplaats.hal .of-werk .pl-summary .pl-sum-wijzig {
+  display: inline-flex; align-items: center; min-height: 24px; margin: 0; padding: 0 2px; border: 0; background: none; cursor: pointer;
+  font: 600 var(--h-t-fijn)/1.4 var(--h-letter); color: var(--h-inkt); text-decoration: underline; text-underline-offset: 3px;
+}
+html body.werkplaats.hal .of-werk .pl-summary .pl-sum-wijzig:hover { color: var(--h-mint7, #016645); }
+html body.werkplaats.hal .of-werk .pl-summary .pl-sum-wijzig:focus-visible { outline: 2px solid var(--h-blauw); outline-offset: 2px; }
+
+/* levering 119 (18 november 2026, proefronde P2-11, keuze b): bij één huisstijl staat de stijl als één regel, "Classic · Wijzigen"
+   (een <summary>), en Wijzigen klapt de twee kaarten open. Een keuze als pil van 48 px, gekozen = inkt-rand (--kies), zoals
+   de kaart die hij vervangt. Inkt op wit 19,6 : 1; geen grijze tekst. */
+html body.werkplaats.hal .of-werk .wk-stijl-vouw > summary.wk-stijl-kort {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; min-height: 48px; padding: 10px 22px; border-radius: 999px;
+  background: var(--h-wit); box-shadow: inset 0 0 0 2px var(--kies); cursor: pointer; list-style: none;
+  font: 450 15px/1.3 var(--h-letter); color: var(--h-inkt);
+}
+html body.werkplaats.hal .of-werk .wk-stijl-vouw > summary.wk-stijl-kort::-webkit-details-marker { display: none; }
+html body.werkplaats.hal .of-werk .wk-stijl-kort b { font-weight: 600; }
+html body.werkplaats.hal .of-werk .wk-stijl-wijzig { text-decoration: underline; text-underline-offset: 3px; }
+html body.werkplaats.hal .of-werk .wk-stijl-vouw > summary.wk-stijl-kort:hover .wk-stijl-wijzig { color: var(--h-mint7, #016645); }
+html body.werkplaats.hal .of-werk .wk-stijl-vouw > summary.wk-stijl-kort:focus-visible { outline: 2px solid var(--h-blauw); outline-offset: 2px; }
+html body.werkplaats.hal .of-werk .wk-stijl-vouw[open] > summary.wk-stijl-kort { margin-bottom: 16px; }

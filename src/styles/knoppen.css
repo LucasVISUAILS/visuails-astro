@@ -236,16 +236,18 @@ html[data-thema="donker"] .k-zeker[open] > summary:not(#k) { background: rgb(255
    in een rij kaarten ("Kies deze look", .k-klein) blijft inkt: dan staat de kleur hoogstens één keer per scherm. Bestellen bovenin
    is wit (balk-99.css): de vaste weg terug, niet de knop die schreeuwt. Onder de muis schuift de diepere toon van links
    naar rechts, zoals bij elke volle knop. ─────────────────────────────────────────────────────────────────────────── */
+/* levering 119 (18 november 2026, proefronde D1-08): ook Verder en Versturen van het merkmodelformulier ([data-bm-next],
+   .bm-submit) brengen een bestelling verder; ze bleven inkt (en Verder stond links), in elk ander formulier zijn ze mint. */
 :root { --k-actie: #3DFFB0; --k-actie-diep: #1FEA9C; --k-actie-tekst: #090D0B; }   /* signaalmint (lijst 101, d) */
-:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit, .k-actie):not(.k-klein, .btn-sm):not(#k):not(#k),
+:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], [data-bm-next], .bm-submit, .ps-verzend, .hold-submit, .k-actie):not(.k-klein, .btn-sm):not(#k):not(#k),
 html body.hal .mobile-nav .mobile-cta .btn-primary:not(#k):not(#k) {
   color: var(--k-actie-tekst) !important; box-shadow: none !important;
   background: var(--k-actie) linear-gradient(90deg, var(--k-actie-diep) 0 50%, var(--k-actie) 50% 100%) 100% 0 / 200% 100% no-repeat !important;
 }
-:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit, .k-actie):is(:hover, :focus-visible):not(.k-klein, .btn-sm):not(#k):not(#k),
+:is(.k, .btn, .knop):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], [data-bm-next], .bm-submit, .ps-verzend, .hold-submit, .k-actie):is(:hover, :focus-visible):not(.k-klein, .btn-sm):not(#k):not(#k),
 html body.hal .mobile-nav .mobile-cta .btn-primary:is(:hover, :focus-visible):not(#k):not(#k) {
   color: var(--k-actie-tekst) !important;
   background: var(--k-actie-diep) linear-gradient(90deg, var(--k-actie-diep) 0 50%, var(--k-actie) 50% 100%) 0 0 / 200% 100% no-repeat !important;
 }
-:is(.k, .btn, .knop):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit, .k-actie):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):not(#k) :is(svg, .ik) { fill: currentColor; color: inherit; }
-:is(.k, .btn, .knop):is([disabled], [aria-disabled="true"]):is([data-pl-next], [data-pl-submit], [data-wk-verder], .ps-verzend, .hold-submit):not(#k):not(#k) { opacity: .45; }
+:is(.k, .btn, .knop):is([href^="/start"], [href^="/nl/start"], [href^="/test-sample"], [href^="/nl/test-sample"], [data-pl-next], [data-pl-submit], [data-wk-verder], [data-bm-next], .bm-submit, .ps-verzend, .hold-submit, .k-actie):is(.k-vol, .btn-primary, .knop-inkt, .k-actie):not(#k) :is(svg, .ik) { fill: currentColor; color: inherit; }
+:is(.k, .btn, .knop):is([disabled], [aria-disabled="true"]):is([data-pl-next], [data-pl-submit], [data-wk-verder], [data-bm-next], .bm-submit, .ps-verzend, .hold-submit):not(#k):not(#k) { opacity: .45; }

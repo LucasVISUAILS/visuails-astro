@@ -33,9 +33,11 @@
 import { checkRate, clientIp, shouldSweep, sweepRateLimits } from '../../src/lib/ratelimit.js';
 import { createOrderMolliePayment, isTestmodus } from '../../src/lib/mollie.js';
 import { centsToMollieValue, paymentDescription, isPayableService, ladderKey } from '../../src/lib/quote.js';
-import { SAMPLE_SERVICE } from '../../src/data/pricing.js';
+import { SAMPLE_SERVICE, heeftVoorrang } from '../../src/data/pricing.js';
 import { REVIEW } from '../../src/data/vat.js';
 import { teBetalenCents } from '../../src/lib/tegoedVerrekening.js';
+/* levering 118 (P1-10): één proef per bedrijf, ook bij opnieuw betalen. */
+import { proefGebruikt } from '../../src/lib/proefGebruikt.js';
 
 const REF_SHAPE = /^VIS-[0-9A-Z-]{3,20}$/i;
 const LIMIT = 10;
@@ -57,7 +59,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
   let o = null;
   /* `vat_treatment` erbij: buiten de EU een eigen lijst betaalmiddelen (ronde 91, B13). */
-  const KOLOMMEN = 'id, ref, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, details_json';
+  const KOLOMMEN = 'id, ref, lang, service, product_count, total_cents, vat_cents, vat_rate, vat_treatment, payment_status, status, details_json, email, phone';
   try {
     try {
       o = await env.DB.prepare(`SELECT ${KOLOMMEN}, review_state FROM orders WHERE ref = ?1`).bind(ref).first();
@@ -92,6 +94,21 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const offerte = o.service === 'custom' && String(o.review_state || '') === REVIEW.approved;
   if (!(isPayableService(o.service) || o.service === SAMPLE_SERVICE || offerte)) return naarBedankpagina;
 
+  /* ── GEEN BETAALKNOP VOOR EEN TWEEDE PROEF — levering 118 (17 november 2026, proefronde P1-10) ──────────────
+     De knop in de mail "Nog niet betaald" (of op de bedankpagina) maakte ook een betaling aan als dit bedrijf
+     intussen al een betaalde proef had. De webhook stortte die euro daarna terug en annuleerde de proef. Nu eerst
+     dezelfde toets als het formulier (alleen de harde treffers); bij een treffer geen betaling, en de bedankpagina
+     met `proef=al`, zodat die kan zeggen waarom. Is de toets niet te doen, dan gewoon door (openvallen). */
+  if (o.service === SAMPLE_SERVICE) {
+    let reg = '';
+    try { reg = JSON.parse(o.details_json || '{}').business_reg || ''; } catch { reg = ''; }
+    const toets = await proefGebruikt(env, { email: o.email || '', phone: o.phone || '', reg, behalve: o.id }).catch(() => null);
+    if (toets?.checked && toets.used > 0) {
+      console.log('[order-pay] proef', o.ref, 'niet betaalbaar: dit bedrijf had al een betaalde proef');
+      return redirect(`${terug}?ref=${encodeURIComponent(ref)}&proef=al`);
+    }
+  }
+
   /* Minus het verrekende tegoed (29 september 2026): zie
      src/lib/tegoedVerrekening.js. */
   const bruto = teBetalenCents(o);
@@ -115,6 +132,8 @@ export async function onRequestGet({ request, env, waitUntil }) {
       /* Bij 0% geen iDEAL — dezelfde regel als op de drie andere betaalpaden. */
       excludeIdeal: Number(o.vat_rate) === 0,
       buitenEu: o.vat_treatment === 'outside_scope',
+      /* levering 118 (17 november 2026, proefronde L-16): bij voorrang geen overboeking. */
+      voorrang: heeftVoorrang(o),
     });
     const checkout = payment?._links?.checkout?.href || null;
     if (checkout) return redirect(checkout);

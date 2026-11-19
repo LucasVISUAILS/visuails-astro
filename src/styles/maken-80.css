@@ -58,6 +58,22 @@
 /* terug naar de eerste: sneller, met de veeg (het filter #m8-veeg groeit mee met de vaart) */
 .m8-aan.m8-terug .m8-dienst { transition: transform .75s cubic-bezier(.7, 0, .2, 1), opacity .5s linear; filter: url(#m8-veeg); }
 .m8 { overflow-x: clip; }
+/* levering 119 (18 november 2026, proefronde T1-04): de baan stond tot het script laadde als rij (341 px hoog op 390, met de
+   namen eronder) en sprong dan naar de baan; op een trage verbinding gaf dat een verschuiving (CLS) van 0,40 op de telefoon.
+   Waar het script gaat draaien (scripting: enabled) staat de baan nu meteen in zijn eindmaat en de kaarten op hun eindplek,
+   uitgerekend zoals zet() in HalMaken80.astro het op de telefoon doet (baan < 700 px breed, dus tot 839 px venster): de
+   gekozen kaart 76 % breed in het midden (12 % links), de volgende 14 px verder op 0,82, hoogte 1,25 × de kaart (minstens
+   220 × 1,25). Gemeten met het script 2,5 s vertraagd: CLS 0,404 → 0,002 op 390, 0,422 → 0,018 op 320 (de rest is de banner).
+   Op de computer staat Wat we maken onder de vouw (CLS 0,000). */
+@media (scripting: enabled) and (max-width: 839px) {
+  .m8:not(.m8-aan) .m8-baan { position: relative; display: block; overflow: visible; padding: 0; margin-inline: 0;
+    height: max(275px, calc((100vw - 2 * var(--m8-m)) * .95)); }
+  .m8:not(.m8-aan) .m8-dienst { position: absolute; top: 0; left: 12%; width: 76%; transform-origin: 0 50%; }
+  .m8:not(.m8-aan) .m8-dienst:nth-child(2) { left: calc(88% + 14px); transform: scale(.82); }
+  .m8:not(.m8-aan) .m8-dienst:nth-child(n + 3) { left: calc(150.32% + 28px); transform: scale(.82); }
+  .m8:not(.m8-aan) .m8-dienst:nth-child(n + 4) { opacity: 0; }
+  .m8:not(.m8-aan) .m8-onder { display: none; }
+}
 
 /* onder de kaart: de naam, één zin, de prijs, de knop en een link */
 .m8 .m8-info { margin: 28px auto 0; max-width: 34em; display: grid; justify-items: center; gap: 6px; text-align: center; }

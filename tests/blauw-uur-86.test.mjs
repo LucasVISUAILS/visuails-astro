@@ -140,10 +140,12 @@ console.log('\n3c · het deelplaatje en de fotogids in de letters van de site');
   /* levering 89: het deelplaatje op het raster (u = korte zijde / 12; kladblok/levering-89, 89/l82/raster.json) */
   /* levering 112 (fase 5 van levering 100): de kop is de titel van de voorpagina (banner94.js) in VISUAILS Display Blok, de
      grond het kaartveld van de site; het raster blijft */
-  ok('het deelplaatje: de kop is de titel uit banner94.js in VISUAILS Display Blok uit public/fonts, geen Urbanist',
-    /import \{ BANNER \} from '\.\.\/src\/data\/banner94\.js';/.test(og) && /lees\('public\/fonts\/visuails-display\/VISUAILSDisplayBlok-Bold\.woff2'\)/.test(og) && !/urbanist/i.test(og) && !/TAGLINE/.test(og));
-  ok('  op het raster: u = 630 / 12, de kop in hoofdletters, de basislijn van de grote regel op 11 u; de grond is het kaartveld',
-    /const W = 1200, H = 630, U = H \/ 12;/.test(og) && /text-transform: uppercase;/.test(og) && /11 \* \$\{U\}/.test(og) && /src\/scripts\/kaartveld\.js/.test(og) && !/scripts\/veld\.js/.test(og) && !/mask-image/.test(og));
+  /* levering 120 (19 november 2026, lijst 130 – 133): de titel (BANNER[lang].titel) in VISUAILS Display 2 Light, in gewone
+     schrijfwijze en zonder aanloop, zoals op de voorpagina (was VISUAILS Display Blok in hoofdletters) */
+  ok('het deelplaatje: de kop is de titel uit banner94.js in VISUAILS Display 2 Light uit public/fonts, geen Urbanist',
+    /import \{ BANNER \} from '\.\.\/src\/data\/banner94\.js';/.test(og) && /lees\('public\/fonts\/visuails-display\/VISUAILSDisplay2-Light\.woff2'\)/.test(og) && /BANNER\[lang\]\.titel/.test(og) && !/urbanist/i.test(og) && !/TAGLINE/.test(og));
+  ok('  op het raster: u = 630 / 12, de titel in gewone schrijfwijze (300), de basislijn van de laatste regel op 11 u; de grond is het kaartveld',
+    /const W = 1200, H = 630, U = H \/ 12;/.test(og) && /font-weight: 300;[^}]*text-transform: none;/.test(og) && /11 \* \$\{U\}/.test(og) && /src\/scripts\/kaartveld\.js/.test(og) && !/scripts\/veld\.js/.test(og) && !/mask-image/.test(og));
   const hl = lees('scripts/handleiding.mjs').replace(/\/\*[\s\S]*?\*\//g, '');
   ok('de fotogids: dezelfde drie letters uit public/fonts, geen Urbanist meer',
     ['VISUAILS Display', 'DM Sans', 'IBM Plex Mono'].every((f) => hl.includes(`['${f}', 'public/fonts/`)) && !/urbanist/i.test(hl));

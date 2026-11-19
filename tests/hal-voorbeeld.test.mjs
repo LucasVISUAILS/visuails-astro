@@ -161,8 +161,9 @@ for (const p of HAL) {
   check(`${p}: geen noindex, body.hal, het woordmerk als symbool`, [/<meta name="robots" content="noindex/.test(h), /<body[^>]*class="[^"]*\bhal\b/.test(h), /<symbol id="woordmerk"/.test(h)], [false, true, true]);
   /* levering 77 (lijst 60): DM Sans voor de tekst en VISUAILS Display Bold voor de koppen, allebei vooraf
      geladen (was Instrument Sans, levering 76) */
-  check(`${p}: de letters (DM Sans en VISUAILS Display) worden vooraf geladen`,
-    [/<link rel="preload"[^>]+\/fonts\/dm-sans\/dm-sans-latin\.woff2/i.test(h), /<link rel="preload"[^>]+\/fonts\/visuails-display\/VISUAILSDisplay-Bold\.woff2/i.test(h), /instrument-sans/i.test(h)], [true, true, false]);
+  /* levering 121 (19 november 2026, lijst 134): de koppen in VISUAILS Display 2 Medium; die wordt nu vooraf geladen (was Bold) */
+  check(`${p}: de letters (DM Sans en VISUAILS Display 2 Medium) worden vooraf geladen`,
+    [/<link rel="preload"[^>]+\/fonts\/dm-sans\/dm-sans-latin\.woff2/i.test(h), /<link rel="preload"[^>]+\/fonts\/visuails-display\/VISUAILSDisplay2-Medium\.woff2/i.test(h), /instrument-sans/i.test(h)], [true, true, false]);
   /* stap 3: vier beelden, vier vinkjes, "4 van 4". Levering 76 (Lucas, 26 oktober, 12:29: "De format
      sectie mag wel subtiel/klein toegevoegd worden aan how it works animatie"): het formaat staat er
      nu klein bij, als één keuze tegelijk (de gekozen in inkt, is-eind), niet als "alle drie". */
@@ -237,8 +238,13 @@ await new Promise((r) => server.listen(0, r));
 const BASIS = `http://127.0.0.1:${server.address().port}`;
 const EXE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch(existsSync(EXE) ? { executablePath: EXE } : {});
+/* levering 123 (19 november 2026): een waakhond. Hangt iets in de browser langer dan 8 minuten, dan stopt de toets zelf met een
+   FAIL en de laatste stap, zodat de uitrol niet op zijn eigen grens van 10 minuten hoeft te wachten. */
+const waakhond = setTimeout(() => { console.log('FAIL hing langer dan 8 minuten in de browser (na de laatste regel hierboven)'); process.exit(1); }, 8 * 60 * 1000);
+waakhond.unref();
 const fouten = [];
 const meting = [];
+const proefVragen = [];
 /* Levering 74 (25 oktober 2026): de voorpagina heeft geen laptop meer (de opening is een
    scrollvideo, HalOpening.astro; zie tests/opening-74.test.mjs). De laptop staat nog op
    /catalog, /lifestyle en /video; de metingen van de laptop lopen daarom op /catalog, de
@@ -249,6 +255,10 @@ for (const pad of [...HAL, ...LAPTOP]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: w < 700 ? 844 : 900 }, reducedMotion: 'reduce' });
     /* zonder cookiebalk: die is van de site, niet van het voorbeeld */
     await ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-10-12T00:00:00Z' })), url: BASIS }]);
+    /* levering 119 (18 november 2026, P6-26, hersteller H9): elke pagina vraagt /api/proef-stand (de proefknoppen bij een
+       gesloten ronde). Die is een function, en deze server is statisch: hier antwoordt de toets zoals live bij een open ronde,
+       net als proef-browser en proef-schaarste-browser. Wat de pagina doet als de vraag mislukt, staat hieronder apart. */
+    await ctx.route('**/api/proef-stand', (r) => { proefVragen.push(`${w}px ${pad}`); return r.fulfill({ status: 200, contentType: 'application/json', body: '{"stand":"open"}' }); });
     const page = await ctx.newPage();
     page.on('pageerror', (e) => fouten.push(`${w}px ${pad} — ${e.message.split('\n')[0]}`));
     page.on('console', (m) => { if ((m.type() === 'error' || m.type() === 'warning') && !/Failed to load resource/.test(m.text())) fouten.push(`${w}px ${pad} — ${m.text().slice(0, 120)}`); });
@@ -341,7 +351,38 @@ const zf = [];
 }
 check('zacht navigeren: geen JS-fout of console-melding', zf, []);
 
-await browser.close();
+/* levering 119 (18 november 2026, P6-26, hersteller H9): zonder function (hier een 404) blijft de pagina stil en blijven de
+   proefknoppen zoals ze zijn. (Hoe vaak hij dan vraagt telt hier niet: lokaal is de 404 binnen vóór de tweede init().) */
+{
+  /* levering 123 (19 november 2026): bij Lucas' uitrol (Windows) bleef deze toets hier hangen, twee keer. Elke stap heeft nu een
+     tijdgrens (geen enkele browserstap kan meer eeuwig wachten), en de HTML voor de telling halen we met fetch() uit node in plaats
+     van met response.text() uit de browser (dat bleef op Windows vermoedelijk wachten). Lukt een stap niet, dan een FAIL met de stap. */
+  const stil = [];
+  const binnen15 = (p, wat) => Promise.race([Promise.resolve(p).catch((e) => { stil.push(wat + ': ' + String(e?.message || e).split('\n')[0]); return null; }), new Promise((r) => setTimeout(() => { stil.push(wat + ': na 15 s geen antwoord'); r(null); }, 15000))]);
+  const ctx = await binnen15(browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' }), 'venster openen');
+  if (ctx) await binnen15(ctx.addCookies([{ name: 'vis_consent', value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, at: '2026-10-12T00:00:00Z' })), url: BASIS }]), 'cookie zetten');
+  const page = ctx ? await binnen15(ctx.newPage(), 'tab openen') : null;
+  if (page) {
+    page.setDefaultTimeout(15000);
+    page.on('pageerror', (e) => stil.push(e.message.split('\n')[0]));
+    page.on('console', (m) => { if ((m.type() === 'error' || m.type() === 'warning') && !/Failed to load resource/.test(m.text())) stil.push(m.text().slice(0, 120)); });
+  }
+  const knopTekst = async () => (page && await binnen15(page.evaluate(() => [...document.querySelectorAll('a[data-vis-uit][href*="test-sample"]')].map((a) => a.textContent.replace(/\s+/g, ' ').trim())), 'knoppen lezen')) || [];
+  const html = await binnen15(fetch(BASIS + '/').then((r) => r.text()), 'HTML halen');
+  const voor = (html || '').match(/<a[^>]*href="\/test-sample\/"[^>]*data-vis-uit[^>]*>[\s\S]*?<\/a>/g)?.length || 0;
+  if (page) await binnen15(page.goto(BASIS + '/', { waitUntil: 'domcontentloaded', timeout: 15000 }), 'voorpagina openen');
+  await new Promise((r) => setTimeout(r, 800));
+  const na = await knopTekst();
+  check('proef-stand mislukt (404): geen JS-fout of console-melding', stil, []);
+  check('  de proefknoppen blijven zoals ze zijn (geen wachtlijst-tekst, geen vlag)', [na.length === voor && na.length > 0, na.some((t) => /wachtlijst|waitlist/i.test(t)), !!(page && await binnen15(page.evaluate(() => !!document.querySelector('[data-vis-proef-dicht]')), 'vlag lezen'))], [true, false, false]);
+  if (ctx) await binnen15(ctx.close(), 'venster sluiten');
+}
+/* init() draait bij het eerste laden twee keer (import én astro:page-load); met een antwoord vraagt elke laadbeurt één keer. */
+const perLaad = proefVragen.reduce((m, k) => ({ ...m, [k]: (m[k] || 0) + 1 }), {});
+check('elke laadbeurt vraagt de proef-stand precies één keer', [Object.keys(perLaad).length, Object.entries(perLaad).filter(([, n]) => n !== 1)], [[...HAL, ...LAPTOP].length * 7, []]);
+
+/* levering 123: ook het sluiten krijgt een grens (15 s); daarna gaat de toets gewoon door */
+await Promise.race([browser.close().catch(() => {}), new Promise((r) => setTimeout(r, 15000))]);
 await new Promise((r) => setTimeout(r, 300));
 server.close();
 check('geen JS-fout, console-melding of mislukt verzoek', fouten, []);

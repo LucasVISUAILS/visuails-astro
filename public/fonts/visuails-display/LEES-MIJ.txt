@@ -8,3 +8,14 @@ koppen (.h-kop en de kop van de opening); de lopende tekst is DM Sans (public/fo
 Dit bestand is precies docs/letter/fonts/VISUAILSDisplay-Bold.woff2; daar staan ook de andere acht
 gewichten, het specimen en de bron om hem opnieuw te bouwen.
 Licentie: SIL Open Font License 1.1 (OFL.txt).
+
+levering 121 (19 november 2026, lijst 134): VISUAILS Display 2 Medium (500) — VISUAILSDisplay2-Medium.woff2
+Sinds deze levering staan ALLE koppen van de site in deze letter, in gewone schrijfwijze (geen hoofdletters):
+paginakoppen, sectiekoppen, kaart- en kleine koppen, de paginakop van Studio en van de privélink. Alleen de videokop op de
+voorpagina blijft VISUAILS Display 2 Light (300, VISUAILSDisplay2-Light.woff2). Gebouwd met docs/letter/bron/familie2.py
+(env BAK=1 STIJL=Medium), bron docs/letter/bron/dm-sans-40pt/DMSans40pt-Medium.ttf; kaphoogte 700 op 1000, 403 tekens.
+De regels: src/styles/hal.css (--h-kopletter en het blok "levering 121" onderaan), studio-hal.css, public/portal.css.
+VISUAILSDisplay-Bold.woff2 blijft staan: de handleiding (scripts/handleiding.mjs) en de fotogids
+(scripts/lib/fotogids-html.mjs) gebruiken hem nog. De site laadt hem sinds levering 122 nergens meer vooraf; ook het cijfer
+in het aantal-veld van het bestelformulier (werkplaats.css) staat nu in Display 2 Medium. VISUAILSDisplayBlok-Bold.woff2 gebruikt niets meer (sinds
+levering 120, ook scripts/make-og.mjs niet); het bestand blijft staan.

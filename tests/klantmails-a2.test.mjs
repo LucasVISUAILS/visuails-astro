@@ -254,7 +254,7 @@ console.log('\n4 · de studiomail zonder bijlagen (9.07), met de bestelmail erna
   ok('de bestelmail gaat niet meteen uit (de klant zit aan de kassa)', !!klant, false);
   const bewaard = (ref) => { const r = inhoud.get(`mail-uitgesteld/${ref}.json`); return r ? JSON.parse(r.body || 'null') : null; };
   const b1 = bewaard(ref1);
-  ok('  maar staat klaar in R2, voor de webhook', !!b1 && b1.to === 'sanne@voorbeeld-kleding.nl' && /We hebben je bestelling/.test(b1.subject));
+  ok('  maar staat klaar in R2, voor de webhook', !!b1 && b1.to === 'sanne@voorbeeld-kleding.nl' && /^Nog niet betaald — je bestelling /.test(b1.subject)); /* levering 118 (integratie IA, W2-15): de bewaarde mail gaat pas uit na een mislukte betaling en heet nu zo. */
   ok('  de bewaarde mail: "Je bestelling staat erin"', tekst(b1?.html || '').includes('Je bestelling staat erin'));
   ok('    zegt dat de betaling nog niet gelukt is (niet "al betaald?")', tekst(b1?.html || '').includes('De betaling is nog niet gelukt') && !tekst(b1?.html || '').includes('Al betaald bij Mollie'));
   ok('    met "Zo gaat het verder"', tekst(b1?.html || '').includes('Zo gaat het verder'));

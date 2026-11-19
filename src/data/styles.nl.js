@@ -218,7 +218,9 @@ export const styles = [
       { title: 'Meteen goed voor je feed', body: 'Je hoeft er niets meer uit te snijden — de verhouding klopt al zoals je hem krijgt.' },
     ],
     bestFor: ['Social-first merken en UGC-achtige advertenties', 'Producten die verkopen op herkenbaarheid', 'Ondernemers die eerst vertrouwen willen opbouwen, en pas daarna glans', 'Organische content die er niet als advertentie uit mag zien'],
-    whatYouGet: [SET, 'Echte, met-de-telefoon-gemaakte lifestylescènes', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één'],
+    /* levering 117 (17 november 2026, proefronde P6-05): stond 'Echte, met-de-telefoon-gemaakte lifestylescènes'.
+       De AI Act-pagina zegt dat niets een echte plek of shoot is; een AI-studio mag hier dus niet 'echt' zeggen. */
+    whatYouGet: [SET, 'Lifestylescènes die eruitzien alsof ze met de telefoon gemaakt zijn', 'Natuurlijke belichting met één lichtbron', 'Feed-klare uitsnedes vanaf dag één'],
   },
   {
     slug: 'custom',

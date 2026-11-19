@@ -5,6 +5,10 @@
 import JuridischHal from '../components/JuridischHal.astro';
 import Layout from '../layouts/Layout.astro';
 import { UPLOAD_DAYS, DELIVERY_DAYS, ACCOUNT_YEARS } from '../lib/retention.js';
+/* levering 117 (17 november 2026, proefronde P6-01): de tabel met termijnen, dezelfde als voorwaarden §7, privacy §6
+   en de FAQ. Zie de NL-tegenhanger. */
+import { bewaarTabel } from '../data/bewaartermijnen.js';
+const BT = bewaarTabel('en');
 import { subverwerkers, lijstRegel, MELDTERMIJN_DAGEN } from '../data/subverwerkers.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
 // src/data/juridischeDatums.js: één bron, en een toets die hem tegen git houdt.
@@ -70,7 +74,8 @@ const SUBS = subverwerkers('en');
       <p><strong>Nature of the processing.</strong> Receiving, storing, passing to the sub-processors in §8, being looked at and reviewed by VISUAILS, and deleting. Nothing is profiled and nothing is decided automatically.</p>
       <p><strong>Duration.</strong> This agreement starts with your first order and ends once the last piece of data it covers has been deleted — see §12. It therefore outlives the order itself, and that is deliberate.</p>
 
-      <h2>4. Type of personal data and categories of data subjects</h2>
+      {/* levering 118 (17 november 2026, proefronde N4 koppen): kortere kop, op 320 px drie regels (was "Type of personal data and categories of data subjects"); de tekst eronder noemt ze allebei */}
+      <h2>4. Personal data and data subjects</h2>
       <p><strong>Type of personal data.</strong> Images of natural persons in the material you supply, plus whatever is visible in it or sits in its file metadata — a face, a body, sometimes a name on a label or a location in the EXIF data.</p>
       <p><strong>Categories of data subjects.</strong> The people appearing in that material: usually a model, an employee, or you.</p>
       <p><strong>What does not belong in it.</strong> We never ask for special categories of personal data within the meaning of Art. 9 GDPR, and never for images of children. If you supply material that contains them anyway, we process it only as far as needed to contact you and, at your choice, to delete it or return it to you; this agreement applies to that too. Note that a face in a photograph is not automatically biometric data: it becomes that only through processing aimed at unique identification, and we do not do that.</p>
@@ -134,16 +139,31 @@ const SUBS = subverwerkers('en');
       <p>What that report contains: what happened, when, which kinds of data and which data subjects it likely affects and roughly how many people and files, the likely consequences, what we have already done to limit it, what we do not yet know, and who your contact person is. What we do not yet know is in there too. We add to it as we learn more, and we keep our own record of every incident — including the ones that do not need reporting.</p>
       <p>We help you further with what Art. 32 to 36 GDPR asks of you, including a data protection impact assessment if your use needs one.</p>
 
-      <h2>11. Transfers outside the European Economic Area</h2>
+      {/* levering 118 (17 november 2026, proefronde N4 koppen): kortere kop, op 320 px drie regels (was "Transfers outside the European Economic Area"); de tekst eronder zegt EEA */}
+      <h2>11. Transfers outside the EEA</h2>
       <p>Our contract for the generation is with a party in Spain; the model makers behind it may be outside the EEA (see §8). Where a sub-processor in §8 is established outside the EEA, the transfer rests on the EU-U.S. Data Privacy Framework (Art. 45 GDPR), with the European Commission’s Standard Contractual Clauses (Art. 46(2)(c) GDPR) as fallback should that framework lapse; for the model makers Magnific works with, on those Standard Contractual Clauses. We do not transfer personal data to a country or party outside that list without informing you first.</p>
       <p>One thing we write down more plainly than is customary: when the visuals are made, material is placed into the sub-processor’s tool by hand, from our environment. So it is not an automatic integration but an act, and it falls under the same arrangements as the rest of this agreement.</p>
 
       <h2>12. Return and deletion</h2>
-      <p>The periods below are the same ones as in §7 of the <a href="/terms/">Terms</a> and §6 of the <a href="/privacy/">Privacy Policy</a>. Storage and the database are cleaned by a nightly task. Our own copies, in our mailbox and on our workstation, follow the periods below; what we generated on Magnific’s platform, we delete by hand within the same period; Resend keeps sent email for 30 days.</p>
+      <p>The periods below are the same ones as in §7 of the <a href="/terms/">Terms</a> and §6 of the <a href="/privacy/">Privacy Policy</a>. Storage and the database are cleaned by a nightly task. Our own copies on our workstation follow the periods below. Photos in our email and WhatsApp, and what we generated on Magnific’s platform (we delete that by hand), follow the table after them. Resend keeps sent email for 30 days.</p>
       <ul>
         <li><strong>The material you supply:</strong> {UPLOAD_DAYS} days after your order closes, then deleted from our storage. Our own copy of your product photos and style references we keep for as long as your customer account exists, up to {ACCOUNT_YEARS} years after your last order, so that a new order keeps the same look.</li>
         <li><strong>The visuals we deliver:</strong> {DELIVERY_DAYS} days in VISUAILS Studio, so you can fetch them again in that time. A copy stays in our own archive with no end date, to keep your look consistent and to improve it. Visuals showing a real, recognisable person — your own model, someone in a worn photo — we keep only for as long as your customer account exists.</li>
       </ul>
+      {/* levering 117 (17 november 2026, proefronde P6-01): deze tabel staat letterlijk zo op vier plekken (§7 hier, privacy §6,
+          verwerkersovereenkomst §12 en de FAQ), uit src/data/bewaartermijnen.js, met de getallen uit retention.js. */}
+      <p id="bewaartabel"><strong>{BT.kop}</strong></p>
+      <div class="table-scroll" tabindex="0" role="region" aria-label={BT.kop}>
+      <table class="files" data-bewaartabel>
+        <thead><tr><th>{BT.kolommen[0]}</th><th>{BT.kolommen[1]}</th></tr></thead>
+        <tbody>
+          {BT.rijen.map((r) => (
+            <tr><td data-label={BT.kolommen[0]}><strong>{r.wat}</strong></td><td data-label={BT.kolommen[1]}>{r.hoeLang}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      </div>
+      <p>{BT.weg}</p>
       <p>Want something gone sooner — your material, our copy of it, or the visuals in our archive? Email us from the address of your account and we delete it; you do not need to give a reason. A new order may then turn out differently from the earlier look. Only a statutory retention duty can stand in the way, and then we say which one. At the end of this agreement we delete everything it covers, copies included, or return it to you if you prefer. Anything that has to stay for that reason stays only for that reason and is not used again.</p>
       <p>The data we hold as controller — your invoice, your company details — is not covered here. Those carry the seven-year Dutch tax retention duty; see the <a href="/privacy/">Privacy Policy</a>.</p>
 

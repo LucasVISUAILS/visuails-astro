@@ -66,7 +66,9 @@ const t = nl ? {
   vastPil: 'Always included', vastKop: ['Always included.', `${CATALOG_IMAGES} photos per product.`],
   extraPil: 'Available to add', extraKop: ['An extra angle.', 'Per photo.'],
   extraTarief: `${tarief} per photo at one product, less the more products you order · ${vatLabel('excl', lang)}`,
-  slotKop: ['This is what every product gets.', 'Now choose your look.'],
+  /* levering 119 (18 november 2026, proefronde D1-07): korter, zoals de Nederlandse ("Dit krijgt elk product."); de oude
+     zin liep op 320 – 340 px over drie regels en paste pas op 15,7 px (kleiner dan de tekst eronder). Nu tot 18,9 px. */
+  slotKop: ['Every product gets this.', 'Now choose your look.'],
   naarBestellen: 'Choose your look and order',
   naarGids: 'What you send us',
 };

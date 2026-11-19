@@ -95,6 +95,8 @@ import {
   RESOLUTIE,
   HOOG_PER_PRODUCT,
   VOORRANG,
+  /* levering 118 (17 november 2026, proefronde P8-06): de ene zin over voorrang. */
+  voorrangBelofte,
   /* Wat een hook en een Motion-clip in een abonnement kosten — 30 september 2026. */
   SERVICE_CREDITS,
 } from './pricing.js';
@@ -114,7 +116,11 @@ import { CATALOG_RATIOS, LIFESTYLE_RATIOS } from './ratios.js';
    CREDITS_GELDIG_MAANDEN geldig (pricing.js). */
 /* De bewaartermijnen komen uit retention.js — dezelfde getallen als /privacy §6,
    /terms §7 en de nachtelijke opruimtaak. Hier niet overgetypt. */
-import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
+import { DELIVERY_DAYS, ACCOUNT_YEARS } from '../lib/retention.js';
+/* levering 117 (17 november 2026, proefronde P6-01): het antwoord op "Hoe lang bewaren jullie mijn foto's?" zei
+   alleen de 90 dagen, het privacybeleid ook de eigen kopie tot 2 jaar — en de FAQ zei dat het dezelfde termijnen waren.
+   Nu staat hier dezelfde tabel als in voorwaarden §7, privacy §6 en verwerkersovereenkomst §12, als zinnen. */
+import { bewaarZinnen } from './bewaartermijnen.js';
 import { localizedPath } from '../i18n/ui.js';
 
 const norm = (lang) => (lang === 'nl' ? 'nl' : 'en');
@@ -352,8 +358,11 @@ function algemeneGroepen(lang = 'en') {
             a: 'De studio is op dit moment op kleding ingericht: de vaste stijlen, de modellen en de drie verplichte foto\u2019s per product (plus een optionele draagfoto) gaan allemaal uit van iets wat gedragen wordt. Verkoop je iets anders, stuur ons dan een bericht via WhatsApp of e-mail met een foto van je product erbij. Dan zeggen we eerlijk of we er iets voor kunnen betekenen \u2014 soms wel, soms niet, en dat zien we in \u00e9\u00e9n oogopslag.',
           },
           {
+            /* levering 118 (17 november 2026, proefronde P12-03 keuze a en P6-04): eerlijk over wat Studio per ACCOUNT
+               onthoudt (vasteLook.js en customer_styles hangen aan customer_id, niet aan een merk), en de proefcontrole
+               zoals de proefpagina en privacy §2 hem noemen: e-mail, telefoon, KVK en na betaling de rekening. */
             q: 'Kan ik als bureau voor mijn klanten bestellen?',
-            a: `Ja. Je bestelt onder je eigen account en vult per bestelling de merknaam en de factuurgegevens van die klant in \u2014 dat hoeft dus niet elke keer hetzelfde te zijn. E\u00e9n ding werkt anders dan je misschien verwacht: de proef van ${sample.price} is er \u00e9\u00e9n per bedrijf, en die telling loopt via de rekening waarvan betaald wordt en niet via het e-mailadres. Je kunt dus \u00e9\u00e9n keer een proef doen op een testproduct, ook als bureau, en daarna niet nog een keer met dezelfde rekening.`,
+            a: `Ja. Je bestelt onder je eigen account en vult per bestelling de merknaam en de factuurgegevens van die klant in. Wat VISUAILS Studio onthoudt, hoort bij je account en niet bij een merk: je vaste look, je eigen looks, je merkmodellen en je abonnement. Die gelden dus voor elke bestelling uit dat account, ook als je voor een ander merk bestelt. Werk je voor meer merken? Maak dan per klantmerk een eigen account, met een eigen e-mailadres. De proef van ${sample.price} is er \u00e9\u00e9n per bedrijf. We controleren op e-mailadres, telefoonnummer en KVK-nummer, en na de betaling ook op de rekening waarmee je betaalde. Een bureau doet dus \u00e9\u00e9n proef, op een testproduct naar keuze.`,
           },
           {
             /* ── HET MEEST GESTELDE BEZWAAR, EN HET STOND NERGENS — 30 AUGUSTUS 2026
@@ -428,7 +437,8 @@ function algemeneGroepen(lang = 'en') {
         items: [
           {
             q: 'Hoe snel is het?',
-            a: `Het serviceniveau volgt de omvang. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, zonder vaste leverdatum. Moet het sneller, kies dan voorrang bij het bestellen: betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan leveren we uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00, of je krijgt de toeslag terug.`,
+            /* levering 118 (17 november 2026, proefronde P8-06): de voorrangsbelofte uit voorrangBelofte(), met Nederlandse tijd. */
+            a: `Het serviceniveau volgt de omvang. Vanaf ${WINDOW_THRESHOLD} producten gaat een bestelling in de agenda en krijgt hij ${clause(turnaround('attended', 'nl')).toLowerCase()}. Daaronder loopt hij in de normale doorlooptijd: ${clause(turnaround('unattended', 'nl')).toLowerCase()}, zonder vaste leverdatum. Moet het sneller, kies dan voorrang bij het bestellen: ${voorrangBelofte('nl')}.`,
           },
           {
             q: 'Wat als de week die ik nodig heb niet kan?',
@@ -459,7 +469,9 @@ function algemeneGroepen(lang = 'en') {
           },
           {
             q: 'Hoe krijg ik de bestanden precies?',
-            a: `${clause(TIERS.unattended.delivery.nl)}. Vanaf ${WINDOW_THRESHOLD} producten komt daar een eigen bestelpagina bij die elke stap met bijbehorende datum toont. Hoe dan ook worden ze geleverd op ${RESOLUTIE.standaard} px aan de lange zijde, in de beeldverhouding die je in het bestelformulier kiest (één per catalogbestelling, per beeld bij lifestyle), als JPG; PNG of WebP vraag je erbij aan in VISUAILS Studio. Voor een marktplaats houden we ons aan wat die aanneemt: ${marktFormaten('nl')}. Catalogbeelden zijn altijd die maat; bij lifestyle kun je per product alle vier de beelden op ${RESOLUTIE.hoog} px laten leveren voor ${euro(HOOG_PER_PRODUCT, 'nl')} extra.`,
+            /* levering 119 (18 november 2026, proefronde P6-16): elke bestelling krijgt een bestelpagina (order.js maakt voor elke
+               bestelling een link /o/…, zoals privacy §9 zegt); vanaf WINDOW_THRESHOLD producten toont die ook de datums (attendedBody). */
+            a: `${clause(TIERS.unattended.delivery.nl)}. Elke bestelling heeft ook een eigen bestelpagina; vanaf ${WINDOW_THRESHOLD} producten toont die elke stap met de bijbehorende datum. Hoe dan ook worden ze geleverd op ${RESOLUTIE.standaard} px aan de lange zijde, in de beeldverhouding die je in het bestelformulier kiest (één per catalogbestelling, per beeld bij lifestyle), als JPG; PNG of WebP vraag je erbij aan in VISUAILS Studio. Voor een marktplaats houden we ons aan wat die aanneemt: ${marktFormaten('nl')}. Catalogbeelden zijn altijd die maat; bij lifestyle kun je per product alle vier de beelden op ${RESOLUTIE.hoog} px laten leveren voor ${euro(HOOG_PER_PRODUCT, 'nl')} extra.`,
           },
         ],
       },
@@ -510,18 +522,23 @@ function algemeneGroepen(lang = 'en') {
              eigen klant mag overdragen, las het zwakste zinnetje van de site op
              een vraag waar de sterkste alinea van de site over gaat. */
           {
+            /* levering 118 (17 november 2026, proefronde P6-07 en P6-03 keuze a): geen "van jou" meer maar wat de licentie
+               uit §8 echt geeft, en het portfolio als opt-in, zoals de vraag na de levering (feedback.js) het al doet. */
             q: 'Wie is eigenaar van de resultaten?',
-            a: 'De afgewerkte visuals zijn van jou, exclusief: waar er auteursrecht op rust, krijg jij de exclusieve licentie — niemand anders mag dat beeld gebruiken. Eén uitzondering: wij mogen geleverde beelden in ons portfolio tonen, tenzij je daar schriftelijk bezwaar tegen maakt. Nooit je eigen bronfoto’s, nooit een product dat nog niet uit is, en een herkenbaar persoon alleen met diens toestemming. Heb je de rechten écht op jouw naam nodig, bijvoorbeeld voor een merkregistratie of een investeerder, dan tekenen we daar kosteloos een akte van overdracht voor. Dat moet met een akte: een overdrachtsclausule in algemene voorwaarden is naar Nederlands recht niet geldig, dus wie dat wel belooft, belooft iets wat de wet niet toestaat.',
+            a: 'Je mag de visuals overal gebruiken, voor altijd, en niemand anders krijgt ze. Juridisch is dat een exclusieve licentie en geen eigendom: op een AI-beeld rust misschien geen auteursrecht, en waar het wel rust, krijg jij de exclusieve licentie. Ons portfolio: we laten je beelden alleen zien als jij daar na de levering ja op zegt. Een product dat nog niet uit is, niet vóór de lancering, en een herkenbaar persoon alleen met diens toestemming. Heb je de rechten écht op jouw naam nodig, bijvoorbeeld voor een merkregistratie of een investeerder, dan tekenen we daar kosteloos een akte van overdracht voor. Dat moet met een akte: een overdrachtsclausule in algemene voorwaarden is naar Nederlands recht niet geldig, dus wie dat wel belooft, belooft iets wat de wet niet toestaat.',
             linkText: 'Lees de voorwaarden',
             linkHref: '/terms',
           },
           {
             q: 'Gebruiken jullie mijn productfoto’s voor iets anders?',
-            a: 'Nee. De foto’s die je stuurt worden alleen gebruikt om jouw bestelling te produceren, en verder niets.',
+            /* levering 117 (P6-01): "en verder niets" klopte niet naast de eigen kopie voor een volgende bestelling. */
+            a: `Nee. De foto’s die je stuurt gebruiken we alleen voor jouw bestellingen: om deze te maken, en met onze eigen kopie (tot ${ACCOUNT_YEARS} jaar na je laatste bestelling) om een volgende bestelling dezelfde look te geven. Wil je die kopie weg? Mail ons en hij is weg.`,
           },
           {
             q: 'Hoe lang bewaren jullie mijn foto’s?',
-            a: `De foto’s die je aanlevert blijven ${UPLOAD_DAYS} dagen na het afronden van je bestelling staan en worden dan verwijderd; de geleverde beelden staan ${DELIVERY_DAYS} dagen in VISUAILS Studio om te downloaden en worden daarna daar verwijderd. Bewaar dus zelf een kopie: wij kunnen er een in ons archief hebben, maar dat is geen garantie — heb je oudere beelden toch nodig, neem contact op en we kijken of ze er nog staan. Wil je je aangeleverde foto’s eerder weg, mail ons en het gebeurt. Dezelfde termijnen staan in ons privacybeleid.`,
+            a: `${bewaarZinnen('nl')} De geleverde beelden staan ${DELIVERY_DAYS} dagen in VISUAILS Studio om te downloaden en worden daarna daar verwijderd. Bewaar dus zelf een kopie: wij kunnen er een in ons archief hebben, maar dat is geen garantie — heb je oudere beelden toch nodig, neem contact op en we kijken of ze er nog staan. Dezelfde tabel staat in de voorwaarden (§7), het privacybeleid (§6) en de verwerkersovereenkomst (§12).`,
+            linkText: 'Bekijk de tabel in het privacybeleid',
+            linkHref: '/privacy#bewaartabel',
           },
           {
             q: 'Moet ik alle geleverde beelden gebruiken?',
@@ -570,8 +587,9 @@ function algemeneGroepen(lang = 'en') {
           a: 'The studio is set up for clothing at the moment: the fixed styles, the models and the three required photos per product (plus an optional worn photo) all assume something that is worn. If you sell something else, send us a message on WhatsApp or by email with a photo of your product. We will tell you honestly whether we can do anything for it \u2014 sometimes yes, sometimes no, and we can tell at a glance.',
         },
         {
+          /* levering 118 (17 november 2026, proefronde P12-03 en P6-04): zie de Nederlandse tegenhanger. */
           q: 'Can I order for my clients as an agency?',
-          a: `Yes. You order under your own account and fill in the brand name and billing details of that client per order \u2014 so they do not have to be the same every time. One thing works differently than you might expect: the ${sample.price} test sample is one per business, and that count runs on the account the payment comes from, not on the email address. So an agency gets one sample in total, on a test product of its choice — not one per client from the same account.`,
+          a: `Yes. You order under your own account and fill in the brand name and billing details of that client per order. What VISUAILS Studio remembers belongs to your account, not to a brand: your fixed look, your own looks, your Brand Models and your plan. So they apply to every order from that account, also when you order for another brand. Working for several brands? Then make one account per client brand, each with its own email address. The ${sample.price} test sample is one per business. We check the email address, phone number and company registration number, and after payment also the account you paid from. So an agency gets one sample, on a test product of its choice.`,
         },
         {
           /* Zie de Nederlandse tegenhanger voor waarom deze vraag hier staat en
@@ -665,7 +683,8 @@ function algemeneGroepen(lang = 'en') {
           // Service level FOLLOWS size now — it is not a second question the
           // buyer answers, and this answer must not put it back into their
           // hands by describing two things to choose between.
-          a: `The service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that it runs in the normal turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, with no fixed delivery date. Need it sooner? Choose priority when you order: pay on a working day before ${VOORRANG.bestelVoorUur}:00 and we deliver by ${VOORRANG.klaarUur}:00 the next working day, or you get the surcharge back.`,
+          /* levering 118 (17 november 2026, proefronde P8-06): de voorrangsbelofte uit voorrangBelofte(), met Nederlandse tijd. */
+          a: `The service level follows the size. From ${WINDOW_THRESHOLD} products an order goes into the calendar and gets ${clause(turnaround('attended', 'en')).toLowerCase()}. Below that it runs in the normal turnaround: ${clause(turnaround('unattended', 'en')).toLowerCase()}, with no fixed delivery date. Need it sooner? Choose priority when you order: ${voorrangBelofte('en')}.`,
         },
         {
           q: 'What if the week I need cannot be held?',
@@ -732,7 +751,8 @@ function algemeneGroepen(lang = 'en') {
           // lezer het verkeerde pad op ("…or request-revision from 10 products").
           // En nog steeds NIET kleinschrijven: in een van deze strings staat
           // "WhatsApp", en .toLowerCase() maakt daar "whatsapp" van.
-          a: `${clause(TIERS.unattended.delivery.en)}. From ${WINDOW_THRESHOLD} products you also get a dedicated order page tracking every step with key dates. Either way they are delivered at ${RESOLUTIE.standaard} px on the long edge, in the aspect ratio you choose in the order form (one per catalog order, per image for lifestyle), as JPG; PNG or WebP you request on the order in VISUAILS Studio. For a marketplace we stick to what it accepts: ${marktFormaten('en')}. Catalog images are always that size; on lifestyle you can have all four images of a product delivered at ${RESOLUTIE.hoog} px instead, for ${euro(HOOG_PER_PRODUCT, 'en')} extra.`,
+          /* levering 119 (proefronde P6-16): zie de Nederlandse tegenhanger. */
+          a: `${clause(TIERS.unattended.delivery.en)}. Every order also has its own order page; from ${WINDOW_THRESHOLD} products it shows every step with its date. Either way they are delivered at ${RESOLUTIE.standaard} px on the long edge, in the aspect ratio you choose in the order form (one per catalog order, per image for lifestyle), as JPG; PNG or WebP you request on the order in VISUAILS Studio. For a marketplace we stick to what it accepts: ${marktFormaten('en')}. Catalog images are always that size; on lifestyle you can have all four images of a product delivered at ${RESOLUTIE.hoog} px instead, for ${euro(HOOG_PER_PRODUCT, 'en')} extra.`,
         },
       ],
     },
@@ -768,17 +788,21 @@ function algemeneGroepen(lang = 'en') {
         },
         {
           q: 'Who owns the results?',
-          a: 'The finished visuals are yours, exclusively: where copyright exists in an image, you get the exclusive licence — nobody else may use it. One exception: we may show delivered visuals in our portfolio, unless you object in writing. Never your source photos, never a product that is not out yet, and a recognisable person only with that person\u2019s consent. If you need the rights in your own name, for a trademark filing or an investor\u2019s IP schedule, we sign a deed of transfer for the order free of charge. It has to be a deed: under Dutch law a transfer clause in general terms is not valid, so anyone promising you a transfer by the act of ordering is promising something the law does not allow.',
+          /* levering 118 (17 november 2026, proefronde P6-07 en P6-03): zie de Nederlandse tegenhanger. */
+          a: 'You may use the visuals anywhere, for ever, and nobody else gets them. Legally that is an exclusive licence, not ownership: an AI image may carry no copyright at all, and where it does, you get the exclusive licence. Our portfolio: we only show your images if you say yes to that after delivery. A product that is not out yet, not before the launch, and a recognisable person only with that person\u2019s consent. If you need the rights in your own name, for a trademark filing or an investor\u2019s IP schedule, we sign a deed of transfer for the order free of charge. It has to be a deed: under Dutch law a transfer clause in general terms is not valid, so anyone promising you a transfer by the act of ordering is promising something the law does not allow.',
           linkText: 'Read the terms',
           linkHref: '/terms',
         },
         {
           q: 'Do you use my product photos for anything else?',
-          a: 'No. The photos you send are used to produce your order and nothing else.',
+          /* levering 117 (P6-01): "nothing else" did not match our own copy for a next order. */
+          a: `No. The photos you send are used only for your orders: to make this one, and with our own copy (up to ${ACCOUNT_YEARS} years after your last order) to give a next order the same look. Want that copy gone? Email us and it is gone.`,
         },
         {
           q: 'How long do you keep my photos?',
-          a: `The photos you send stay for ${UPLOAD_DAYS} days after your order closes and are then deleted; the delivered images stay in VISUAILS Studio for ${DELIVERY_DAYS} days to download and are then removed there. So keep your own copy: we may have one in our archive, but that is not a guarantee — still need older images? Get in touch and we check whether they are still there. Want your source photos gone sooner? Email us and it is done. The same terms are in our privacy policy.`,
+          a: `${bewaarZinnen('en')} The delivered images stay in VISUAILS Studio for ${DELIVERY_DAYS} days to download and are then removed there. So keep your own copy: we may have one in our archive, but that is not a guarantee — still need older images? Get in touch and we check whether they are still there. The same table is in the Terms (§7), the Privacy Policy (§6) and the Data Processing Agreement (§12).`,
+          linkText: 'See the table in the Privacy Policy',
+          linkHref: '/privacy#bewaartabel',
         },
         {
           q: 'Do I have to use every image you deliver?',

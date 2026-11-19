@@ -6,13 +6,24 @@
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 .st2 { --st2-m: max(20px, calc((100vw - 1320px) / 2)); }
 
-/* welke stap */
-.st2:not(:has(:is(#catalog, #lifestyle, #video):target)) :is(.h-st-kies, .h-st-video) { display: none; }
-.st2:has(:is(#catalog, #lifestyle, #video):target) .st2-soort { display: none; }
-.st2:has(#video:target) .h-st-kies { display: none; }
-.st2:has(:is(#catalog, #lifestyle):target) .h-st-video { display: none; }
-.st2 .h-st-groep:not(:target) { display: none; }
+/* welke stap. Zonder script volgt hij :target. Levering 118 (17 november 2026, proefronde P10-07): met script zet
+   StartHal data-stap uit de hash, ook als :target niet klopt (terug uit het formulier via de ClientRouter zet Astro de
+   adresbalk op #lifestyle zonder ankersprong, en dan toonde :target stap 1). Dan geldt alleen data-stap. */
+.st2:not([data-stap]):not(:has(:is(#catalog, #lifestyle, #video):target)) :is(.h-st-kies, .h-st-video) { display: none; }
+.st2:not([data-stap]):has(:is(#catalog, #lifestyle, #video):target) .st2-soort { display: none; }
+.st2:not([data-stap]):has(#video:target) .h-st-kies { display: none; }
+.st2:not([data-stap]):has(:is(#catalog, #lifestyle):target) .h-st-video { display: none; }
+.st2:not([data-stap]) .h-st-groep:not(:target) { display: none; }
+.st2[data-stap="kies"] :is(.h-st-kies, .h-st-video) { display: none; }
+.st2[data-stap]:not([data-stap="kies"]) .st2-soort { display: none; }
+.st2[data-stap="video"] .h-st-kies { display: none; }
+.st2:is([data-stap="catalog"], [data-stap="lifestyle"]) .h-st-video { display: none; }
+.st2[data-stap="catalog"] .h-st-groep:not(#catalog), .st2[data-stap="lifestyle"] .h-st-groep:not(#lifestyle) { display: none; }
 .st2 .h-st-band-pil { display: none; }
+/* levering 118 (proefronde P11-04): de focus gaat bij een stapwissel naar de kop (tabindex -1). Met de muis geen rand;
+   met het toetsenbord de gewone focusrand. */
+.st2 :is(h1, h2)[tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
+.st2 :is(h1, h2)[tabindex="-1"]:focus-visible { outline: 2px solid var(--h-blauw); outline-offset: 4px; }
 
 /* de stappen: 01 Wat · 02 Look · 03 Bestellen */
 .st2-stappen { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; padding: 0; list-style: none;
@@ -54,6 +65,12 @@ html body.hal .st2 .h-st-groep { margin-top: 0; padding-top: 0; }
 .st2-terug svg { width: 16px; height: 16px; fill: currentColor; }
 .st2-terug:hover { text-decoration: underline; text-underline-offset: 4px; }
 .st2 .h-st-groep-kop .h-kop, .st2 .h-st-video .h-st-band-kop .h-kop { font-size: clamp(32px, 4.4vw, 64px); line-height: .98; }
+/* levering 118 (17 november 2026, proefronde P4-02): de videokaart is de keuze; de infopagina is een kleine link eronder.
+   Het li wordt een kolom, zodat de kaart (height 100 % in hal.css) de link niet uit het li duwt. */
+html body.hal .st2 .h-st-vk > li { display: flex; flex-direction: column; gap: 10px; }
+html body.hal .st2 .h-st-vk-a { height: auto; flex: 1 1 auto; }
+html body.hal .st2 .st2-vk-bekijk { align-self: flex-start; padding: 4px 0; font: 600 13.5px/1.3 var(--h-letter); color: var(--h-inkt); text-decoration: underline; text-underline-offset: 3px; }
+html body.hal .st2 .st2-vk-bekijk:hover { text-decoration-thickness: 2px; }
 
 @media (max-width: 1100px) {
   .st2-tegels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -74,6 +91,33 @@ html body.hal .st2 .h-st-groep { margin-top: 0; padding-top: 0; }
   html body.hal .st2 .st2-stappen { justify-content: center; }
   .st2-kop { justify-items: center; }
 }
+/* levering 118 (17 november 2026, proefronde P2-02): bij 200 % zoom op een telefoon (195 px breed) hield de tegel twee
+   kolommen (92 px beeld + 16 px tussenruimte) en kreeg de tekst 47 px: woorden braken midden door en de chips liepen buiten
+   beeld. Onder 300 px stapelt de tegel: beeld boven, tekst eronder. Gemeten: 300 − 2 × 16 = 268 px tekst; bij 195 px is
+   dat 163 px, en het langste woord ("Productfoto's", 18 px vet, met pijl) is ± 150 px. Zo breekt geen woord meer. */
+@media (max-width: 300px) {
+  .st2 { --st2-m: 16px; }
+  .st2-a { grid-template-columns: minmax(0, 1fr); }
+  .st2-beeld { grid-row: auto; aspect-ratio: 3 / 2; }
+  .st2-voor { margin-top: 12px; }
+  .st2-a, .st2-a * { -webkit-hyphens: manual; hyphens: manual; }
+  .st2-naam { flex-wrap: wrap; }
+  /* de chips (40 px hoog, nowrap in hal.css) mogen nu over twee regels en worden nooit breder dan de kolom */
+  .st2 .h-st-ook-rij, .st2 .h-st-ook-rij > li { max-width: 100%; min-width: 0; }
+  html body.hal .st2 .h-st-chip { height: auto; min-height: 40px; max-width: 100%; padding: 9px 16px; white-space: normal; line-height: 1.3; }
+}
 @media (prefers-reduced-motion: reduce) {
   .st2-beeld { transition: none; }
+}
+
+/* ── levering 118 (17 november 2026, proefronde P2-12 keuze a): wat één product kost, direct onder het vanaf-bedrag ──
+   In dezelfde maat en kleur als de woorden van het tarief (13,5 px, grijs #5E6461 op wit = 6,0 : 1). In de tegel van stap 1
+   staat hij in hetzelfde blok als de prijs (st2-prijs), zodat de telefoonopmaak (vier rijen naast het beeld) blijft.
+   Op de telefoon staat het tarief per kaart uit (hal.css, levering 58); dan ook de uitleg: hij staat één keer boven de rij. */
+.st2-uitleg { display: block; margin-top: 2px; }
+.hal .h-st-tarief-uitleg { margin: 4px 0 0; font: 450 var(--h-t-fijn)/1.4 var(--h-letter); color: var(--h-inkt-3); }
+html body.hal .h-st-tarief-uitleg + .h-st-abo { margin-top: 8px; }
+@media (max-width: 620px) {
+  .hal .h-st-kies .h-st-groep-prijs .h-st-tarief-uitleg { margin: 0; }
+  .hal .h-st-kies .h-st-look .h-st-tarief-uitleg { display: none; }
 }

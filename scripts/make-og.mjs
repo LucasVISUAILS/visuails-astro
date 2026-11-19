@@ -15,6 +15,10 @@
  *     groot, in VISUAILS Display Blok, wit, zonder leesteken (lijst 122). De aanloop is 42 % van de grote regel, net als op
  *     de site. De oude kop (TAGLINE, "All your product imagery. Without a shoot.") staat er niet meer op;
  *   - het logo is wit, het V-merk en het tekstlogo uit het merk (V_D en K5 uit src/data/woordmerk.js), alleen herkleurd.
+ * LEVERING 120 (19 november 2026, lijst 130 – 133): de titel van de voorpagina is één titel in één maat (BANNER[lang].titel,
+ * "Your brand’s visual content partner" / "De beeldmakers achter jouw merk") in VISUAILS Display 2 Light (300), in gewone
+ * schrijfwijze, zonder aanloop. Hier dus ook: de titel zo breed als zijn kolom (kaphoogte hoogstens 1,5 u, kaphoogte 700 op
+ * 1000 zoals de blokletter), wit, de onderste basislijn op 11 u; op de voorpagina (b) op twee regels.
  * Het RASTER VOOR BEELDEN (docs/KLEURENSCHEMA.md) blijft: u = de korte zijde ÷ 12 (52,5 px), marge 1 u, de lockup naast
  * (L2) 1 u hoog, alleen het merk (L3) 6 u hoog, de onderste basislijn op 11 u. De grote regel is zo breed als zijn kolom,
  * met een kaphoogte van hoogstens 1,5 u.
@@ -52,12 +56,12 @@ const W = 1200, H = 630, U = H / 12;
 const WIT = '#FFFFFF';
 const V_D = ['M 0.0 16.0 L 144.25 266.75 L 463.25 813.25 L 662.75 354.75 L 619.25 408.25 L 515.5 546.25 L 264.5 119.0 A 201.21 201.21 0 0 0 101.0 15.75 L 0.0 16.0 Z',
   'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.0 338.25 L 701.75 0.0 Z'];
-/* VISUAILS Display Blok: kaphoogte 700 op 1000 (docs/letter/bron/blok.py, H = 700) */
-const KAP = 0.700, AANLOOP = 0.42;
+/* VISUAILS Display 2 Light (levering 120): kaphoogte 700 op 1000 (OS/2 sCapHeight, docs/letter/bron/familie2.py) */
+const KAP = 0.700;
 
 const lees = (f) => { const p = path.join(ROOT, f); if (!fs.existsSync(p)) throw new Error(`make-og: ${p} niet gevonden`); return p; };
 const dataUrl = (abs, mime) => `data:${mime};base64,${fs.readFileSync(abs).toString('base64')}`;
-const BLOK = lees('public/fonts/visuails-display/VISUAILSDisplayBlok-Bold.woff2');
+const KOPLETTER = lees('public/fonts/visuails-display/VISUAILSDisplay2-Light.woff2');
 const MONO = lees('public/fonts/ibm-plex-mono/IBMPlexMono-600.woff2');
 /* de drie stappen van de voorpagina: dezelfde hoodie, van de telefoonfoto tot het beeld op model (src/data en de galerij) */
 /* stap 2 is een set van drie productfoto's onder elkaar (Lucas, 17:31: "alle 3 de productfoto's onder elkaar"): voor, achter en
@@ -81,12 +85,12 @@ function tekstlogo(x, kaplijn, cap) {
   return `<svg class="merk" data-tekstvlak style="left:${x.toFixed(2)}px;top:${top.toFixed(2)}px;width:${(WOORDMERK.breed * k).toFixed(2)}px;height:${(WOORDMERK.hoog * k).toFixed(2)}px" viewBox="${WOORDMERK.symbool}">`
     + `<path fill="${WIT}" fill-rule="evenodd" d="${WOORDMERK.d}"/></svg>`;
 }
-/* de kop: aanloop en grote regel. De pagina zet hem zelf op maat (zie zetKop in de pagina): de grote regel zo breed als de
-   kolom (x tot x + breed), kaphoogte hoogstens 1,5 u, de basislijn van de grote regel op 11 u */
+/* de kop: de titel (levering 120: één titel, geen aanloop meer). De pagina zet hem zelf op maat (zie de pagina): de langste
+   regel zo breed als de kolom (x tot x + breed), kaphoogte hoogstens 1,5 u, de basislijn van de laatste regel op 11 u */
 function kop(lang, x, breed, { gebroken = false } = {}) {
-  const [a, g] = BANNER[lang].kop;
-  const groot = gebroken ? breek(g).map((r, n, l) => `<span>${r}${n === l.length - 1 ? '<i class="basis"></i>' : ''}</span>`).join('') : `${g}<i class="basis"></i>`;
-  return `<div class="kop" data-tekstvlak data-x="${x}" data-breed="${breed}"><span class="aanloop">${a}</span><span class="groot">${groot}</span></div>`;
+  const g = BANNER[lang].titel;
+  const groot = gebroken ? breek(g).map((r, n, l) => `<span>${r}${n === l.length - 1 ? '<i class="basis"></i>' : ''}</span>`).join('') : `<span>${g}<i class="basis"></i></span>`;
+  return `<div class="kop" data-tekstvlak data-x="${x}" data-breed="${breed}"><span class="groot">${groot}</span></div>`;
 }
 /* b: drie beelden op een rij, rechts uitgelijnd op de marge, van 1 u tot de stap eronder; de basislijn van de stap op 11 u */
 const TEGEL = { b: 196, tussen: 12, onder: 6, top: U, label: 13 };
@@ -136,7 +140,7 @@ function breek(tekst) {
 const RANDJE = 60;
 function pagina(inhoud, plek, modus = '') {
   return `<!doctype html><meta charset="utf-8"><style>
-@font-face { font-family: 'VISUAILS Display Blok'; src: url('${dataUrl(BLOK, 'font/woff2')}') format('woff2'); font-weight: 700; font-display: block; }
+@font-face { font-family: 'VISUAILS Display 2'; src: url('${dataUrl(KOPLETTER, 'font/woff2')}') format('woff2'); font-weight: 300; font-display: block; }
 @font-face { font-family: 'IBM Plex Mono'; src: url('${dataUrl(MONO, 'font/woff2')}') format('woff2'); font-weight: 600; font-display: block; }
 ${KAART_CSS}
 * { margin: 0; box-sizing: border-box; }
@@ -147,9 +151,8 @@ body { width: ${W}px; height: ${plek + H + 2000}px; position: relative; overflow
 .merk { position: absolute; display: block; overflow: visible; }
 .tegel { position: absolute; display: block; object-fit: cover; border-radius: 8px; }
 .stap { position: absolute; font: 600 ${TEGEL.label}px/1 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: ${WIT}; white-space: nowrap; }
-.kop { position: absolute; font-family: 'VISUAILS Display Blok', sans-serif; font-weight: 700; line-height: .92; text-transform: uppercase; color: ${WIT}; }
+.kop { position: absolute; font-family: 'VISUAILS Display 2', sans-serif; font-weight: 300; line-height: 1.06; letter-spacing: -.01em; text-transform: none; color: ${WIT}; }
 .kop span { display: block; white-space: nowrap; width: max-content; }
-.kop .aanloop { font-size: ${AANLOOP}em; margin-bottom: .12em; }
 .kop .basis { display: inline-block; width: 0; height: 0; vertical-align: baseline; }
 /* de meetstanden: kaal = alleen de grond (veld en foto); masker = alleen de letters en logo's, zwart op wit */
 .kaal .merk, .kaal .kop, .kaal .stap { visibility: hidden; }
@@ -157,12 +160,13 @@ body { width: ${W}px; height: ${plek + H + 2000}px; position: relative; overflow
 </style><body class="hal ${modus}"><div class="og" data-kaart><div class="vlak">${inhoud}</div></div>
 <script type="module">
 scrollTo(0, ${plek});
-await document.fonts.load('700 50px "VISUAILS Display Blok"'); await document.fonts.load('600 13px "IBM Plex Mono"'); await document.fonts.ready;
-/* de kop op maat: eerst op 100 px meten, dan zo groot dat de grote regel de kolom vult (kaphoogte hoogstens 1,5 u) */
+await document.fonts.load('300 50px "VISUAILS Display 2"'); await document.fonts.load('600 13px "IBM Plex Mono"'); await document.fonts.ready;
+/* de kop op maat: eerst op 100 px meten, dan zo groot dat de langste regel de kolom vult (kaphoogte hoogstens 1,5 u) */
 for (const k of document.querySelectorAll('.kop')) {
   k.style.fontSize = '100px';
   const g = k.querySelector('.groot'), b = Number(k.dataset.breed);
-  const fs = Math.min(100 * b / g.getBoundingClientRect().width, 1.5 * ${U} / ${KAP});
+  const lang = Math.max(...[...g.querySelectorAll('span')].map((s) => s.getBoundingClientRect().width));
+  const fs = Math.min(100 * b / lang, 1.5 * ${U} / ${KAP});
   k.style.fontSize = fs.toFixed(2) + 'px'; k.style.left = k.dataset.x + 'px'; k.style.top = '0px';
   const basis = k.querySelector('.basis').getBoundingClientRect().top - k.getBoundingClientRect().top;
   k.style.top = (11 * ${U} - basis).toFixed(2) + 'px';
@@ -175,7 +179,7 @@ window.__kaartveld?.zet(4);
 const t0 = performance.now();
 while (!kaart.classList.contains('kv-aan') && performance.now() - t0 < 20000) await new Promise((r) => setTimeout(r, 100));
 await new Promise((r) => setTimeout(r, 300));
-window.kopMaat = [...document.querySelectorAll('.kop')].map((k) => ({ px: parseFloat(getComputedStyle(k).fontSize), aanloop: parseFloat(getComputedStyle(k.querySelector('.aanloop')).fontSize), breed: k.querySelector('.groot').getBoundingClientRect().width, rechts: Math.max(...[...k.children].map((c) => c.getBoundingClientRect().right)) }));
+window.kopMaat = [...document.querySelectorAll('.kop')].map((k) => ({ px: parseFloat(getComputedStyle(k).fontSize), breed: k.querySelector('.groot').getBoundingClientRect().width, rechts: Math.max(...[...k.querySelectorAll('span')].map((c) => c.getBoundingClientRect().right)) }));
 window.klaar = kaart.classList.contains('kv-aan') ? true : 'geen veld (webgl: ' + (document.documentElement.classList.contains('kv-geen') ? 'nee' : 'ja') + ', kaartveld: ' + !!window.__kaartveld + ')';
 </script>`;
 }
@@ -213,7 +217,7 @@ async function maak(naam, inhoud, plek, eis) {
   const c = await slechtste(kaal.png, masker.png);
   if (c < eis) throw new Error(`make-og: ${naam} haalt op het slechtste punt ${c.toFixed(2)} : 1 (eis ${eis} : 1)`);
   for (const m of vol.maat) {
-    if (m.aanloop < 11.5) throw new Error(`make-og: ${naam}: de aanloop is ${m.aanloop.toFixed(1)} px (minstens 11,5)`);
+    if (m.px < 24) throw new Error(`make-og: ${naam}: de titel is ${m.px.toFixed(1)} px (minstens 24)`);
     if (m.rechts > W - U + 0.5) throw new Error(`make-og: ${naam}: de kop steekt in de marge (${m.rechts.toFixed(1)} px)`);
   }
   /* als jpeg: WhatsApp toont een voorbeeld alleen onder ± 300 kB */
@@ -226,7 +230,7 @@ async function maak(naam, inhoud, plek, eis) {
     fs.writeFileSync(path.join(PAKKET, `${naam}.png`), vol.png);
     fs.writeFileSync(path.join(PAKKET, `${naam}@2x.png`), (await schiet(pagina(inhoud, plek), 2)).png);
   }
-  const kop = vol.maat.map((m) => `kop ${m.px.toFixed(0)} px, aanloop ${m.aanloop.toFixed(0)} px`).join('');
+  const kop = vol.maat.map((m) => `titel ${m.px.toFixed(0)} px`).join('');
   verslag.push({ naam, kB: Math.round(jpg.length / 1024), slechtste: +c.toFixed(2), kop: vol.maat });
   console.log(`  public/img/${naam}.jpg  ${(jpg.length / 1024).toFixed(0)} kB  slechtste punt ${c.toFixed(2)} : 1  ${kop}`);
 }
@@ -234,7 +238,7 @@ async function maak(naam, inhoud, plek, eis) {
 const PLEK = { 'og-en': 0, 'og-nl': 900, 'og-voorpagina-en': 1800, 'og-voorpagina-nl': 2700, 'og-logo': 3600 };
 for (const lang of Object.keys(BANNER)) {
   await maak(`og-${lang}`, lockup('L2', U, U, U) + kop(lang, U, W - 2 * U), PLEK[`og-${lang}`], 4.5);
-  /* de voorpagina (lijst 103, b): de kop links van de drie beelden, ½ u ervandaan, de grote regel op twee regels */
+  /* de voorpagina (lijst 103, b): de kop links van de drie beelden, ½ u ervandaan, de titel op twee regels */
   await maak(`og-voorpagina-${lang}`, await stappen(lang) + tekstlogo(U, U, U / 2) + kop(lang, U, TEGEL.links - 1.5 * U, { gebroken: true }), PLEK[`og-voorpagina-${lang}`], 4.5);
 }
 {

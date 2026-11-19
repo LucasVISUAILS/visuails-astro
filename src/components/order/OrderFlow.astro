@@ -52,7 +52,8 @@ import {
   plans, planSaving, PLAN_AMOUNT, PLAN_PRODUCTS, PLAN_CLIPS, STOCK_OFF_BRAND, SERVICE_CREDITS, EXTRA_CREDITS,
 } from '../../data/pricing.js';
 import { ATTENDED_PUNTEN_PER_VENSTER, ATTENDED_PER_WINDOW } from '../../data/capacity.js';
-import { puntenVoor, beeldenVoor, RESOLUTIE, HOOG_PER_PRODUCT, VOORRANG, VOORRANG_COPY, voorrangBedrag } from '../../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P8-06): de ene zin over voorrang komt uit pricing.js (voorrangBelofte/voorrangZin), niet meer getypt. */
+import { puntenVoor, beeldenVoor, RESOLUTIE, HOOG_PER_PRODUCT, VOORRANG, VOORRANG_COPY, voorrangBedrag, voorrangZin, voorrangBelofte } from '../../data/pricing.js';
 /* De drie diensten die op de ladder staan; video en hooks hebben nog geen
    kassa in dit formulier, dus daar is voorrang nog geen knop maar een zin in
    het gesprek. Zie voorrangKan() in pricing.js. */
@@ -72,6 +73,8 @@ import { SHOTS, SHOT_IDS, MAX_REF_PER_PRODUCT, copy as shotCopy, vakRegel } from
 import { isEcht } from '../../lib/beeldAanwezig.js';
 import {
   PRODUCT_QUESTIONS, ORDER_QUESTIONS, copy as attrCopy,
+  /* levering 119 (18 november 2026, proefronde P10-02): de grens van de productnaam komt uit attributes.js, net als voor /api/order. */
+  PRODUCT_NAAM_MAX,
 } from '../../data/attributes.js';
 import ProductUploader from './ProductUploader.astro';
 /* Styling.astro ("Wat je opstuurt") staat sinds 11 oktober 2026 niet meer in
@@ -118,6 +121,10 @@ import { catalogStyles as catalogStylesEn } from '../../data/catalogStyles.js';
 import { catalogStyles as catalogStylesNl } from '../../data/catalogStyles.nl.js';
 import { RECOMMENDED as BG_AANBEVOLEN } from '../../data/backgrounds.js';
 import { levertijdDelen } from '../../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P1-03): het bedrag van de €1-proef met btw, uit dezelfde offerte als de kassa. */
+import { quoteTestSample } from '../../lib/quote.js';
+/* levering 119 (18 november 2026, proefronde P10-02): een productnaam van 228 tekens zonder spatie blies mail, portaal en /admin op.
+   De grens (PRODUCT_NAAM_MAX) staat in src/data/attributes.js en is hierboven geïmporteerd. */
 interface Props {
   lang: 'en' | 'nl';
   /** The ladder kind. Also what the config blob calls the service. */
@@ -277,7 +284,8 @@ const sample = TEST_SAMPLE[lang];
 const SERVICE = {
   en: {
     catalog: {
-      title: 'Catalog sets',
+      /* levering 118 (17 november 2026, proefronde P2-10): één naam per dienst, overal Catalog. */
+      title: 'Catalog',
       gets: 'From 4 images per product — front, back, detail, on model',
       lead: `The rate falls as the count rises, from ${euro(ladderRate('catalog', 1), 'en')} to ${euro(ladderFloor('catalog'), 'en')} a product.`,
       leadCredits: `With your plan: ${SERVICE_CREDITS.catalog} credits a product.`,
@@ -292,7 +300,8 @@ const SERVICE = {
   },
   nl: {
     catalog: {
-      title: 'Catalogsets',
+      /* levering 118 (17 november 2026, proefronde P2-10): één naam per dienst, overal Catalog. */
+      title: 'Catalog',
       gets: 'Vanaf 4 beelden per product — voor, achter, detail, op model',
       lead: `Het tarief daalt naarmate het aantal stijgt, van ${euro(ladderRate('catalog', 1), 'nl')} naar ${euro(ladderFloor('catalog'), 'nl')} per product.`,
       leadCredits: `Met je abonnement: ${SERVICE_CREDITS.catalog} credits per product.`,
@@ -344,7 +353,7 @@ const PIPE = {
   en: {
     total: {
       each: `{rate} per product × {n}, ${vatLabel('excl', 'en')}.`,
-      more: 'That is more than one reserved delivery date holds, so it is planned with you rather than priced by a form.',
+      more: 'That is more than one delivery date holds, so it is planned with you rather than priced by a form.',
       quote: 'Choose how many products and the total appears here.',
       onRequest: '—',
       look: ' Plus {price} × {n} for complete looks: pieces from this order worn together.',
@@ -390,7 +399,9 @@ const PIPE = {
       snel: `Your order is delivered ${bijzin(turnaround('unattended', 'en'))}.`,
       venster: 'Your images arrive in the window you chose: {datum}.',
       later: `Your images arrive on ${bijzin(turnaround('attended', 'en'))}.`,
-      voorrang: `Your order has priority: pay on a working day before ${VOORRANG.bestelVoorUur}:00 and we deliver by ${VOORRANG.klaarUur}:00 the next working day.`,
+      /* levering 118 (17 november 2026, proefronde L-16 keuze a): voorrang telt vanaf het latere moment: betaald én alle foto's binnen. */
+      /* levering 118 (17 november 2026, proefronde P8-06): dezelfde belofte als overal (voorrangBelofte, met Dutch time en L-16 erin). */
+      voorrang: `Your order has priority: ${voorrangBelofte('en')}.`,
       revisie: `After delivery you have ${REVISIE_DAGEN} days for one revision round.`,
     },
     /* De abonnementsregel. Twee vormen, en het verschil is niet toon maar
@@ -408,7 +419,8 @@ const PIPE = {
       unattended: `${clause(TIERS.unattended.queue.en)}. From ${WINDOW_THRESHOLD} products we hold a delivery date for you instead.`,
     },
     kind: {
-      catalog: 'Catalog set',
+      /* levering 118 (17 november 2026, proefronde P2-10): Catalog. */
+      catalog: 'Catalog',
       lifestyle: 'Lifestyle carousel',
     },
     // The last resort when a field carries no message of its own. Every field
@@ -472,7 +484,9 @@ const PIPE = {
       hoogResN: '{px} px on {n} products',
       hoogRes1: '{px} px on 1 product',
       voorrang: 'Delivery',
-      voorrangJa: `Priority — delivered by 17:00 the next working day, or the surcharge comes back`,
+      /* levering 118 (17 november 2026, proefronde L-16 keuze a): voorrang telt vanaf het latere moment: betaald én alle foto's binnen. */
+      /* levering 118 (17 november 2026, proefronde P8-06): voorrangZin() uit pricing.js. */
+      voorrangJa: voorrangZin('en'),
       /* De bijbestelde hoeken, met hun NAMEN en niet als getal: "4 extra photos"
          zegt wat het kost, "Flat-lay, Side, Inside, One detail" zegt wat je krijgt,
          en dit scherm is het laatste moment waarop dat nog te veranderen is. */
@@ -504,9 +518,11 @@ const PIPE = {
       /* B26b: het totaal in het meelopende overzicht en in stap 1. */
       creditsTotaal: '{n} credits',
       files: 'Reference material',
-      noFiles: 'Nothing sent yet — we will get back to you',
+      /* levering 119 (18 november 2026, proefronde L-04): with photos later, the customer acts, not us. */
+      noFiles: 'No photos yet: you send them after ordering, in VISUAILS Studio',
       window: 'Delivery',
-      windowLater: 'Delivery date still to be reserved',
+      /* levering 119 (18 november 2026, proefronde L-05): one idea for the date: held once you order, fixed once you pay. */
+      windowLater: 'Delivery date to follow; we agree it with you',
       queue: TIERS.unattended.queue.en,
       email: 'Email',
     },
@@ -564,14 +580,15 @@ const PIPE = {
       prefillNote: "Filled in from your account ({email}) — change anything that’s out of date.",
     },
     gate: {
-      windowSub: 'Dates we can hold',
+      windowSub: 'Dates we can hold for you',
       /* ── DE AGENDA — 10 september 2026 ────────────────────────────────
          Lucas: *"Ik zou dit liever als een agenda willen zien waar de klant kan
          klikken op een beschikbare datum."* De twee regels hieronder zijn het
          enige wat de kalender aan tekst nodig heeft; de maandnamen en de
          weekdagen komen uit Intl en niet uit deze lijst, want die kent elke
          browser al in elke taal. */
-      chosen: 'Held for you',
+      /* levering 119 (18 november 2026, proefronde L-05): one idea for the date: held once you order, fixed once you pay. */
+      chosen: 'Chosen',
       none: 'No dates open in this stretch.',
       earlier: '← Earlier',
       later: 'Later →',
@@ -624,7 +641,9 @@ const PIPE = {
       snel: `Je beelden komen ${bijzin(turnaround('unattended', 'nl'))}.`,
       venster: 'Je beelden komen in het venster dat je koos: {datum}.',
       later: `Je beelden komen op ${bijzin(turnaround('attended', 'nl'))}.`,
-      voorrang: `Je bestelling heeft voorrang: betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan leveren we uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00.`,
+      /* levering 118 (17 november 2026, proefronde L-16 keuze a): voorrang telt vanaf het latere moment: betaald én alle foto's binnen. */
+      /* levering 118 (17 november 2026, proefronde P8-06): dezelfde belofte als overal (voorrangBelofte, met Nederlandse tijd en L-16 erin). */
+      voorrang: `Je bestelling heeft voorrang: ${voorrangBelofte('nl')}.`,
       revisie: `Na levering heb je ${REVISIE_DAGEN} dagen voor één revisieronde.`,
     },
     /* Zie de Engelse noot hierboven. */
@@ -634,11 +653,13 @@ const PIPE = {
       cta: 'Bekijk de abonnementen',
     },
     level: {
-      attended: `${WINDOW_THRESHOLD} producten of meer, dus we zetten voor deze bestelling een leverdatum vast. ${clause(turnaround('attended', 'nl'))}.`,
-      unattended: `${clause(TIERS.unattended.queue.nl)}. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling in plaats daarvan een vastgezette leverdatum.`,
+      /* levering 119 (18 november 2026, proefronde L-05): één begrip voor de leverdatum: vastgehouden zodra je bestelt, vast zodra je betaalt. */
+      attended: `${WINDOW_THRESHOLD} producten of meer, dus krijgt deze bestelling een vaste leverdatum. ${clause(turnaround('attended', 'nl'))}.`,
+      unattended: `${clause(TIERS.unattended.queue.nl)}. Vanaf ${WINDOW_THRESHOLD} producten krijgt een bestelling in plaats daarvan een vaste leverdatum.`,
     },
     kind: {
-      catalog: 'Catalogset',
+      /* levering 118 (17 november 2026, proefronde P2-10): Catalog. */
+      catalog: 'Catalog',
       lifestyle: 'Lifestylecarrousel',
     },
     err: { generic: 'Hier moet nog een antwoord staan voordat je verder kunt.' },
@@ -669,7 +690,9 @@ const PIPE = {
       hoogResN: '{px} px bij {n} producten',
       hoogRes1: '{px} px bij 1 product',
       voorrang: 'Levering',
-      voorrangJa: `Voorrang — geleverd uiterlijk de volgende werkdag om 17:00, of de toeslag komt terug`,
+      /* levering 118 (17 november 2026, proefronde L-16 keuze a): voorrang telt vanaf het latere moment: betaald én alle foto's binnen. */
+      /* levering 118 (17 november 2026, proefronde P8-06): voorrangZin() uit pricing.js. */
+      voorrangJa: voorrangZin('nl'),
       /* Zie de Engelse tegenhanger. */
       angles: 'Extra hoeken',
       anglesN: '{list} — bij elk product',
@@ -694,9 +717,11 @@ const PIPE = {
       creditsWaarde: '{n} credits van je abonnement — je betaalt niets bij Mollie',
       creditsTotaal: '{n} credits',
       files: 'Referentiemateriaal',
-      noFiles: 'Nog niets gestuurd — we nemen contact met je op',
+      /* levering 119 (18 november 2026, proefronde L-04): bij foto's later is de klant aan zet, niet wij. */
+      noFiles: 'Nog geen foto’s: die stuur je na het bestellen in VISUAILS Studio',
       window: 'Levering',
-      windowLater: 'Leverdatum wordt nog vastgezet',
+      /* levering 119 (18 november 2026, proefronde L-05): één begrip voor de leverdatum: vastgehouden zodra je bestelt, vast zodra je betaalt. */
+      windowLater: 'Leverdatum volgt; die spreken we met je af',
       queue: TIERS.unattended.queue.nl,
       email: 'E-mail',
     },
@@ -717,7 +742,8 @@ const PIPE = {
         network: 'De verbinding viel weg voordat dit bestand binnen was. Probeer het opnieuw.',
         generic: 'We konden dit bestand niet lezen. Probeer het nog eens, of kies een andere foto van hetzelfde product.',
         'bad-type': 'Geen beeld dat we kunnen lezen. JPG, PNG, WebP, AVIF, HEIC, GIF of TIFF.',
-        empty: 'Dit bestand is leeg — 0 bytes. Kies de foto opnieuw uit je fotolijst.',
+        /* levering 118 (17 november 2026, proefronde P2-10): "fotolijst" begreep de proefklant niet. */
+        empty: 'Dit bestand is leeg — 0 bytes. Kies de foto opnieuw uit je foto’s of je map.',
         'no-file': 'Er kwam niets mee. Kies de foto opnieuw — soms geeft de bestandskiezer een leeg vakje door.',
         'bad-batch': 'Deze upload is de verbinding met je bestelling kwijt. Herlaad de pagina en kies de bestanden opnieuw.',
         'bad-request': 'Deze upload werd geweigerd. Herlaad de pagina en voeg het bestand opnieuw toe — je bestelling staat er nog.',
@@ -725,7 +751,7 @@ const PIPE = {
         'dag-limiet': 'Het maximum aantal uploads voor vandaag is bereikt. Onder de foto’s staat hoe je de bestelling toch plaatst.',
         botcheck: 'We konden niet bevestigen dat deze upload van een mens komt. Probeer het opnieuw, of stuur je foto’s via WhatsApp of per mail.',
         // Zie de noot bij de Engelse te-klein.
-        'te-klein': 'Te klein — {lang} pixels op de lange zijde, en we hebben er minstens {min} nodig. Dit is meestal een screenshot of een foto van een website; stuur het origineel uit je fotolijst.',
+        'te-klein': 'Te klein — {lang} pixels op de lange zijde, en we hebben er minstens {min} nodig. Dit is meestal een screenshot of een foto van een website; stuur het origineel uit je foto’s of je map.',
       },
       // Zie de noot bij het Engelse let-blok.
       let: {
@@ -738,9 +764,11 @@ const PIPE = {
       prefillNote: 'Ingevuld vanuit je account ({email}) — pas aan wat niet meer klopt.',
     },
     gate: {
-      windowSub: 'Data die we kunnen vrijhouden',
+      /* levering 119 (18 november 2026, proefronde L-05): één begrip voor de leverdatum: vastgehouden zodra je bestelt, vast zodra je betaalt. */
+      windowSub: 'Data die we voor je kunnen vasthouden',
       /* Zie de Engelse tegenhanger. */
-      chosen: 'Voor je vrijgehouden',
+      /* levering 119 (L-05): vóór het bestellen is er nog niets vastgehouden; dus gewoon wat je koos. */
+      chosen: 'Gekozen',
       none: 'Geen data vrij in deze periode.',
       earlier: '← Eerder',
       later: 'Later →',
@@ -1097,6 +1125,68 @@ for (const l of ['en', 'nl'] as const) {
   };
 }
 
+// ── LEVERING 118 — 17 november 2026 (proefronde) ─────────────────────────────
+// De woorden die pipeline.js sinds levering 118 zelf tekent, op één plek. Bedragen staan er niet in: die rekent
+// pipeline.js uit pricing.js en quote.js en zet ze in {bedrag}, {net}, {nul} en {prijs}.
+for (const l of ['en', 'nl'] as const) {
+  const nl = l === 'nl';
+  (PIPE[l] as Record<string, unknown>).lv118 = {
+    /* P2-05: een mislukte foto bovenaan het product. */
+    kaartFout: nl ? 'Niet verstuurd: {list}. Kijk bij het vak.' : 'Not sent: {list}. See the slot.',
+    /* P10-05: foto's die op de verbinding wachten. */
+    wachtH1: nl ? 'Je verbinding is weg; 1 foto wacht en gaat vanzelf.' : 'Your connection is gone; 1 photo is waiting and will go by itself.',
+    wachtH: nl ? 'Je verbinding is weg; {n} foto’s wachten en gaan vanzelf.' : 'Your connection is gone; {n} photos are waiting and will go by themselves.',
+    wachtKnop: nl ? 'Wachten' : 'Wait',
+    wachtLater: nl ? 'Toch later' : 'Later after all',
+    /* L-16 en P8-04: voorrang op het bevestigscherm. */
+    voorrangSumDag: nl ? 'Voorrang — betaal je nu, dan uiterlijk {dag} om {uur}:00 klaar, of de toeslag komt terug' : 'Priority — pay now and it is ready by {uur}:00 on {dag}, or the surcharge comes back',
+    voorrangSumFotos: nl ? 'Voorrang — de klok loopt vanaf je betaling én al je foto’s: binnen vóór {voor}:00 op een werkdag, dan de volgende werkdag om {uur}:00 klaar' : 'Priority — the clock starts once your payment and all your photos are in: in before {voor}:00 on a working day, ready by {uur}:00 the next working day',
+    /* P12-05: op wie de factuur komt. */
+    factuurAan: nl ? 'Factuur aan' : 'Invoice to',
+    wijzig: nl ? 'Wijzig' : 'Change',
+    /* L-10: wat de server met de betaling doet. */
+    nakijkZin: nl ? 'We kijken je gegevens eerst na. De betaallink komt binnen een werkdag per mail; daarna beginnen we.' : 'We check your details first. The payment link follows by email within one working day; then we start.',
+    nakijkKnop: nl ? 'Bestelling versturen' : 'Send order',
+    payNakijken: nl ? '{bedrag} ({pct}% btw) — na het nakijken, via de betaallink in je mail' : '{bedrag} ({pct}% VAT) — after the check, through the payment link in your email',
+    payBuiten: nl ? '{net} · btw {nul} (buiten de EU)' : '{net} · VAT {nul} (outside the EU)',
+    payVerlegd: nl ? '{net} · btw verlegd {nul}' : '{net} · VAT reverse-charged {nul}',
+    /* P1-03: de €1-proef met btw. */
+    btwRegel: nl ? 'Btw {pct}%' : 'VAT {pct}%',
+    totaalRegel: nl ? 'Totaal bij Mollie' : 'Total at Mollie',
+    /* P1-04: tweede proef. */
+    proefBestel: nl ? 'Bestel deze look voor {prijs}' : 'Order this look for {prijs}',
+    proefBestelKaal: nl ? 'Bestel deze look' : 'Order this look',
+    /* P2-07: automatisch teruggezet. */
+    conceptTerugH: nl ? 'We hebben je bestelling teruggezet' : 'We put your order back',
+    /* P1-06: de vaste Verder op de telefoon. */
+    nogKeuze1: nl ? 'Nog 1 keuze' : '1 more choice',
+    nogKeuzes: nl ? 'Nog {n} keuzes' : '{n} more choices',
+    /* P3-11: volle dagen. */
+    vol: nl ? 'vol' : 'full',
+    volTussen: nl ? '({dagen} vol)' : '({dagen} full)',
+  };
+}
+
+// ── LEVERING 119 — 18 november 2026 (proefronde) ─────────────────────────────
+// De nieuwe woorden van pipeline.js, op één plek, zoals lv118 hierboven. Geen bedragen.
+for (const l of ['en', 'nl'] as const) {
+  const nl = l === 'nl';
+  (PIPE[l] as Record<string, unknown>).lv119 = {
+    /* L-04: wat de klant zelf invulde, op het controlescherm. */
+    producten: nl ? 'Je producten' : 'Your products',
+    bericht: nl ? 'Je bericht' : 'Your message',
+    contact: nl ? 'Hoe we je bereiken' : 'How we reach you',
+    /* P10-09: een eigen gezicht per product. */
+    modelPerN: nl ? '{n} producten met een eigen gezicht' : '{n} products with their own face',
+    /* P3-14: de achtergrond per hoek, alleen de afwijkingen. */
+    bgRest: nl ? 'rest {kleur}' : 'the rest {kleur}',
+    /* L-15: een overgenomen soort zegt waar hij vandaan komt. */
+    soortZoals: nl ? '{soort} · zoals product {n}' : '{soort} · same as product {n}',
+    /* P11-13: na Eerder of Later. */
+    dagenNu: nl ? 'Nu: {van} tot {tot}' : 'Now: {van} to {tot}',
+  };
+}
+
 // ── The contract, enforced at build time ───────────────────────────────────
 // Every dotted path src/scripts/pipeline.js passes to c(), in both languages.
 // A key that is missing or empty fails the build here rather than reaching a
@@ -1188,6 +1278,14 @@ const REQUIRED_COPY = [
   'concept.dienst', 'concept.wat', 'concept.product1', 'concept.productN',
   'concept.foto0', 'concept.foto1', 'concept.fotoN', 'concept.weg1', 'concept.wegN',
   'gate.windowSub', 'gate.chosen', 'gate.none', 'gate.earlier', 'gate.later',
+  /* levering 118 (17 november 2026): de nieuwe woorden van pipeline.js. */
+  'lv118.kaartFout', 'lv118.wachtH1', 'lv118.wachtH', 'lv118.wachtKnop', 'lv118.wachtLater',
+  'lv118.voorrangSumDag', 'lv118.voorrangSumFotos', 'lv118.factuurAan', 'lv118.wijzig',
+  'lv118.nakijkZin', 'lv118.nakijkKnop', 'lv118.payNakijken', 'lv118.payBuiten', 'lv118.payVerlegd',
+  'lv118.btwRegel', 'lv118.totaalRegel', 'lv118.proefBestel', 'lv118.proefBestelKaal', 'lv118.conceptTerugH',
+  'lv118.nogKeuze1', 'lv118.nogKeuzes', 'lv118.vol', 'lv118.volTussen',
+  /* levering 119 (18 november 2026): idem. */
+  'lv119.producten', 'lv119.bericht', 'lv119.contact', 'lv119.modelPerN', 'lv119.bgRest', 'lv119.soortZoals', 'lv119.dagenNu',
   'submit.sending', 'submit.email', 'submit.network', 'submit.generic', 'submit.rate',
   ...(bgApplies
     ? ['bg.warn', `bg.note.${CUSTOM_ID}`, ...BACKGROUNDS.map((b) => `bg.note.${b.id}`)]
@@ -1288,7 +1386,8 @@ const FORM = {
          aantallen komen niet uit een tekst maar uit dezelfde bron als de rest
          van de site — vier catalogbeelden, een carousel van drie. */
       sampleKindLabel: 'What should we make?',
-      sampleKindCatalog: 'Catalog set',
+      /* levering 118 (17 november 2026, proefronde P2-10): Catalog. */
+      sampleKindCatalog: 'Catalog',
       sampleKindCatalogGets: 'Four images, product on a clean background',
       sampleKindLifestyle: 'Lifestyle carousel',
       sampleKindLifestyleGets: 'Four images in a styled look, three on a model',
@@ -1431,13 +1530,16 @@ const FORM = {
       viesZonder: 'Order without a VAT number (with VAT)',
       /* Doorloop 27 (B41): al een proef op dit adres, al bij het verlaten van stap 3. */
       proefAlKop: 'You’ve already had your test sample.',
-      proefAl: ['It is one per business, and this email address, phone number or registration number already has one. Nothing has been ordered. ', 'Order normally', ' from a single product, or ', 'send us a message', ' if the first sample never arrived.'],
+      /* levering 118 (17 november 2026, proefronde P1-04): de link wordt "Bestel deze look voor €…" (pipeline.js), dus geen "vanaf één product" erachter. */
+      proefAl: ['It is one per business, and this email address, phone number or registration number already has one. Nothing has been ordered. ', 'Order normally', ', or ', 'send us a message', ' if the first sample never arrived.'],
       /* o03, 8 oktober 2026: Cloudflare zei uitdrukkelijk dat de botcheck niet
          klopte. Er is niets aangemaakt of afgeschreven. */
       refuseBotcheck: 'We could not confirm that this order came from a person, so it was not sent and nothing was charged. Try again in a moment, or place the order with us directly:',
       refuseBotcheckWaLabel: 'send a WhatsApp',
       refuseBotcheckWa: 'Hello VISUAILS, I tried to place an order on the site and it did not go through. Can you help me place it?',
       refuseBotcheckOf: 'or email',
+      /* levering 118 (17 november 2026, proefronde P4-08): /api/order stuurt bij te vaak versturen terug met ?error=rate (was een witte pagina). */
+      refuseRate: 'You sent this form many times in a short while, so this one did not go through and nothing was charged. Wait a few minutes and try again, or place the order with us directly:',
       noVat: 'I do not have a VAT number',
       vatHint: 'A business in another EU country: we check it against VIES, and if it is valid no Dutch VAT is charged.',
       reg: 'Registration number',
@@ -1462,10 +1564,11 @@ const FORM = {
       h: 'Timing',
       lead: 'Checked against the real calendar rather than promised.',
       checking: 'Checking the calendar…',
-      queueH: 'This order does not need a reserved delivery date',
+      /* levering 119 (18 november 2026, proefronde L-05): one idea for the date: held once you order, fixed once you pay. */
+      queueH: 'This order does not need a fixed delivery date',
       queueBody: `Orders of up to ${WINDOW_THRESHOLD - 1} products are produced in the order they arrive — ${turnaround('unattended', 'en').charAt(0).toLowerCase()}${turnaround('unattended', 'en').slice(1)}.`,
       okH: 'These delivery dates can be held for you',
-      okBody: 'Pick one. Nothing is reserved by looking at it — the delivery date is held the moment your order and payment are in, and stays held for seven days if you pay later through the link in your email.',
+      okBody: 'Pick one. Looking costs nothing: once you order, we hold the date for you for seven days, and it is fixed once you pay.',
       okMax: 'Per date we hold room for up to',
       okMaxTail: 'products.',
       fullH: 'The next few weeks are full',
@@ -1507,7 +1610,8 @@ const FORM = {
       h: 'Check and pay',
       lead: 'Read it back. Nothing has been created yet, and nothing has been charged.',
       afterH: 'What happens after you press the button',
-      afterWindow: 'Your reserved delivery date is held for seven days while you pay.',
+      /* levering 119 (18 november 2026, proefronde L-05): one idea for the date: held once you order, fixed once you pay. */
+      afterWindow: 'We hold your delivery date for seven days while you pay; once paid, it is fixed.',
       /* 8 november 2026 (doorloop 90, B31): vanaf 10 producten zonder leverdatum ging je niet naar Mollie maar naar
          de bedankpagina met de betaalknop, terwijl hier stond dat je meteen naar Mollie gaat. */
       afterNoWindow: 'No delivery date chosen? Then the next page has the payment button, and we agree the date with you.',
@@ -1665,7 +1769,8 @@ const FORM = {
       moreBack: `Toch ${maxProducts} of minder? Kies dan een aantal`,
       /* Zie de noot bij de Engelse tegenhanger. */
       sampleKindLabel: 'Wat maken we voor je?',
-      sampleKindCatalog: 'Catalogset',
+      /* levering 118 (17 november 2026, proefronde P2-10): Catalog. */
+      sampleKindCatalog: 'Catalog',
       sampleKindCatalogGets: 'Vier beelden, je product op een schone ondergrond',
       sampleKindLifestyle: 'Lifestylecarrousel',
       sampleKindLifestyleGets: 'Vier beelden in een gestylede look, drie op een model',
@@ -1779,12 +1884,15 @@ const FORM = {
       refuseBotcheckWaLabel: 'stuur een WhatsApp',
       refuseBotcheckWa: 'Hallo VISUAILS, ik probeerde een bestelling te plaatsen op de site en dat lukte niet. Kunnen jullie me helpen hem te plaatsen?',
       refuseBotcheckOf: 'of mail',
+      /* levering 118 (17 november 2026, proefronde P4-08): zie de Engelse refuseRate. */
+      refuseRate: 'Je hebt in korte tijd vaak verstuurd, dus is deze niet aangekomen en is er niets afgeschreven. Wacht een paar minuten en probeer het opnieuw, of plaats de bestelling rechtstreeks bij ons:',
       refuseVat: 'Dit btw-nummer heeft niet de vorm die bij het gekozen land hoort. Verbeter het, of zet het vinkje “Ik heb geen btw-nummer” aan.',
       viesGeldig: 'Gevonden in de Europese btw-controle (VIES). Met de zakelijke verklaring in de laatste stap wordt de btw verlegd.',
       viesOngeldig: 'Dit nummer staat niet in de Europese btw-controle (VIES). Kijk het even na. Klopt het toch? Dan controleren we het met de hand en krijg je de betaallink binnen een werkdag.',
       viesZonder: 'Bestel zonder btw-nummer (met btw)',
       proefAlKop: 'Je hebt VISUAILS al geprobeerd.',
-      proefAl: ['Er is één proef per bedrijf, en op dit e-mailadres, telefoonnummer of KVK-nummer staat er al een. Er is niets besteld. ', 'Bestel gewoon', ' vanaf één product, of ', 'stuur ons een bericht', ' als de eerste proef nooit aankwam.'],
+      /* levering 118 (17 november 2026, proefronde P1-04): de link wordt "Bestel deze look voor €…" (pipeline.js), dus geen "vanaf één product" erachter. */
+      proefAl: ['Er is één proef per bedrijf, en op dit e-mailadres, telefoonnummer of KVK-nummer staat er al een. Er is niets besteld. ', 'Bestel gewoon', ', of ', 'stuur ons een bericht', ' als de eerste proef nooit aankwam.'],
       noVat: 'Ik heb geen btw-nummer',
       vatHint: 'Zakelijk in een ander EU-land: we controleren hem bij VIES, en klopt hij, dan rekenen we geen Nederlandse btw.',
       reg: 'Registratienummer',
@@ -1800,13 +1908,14 @@ const FORM = {
     },
     s4: {
       h: 'Levertijd',
-      lead: 'We kijken in de echte agenda. Wat je hier ziet, houden we ook vrij.',
+      /* levering 119 (18 november 2026, proefronde L-05): één begrip voor de leverdatum: vastgehouden zodra je bestelt, vast zodra je betaalt. */
+      lead: 'We kijken in de echte agenda.',
       checking: 'Agenda bekijken…',
-      queueH: 'Deze bestelling heeft geen vastgezette leverdatum nodig',
+      queueH: 'Deze bestelling heeft geen vaste leverdatum nodig',
       /* 'onder dat aantal' verwees naar niets op dit scherm — 3 sep 2026. */
       queueBody: `Bestellingen tot en met ${WINDOW_THRESHOLD - 1} producten maken we in de volgorde waarin ze binnenkomen — ${turnaround('unattended', 'nl').charAt(0).toLowerCase()}${turnaround('unattended', 'nl').slice(1)}.`,
-      okH: 'Deze leverdata kunnen voor je worden vastgehouden',
-      okBody: 'Kies er één. Door te kijken reserveer je niets — de leverdatum staat vast zodra je bestelling en betaling binnen zijn, en blijft zeven dagen voor je staan als je later betaalt via de link in je mail.',
+      okH: 'Deze leverdata kunnen we voor je vasthouden',
+      okBody: 'Kies er één. Kijken kost niets: zodra je bestelt, houden we de datum zeven dagen voor je vast, en vast staat hij zodra je betaalt.',
       okMax: 'Per leverdatum houden we ruimte voor maximaal',
       okMaxTail: 'producten.',
       fullH: 'De komende weken zitten vol',
@@ -1846,7 +1955,8 @@ const FORM = {
       h: 'Controleer en betaal',
       lead: 'Lees het terug. Er is nog niets aangemaakt en er is nog niets in rekening gebracht.',
       afterH: 'Wat er gebeurt nadat je op de knop drukt',
-      afterWindow: 'Je vastgezette leverdatum blijft zeven dagen voor je staan terwijl je betaalt.',
+      /* levering 119 (18 november 2026, proefronde L-05): één begrip voor de leverdatum: vastgehouden zodra je bestelt, vast zodra je betaalt. */
+      afterWindow: 'We houden je leverdatum zeven dagen voor je vast terwijl je betaalt; betaald staat hij vast.',
       afterNoWindow: 'Geen leverdatum gekozen? Dan staat de betaalknop op de volgende pagina, en de leverdatum spreken we met je af.',
       /* O16 (ronde 9): alleen voor een ander EU-land — een klant buiten de EU las
          hem ook, en voor hem klopt hij niet. syncReg() in pipeline.js zet hem aan. */
@@ -1959,9 +2069,12 @@ const WK = lang === 'nl' ? {
   taalKort: 'EN',
   van: (i: number, n: number) => `${i} van ${n}`,
   opening: isCatalog
-    ? { l: 'Catalogsets.', h: 'Vier beelden per product.', zin: 'Voorkant, achterkant, een detail en op een model, op jouw achtergrond. Hoe meer producten, hoe lager de prijs per product.' }
+    /* levering 118 (17 november 2026, proefronde P2-10): Catalog. */
+    ? { l: 'Catalog.', h: 'Vier beelden per product.', zin: 'Voorkant, achterkant, een detail en op een model, op jouw achtergrond. Hoe meer producten, hoe lager de prijs per product.' }
     : { l: 'Lifestylecarrousels.', h: 'Vier beelden per product.', zin: 'Je product op een model in een gestylede scène: van voren, van achteren, een detail en het product alleen. Hoe meer producten, hoe lager de prijs per product.' },
   stijl: isCatalog ? { label: 'Stijl', kop: 'Welke stijl?' } : { label: 'Look', kop: 'Welke look?' },
+  /* levering 119 (18 november 2026, proefronde P2-11, keuze b): bij één huisstijl is de vraag al beantwoord (op /start koos je hem). */
+  stijlKort: { kop: 'Je stijl', wijzig: 'Wijzigen' },
   aantal: { label: 'Aantal', kop: 'Hoeveel producten?' },
   trapKop: 'Prijs per product',
   trapKnop: (rij: string, prijs: string) => `${rij}: ${prijs} per product`,
@@ -1969,14 +2082,16 @@ const WK = lang === 'nl' ? {
   gezicht: { label: 'Gezicht', kop: 'Wie draagt het?', zin: 'Voor de foto’s op een model. Kies een gezicht, of de eerste tegel: dan kiezen wij er een dat bij je merk past. Per product aan te passen bij je foto’s.' },
   levering: { label: 'Levering', kop: 'Wanneer?' },
   leverOnder: `Zodra het klaar is: ${wkLever[0].toLowerCase()}${wkLever[1] ? `, ${wkLever[1]}` : ''}. Je krijgt een bericht.`,
-  leverBoven: `Vanaf ${WINDOW_THRESHOLD} producten kies je na je gegevens een leverdatum: gereserveerd zodra je bestelt, vast zodra je betaalt.`,
+  leverBoven: `Vanaf ${WINDOW_THRESHOLD} producten kies je na je gegevens een leverdatum: vastgehouden zodra je bestelt, vast zodra je betaalt.`,
   voorrang: 'Voorrang',
   voorrangTerm: 'de grenzen van voorrang',
-  voorrangZin: `Bovenaan de lijst. Betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan is het de volgende werkdag om ${VOORRANG.klaarUur}:00 klaar. Halen we dat niet, dan krijg je de toeslag terug.`,
+  /* levering 118 (17 november 2026, proefronde L-16 keuze a): de klok loopt vanaf betaald én alle foto's binnen. */
+  /* levering 118 (17 november 2026, proefronde P8-06): de belofte uit pricing.js. */
+  voorrangZin: `Bovenaan de lijst: ${voorrangBelofte('nl')}.`,
   /* Ronde 91 (C06): als de agenda dicht staat op een van de twee werkdagen van de belofte. */
   voorrangDicht: 'Nu niet te kiezen: de studio is dicht op de eerstvolgende werkdagen, dus die levertijd halen we niet. De gewone levering blijft staan.',
   /* Lijst 87 (C07): de echte dag, uit voorrangDeadline() (pricing.js), zodat je in het weekend ziet wat je koopt. */
-  voorrangDag: 'Betaal je nu, dan is het uiterlijk {dag} om {uur}:00 klaar.',
+  voorrangDag: 'Betaal je nu en staan al je foto’s er, dan is het uiterlijk {dag} om {uur}:00 klaar.',
   eigenStijl: 'Op aanvraag',
   krijgKop: 'Wat je krijgt',
   hoekNoot: ['Achtergrond per hoek.', 'Tik op het vierkantje. Geldt voor de hele bestelling.'],
@@ -1993,6 +2108,8 @@ const WK = lang === 'nl' ? {
   hoekPaneel: 'Een hoek erbij',
   hoekKlaar: 'Klaar',
   vorm: 'Vorm van het beeld',
+  /* levering 118 (P1-06): het blok met de verhouding in stap 1, op de telefoon. */
+  vormBlok: { label: 'Vorm', kop: 'Welke verhouding?' },
   rProducten: 'Producten',
   rBeelden: 'Beelden',
   rGezicht: 'Gezicht',
@@ -2035,9 +2152,12 @@ const WK = lang === 'nl' ? {
   taalKort: 'NL',
   van: (i: number, n: number) => `${i} of ${n}`,
   opening: isCatalog
-    ? { l: 'Catalog sets.', h: 'Four images per product.', zin: 'Front, back, a detail and on a model, on your background. The more products, the lower the price per product.' }
+    /* levering 118 (17 november 2026, proefronde P2-10): Catalog. */
+    ? { l: 'Catalog.', h: 'Four images per product.', zin: 'Front, back, a detail and on a model, on your background. The more products, the lower the price per product.' }
     : { l: 'Lifestyle carousels.', h: 'Four images per product.', zin: 'Your product on a model in a styled scene: from the front, from the back, a detail and the product on its own. The more products, the lower the price per product.' },
   stijl: isCatalog ? { label: 'Style', kop: 'Which style?' } : { label: 'Look', kop: 'Which look?' },
+  /* levering 119 (P2-11, keuze b): with one house style the question is already answered. */
+  stijlKort: { kop: 'Your style', wijzig: 'Change' },
   aantal: { label: 'Count', kop: 'How many products?' },
   trapKop: 'Price per product',
   trapKnop: (rij: string, prijs: string) => `${rij}: ${prijs} per product`,
@@ -2045,13 +2165,15 @@ const WK = lang === 'nl' ? {
   gezicht: { label: 'Face', kop: 'Who wears it?', zin: 'For the photos on a model. Pick a face, or the first tile: then we choose one that suits your brand. You can change it per product with your photos.' },
   levering: { label: 'Delivery', kop: 'When?' },
   leverOnder: `As soon as it is ready: ${wkLever[0].toLowerCase()}${wkLever[1] ? `, ${wkLever[1]}` : ''}. We let you know.`,
-  leverBoven: `From ${WINDOW_THRESHOLD} products you pick a delivery date after your details: reserved when you order, fixed once you pay.`,
+  leverBoven: `From ${WINDOW_THRESHOLD} products you pick a delivery date after your details: held once you order, fixed once you pay.`,
   voorrang: 'Priority',
   voorrangTerm: 'the limits of priority',
-  voorrangZin: `Top of the list. Pay on a working day before ${VOORRANG.bestelVoorUur}:00 and it is ready by ${VOORRANG.klaarUur}:00 the next working day. If we do not make it, the surcharge comes back.`,
+  /* levering 118 (17 november 2026, proefronde L-16 keuze a): de klok loopt vanaf betaald én alle foto's binnen. */
+  /* levering 118 (17 november 2026, proefronde P8-06): the promise from pricing.js. */
+  voorrangZin: `Top of the list: ${voorrangBelofte('en')}.`,
   /* Ronde 91 (C06): see the Dutch counterpart. */
   voorrangDicht: 'Not available right now: the studio is closed on the next working days, so we cannot make that deadline. Normal delivery still applies.',
-  voorrangDag: 'Pay now and it is ready by {uur}:00 on {dag} at the latest.',
+  voorrangDag: 'Pay now with all your photos in and it is ready by {uur}:00 on {dag} at the latest.',
   eigenStijl: 'On request',
   krijgKop: 'What you get',
   hoekNoot: ['Background per angle.', 'Tap the little square. It applies to the whole order.'],
@@ -2068,6 +2190,8 @@ const WK = lang === 'nl' ? {
   hoekPaneel: 'Add an angle',
   hoekKlaar: 'Done',
   vorm: 'Image shape',
+  /* levering 118 (P1-06): the ratio block in step 1, on the phone. */
+  vormBlok: { label: 'Shape', kop: 'Which ratio?' },
   rProducten: 'Products',
   rBeelden: 'Images',
   rGezicht: 'Face',
@@ -2222,7 +2346,10 @@ const ERBIJ = lang === 'nl' ? {
     alInLook: 'Zit al in look {l}',
     vol: 'Een look heeft hooguit drie stukken',
     dubbel: 'Op die plek staat al een stuk',
-    toeSub: '+ {prijs} · eigen vier beelden',
+    /* levering 119 (18 november 2026, proefronde P10-01): het verschil in het totaal (pipeline.js rekent het met totaalBij()). */
+    toeSub: '+ {prijs} in totaal · eigen vier beelden',
+    toeSubNul: 'Zelfde totaal · eigen vier beelden',
+    toeSubMinder: '{prijs} minder in totaal · eigen vier beelden',
     lookLabel: 'Look {l} · {n} stukken',
     lookH: 'Een complete look',
     lookWie: '{namen}, samen gedragen door één model.',
@@ -2262,7 +2389,10 @@ const ERBIJ = lang === 'nl' ? {
     alInLook: 'Already in look {l}',
     vol: 'A look has three pieces at most',
     dubbel: 'That place already has a piece',
-    toeSub: '+ {prijs} · its own four images',
+    /* levering 119 (18 november 2026, proefronde P10-01): the difference in the total. */
+    toeSub: '+ {prijs} in total · its own four images',
+    toeSubNul: 'Same total · its own four images',
+    toeSubMinder: '{prijs} less in total · its own four images',
     lookLabel: 'Look {l} · {n} pieces',
     lookH: 'A complete look',
     lookWie: '{namen}, worn together by one model.',
@@ -2362,6 +2492,9 @@ const config = {
   // it here would freeze the wrong rung into the page.
   extraPhotoLadder: EXTRA_PHOTO_LADDER,
   maxExtraPerProduct: MAX_EXTRA_PER_PRODUCT,
+  /* levering 119 (18 november 2026, proefronde P10-02): de productnaam hoogstens zoveel tekens (pipeline.js zet maxLength op het
+     veld). De server knipt op hetzelfde getal; zie de notities van levering 119 (functions/api/order.js). */
+  productNaamMax: PRODUCT_NAAM_MAX,
   /* De GRATIS referentievakken achter het plusje. Uit shots.js en niet uit
      pricing.js, en dat verschil is de hele afspraak: de betaalde extra's staan
      daar omdat ze geld kosten, deze staan daar omdat ze alleen een vakje zijn dat
@@ -2570,6 +2703,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
         Er is dan niets aangemaakt, en de klant krijgt twee wegen die altijd werken. */}
     <div class="pl-weigering" data-form-refusal="botcheck" role="status" tabindex="-1" hidden>
       {f.s3.refuseBotcheck}{' '}
+      <a href={waHref(f.s3.refuseBotcheckWa)} target="_blank" rel="noopener">{f.s3.refuseBotcheckWaLabel}<NieuwTabblad lang={lang} /></a>{' '}
+      {f.s3.refuseBotcheckOf}{' '}
+      <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+    </div>
+    {/* levering 118 (17 november 2026, proefronde P4-08): te vaak verstuurd (?error=rate). Was een witte pagina; nu dezelfde twee wegen als bij de botcheck. */}
+    <div class="pl-weigering" data-form-refusal="rate" role="status" tabindex="-1" hidden>
+      {f.s3.refuseRate}{' '}
       <a href={waHref(f.s3.refuseBotcheckWa)} target="_blank" rel="noopener">{f.s3.refuseBotcheckWaLabel}<NieuwTabblad lang={lang} /></a>{' '}
       {f.s3.refuseBotcheckOf}{' '}
       <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
@@ -2800,8 +2940,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
 
           Een pagina die deze slot niet vult, verliest niets: een lege slot
           rendert niets. */}
-      <WkBlok aan={werk} id="stijl" nr="01" label={WK.stijl.label} kop={WK.stijl.kop}>
+      <WkBlok aan={werk} id="stijl" nr="01" label={WK.stijl.label} kop={wkStijlKaarten ? WK.stijlKort.kop : WK.stijl.kop}>
+        {/* levering 119 (18 november 2026, proefronde P2-11, keuze b): na "Catalog" op /start koos je Classic al (de enige
+            huisstijl), en hier vroeg het formulier opnieuw "Welke stijl?". Nu één regel "Classic · Wijzigen"; Wijzigen klapt de
+            twee kaarten open (Classic en de eigen look op aanvraag). Een <details>: werkt ook zonder script. */}
         {wkStijlKaarten && (
+          <details class="wk-stijl-vouw">
+          <summary class="wk-stijl-kort">{catHuis.map((st: any) => <b>{st.name}</b>)}<span class="wk-stijl-kort-t" aria-hidden="true">·</span><span class="wk-stijl-wijzig">{WK.stijlKort.wijzig}</span></summary>
           <div class="wk-stijlen">
             {catHuis.map((st: any) => (
               <a class="wk-stijl is-gekozen" href={lp('/catalog')} aria-current="true">
@@ -2817,6 +2962,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
               </a>
             )}
           </div>
+          </details>
         )}
         {/* De eigen catalogusstijlen van een ingelogde klant komen hier (addOwnStyles). */}
         {werk && isCatalog && <div class="wk-eigen-stijlen" data-wk-eigen-stijl hidden></div>}
@@ -2882,7 +3028,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
                 const x = i === 0 ? 0 : laatste ? 100 : midden;
                 return (
                   <li data-wk-van={String(tr.van)} data-wk-tot={String(tr.tot)} class={i === 0 ? 'is-l' : laatste ? 'is-r' : undefined} style={`--x:${x.toFixed(2)}%`}>
-                    <button type="button" data-pl-qty-set={String(tr.van)} aria-label={WK.trapKnop(WK.trapRij(tr.van, tr.tot), euro(tr.prijs, lang))}><span>{tr.van === tr.tot ? String(tr.van) : `${tr.van}–${tr.tot}`}</span><b>{euro(tr.prijs, lang)}</b></button>
+                    <button type="button" data-pl-qty-set={String(tr.van)} aria-pressed="false" aria-label={WK.trapKnop(WK.trapRij(tr.van, tr.tot), euro(tr.prijs, lang))}><span>{tr.van === tr.tot ? String(tr.van) : `${tr.van}–${tr.tot}`}</span><b>{euro(tr.prijs, lang)}</b></button>
                   </li>
                 );
               })}
@@ -3108,7 +3254,8 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
           hetzelfde zeggen als elk ander bedrag op de site. */}
       {isSample && (
       <p class="pl-total-flat">
-        <strong>{sample.price}</strong> <span class="pl-total-flat-btw">{vatLabel('excl', lang)}</span> {f.s1.sampleFlatNote}
+        {/* levering 118 (17 november 2026, proefronde P1-03): ook het bedrag met btw, vóór betalen. Bij Mollie stond €1,21 en hier alleen €1. */}
+        <strong>{sample.price}</strong> <span class="pl-total-flat-btw">{vatLabel('excl', lang)}</span> ({euro(quoteTestSample().grossCents / 100, lang)} {vatLabel('incl', lang)}) {f.s1.sampleFlatNote}
       </p>
       )}
       {/* Wat er bij de prijs zit (1.07). Vaste tekst, geen bedrag: die staan
@@ -3202,13 +3349,29 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
           </div>
           )}
       </WkBlok>
+      {/* levering 118 (17 november 2026, proefronde P1-06): de verhouding als eigen blok in stap 1. Op de telefoon stond hij in
+          "Wat je krijgt", onder de Verder-knoppen, en een carrousel in 1:1 terwijl je 4:5 wilde, merk je pas bij levering. Alleen
+          tot 900 px (werkplaats.css): breder staat dezelfde keuze naast het formulier. Dezelfde knoppen (data-wk-vorm), dus
+          bindWkVorm() en de radio's in RatioPicker blijven de bron. */}
+      {werk && wkVormen.length > 0 && (
+        <WkBlok aan={werk} id="vorm" nr="05" label={WK.vormBlok.label} kop={WK.vormBlok.kop}>
+          <div class="wk-vormen" role="group" aria-label={WK.vorm} data-wk-vormen>
+            {wkVormen.map((v: any) => (
+              <button type="button" data-wk-vorm={v.id} aria-pressed={v.id === DEFAULT_RATIO_ID ? 'true' : 'false'}>{v.label}</button>
+            ))}
+          </div>
+        </WkBlok>
+      )}
       <div class="wk-opslag" hidden>
           <div class="field pl-meeropties-vorm">
             <RatioPicker lang={lang} />
           </div>
       </div>
+      {/* levering 118 (17 november 2026, proefronde P3-05): een echte <dialog>; pipeline.js (bindWkHoeken) opent hem met
+          showModal(). Dat dimt alles, ook "Wat je krijgt" en de balken, en houdt de focus binnen het venster. `hidden` blijft
+          voor een browser zonder showModal(). */}
       {isCatalog && (
-      <div class="wk-hoeken" data-wk-hoeken hidden role="dialog" aria-modal="true" aria-labelledby="wk-hoeken-h">
+      <dialog class="wk-hoeken" data-wk-hoeken hidden aria-labelledby="wk-hoeken-h">
         <div class="wk-hoeken-in">
           <div class="wk-hoeken-kop">
             <h2 class="wk-hoeken-h" id="wk-hoeken-h">{WK.hoekPaneel}</h2>
@@ -3216,7 +3379,7 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
           </div>
           <slot name="extra" />
         </div>
-      </div>
+      </dialog>
       )}
       </Fragment>
         )}
@@ -3332,13 +3495,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
           pipeline.js. De zin over "stuur alles mee" (s2.skip) is mee weg: wat
           er gebeurt als er iets ontbreekt, zegt het tussenscherm van 2.05 nu,
           op het moment dat het speelt. */}
-      <ProductUploader lang={lang} />
-
       {/* ── DE TIPBALK — levering 59 (afvinklijst 36, b-tips) ──────────────────
           De tips staan niet meer in de kaarten. Onderin de werkkolom een donkere balk
           met één tip tegelijk, die om de 7 seconden wisselt; stil onder de muis en bij
           minder beweging, met een knop voor de volgende tip, een pauzeknop (niet op de
-          telefoon) en een kruisje (terug via "Toon de tips weer"). bindWkTips(). */}
+          telefoon) en een kruisje (terug via "Toon de tips weer"). bindWkTips().
+          levering 118 (17 november 2026, proefronde P2-05): in de pagina boven de uploadvakken in plaats van vast onderin,
+          en de tip wisselt niet meer vanzelf (de pijl toont de volgende). */}
       {werk && (
         <div class="wk-tipbalk" data-wk-tipbalk role="region" aria-label={WK.s2.tipsLabel} data-wk-tips={JSON.stringify(WK.s2.tips)}>
           <span class="wk-tip-l"><span class="wk-tip-li" set:html={ikoon('info')} />{WK.s2.tip}</span>
@@ -3351,6 +3514,8 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
           </span>
         </div>
       )}
+
+      <ProductUploader lang={lang} />
 
       <p class="pl-step-err" id="pl-err-2" data-pl-step-error hidden></p>
 
@@ -3554,7 +3719,8 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
             server (businessCheck() in src/data/business.js). */}
         <div class="field">
           <div data-pl-vatveld>
-          <label for="pl-vat">{f.s3.vat} <span class="req" data-pl-vat-req>*</span><span class="pl-opt" data-pl-vat-opt hidden>{f.optional}</span><Uitleg tekst={f.s3.vatHint} over={f.s3.vat} lang={lang} /></label>
+          {/* levering 119 (18 november 2026, proefronde P11-11): het vraagteken naast het label en niet erin; het veld heette "Btw-nummer optioneel Uitleg over Btw-nummer". */}
+          <label for="pl-vat">{f.s3.vat} <span class="req" data-pl-vat-req>*</span><span class="pl-opt" data-pl-vat-opt hidden>{` ${f.optional}`}</span></label><Uitleg tekst={f.s3.vatHint} over={f.s3.vat} lang={lang} />
           <input class="input" type="text" id="pl-vat" name="vat" autocomplete="off" placeholder="NL000000000B00" data-pl-req="1" data-pl-req-unless="no_vat" data-pl-err-msg={f.s3.vatErr} />
           {/* B05 (doorloop 27): het antwoord van VIES, zodra het nummer de goede vorm heeft. */}
           <p class="pl-vies" data-pl-vies data-geldig={f.s3.viesGeldig} data-ongeldig={f.s3.viesOngeldig} role="status" hidden><span data-pl-vies-tekst></span> <button type="button" class="pl-vies-zonder" data-pl-vies-zonder hidden>{f.s3.viesZonder}</button></p>
@@ -3603,7 +3769,8 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
               wisselt syncReg() het label, de melding en een patroon van acht
               cijfers in; daarbuiten blijft het vrij, zie de noot hierboven. */}
           <div class="field pl-reg" data-pl-reg hidden>
-            <label for="pl-reg"><span data-pl-reg-label data-reg={f.s3.reg} data-kvk={f.s3.regKvk}>{f.s3.reg}</span> <span class="req" data-pl-reg-req>*</span><span class="pl-opt" data-pl-reg-opt hidden>{f.optional}</span></label>
+            {/* levering 119 (18 november 2026, proefronde P11-11): de spatie vóór "optioneel" in de span zelf; de naam was "Registratienummeroptioneel". */}
+            <label for="pl-reg"><span data-pl-reg-label data-reg={f.s3.reg} data-kvk={f.s3.regKvk}>{f.s3.reg}</span> <span class="req" data-pl-reg-req>*</span><span class="pl-opt" data-pl-reg-opt hidden>{` ${f.optional}`}</span></label>
             <input class="input" type="text" id="pl-reg" name="reg_number" autocomplete="off"
                    maxlength="40" data-pl-req="1" data-pl-req-when="no_vat"
                    data-pl-err-msg={f.s3.regErr} data-err-reg={f.s3.regErr} data-err-kvk={f.s3.regKvkErr} />
@@ -3694,9 +3861,11 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
         <button type="button" class="knop knop-lijn pl-van-bericht" data-rol="toevoegen" data-pl-van-bericht hidden><Fragment set:html={rolIkoon('toevoegen')} /></button>
       </div>
 
+      {/* levering 119 (18 november 2026, proefronde P11-14): role="alert" en niet "status": de melding krijgt de focus en moet zeker voorgelezen worden. */}
       {isSample && (
-        <div class="pl-weigering pl-proef-al" data-pl-proef-al role="status" tabindex="-1" hidden>
-          <strong>{f.s3.proefAlKop}</strong> {f.s3.proefAl[0]}<a href={lp('/start')}>{f.s3.proefAl[1]}</a>{f.s3.proefAl[2]}<a href={lp('/contact')}>{f.s3.proefAl[3]}</a>{f.s3.proefAl[4]}
+        <div class="pl-weigering pl-proef-al" data-pl-proef-al role="alert" tabindex="-1" hidden>
+          {/* levering 118 (17 november 2026, proefronde P1-04): pipeline.js (zetProefBestel) maakt van de eerste link "Bestel deze look voor €…" naar het gewone formulier, met de look en de foto's. */}
+          <strong>{f.s3.proefAlKop}</strong> {f.s3.proefAl[0]}<a href={lp('/start')} data-pl-proef-bestel>{f.s3.proefAl[1]}</a>{f.s3.proefAl[2]}<a href={lp('/contact')}>{f.s3.proefAl[3]}</a>{f.s3.proefAl[4]}
         </div>
       )}
       <p class="pl-step-err" id="pl-err-3" data-pl-step-error hidden></p>
@@ -4926,6 +5095,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     font-variant-numeric: tabular-nums;
   }
   .pl-windows :global(.pl-dag-tot) { margin-top: .25rem; text-transform: none; letter-spacing: 0; }
+  /* levering 118 (17 november 2026, proefronde P3-11): een volle dag als grijze kaart zonder knop (gestippelde rand, grijs vlak,
+     grijze tekst #5E6461 op #F4F5F4: 5,6 : 1), en "(29–30 vol)" onder een venster dat erover springt. */
+  .pl-windows :global(.pl-dag.is-vol) { cursor: default; border-style: dashed; background: #F4F5F4; color: #5E6461; }
+  .pl-windows :global(.pl-dag.is-vol:hover) { border-color: var(--line-strong); }
+  .pl-windows :global(.pl-dag.is-vol .pl-dag-wd),
+  .pl-windows :global(.pl-dag.is-vol .pl-dag-mnd) { color: #5E6461; }
+  .pl-windows :global(.pl-dag-vol) { white-space: nowrap; }
   /* Eerder / later, met het bereik van de rij ertussen. */
   .pl-windows :global(.pl-dagen-nav) {
     display: flex;
@@ -4990,7 +5166,11 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     padding: .8rem 0;
     border-bottom: 1px solid var(--line);
     font-size: var(--h-t-klein); color: var(--ink); line-height: 1.5;
+    /* levering 119 (18 november 2026, proefronde P10-02 en L-04): een lange naam of een e-mailadres zonder spatie breekt hier,
+       en het bericht van de klant houdt zijn eigen regels. */
+    overflow-wrap: anywhere;
   }
+  .pl-summary :global(dd.pl-sum-bericht) { white-space: pre-line; }
 
   /* ── DE MELDING NA EEN WEIGERING VAN DE SERVER ─────────────────────────
      Dezelfde vorm als .pl-error, maar bovenaan het formulier in plaats van bij
@@ -5360,11 +5540,13 @@ const LATIJNS = '[\\p{Script=Latin}\\p{M}\\p{N}\\p{P}\\p{S}\\p{Zs}]*';
     display: flex; align-items: center; justify-content: center;
   }
   .pl-sum-strip :global(.pl-sum-thumb img) { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .pl-sum-strip :global(.pl-sum-thumb.is-ratio) { width: auto; max-width: 84px; background: var(--surface-2); }
-  .pl-sum-strip :global(.pl-sum-thumb.is-bg img) { mix-blend-mode: multiply; }
+  /* levering 119 (18 november 2026, proefronde P1-07): de tegels van de achtergrond en de verhouding zijn weg (pipeline.js,
+     renderStrip), en de naam loopt over twee regels in plaats van "TEST-merk Ev…". Een naam zonder spaties breekt waar het moet
+     (P10-02). */
   .pl-sum-strip :global(.pl-sum-cap) {
     font-size: var(--h-t-label); line-height: 1.25; color: var(--ink-3); text-align: center;
-    max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 84px; overflow: hidden; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
   }
   .pl-sum-strip :global(.pl-sum-more) { font-size: var(--h-t-label); color: var(--ink-3); align-self: center; }
 

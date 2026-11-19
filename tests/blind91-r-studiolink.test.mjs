@@ -64,7 +64,9 @@ ok('formaten (extra-format-ready): ook NL krijgt de taal', /let href = studioUrl
 const cron = lees('cron/index.js');
 ok('cron: beide abonnementsknoppen via studioUrl', (cron.match(/mailButton\(studioUrl\('https:\/\/visuails\.com', '\/plan', nl \? 'nl' : 'en'\)/g) || []).length, 2);
 const bl = lees('src/lib/betaallink.js');
-ok('betaallink: Je gegevens via studioUrl, NL en EN', /studioUrl\(origin, '\/details', 'nl'\)/.test(bl) && /studioUrl\(origin, '\/details', 'en'\)/.test(bl), true);
+/* levering 118 (integratie IA, P4-06 van BG): een offerte zonder adres stuurt niet meer naar Studio → Je gegevens, maar
+   naar de factuurstap op de bestelpagina (/o/<token>#factuur). Dan mag er ook geen kale /account/details-link staan. */
+ok('betaallink: geen kale Studio-link meer; zonder adres naar /o/…#factuur', /url = `\$\{portalUrl\(token, origin\)\}#factuur`/.test(bl) && !/['"`]\/account\/details/.test(bl), true);
 const ord = lees('functions/api/order.js');
 ok('order: de fotolink via studioUrl', /\? studioUrl\(requestOrigin\(request\), '\/orders', lang\)/.test(ord), true);
 

@@ -268,6 +268,14 @@ export function stampDeliveryRetention(env, orderId) {
  * wat hij weghaalde, en een gebeurtenis in dit project de bestaande status
  * herhaalt in plaats van er een te verzinnen. Zonder deze kolom zou de taak de
  * status apart moeten opvragen, per bestelling, midden in een verwijderlus.
+ *
+ * ── GEEN LIKE MEER — levering 117 (17 november 2026, proefronde B1-12) ───────
+ * Hier stond `f.r2_key LIKE 'intake/' || q.upload_batch || '/%'`. Dat patroon is
+ * 7 + 43 + 2 = 52 tekens, en D1 staat in een LIKE-patroon hoogstens 50 toe: elke
+ * nacht sinds 6 november gaf "LIKE or GLOB pattern too complex" en de opruiming
+ * deed niets. Nu een gewone vergelijking van het begin van de sleutel (substr),
+ * zonder patroon. Die is ook strenger: LIKE zag de `_` in een batch-id als
+ * jokerteken en negeerde hoofdletters. 'intake/' + batch + '/' is lengte + 8.
  */
 export const EXPIRED_FILES_SQL = `
   SELECT f.id, f.r2_key, f.preview_key, f.kind, f.order_id, o.status AS order_status, o.lang AS order_lang
@@ -284,7 +292,7 @@ export const EXPIRED_FILES_SQL = `
               AND NOT EXISTS (SELECT 1 FROM files g WHERE g.r2_key = f.r2_key AND g.order_id <> f.order_id)
               AND NOT EXISTS (SELECT 1 FROM plan_queue q
                                WHERE COALESCE(q.upload_batch, '') <> ''
-                                 AND f.r2_key LIKE 'intake/' || q.upload_batch || '/%'))
+                                 AND substr(f.r2_key, 1, length(q.upload_batch) + 8) = 'intake/' || q.upload_batch || '/'))
          )
    ORDER BY f.id
    LIMIT ?1`;

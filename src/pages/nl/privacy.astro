@@ -11,6 +11,10 @@ import NieuwTabblad from '../../components/NieuwTabblad.astro';
 // en PORTAL_TTL_DAYS zijn allebei toevallig 90 en betekenen iets anders.
 import { UPLOAD_DAYS, DELIVERY_DAYS, ACCOUNT_YEARS, BACKUP_KEEP, DRIVE_PRULLENBAK_DAGEN, BACKUP_UITERLIJK_WEKEN, CORRESPONDENTIE_JAREN } from '../../lib/retention.js';
 import { PORTAL_TTL_DAYS } from '../../lib/token.js';
+/* levering 117 (17 november 2026, proefronde P6-01): de tabel met termijnen, dezelfde als voorwaarden §7, de
+   verwerkersovereenkomst §12 en de FAQ. */
+import { bewaarTabel } from '../../data/bewaartermijnen.js';
+const BT = bewaarTabel('nl');
 // De termijn waarbinnen ingetrokken beelden van site en social gaan (punt 10.05).
 import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../../data/termijnen.js';
 
@@ -90,7 +94,8 @@ import { ontvangers, lijstRegel } from '../../data/subverwerkers.js';
       <p>Op grond van de AVG baseren we ons op de volgende rechtsgronden:</p>
       <ul>
         <li><strong>Uitvoering van een overeenkomst</strong> — om de visuals te leveren die je bestelt en je bestelling te beheren.</li>
-        <li><strong>Toestemming</strong> — voor alles wat optioneel is, zoals niet-essentiële analytische cookies, het bericht bij lancering, de Studiobrief, de wachtlijst van de proef en de tekst of beelden die je ons laat tonen, allemaal uit paragraaf 2. Je kunt je toestemming op elk moment intrekken; één mail aan ons is genoeg.</li>
+        {/* levering 119 (18 november 2026, besluit Lucas): er zijn geen analytische cookies; het meten (Cloudflare Web Analytics, via consent.js) gaat zonder cookies en alleen na een ja. */}
+        <li><strong>Toestemming</strong> — voor alles wat optioneel is, zoals het meten van bezoek (Cloudflare Web Analytics, zonder cookies, alleen als je dat aanzet), het bericht bij lancering, de Studiobrief, de wachtlijst van de proef en de tekst of beelden die je ons laat tonen, allemaal uit paragraaf 2. Je kunt je toestemming op elk moment intrekken; één mail aan ons is genoeg.</li>
         <li><strong>Gerechtvaardigde belangen</strong> — om onze dienst veilig te houden, misbruik te voorkomen en te verbeteren wat we aanbieden, afgewogen tegen jouw rechten. Daaronder vallen de controle die de proef op één per bedrijf houdt, de vraag om feedback na de levering, en de botcontrole op formulieren (Cloudflare Turnstile); Cloudflare verwerkt die signalen voor ons, en daarnaast voor zichzelf om zijn botherkenning te verbeteren.</li>
         <li><strong>Wettelijke verplichting</strong> — om facturatie- en belastinggegevens te bewaren zoals vereist door de Nederlandse en EU-wetgeving.</li>
       </ul>
@@ -105,7 +110,7 @@ import { ontvangers, lijstRegel } from '../../data/subverwerkers.js';
       <p class="legal-meta">{lijstRegel('nl')}</p>
       <p>De afspraken achter deze lijst, en per partij de grondslag voor doorgifte, staan in §8 van de <a href="/nl/data-processing-agreement/#subverwerkers">verwerkersovereenkomst</a>.</p>
       <p><strong>Mollie B.V.</strong> (Amsterdam, Nederland) regelt de betalingen. Voor de betaling zelf is Mollie een eigen verwerkingsverantwoordelijke en niet onze verwerker: Mollie valt als betaalinstelling onder eigen wettelijke plichten, zoals fraudecontrole, en legt in <a href="https://www.mollie.com/legal/privacy" rel="noopener">zijn eigen privacyverklaring</a> uit wat het met je gegevens doet. Wij zien of bewaren nooit volledige kaartgegevens.</p>
-      <p><strong>Jouw materiaal wordt niet gebruikt om AI-modellen te trainen.</strong> Dat is niet wat wij hopen, het is wat het platform waarop wij genereren in zijn eigen voorwaarden vastlegt: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em> (vrij vertaald: je beelden worden nooit gebruikt om hun AI-modellen of die van anderen te trainen of te verbeteren) — en het platform verwijdert wat je uploadt direct nadat de visual eruit is gemaakt. De visual die eruit komt, bewaart het platform zolang wij er klant zijn. Dat gaat over hun kopie; wat wij zelf van je bewaren en hoe lang, staat in §6. Het materiaal dat je aanlevert gebruiken wij ook niet voor ons eigen portfolio of voor advertenties, tenzij je ons daar per bestelling apart toestemming voor geeft. Voor de visuals die wij leveren staat de afspraak over ons portfolio in §8 van de <a href="/nl/terms/">voorwaarden</a>.</p>
+      <p><strong>Jouw materiaal wordt niet gebruikt om AI-modellen te trainen.</strong> Dat is niet wat wij hopen, het is wat het platform waarop wij genereren in zijn eigen voorwaarden vastlegt: <em>"Under no circumstances will we use your images or voices, or those of third parties that you upload to our platform, to train or improve our artificial intelligence models or those of third-party providers"</em> (vrij vertaald: je beelden worden nooit gebruikt om hun AI-modellen of die van anderen te trainen of te verbeteren) — en het platform verwijdert wat je uploadt direct nadat de visual eruit is gemaakt. De visual die eruit komt, bewaart het platform zolang wij er klant zijn, tenzij wij hem weghalen: dat doen wij met de hand, binnen de termijn in de tabel van §6. Dat gaat over hun kopie; wat wij zelf van je bewaren en hoe lang, staat in §6. Het materiaal dat je aanlevert gebruiken wij ook niet voor ons eigen portfolio of voor advertenties, tenzij je ons daar per bestelling apart toestemming voor geeft. Voor de visuals die wij leveren staat de afspraak over ons portfolio in §8 van de <a href="/nl/terms/">voorwaarden</a>.</p>
       <p><strong>Welk model, dat wisselt.</strong> Het platform hierboven biedt een groot aantal modellen van verschillende makers, en wij werken met wat op dat moment het beste resultaat geeft — groeit de AI-modellenindustrie, dan groeit de kwaliteit die wij kunnen leveren mee. Daarom noemt de lijst de makers van wie wij modellen gebruiken, en niet de modellen: een nieuwer model van een maker uit de lijst verandert voor jou niets, en een maker die erbij komt melden wij vooraf, zoals in §8 van de <a href="/nl/data-processing-agreement/">verwerkersovereenkomst</a> staat. Wil je weten welke daarvan voor jouw bestellingen zijn gebruikt? Vraag het ons, dan heb je binnen vijf werkdagen antwoord.</p>
       <p>We verkopen je persoonsgegevens niet en we delen ze niet voor advertenties van derden.</p>
       <p>Reviews staan hier los van: laat je er een achter op Google of Trustpilot, dan doe je dat bij dat platform onder hun voorwaarden, en wij zien alleen wat je daar publiceert.</p>
@@ -121,6 +126,20 @@ import { ontvangers, lijstRegel } from '../../data/subverwerkers.js';
         <li><strong>Mail en WhatsApp</strong> — de mails en WhatsApp-berichten die we met je uitwisselen, bewaren we {CORRESPONDENTIE_JAREN} jaar na ons laatste contact, net als je account; daarna verwijderen we ze.</li>
         <li><strong>Back-ups</strong> — eens per week maken we een kopie van onze database, en we bewaren de {BACKUP_KEEP} meest recente; een oudere kopie die we opruimen, staat daarna nog tot {DRIVE_PRULLENBAK_DAGEN} dagen in de prullenbak van Google Drive. Wat we verwijderen, is daardoor uiterlijk na {BACKUP_UITERLIJK_WEKEN} weken ook uit de back-ups verdwenen.</li>
       </ul>
+      {/* levering 117 (17 november 2026, proefronde P6-01): deze tabel staat letterlijk zo op vier plekken (§7 hier, privacy §6,
+          verwerkersovereenkomst §12 en de FAQ), uit src/data/bewaartermijnen.js, met de getallen uit retention.js. */}
+      <p id="bewaartabel"><strong>{BT.kop}</strong></p>
+      <div class="table-scroll" tabindex="0" role="region" aria-label={BT.kop}>
+      <table class="files" data-bewaartabel>
+        <thead><tr><th>{BT.kolommen[0]}</th><th>{BT.kolommen[1]}</th></tr></thead>
+        <tbody>
+          {BT.rijen.map((r) => (
+            <tr><td data-label={BT.kolommen[0]}><strong>{r.wat}</strong></td><td data-label={BT.kolommen[1]}>{r.hoeLang}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      </div>
+      <p>{BT.weg}</p>
       <p>Liet je je adres achter op de wachtlijst van de proef, dan staat het daar tot we de mail sturen dat de proef weer open is, en wissen we het meteen daarna.</p>
       <p>Ben je aangemeld voor de Studiobrief, dan bewaren we je adres tot je je afmeldt; daarna verwijderen we het, of bewaren we alleen het adres met de vermelding dat je geen mail meer wilt — zodat je er niet per ongeluk opnieuw op komt.</p>
       <p>Facturen en de gegevens daarop bewaren we zeven jaar, omdat de Nederlandse belastingwet dat vereist — ook nadat je account is verwijderd, en dan alleen wat er op de factuur zelf staat. Wanneer gegevens niet langer nodig zijn, verwijderen of anonimiseren we ze.</p>
@@ -138,7 +157,9 @@ import { ontvangers, lijstRegel } from '../../data/subverwerkers.js';
       <p>Om een van deze rechten uit te oefenen, mail je ons op <a href="mailto:hello@visuails.com">hello@visuails.com</a>. Je hebt ook het recht om een klacht in te dienen bij de Nederlandse toezichthouder, de Autoriteit Persoonsgegevens (autoriteitpersoonsgegevens.nl).</p>
 
       <h2>8. Internationale doorgiften</h2>
-      <p>Het meeste blijft binnen de Europese Economische Ruimte. Het genereren gebeurt bij een partij in Spanje, de betalingen bij een partij in Nederland. Cloudflare en Resend zijn in de Verenigde Staten gevestigd, en Google Ireland werkt met Google LLC in de Verenigde Staten. Alle drie zijn gecertificeerd onder het <strong>EU-VS Data Privacy Framework</strong>, waarvoor de Europese Commissie een adequaatheidsbesluit heeft genomen (art. 45 AVG); daarnaast hebben wij met elk de <strong>standaardcontractbepalingen</strong> van de Europese Commissie (art. 46 lid 2 sub c AVG), als terugval mocht dat kader vervallen. Onze bestanden en bestelgegevens kunnen daardoor ook buiten de EU worden opgeslagen. Neem je via WhatsApp contact op, dan werkt WhatsApp Ireland met Meta Platforms, Inc. in de Verenigde Staten; volgens het eigen privacybeleid van WhatsApp rust die doorgifte op hetzelfde kader en op standaardcontractbepalingen.</p>
+      {/* levering 118 (17 november 2026, proefronde P6-12): hier stond dat het genereren "in Spanje" gebeurt, terwijl
+          §5 en de verwerkersovereenkomst Google (VS) en ByteDance (Singapore) noemen. Nu staat er wie het beeld echt verwerkt. */}
+      <p>Ons contract voor het genereren is met een partij in Spanje (Magnific). De modellen die daar voor ons draaien, zijn van Google in de Verenigde Staten en ByteDance in Singapore; zij verwerken je beeld dus buiten de Europese Economische Ruimte, onder standaardcontractbepalingen die Magnific met hen sloot. De betalingen lopen via een partij in Nederland. Cloudflare en Resend zijn in de Verenigde Staten gevestigd, en Google Ireland werkt met Google LLC in de Verenigde Staten. Alle drie zijn gecertificeerd onder het <strong>EU-VS Data Privacy Framework</strong>, waarvoor de Europese Commissie een adequaatheidsbesluit heeft genomen (art. 45 AVG); daarnaast hebben wij met elk de <strong>standaardcontractbepalingen</strong> van de Europese Commissie (art. 46 lid 2 sub c AVG), als terugval mocht dat kader vervallen. Onze bestanden en bestelgegevens kunnen daardoor ook buiten de EU worden opgeslagen. Neem je via WhatsApp contact op, dan werkt WhatsApp Ireland met Meta Platforms, Inc. in de Verenigde Staten; volgens het eigen privacybeleid van WhatsApp rust die doorgifte op hetzelfde kader en op standaardcontractbepalingen.</p>
       <p>Geeft het generatieplatform materiaal door aan een modelmaker buiten de EER, dan sluit dat platform daarvoor zelf standaardcontractbepalingen. De volledige keten, met per partij het land en de grondslag, staat in §8 van de <a href="/nl/data-processing-agreement/">verwerkersovereenkomst</a> — één lijst, die actueel wordt gehouden, want dat is wat de AVG van ons vraagt als wij van dienstverlener wisselen.</p>
 
       <h2>9. Beveiliging</h2>

@@ -90,6 +90,8 @@ import { checkRate, clientIp, shouldSweep, sweepRateLimits } from './ratelimit.j
    daggrens als /api/upload, en de ene lijst "wat ontbreekt". Zie fotosView(). */
 import { isBeeldHandtekening, UPLOAD_DAG } from '../../functions/api/upload.js';
 import { ontbrekendeFotos, ontbrekendRegels, ontbrekendVoorOrder, vakNaam as ontbreektVakNaam, bijbesteldeHoeken } from './ontbreekt.js';
+/* levering 118 (17 november 2026, proefronde L-16): voorrang loopt vanaf betaald én foto's compleet. */
+import { markeerFotosCompleet, voorrangVanaf } from './fotosCompleet.js';
 import { SHOTS as FOTOVAKKEN, refShotId, isRefShotId, MAX_REF_PER_PRODUCT } from '../data/shots.js';
 /* De twee datums na een levering (punt 2.03): dezelfde som als de levermail. */
 import { leverDatumsVan } from './leverdatums.js';
@@ -98,6 +100,13 @@ import { vandaagNL } from './nlDag.js';
 import { nuZin, nuKnopLabel, ACTIE_SOORTEN, RANG as NU_RANG, isAfgerond as nuAfgerond, standKort, isAanvraag as isAanvraagOrder } from './nuzin.js';
 /* Punt 3.07: "Bestel met dezelfde look" — alleen lookkeuzes in de link. */
 import { herbestelKnop, herbestelAllesKnop, bestelInstellingen } from './herbestel.js';
+/* levering 119 (18 november 2026, proefronde P9-07): de uitleg onder "Meer producten in deze look?" in Studio. Wie
+   hier kijkt is ingelogd; het formulier neemt zijn gegevens over. */
+const STUDIO_HERBESTEL_UITLEG = {
+  nl: 'Opent het bestelformulier met dezelfde keuzes. Je bent ingelogd, dus je gegevens staan er al in.',
+  en: 'Opens the order form with the same choices. You are signed in, so your details are already filled in.',
+};
+const studioHerbestel = (k, lang) => (k ? { ...k, uitleg: STUDIO_HERBESTEL_UITLEG[lang === 'en' ? 'en' : 'nl'] } : k);
 import { sendMail } from './mail.js';
 import { mailRondeOntvangen } from './cancelMail.js';
 import {
@@ -164,7 +173,9 @@ import {
 } from './bijkopen.js';
 import { bundelVoor, kindLabel, kindPer, subMaandBruto, subEersteBetalingBruto, subBrutoCents } from './slots.js';
 /* De creditkant — zie de kop bij CREDIT_KIND in slots.js en SERVICE_CREDITS in pricing.js. */
-import { creditsVoor, creditsPerSoort, dienstenVoorAbo } from './slots.js';
+import { creditsVoor, creditsPerSoort, dienstenVoorAbo, merkmodelInAbonnement } from './slots.js';
+/* levering 117 (P4-04): wat de klant krijgt en wanneer, uit de offerte. */
+import { offerteAfspraak } from './betaallink.js';
 /*
  * HET ABONNEMENT. src/data/plans.js is het contract (wat een plan kost en geeft),
  * src/lib/subscription.js zijn de rijen (wie er een heeft en wat er nog van over
@@ -185,6 +196,10 @@ import {
 } from '../data/capacity.js';
 import { puntenVoor, PRODUCT_SLOT_KINDS, SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN, BIJKOOP_PAKKETTEN, BIJKOOP_KORTING_PCT, BIJKOOP_MAX_PER_MAAND, spaarPlafond } from '../data/pricing.js';
 import { PAUZE_MAX_MAANDEN } from '../data/termijnen.js';
+/* levering 118 (17 november 2026, proefronde P4-09): de termijn voor de richtingen van een merkmodel. Als namespace,
+   zodat dit bestand niet omvalt zolang MERKMODEL_RICHTINGEN_WERKDAGEN nog niet in termijnen.js staat (dan geen zin). */
+import * as TERMIJNEN from '../data/termijnen.js';
+const RICHTINGEN_WERKDAGEN = Number(TERMIJNEN.MERKMODEL_RICHTINGEN_WERKDAGEN) || 0;
 import { PLAN_SERVICE, rolloverMonths } from '../data/plans.js';
 import { readCalendar } from './agenda.js';
 import { planName } from '../data/planNames.js';
@@ -252,6 +267,8 @@ import {
   vragen as mailVragen,
   C as MAILKLEUR,
 } from './mailTemplate.js';
+/* levering 119 (A0-01): de aanhef met de volle voornaam. */
+import { aanhefTekst } from './aanhef.js';
 /* Ronde 91 (9 november 2026): E08 het gedeelde geldformaat in de overstapmail, E05 Studio-links met taal. */
 import { bedrag as mailBedrag } from './mailTemplate.js';
 import { studioUrl } from './studioLink.js';
@@ -522,6 +539,8 @@ const COPY = {
     /* Doorloop 27 (B40): de zin las bij een tikfout als "verlopen". Nog steeds
        één zin voor iedereen (zie hierboven), maar nu met "kijk de cijfers na". */
     codeWrong: 'That code is wrong or has expired. Check the six digits, use the link in the same email, or ask for a new one below.',
+    /* levering 119 (18 november 2026, proefronde P9-06): na vijf pogingen werkt ook de goede code niet meer. */
+    codeTeVaak: 'Too many tries. After five attempts this code stops working, even the right one. Send a new code below, or use the link in the email.',
     codeAgain: 'Send a new email',
     codeAgainCta: 'Send a new code',
     codeTooMany: 'Too many attempts from here. Wait a minute, or use the link in the email.',
@@ -561,6 +580,8 @@ const COPY = {
     // pricing.js, in één regel op de kaart.
     fQueue: 'Standard turnaround — as soon as it is ready, no fixed date.',
     fOfferte: 'Turnaround as agreed in the quote. Not sent your product photos yet? Reply to the quote email with the photos, or send them on WhatsApp.',
+    /* levering 117 (P4-04): met wat de klant krijgt en de datum uit de offerte, als die er zijn. */
+    fOfferteAfspraak: (wat, dag) => `${wat ? `What you get: ${wat}. ` : ''}${dag ? `Ready on ${dag}. ` : ''}Not sent your product photos yet? Reply to the quote email with the photos, or send them on WhatsApp.`,
     fProducts: 'Products',
     windowPending: 'Being scheduled',
 
@@ -632,6 +653,13 @@ const COPY = {
     // een geldige string.
     sampleNote: `This is the ${TEST_SAMPLE.en.price} test sample, so there is nothing to approve — but tell us what you think and we will answer.`,
     closedNote: 'You approved everything in this order. Changed your mind? Undo it below.',
+    /* levering 118 (17 november 2026, proefronde P4-10): bij een merkmodel keurde de klant niets goed; het staat vast. */
+    closedNoteMerkmodel: 'Your brand model is locked and yours alone. You find it under Your look.',
+    /* Buiten flowNow: die moet letterlijk gelijk blijven aan nuzin.js (tests/nu-zin.test.mjs). */
+    merkmodelVast: 'Your brand model is locked. It is yours alone, and you can choose it in your next order.',
+    /* levering 118 (proefronde P4-09): achter de zin van een ontvangen merkmodel, als de termijn in termijnen.js staat. */
+    merkmodelTermijn: (n) => `You get the first directions by email within ${n} working days.`,
+    emptyFilesMerkmodel: 'A brand model has no files to download. You find it under Your look.',
     /* Eén zin, en hij beantwoordt de enige vraag: waar zijn mijn beelden. Niet
        "toegang ingetrokken" — dat klinkt als een straf voor iets wat de klant
        zelf heeft aangevraagd of wat wij hebben teruggedraaid. */
@@ -929,6 +957,8 @@ const COPY = {
       awaiting_payment: 'Your order is in, but not paid yet. Once the payment comes through we schedule it in.',
       btwLijst: 'Your order is in. We first check your VAT details; then we send you the payment link — usually within one working day.',
       received: 'We have your order and your files. We are scheduling it in.',
+      /* levering 118 (N4 #8): no photos yet ("Later in Studio") */
+      receivedZonderFotos: 'We have your order, but no photos yet. Add them, and we schedule it in.',
       request: 'This is a request, not an order yet. We reply in writing with a proposal and a price — usually within a working day.',
       requestPaid: 'Your quote is paid. We are working out your request and will let you know as soon as there is something to look at.',
       brandModel: 'We have your brand model order. We are making your candidates and will let you know when you can choose.',
@@ -957,6 +987,8 @@ const COPY = {
     /* Punt 3.01: het "wat nu"-blok bovenaan het overzicht. */
     ovNuTeDoen: 'To do now',
     ovNogMeer: (n) => (n === 1 ? 'And 1 more order:' : `And ${n} more orders:`),
+    /* Levering 117 (17 november 2026, P5-07): een aanvraag op maat waar de klant aan zet is. */
+    ovOpMaatKop: 'Custom request, your turn:',
     /* Punt 2.03 (8 oktober 2026): de dichte bestelkaart — de Nu-zin, één knop,
        de twee datums na een levering en de ingeklapte afgeronde bestellingen. */
     nuMist: (vak, product) => `A photo is still missing: ${product} \u00b7 ${vak}. Add it, so we start with everything complete.`,
@@ -1251,6 +1283,8 @@ const COPY = {
     // Zie de Engelse tak: één zin voor elke misser, zodat er niets te lezen
     // valt over of het adres bestaat.
     codeWrong: 'Die code klopt niet of is verlopen. Kijk de zes cijfers na, gebruik de link in dezelfde mail, of vraag hieronder een nieuwe aan.',
+    /* levering 119 (18 november 2026, proefronde P9-06): na vijf pogingen werkt ook de goede code niet meer. */
+    codeTeVaak: 'Te vaak geprobeerd. Na vijf pogingen werkt deze code niet meer, ook de goede niet. Stuur hieronder een nieuwe code, of gebruik de link in de mail.',
     codeAgain: 'Nieuwe mail sturen',
     codeAgainCta: 'Stuur een nieuwe code',
     codeTooMany: 'Te veel pogingen vanaf hier. Wacht even, of gebruik de link in de mail.',
@@ -1269,6 +1303,8 @@ const COPY = {
     fWindow: 'Levering',
     fQueue: 'Normale doorlooptijd — zo snel mogelijk, geen vaste datum.',
     fOfferte: 'Levertijd zoals afgesproken in de offerte. Nog geen productfoto’s gestuurd? Beantwoord de offertemail met de foto’s, of stuur ze via WhatsApp.',
+    /* levering 117 (P4-04): met wat de klant krijgt en de datum uit de offerte, als die er zijn. */
+    fOfferteAfspraak: (wat, dag) => `${wat ? `Wat je krijgt: ${wat}. ` : ''}${dag ? `Klaar op ${dag}. ` : ''}Nog geen productfoto’s gestuurd? Beantwoord de offertemail met de foto’s, of stuur ze via WhatsApp.`,
     fProducts: 'Producten',
     windowPending: 'Wordt ingepland',
 
@@ -1323,6 +1359,10 @@ const COPY = {
     revokedNote: 'Revisieaanvragen staan op dit account uit. Stuur ons een bericht, dan lossen we het samen op.',
     sampleNote: `Dit is de proef van ${TEST_SAMPLE.nl.price}, dus er valt niets goed te keuren — maar laat gerust weten wat je ervan vindt, we reageren altijd.`,
     closedNote: 'Je hebt alles in deze bestelling goedgekeurd. Toch nog iets? Maak het hieronder ongedaan.',
+    closedNoteMerkmodel: 'Je merkmodel staat vast en is alleen van jou. Je vindt het onder Je vaste look.',
+    merkmodelVast: 'Je merkmodel staat vast. Het is alleen van jou, en je kiest het bij je volgende bestelling.',
+    merkmodelTermijn: (n) => `Je krijgt de eerste richtingen binnen ${n} werkdagen per mail.`,
+    emptyFilesMerkmodel: 'Een merkmodel heeft geen bestanden om te downloaden. Je vindt het onder Je vaste look.',
     cancelledNote: 'Deze bestelling is geannuleerd en de betaling is met je verrekend, dus de beelden staan hier niet meer. Je factuur — en een eventuele creditnota — vind je onder Facturen.',
     /* Een creditsbestelling heeft geen betaling en geen eigen factuur (15 oktober 2026, live). */
     cancelledNoteCredits: 'Deze bestelling is geannuleerd, dus er staan hier geen beelden. Wat er met je credits is gebeurd, staat in het creditboek onder Abonnement.',
@@ -1520,6 +1560,9 @@ const COPY = {
       awaiting_payment: 'Je bestelling is binnen, maar nog niet betaald. Zodra de betaling binnen is, plannen we hem in.',
       btwLijst: 'Je bestelling is binnen. We kijken eerst je btw-gegevens na; daarna sturen we je de betaallink — meestal binnen een werkdag.',
       received: 'We hebben je bestelling en je bestanden binnen. We plannen hem in.',
+      /* levering 118 (17 november 2026, proefronde N4 #8): "en je bestanden" klopte niet bij een bestelling zonder foto's
+         ("Later in Studio"). Dan deze zin, met de knop naar de fotovakken. */
+      receivedZonderFotos: 'We hebben je bestelling binnen, maar nog geen foto’s. Voeg ze toe, dan plannen we hem in.',
       /* Een aanvraag (video, hooks, editions, eigen look) is nog geen bestelling
          — tot 19 september 2026 zei de kaart ook daar "we plannen hem in". */
       request: 'Dit is een aanvraag, nog geen bestelling. We antwoorden schriftelijk met een voorstel en een prijs — meestal binnen een werkdag.',
@@ -1552,6 +1595,8 @@ const COPY = {
     /* Punt 3.01: het "wat nu"-blok bovenaan het overzicht. */
     ovNuTeDoen: 'Nu te doen',
     ovNogMeer: (n) => (n === 1 ? 'En nog 1 bestelling:' : `En nog ${n} bestellingen:`),
+    /* Levering 117 (17 november 2026, P5-07): een aanvraag op maat waar de klant aan zet is. */
+    ovOpMaatKop: 'Op maat, jij bent aan zet:',
     /* Punt 2.03 (8 oktober 2026): de dichte bestelkaart — de Nu-zin, één knop,
        de twee datums na een levering en de ingeklapte afgeronde bestellingen. */
     nuMist: (vak, product) => `Er ontbreekt nog een foto: ${product} \u00b7 ${vak}. Voeg hem toe, dan beginnen we met alles compleet.`,
@@ -2576,6 +2621,10 @@ async function handleCodePost(context) {
     windowSeconds: CODE_ACCOUNT_WINDOW,
   });
   if (!perAccount.allowed) return again(t.codeTooMany, 429);
+  /* levering 119 (18 november 2026, proefronde P9-06): na vijf foute codes zei ook de goede "klopt niet". Nu een eigen
+     zin. Hij hangt aan de teller op het e-mailadres (perAccount.hits), niet aan de rij van het account: een onbekend
+     adres krijgt na vijf pogingen dus dezelfde zin, en er valt niets te lezen over of het adres bestaat. */
+  const fout = () => again(Number(perAccount.hits) >= LOGIN_CODE_MAX_ATTEMPTS ? t.codeTeVaak : t.codeWrong);
 
   let row;
   try {
@@ -2596,8 +2645,8 @@ async function handleCodePost(context) {
     return html(page({ thema: themaCookie(request), lang, title: 'VISUAILS', body: errorBody(t) }), 503);
   }
 
-  if (!row || isExpired(row.code_expires_at, null)) return again(t.codeWrong);
-  if (Number(row.code_attempts) >= LOGIN_CODE_MAX_ATTEMPTS) return again(t.codeWrong);
+  if (!row || isExpired(row.code_expires_at, null)) return fout();
+  if (Number(row.code_attempts) >= LOGIN_CODE_MAX_ATTEMPTS) return fout();
 
   /* ── EERST DE POGING, DAN PAS VERGELIJKEN — 9 november 2026 (ronde 91, A07) ──
      Hier werd eerst vergeleken en daarna geteld. Twaalf gelijktijdige gokken
@@ -2616,7 +2665,7 @@ async function handleCodePost(context) {
   } catch {
     return html(page({ thema: themaCookie(request), lang, title: 'VISUAILS', body: errorBody(t) }), 503);
   }
-  if (gereserveerd?.meta && !(Number(gereserveerd.meta.changes) > 0)) return again(t.codeWrong);
+  if (gereserveerd?.meta && !(Number(gereserveerd.meta.changes) > 0)) return fout();
 
   const guess = await hashLoginCode(row.customer_id, code);
   if (guess !== row.code_hash) {
@@ -2630,7 +2679,7 @@ async function handleCodePost(context) {
     await env.DB.prepare(
       `UPDATE account_tokens SET code_hash = NULL WHERE id = ?1 AND code_attempts >= ?2`
     ).bind(row.id, LOGIN_CODE_MAX_ATTEMPTS).run().catch(() => {});
-    return again(t.codeWrong);
+    return fout();
   }
 
   // De code is goed. Hij mag nu niet nog eens: eenmalig is eenmalig, en de
@@ -3421,6 +3470,10 @@ async function handleMe({ request, env }) {
        september 2026). Het formulier toont het; het echte bedrag rekent
        /account/order uit. Zie src/lib/tegoedVerrekening.js. */
     tegoedCents: await tegoedBeschikbaar(env, customer.customer_id).catch(() => 0),
+    /* levering 117 (17 november 2026, proefronde P5-12): is het merkmodel inbegrepen in zijn abonnement?
+       Dan toont /start/brand-model "Inbegrepen in je abonnement" in plaats van de prijs. Wat er echt
+       afgaat, beslist /account/order zelf (merkmodelInAbonnement in slots.js). */
+    merkmodelInbegrepen: !!(await merkmodelInAbonnement(env, customer.customer_id).catch(() => null)),
     /* Credits van een abonnement (ronde B, 8 oktober 2026): saldo, wat er per
        datum vervalt en wanneer er nieuwe bijkomen. Stap 5 rekent er de zin
        "Deze bestelling kost 48 credits · je hebt er 120 · daarna 72" mee uit;
@@ -3528,7 +3581,7 @@ export function klantStandVan({ lang = 'nl', row = {}, orders = [], filesByOrder
   }
 
   const bron = orders.find((x) => x.status === 'delivered' && !leveringIngetrokken(x) && herbestelKnop(x, { lang: L }));
-  const hk = bron ? herbestelKnop(bron, { lang: L, abonnee }) : null;
+  const hk = bron ? studioHerbestel(herbestelKnop(bron, { lang: L, abonnee }), L) : null; // levering 119 (P9-07)
 
   const loopt = (x) => x && !x.closed_at && x.status !== 'cancelled';
   const lopend = loopt(o) ? o : orders.find(loopt);
@@ -3928,8 +3981,26 @@ function normalizeHex(v) {
   return null;
 }
 
+/* ── EEN BESTELLING VAN IEMAND ANDERS OP JOUW ADRES — levering 118 (17 november 2026, proefronde B1-05) ──
+   Wie het e-mailadres van een klant kende, zette zonder inlog een bestelling met eigen merknaam en foto's direct in
+   diens Studio. Lucas koos advies a: zo'n bestelling verschijnt pas in Studio als hij betaald is. /api/order zet bij
+   een bestelling zonder sessie op een adres dat al een account had `details.zonder_inlog = 1` (zie de notities van
+   levering 118, bouwer BA); zonder dat vinkje verandert hier niets. Betaald (ook met tegoed of credits, of daarna
+   terugbetaald) is wél van hem: dan staat er geld achter, en de betaler heeft hem bewust geplaatst. */
+export function vreemdeOnbetaald(o) {
+  if (!o) return false;
+  let d = {};
+  try { d = JSON.parse(o.details_json || '{}') || {}; } catch { d = {}; }
+  const zonder = d.zonder_inlog === 1 || d.zonder_inlog === true || d.zonder_inlog === '1';
+  if (!zonder) return false;
+  return !['paid', 'credits', 'plan', 'refunded'].includes(String(o.payment_status || ''));
+}
+
 /** All orders this customer has placed, most recent first. */
 async function loadOrders(env, customerId) {
+  return (await loadOrdersAlle(env, customerId)).filter((o) => !vreemdeOnbetaald(o));
+}
+async function loadOrdersAlle(env, customerId) {
   // customer_note komt uit migratie 0013 en wordt in een try/catch gelezen: de
   // bestellingenlijst is het dashboard, en dat mag niet omvallen op een kolom
   // die nog niet bestaat. Zonder kolom is er ook geen mededeling, dus de
@@ -4608,7 +4679,7 @@ async function handleRevisionRound({ form, env }, customer, home) {
     const gaten = uniek.map((_, i) => `?${i + 3}`).join(', ');
     const res = await env.DB.prepare(
       `SELECT f.id, f.order_id, o.closed_at, o.service, o.revision_round_at,
-              o.lang, o.ref, o.email, o.name, c.revisions_revoked_at
+              o.lang, o.ref, o.email, o.name, o.first_name, c.revisions_revoked_at
          FROM files f
          JOIN orders o ON o.id = f.order_id
          JOIN customers c ON c.id = o.customer_id
@@ -5395,6 +5466,8 @@ async function handleOrderFotos({ request, env }, customer, orderId) {
     "INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'customer')"
   ).bind(orderId, o.status, regel(taal)).run().catch(() => {});
   const nogOpen = await ontbrekendVoorOrder(env.DB, orderId).catch(() => null);
+  /* levering 118 (L-16): niets meer open, dan loopt de voorrangstermijn vanaf nu (als hij op foto's wachtte). */
+  if (rijen.length) await markeerFotosCompleet(env, orderId, nogOpen);
   /* De studiomail "Foto's binnen" noemt de vakken (Nederlands: hij is voor Lucas),
      en sinds 15 oktober ook wat er vervangen of verwijderd is. */
   await notifyFotosToegevoegd(env, { orderId, count: aantal,
@@ -5605,6 +5678,8 @@ async function handleOrderPay({ request, env }, customer, orderId) {
       excludeIdeal: Number(order.vat_rate) === 0,
       /* Buiten de EU ook geen Bancontact/EPS (ronde 91, B13). */
       buitenEu: order.vat_treatment === 'outside_scope',
+      /* levering 118 (17 november 2026, proefronde L-16): bij voorrang geen overboeking. */
+      voorrang: heeftVoorrang(order),
     });
     checkout = payment?._links?.checkout?.href || null;
   } catch (err) {
@@ -6142,7 +6217,9 @@ export function readPlanMail(request) {
   }
   return '';
 }
-function setTerugCookie(pad) {
+/* levering 118 (17 november 2026, proefronde L-07): geëxporteerd, zodat /api/plan na de inlogmail de klant naar het
+   abonnementsformulier terugstuurt (vs_terug). */
+export function setTerugCookie(pad) {
   return `${TERUG_COOKIE}=${encodeURIComponent(pad)}; Max-Age=1800; ${COOKIE_FLAGS}`;
 }
 function clearTerugCookie() {
@@ -7657,7 +7734,10 @@ export async function mailAboWijziging(env, { soort, sub, customer, lang, jaarTo
         /* Een zin eindigt waar na de punt een hoofdletter volgt, niet bij "incl. btw". */
         preheader: (String(koppen[1]).match(/^.*?[.!?](?=\s+["'“‘(]?[A-ZÀ-Ý]|\s*$)/) || [koppen[0]])[0],
         body: mailH1(koppen[0], mailKenmerk('abonnement', sub.ref, nl ? 'nl' : 'en'))
-          + mailP(mailGreeting(customer.name, nl ? 'nl' : 'en', direct ? { nu: new Date(), land: customer.country || '' } : {}))
+          /* levering 119 (18 november 2026, proefronde A0-01): de voornaam helemaal als we hem hebben. */
+          + mailP(String(customer.first_name || '').trim()
+            ? esc(aanhefTekst(String(customer.first_name).trim().replace(/\s+/g, ' '), nl ? 'nl' : 'en', direct ? { nu: new Date(), land: customer.country || '' } : {}))
+            : mailGreeting(customer.name, nl ? 'nl' : 'en', direct ? { nu: new Date(), land: customer.country || '' } : {}))
           + mailP(esc(koppen[1]))
           + mailLinkLine(studioUrl('https://visuails.com', '/plan', nl ? 'nl' : 'en'), nl ? 'Naar je abonnement' : 'Go to your plan')
           + mailVragen(nl ? 'nl' : 'en', '', { over: nl ? `mijn abonnement ${sub.ref}` : `my plan ${sub.ref}` }),
@@ -8188,7 +8268,11 @@ export function progressView(t, lang, o, events = [], files = []) {
   /* Ronde 9 (O51): na de bewaartermijn zei de regel nog "staan klaar om te downloaden". */
   const geleverdeBestanden = (files || []).filter((f) => f.kind === 'delivery' && !f.superseded_at);
   const allesVerlopen = geleverdeBestanden.length > 0 && geleverdeBestanden.every((f) => f.expires_at && isExpired(f.expires_at, null));
-  const now = geannuleerdGeld ? geannuleerdGeld : afgerond ? (allesVerlopen ? (t.flowNow.closedExpired || t.flowNow.closed) : t.flowNow.closed) : opBtwLijst ? (t.flowNow.btwLijst || t.flowNow.awaiting_payment) : unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (status === 'received' && o.service === 'brand-model' && t.flowNow.brandModel) ? t.flowNow.brandModel : (t.flowNow[status] || t.flowNow.received);
+  /* levering 118 (proefronde P4-10): een afgerond merkmodel zegt "staat vast", niet "je beelden staan klaar". */
+  /* levering 118 (17 november 2026, proefronde N4 #8): nog geen enkele foto bij een bestelling waar ze nog bij kunnen
+     ("Later in Studio"): niet "je bestelling en je bestanden binnen". Dezelfde zin als nuZin() (ctx.geenFotos). */
+  const zonderFotos = status === 'received' && nasturenOpen(o) && !(files || []).some((f) => f.kind === 'upload');
+  const now = geannuleerdGeld ? geannuleerdGeld : (afgerond && o.service === 'brand-model' && t.merkmodelVast) ? t.merkmodelVast : afgerond ? (allesVerlopen ? (t.flowNow.closedExpired || t.flowNow.closed) : t.flowNow.closed) : opBtwLijst ? (t.flowNow.btwLijst || t.flowNow.awaiting_payment) : unpaid ? t.flowNow.awaiting_payment : isAanvraag ? (betaald ? (t.flowNow.requestPaid || t.flowNow.received) : t.flowNow.request) : revising ? t.flowNow.revising : (status === 'received' && o.service === 'brand-model' && t.flowNow.brandModel) ? `${t.flowNow.brandModel}${RICHTINGEN_WERKDAGEN && t.merkmodelTermijn ? ` ${t.merkmodelTermijn(RICHTINGEN_WERKDAGEN)}` : ''}` : (zonderFotos && t.flowNow.receivedZonderFotos) || (t.flowNow[status] || t.flowNow.received);
   const when = !cancelled && status !== 'delivered' && o.window_start
     ? ` ${t.flowWindow(shortDate(o.window_start, lang), shortDate(o.window_end || o.window_start, lang))}`
     : '';
@@ -9589,10 +9673,17 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
   const windowLine = (o.status === 'cancelled' || o.status === 'delivered' || o.closed_at) ? ''
     : (o.window_start || o.tier === 'attended')
     ? `${t.fWindow}: ${window}`
-    : heeftVoorrang(o) ? `${voorrangZin(lang, o.paid_at || null)}.`
+    /* levering 118 (L-16): de dag pas als betaald én foto's compleet; daarvoor de regel zonder datum. */
+    : heeftVoorrang(o) ? `${voorrangZin(lang, voorrangVanaf(o))}.`
     /* Video en eigen look lopen via een offerte; de wachtrijzin klopt daar niet
        (ronde 9, F40). */
-    : (o.service === 'video' || o.service === 'custom') ? t.fOfferte
+    /* levering 117 (17 november 2026, proefronde P4-04): "zoals afgesproken in de offerte" verwees naar
+       een levertijd die er niet was. Nu staat de afspraak zelf er (offerteAfspraak in betaallink.js, dezelfde
+       bron als de offertemail, /o/ en de factuur); een offerte van vóór vandaag houdt de oude zin. */
+    : (o.service === 'video' || o.service === 'custom') ? (() => {
+      const af = offerteAfspraak(o.details_json, lang);
+      return (af.inhoud || af.klaarOp) ? t.fOfferteAfspraak(af.inhoud.replace(/\s*\n\s*/g, ' · ').replace(/[.\s]+$/, ''), af.klaarOpTekst) : t.fOfferte;
+    })()
     : t.fQueue;
 
   /* De revisieronde, als toestand — dezelfde drie takken als revisionRound(). */
@@ -9685,7 +9776,8 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
      (punt 2.03); `knoppen` (hoogstens twee) is voor het "wat nu"-blok bovenaan
      het overzicht. Geannuleerd houdt de zin van de tijdlijn: die weet waar het
      geld is (orderMoney), en de woorden zijn dezelfde als in nuzin.js. */
-  const ns = nuZin(o, { files, bedrag: !!orderMoney(o), eersteMist, fb, gegevensMist: o._gegevensMist || '' }, lang);
+  /* levering 118 (17 november 2026, proefronde N4 #8): er kunnen foto's bij (fotos) en er is er nog geen. */
+  const ns = nuZin(o, { files, bedrag: !!orderMoney(o), eersteMist, geenFotos: !!fotos && !uploaded.length, fb, gegevensMist: o._gegevensMist || '' }, lang);
   const allesGoedKan = openTeKeuren.length > 0 && canReview(o) && !o.closed_at && !isSample(o) && o.status !== 'cancelled';
   /* Het bedrag op de knop is wat Mollie vraagt: bruto minus het verrekende tegoed
      (9 november 2026, ronde 91, B01 — zie handleOrderPay()). */
@@ -9715,11 +9807,15 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     if (s === 'gegevensMist') return studioKnop('gegevens');
     return studioKnop('downloaden');
   })();
+  /* levering 118 (17 november 2026, proefronde P4-10): een afgerond merkmodel heeft geen beelden om te downloaden; de
+     kaart zegt dan de zin van de tijdlijn ("Je merkmodel staat vast"), zonder downloadknop. nuzin.js zelf hoort dit
+     ook te krijgen (de bestelpagina); zie de notities van levering 118. */
+  const merkmodelVast = o.service === 'brand-model' && nuAfgerond(o) && ns.soort !== 'geannuleerd';
   const nu = {
-    soort: ns.soort,
-    zin: ns.soort === 'geannuleerd' ? progress.now : ns.zin,
-    knop: eenKnop,
-    knoppen: ns.knoppen.map(studioKnop).filter(Boolean).slice(0, 2),
+    soort: merkmodelVast ? 'merkmodelVast' : ns.soort,
+    zin: ns.soort === 'geannuleerd' || merkmodelVast ? progress.now : ns.zin,
+    knop: merkmodelVast ? null : eenKnop,
+    knoppen: merkmodelVast ? [] : ns.knoppen.map(studioKnop).filter(Boolean).slice(0, 2),
   };
 
   /* ── AFGEROND: INGEKLAPT ONDERAAN — 8 oktober 2026 (punt 2.03) ────────────
@@ -9731,7 +9827,9 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     /* Punt 3.05: de open kaart begint dan met het afrondblok (map + tevredenheid). */
     afrondScherm: nuAfgerond(o) && o.status !== 'cancelled',
     /* Punt 3.07: "Bestel met dezelfde look" bij elke geleverde bestelling. */
-    herbestel: o.status === 'delivered' && !ingetrokken ? herbestelKnop(o, { lang, abonnee }) : null,
+    /* levering 119 (18 november 2026, proefronde P9-07): in Studio is de klant al ingelogd, dus niet "vul je gegevens
+       zelf in, of je logt in" (de tekst van herbestel.js, voor de privélink). */
+    herbestel: o.status === 'delivered' && !ingetrokken ? studioHerbestel(herbestelKnop(o, { lang, abonnee }), lang) : null,
     /* Werklijst 33 (15 oktober 2026): alles van deze bestelling overnemen. */
     herbestelAlles: !ingetrokken ? herbestelAllesKnop(o, { lang }) : null,
     allesGoed,
@@ -9745,11 +9843,11 @@ export function orderView(t, lang, o, files, events = [], fb = null, index = 0, 
     note: o.customer_note || '',
     closedNote: ingetrokken
       ? (o.status === 'cancelled' && ['credits', 'plan'].includes(String(o.payment_status || '')) ? t.cancelledNoteCredits : t.cancelledNote)
-      : ((o.closed_at && !isSample(o)) ? t.closedNote : ''),
+      : ((o.closed_at && !isSample(o)) ? (o.service === 'brand-model' ? t.closedNoteMerkmodel : t.closedNote) : ''),
     feedbackHtml: feedbackFor(t, lang, o, fb),
     products: grouped ? grouped.map((g) => productView(t, lang, o, g, Number(openOrderId) === Number(o.id) && openProduct === g.key)) : null,
     sides: grouped ? null : {
-      delivered: { h: t.sideDelivered, empty: t.emptyFiles, shots: delivered.map((f) => shotView(t, f, o)) },
+      delivered: { h: t.sideDelivered, empty: o.service === 'brand-model' ? t.emptyFilesMerkmodel : t.emptyFiles, shots: delivered.map((f) => shotView(t, f, o)) },
       uploaded: { h: t.sideUploaded, empty: t.emptyUploads, shots: uploaded.map((f) => shotView(t, f, o)) },
     },
     ronde,
@@ -10038,7 +10136,8 @@ const ABO = {
     hervatten: 'Hervatten',
     tochDoor: 'Toch doorgaan',
     bestelH: 'Bestellen met credits',
-    bestelLede: 'Het gewone bestelformulier, met je vaste look al ingevuld. In stap 5 betaal je met credits.',
+    /* levering 119 (18 november 2026, proefronde P9-03): geen stapnummer; het formulier heeft er 4 (of 5 bij 10+ producten). */
+    bestelLede: 'Het gewone bestelformulier, met je vaste look al ingevuld. Je betaalt met credits in de laatste stap, Betalen.',
     catalogKaal: 'Catalog bestellen',
     lifestyleKaal: 'Lifestyle bestellen',
     perProduct: (n) => `${n} credits per product`,
@@ -10053,7 +10152,8 @@ const ABO = {
     bedragJaar: 'Betaald voor het jaar',
     volgende: 'Volgende afschrijving',
     status: 'Status',
-    jaarTot: 'Loopt tot en met',
+    /* levering 118 (proefronde P5-11): op die dag begint de volgende termijn, dus "tot", niet "tot en met". */
+    jaarTot: 'Loopt tot',
     facturen: 'Je termijnfacturen staan onder de tab Facturen.',
     facturenLink: 'Bekijk ze',
     pauzeren: 'Pauzeren',
@@ -10080,7 +10180,7 @@ const ABO = {
     termijnMaand: 'maandelijks',
     termijnJaar: '12 maanden vooruit',
     perMaand: 'per maand',
-    geenSaldoBestel: 'Bestellen kan altijd; zonder credits betaal je in stap 5 via Mollie.',
+    geenSaldoBestel: 'Bestellen kan altijd. Zonder credits betaal je in de laatste stap, Betalen, via Mollie.', // levering 119 (P9-03)
     /* De vier tabs (15 oktober 2026, v28-abotabs = a). */
     tabsLabel: 'Je abonnement',
     tabOverzicht: 'Overzicht',
@@ -10167,7 +10267,7 @@ const ABO = {
     hervatten: 'Resume',
     tochDoor: 'Keep going after all',
     bestelH: 'Order with credits',
-    bestelLede: 'The usual order form, with your look already filled in. In step 5 you pay with credits.',
+    bestelLede: 'The usual order form, with your look already filled in. You pay with credits in the last step, Pay.', // levering 119 (P9-03)
     catalogKaal: 'Order catalog',
     lifestyleKaal: 'Order lifestyle',
     perProduct: (n) => `${n} credits per product`,
@@ -10209,7 +10309,7 @@ const ABO = {
     termijnMaand: 'monthly',
     termijnJaar: '12 months in advance',
     perMaand: 'per month',
-    geenSaldoBestel: 'You can always order; without credits you pay through Mollie in step 5.',
+    geenSaldoBestel: 'You can always order. Without credits you pay through Mollie in the last step, Pay.', // levering 119 (P9-03)
     tabsLabel: 'Your plan',
     tabOverzicht: 'Overview',
     tabCredits: 'Credits',
@@ -10552,17 +10652,22 @@ export async function planView(env, request, t, lang, customer, models = [], loc
   });
 
   /* ── JE PLAN ─────────────────────────────────────────────────────────── */
+  /* levering 118 (17 november 2026, proefronde P5-11): het btw-label volgt de behandeling van het abonnement. Een
+     verlegd jaar van €16.900 heette hier "incl. btw", terwijl er geen btw op zat. */
+  const aboBtw = sub && sub.vat_treatment === VAT_TREATMENT.reverseCharge ? (L === 'nl' ? '· btw verlegd' : '· VAT reverse-charged')
+    : sub && sub.vat_treatment === VAT_TREATMENT.outsideScope ? (L === 'nl' ? '· geen btw, buiten de EU' : '· no VAT, outside the EU')
+    : btwLabel('incl', L);
   const planBlok = sub ? {
     naam: planName(state.plan, L),
     termijn: jaar ? A.termijnJaar : A.termijnMaand,
     bedragLabel: jaar ? A.bedragJaar : A.bedrag,
     bedrag: jaar
-      ? `${money(subEersteBetalingBruto(sub), L)} ${btwLabel('incl', L)}`
-      : `${money(subMaandBruto(sub), L)} ${A.perMaand} ${btwLabel('incl', L)}`,
+      ? `${money(subEersteBetalingBruto(sub), L)} ${aboBtw}`
+      : `${money(subMaandBruto(sub), L)} ${A.perMaand} ${aboBtw}`,
     volgende: sub.status === 'active' && !jaar && state.termijnTot
       ? (klaar
-        ? `${datumLang(state.termijnTot, L, nu)} · ${money(overstapBedragen(sub, klaar).bruto, L)} ${btwLabel('incl', L)} (${planName(klaar.plan, L)}, ${A.overstapNieuw})`
-        : `${datumLang(state.termijnTot, L, nu)} · ${money(subMaandBruto(sub), L)} ${btwLabel('incl', L)}`) : '',
+        ? `${datumLang(state.termijnTot, L, nu)} · ${money(overstapBedragen(sub, klaar).bruto, L)} ${aboBtw} (${planName(klaar.plan, L)}, ${A.overstapNieuw})`
+        : `${datumLang(state.termijnTot, L, nu)} · ${money(subMaandBruto(sub), L)} ${aboBtw}`) : '',
     jaarTot: state.jaarTot ? datumLang(state.jaarTot, L, nu) : '',
     /* Een pauze die nog moet ingaan (15 oktober 2026, gezien op de live site):
        de rij stond op "Gepauzeerd" terwijl de melding erboven zei "tot dan loopt
@@ -10670,6 +10775,8 @@ export async function planView(env, request, t, lang, customer, models = [], loc
           : A.overstapKlaarPauze(planName(klaar.plan, L)),
         verlies: wegKlaar ? A.overstapVerlies(wegKlaar, spaarPlafond(klaar.credits), datum) : '',
         knop: A.overstapTerugKnop,
+        /* levering 119 (P9-11): de keuzelijst staat dan ingeklapt onder deze regel (plan.astro). */
+        anders: L === 'nl' ? 'Toch een ander plan kiezen' : 'Choose another plan after all',
       } : null,
     };
   }
@@ -10936,6 +11043,9 @@ export async function studioScreen(context, section) {
     v.actie = await primaireActie(env, t, lang, customer);
     /* Punt 3.01: het "wat nu"-blok bovenaan, uit dezelfde orderView() als Bestellingen. */
     v.watNu = watNuView(t, lang, st.orders, st.filesByOrder, st.eventsByOrder, await ordersExtra(env, st.orders), v.featured);
+    /* Levering 117 (17 november 2026, proefronde P5-07): een voorbeeld of offerte op maat die op de klant wacht, ook in
+       "Nu te doen" (opMaatAanZet() in src/lib/opMaat.js; leeg zonder de tabellen van 0071). */
+    v.opMaatNu = await (await import('./opMaat.js')).opMaatAanZet(env, customer.customer_id, lang).catch(() => []);
     /* Tip 4: het eerste bezoek aan Studio — wat waar staat. */
     st.tip = studioTip(request, lang, 'studio', st.tipsWeg);
     return { st, v };
@@ -10994,9 +11104,20 @@ export async function studioScreen(context, section) {
     const { aanvragenVan, merkVan, aanvraagVan } = await import('./opMaat.js');
     const url = new URL(request.url);
     const id = Number(url.searchParams.get('id')) || 0;
-    const aanvragen = await aanvragenVan(env, customer.customer_id).catch(() => []);
+    /* levering 118 (17 november 2026, proefronde P5-09): ook de gesloten aanvragen; de pagina zet ze onder "Afgerond". */
+    const aanvragen = await aanvragenVan(env, customer.customer_id, { ookGesloten: true }).catch(() => []);
     const open = id ? await aanvraagVan(env, customer.customer_id, id).catch(() => null) : null;
-    const merk = await merkVan(env, customer.customer_id).catch(() => ({}));
+    /* levering 119 (18 november 2026, proefronde P12-09): de pagina maakt geen concept meer bij het openen (pas bij de
+       eerste wijziging, public/js/op-maat.js). Heeft de klant al een concept voor deze dienst, dan gaat hij daar
+       meteen verder, zoals vroeger; zonder concept blijft het bij kijken. */
+    const gevraagd = String(url.searchParams.get('dienst') || '');
+    if (!id && gevraagd) {
+      const concept = aanvragen.find((a) => a.dienst === gevraagd && a.stand === 'concept');
+      if (concept) return seeOther(`/account/op-maat?id=${concept.id}`);
+    }
+    /* levering 118 (17 november 2026, proefronde P12-02): op een verstuurde aanvraag het merk van toen (de kopie bij de
+       aanvraag); het merkblok staat daar alleen-lezen (fieldset disabled in op-maat.astro). */
+    const merk = (open && open.merk) || await merkVan(env, customer.customer_id).catch(() => ({}));
     const merkmodel = (st.models || []).some((m) => m.has_preview && m.status !== 'in_design');
     /* Lijst 112, schermen 9 en 10: de voorbeelden van de lopende ronde en de offerte. */
     let ronde = 0, voorbeelden = [], offerte = null;

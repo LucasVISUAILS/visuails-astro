@@ -28,8 +28,9 @@ import { BUSINESS_VERSION, VERLEGGING_VERSION, verleggingZin } from '../data/bus
 import { checkVat } from './vies.js';
 import { sendMail } from './mail.js';
 import { studioUrl } from './studioLink.js';
-import { stuurBetaallink } from './betaallink.js';
+import { stuurBetaallink, markeerProefbestelling } from './betaallink.js';
 import { shell, h1, p, rows, button, terugval, vragen, bedrag as mailBedrag, greeting, kenmerk, esc } from './mailTemplate.js';
+import { aanhefTekst } from './aanhef.js';
 
 export const EMAIL_VORM = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const KENMERK_VAN = (id) => `OM-${id}`;
@@ -104,7 +105,7 @@ export async function offerteVoorScherm(env, id) {
  * (een vervanging zolang de klant nog geen akkoord gaf).
  */
 export async function stuurOfferte(env, id, { regels, email, land, btwNummer }, { origin, vies } = {}) {
-  const a = await env.DB.prepare('SELECT a.id, a.customer_id, a.dienst, a.stand, a.taal, c.name, c.brand FROM maat_aanvragen a JOIN customers c ON c.id = a.customer_id WHERE a.id = ?').bind(id).first();
+  const a = await env.DB.prepare('SELECT a.id, a.customer_id, a.dienst, a.stand, a.taal, c.name, c.first_name, c.brand FROM maat_aanvragen a JOIN customers c ON c.id = a.customer_id WHERE a.id = ?').bind(id).first();
   if (!a) return { ok: false, reden: 'weg' };
   if (a.stand !== 'akkoord' && a.stand !== 'offerte') return { ok: false, reden: 'stand' };
   const oud = await offerteRij(env, id);
@@ -153,7 +154,8 @@ export function offerteMail(a, regels, b, btw, origin) {
     preheader: nl ? 'De prijs van je stijl op maat. Akkoord of iets aanpassen kan in Studio.' : 'The price of your custom style. Accept or ask for a change in Studio.',
     body: [
       h1(nl ? 'Je offerte' : 'Your quote', kenmerk('aanvraag', KENMERK_VAN(a.id), lang)),
-      p(greeting(a.name, lang)),
+      /* levering 119 (18 november 2026, proefronde A0-01): de voornaam helemaal; zonder voornaam het oude gedrag. */
+      p(String(a.first_name || '').trim() ? esc(aanhefTekst(String(a.first_name).trim().replace(/\s+/g, ' '), lang === 'nl' ? 'nl' : 'en')) : greeting(a.name, lang)),
       p(nl
         ? `Hieronder staat de prijs voor <strong>${esc(dienst)}</strong>, zoals we hem na het voorbeeld hebben uitgewerkt. Alle bedragen zijn exclusief btw.`
         : `Below is the price for <strong>${esc(dienst)}</strong>, as we worked it out after the preview. All amounts exclude VAT.`),
@@ -238,6 +240,17 @@ export async function akkoordEnBetaallink(env, customerId, id, { zakelijk = fals
       throw e;
     });
   const o = await env.DB.prepare('SELECT id FROM orders WHERE ref = ?').bind(ref).first();
+  /* levering 118 (17 november 2026, proefronde P4-06): het factuuradres uit Je gegevens op de bestelling, waar de
+     factuur het leest; zonder adres ging de aanbetaling uit met alleen een naam. Ontbreekt het, dan vraagt de betaallink
+     er eerst om (de bestelpagina, src/lib/betaallink.js en portal.js). Werpt niet: het akkoord staat al. */
+  await env.DB.prepare(`UPDATE orders SET address_line1 = c.address_line1, address_line2 = c.address_line2, postal_code = c.postal_code,
+      city = c.city, region = c.region, first_name = c.first_name, last_name = c.last_name
+      FROM (SELECT address_line1, address_line2, postal_code, city, region, first_name, last_name FROM customers WHERE id = ?2) AS c
+     WHERE orders.id = ?1 AND c.address_line1 IS NOT NULL AND TRIM(c.address_line1) != ''`).bind(o.id, customerId).run()
+    .catch((e) => console.error('[op-maat] adres niet op de bestelling gezet —', e?.message || e));
+  /* levering 117 (17 november 2026, proefronde P5-08): met een test_-sleutel is dit een proefbestelling,
+     net als in /api/order. Zonder deze regel gaf een testbetaling een factuur uit de echte reeks. */
+  await markeerProefbestelling(env, o.id);
   const nlT = lang === 'nl';
   await env.DB.batch([
     env.DB.prepare('UPDATE maat_offertes SET order_id = ? WHERE aanvraag_id = ?').bind(o.id, id),

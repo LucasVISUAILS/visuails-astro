@@ -1565,6 +1565,9 @@ a.fl-chip.is-warn:hover { background: var(--ghost); }
 .pl-chip:hover, .pl-chip:focus-visible { border-color: var(--ink-500); color: var(--ink); }
 .pl-chip.is-af { border-color: var(--teal); box-shadow: inset 3px 0 0 var(--teal); }
 .pl-chip.is-asap { border-style: dashed; }
+/* levering 118 (17 november 2026, proefronde W1-01/W1-02): een onbetaalde reservering staat licht in de planning
+   (gestippeld, zonder vlak); geen nieuwe kleur. De klasse zet admin.js (nogOnbetaald). */
+.pl-chip.is-voorlopig { border-style: dotted; background: transparent; }
 .pl-chip.is-laat { border-color: var(--warn-ink); box-shadow: inset 3px 0 0 var(--warn-ink); }
 .pl-chip.is-delivered, .pl-chip.is-cancelled { opacity: .6; }
 .pl-chip-ref { display: block; font-family: var(--font-mono); font-stretch: var(--stretch-mono); font-weight: 700; color: var(--ink); }
@@ -3096,3 +3099,8 @@ html[data-thema="donker"] .btn.btn-quiet:hover, html[data-thema="donker"] .btn.b
 .fl-chip:has(.ik) { display: inline-flex; align-items: center; gap: 6px; }
 .bar-link .ik { width: 15px; height: 15px; fill: currentColor; flex: none; }
 .bar-link:has(.ik) { display: inline-flex; align-items: center; gap: 7px; }
+
+/* levering 119 (18 november 2026, proefronde P10-02): het bord en het blok "1 foto ontbreekt" werden met één lange
+   productnaam 2.051 px breed op 1440. De naam breekt nu binnen zijn vak (de tabellen deden dat al, regel "Een
+   e-mailadres van veertig tekens"). */
+.ontbreekt-blok p, .board-naam { overflow-wrap: anywhere; }

@@ -31,6 +31,8 @@ import { ikoon, IKOON, rolIkoon } from '../data/iconen.js';
 import { localizedPath } from '../i18n/ui.js';
 import { WINDOW_THRESHOLD, TEST_SAMPLE } from '../data/pricing.js';
 import { PORTAL_TTL_DAYS } from '../lib/token.js';
+/* levering 119 (18 november 2026, proefronde P9-05): de ene zin over het delen van de privélink. */
+import { DEEL_ZIN } from '../lib/deelLink.js';
 import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
 import { DEMO_ORDER, demoWindow, dayLabel } from '../data/figdemo.js';
 import { LEVERTAG, TAG_WOORD, tagNaam } from '../lib/iptc.js';
@@ -49,7 +51,7 @@ const lp = (p: string) => localizedPath(lang, p);
 const COPY = {
   en: {
     h1: ['Every order.', 'In one place.'],
-    lede: `VISUAILS Studio holds all your orders: where each one stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. You sign in with your email address — we email you a code and a link, and there is no password. Every order also has its own order page, for anyone who needs to look along without signing in. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it: reserved when you order, fixed once you have paid.`,
+    lede: `VISUAILS Studio holds all your orders: where each one stands, the visuals the moment they are finished, and a button on each one to approve it or say what is wrong. You sign in with your email address — we email you a code and a link, and there is no password. Every order also has its own order page, for anyone who needs to look along without signing in. From ${WINDOW_THRESHOLD} products up there is a delivery date beside it: held once you order, fixed once you have paid.`,
     /* "Inloggen bovenaan" (1.11): dezelfde woorden als de link rechtsboven in
        de balk (nav_account in src/i18n/ui.js). */
     ctaLogin: 'Log in',
@@ -131,7 +133,8 @@ const COPY = {
       ['Protected against guessing', 'Keep trying and you are stopped after a few attempts, before anything is looked up.'],
       ['It expires', `The link stops working ${PORTAL_TTL_DAYS} days after the order is completed. The source files you sent are deleted ${UPLOAD_DAYS} days after that.`],
     ],
-    secNote: 'Treat the link the way you would treat a key: anyone who has it can see the order. Send it on if a colleague needs it, and ask us for a new one if it goes somewhere it should not.',
+    /* levering 119 (18 november 2026, proefronde P9-05): de ene deelzin (deelLink.js); "stuur hem gerust door" sprak de mail en /o/ tegen. */
+    secNote: `${DEEL_ZIN.en} Ask us for a new one if it goes somewhere it should not.`,
 
     closeH: 'One of your own products, as a catalog set or a carousel, first.',
     closeLede: `${TEST_SAMPLE.en.deliverable}, made from your own photo and checked before delivery. VISUAILS Studio comes with every paid order.`,
@@ -141,7 +144,7 @@ const COPY = {
 
   nl: {
     h1: ['Al je bestellingen.', 'Op één plek.'],
-    lede: `In VISUAILS Studio staan al je bestellingen: waar elke bestelling staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om het goed te keuren of te zeggen wat er niet klopt. Je logt in met je e-mailadres — we mailen je een code en een link, en een wachtwoord is er niet. Elke bestelling heeft daarnaast een eigen bestelpagina, voor wie mee moet kijken zonder in te loggen. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast: gereserveerd zodra je bestelt, vast zodra je hebt betaald.`,
+    lede: `In VISUAILS Studio staan al je bestellingen: waar elke bestelling staat, de beelden zodra ze klaar zijn, en bij elk beeld een knop om het goed te keuren of te zeggen wat er niet klopt. Je logt in met je e-mailadres — we mailen je een code en een link, en een wachtwoord is er niet. Elke bestelling heeft daarnaast een eigen bestelpagina, voor wie mee moet kijken zonder in te loggen. Vanaf ${WINDOW_THRESHOLD} producten staat er een leverdatum naast: vastgehouden zodra je bestelt, vast zodra je hebt betaald.`,
     ctaLogin: 'Inloggen',
     ctaStart: 'Start een bestelling',
 
@@ -193,7 +196,8 @@ const COPY = {
       ['Tegen raden beschermd', 'Wie blijft proberen, wordt na een paar pogingen tegengehouden, nog voordat er iets wordt opgezocht.'],
       ['Hij verloopt', `De link werkt niet meer vanaf ${PORTAL_TTL_DAYS} dagen nadat de bestelling is afgerond. De bronbestanden die je stuurde worden ${UPLOAD_DAYS} dagen na het afronden verwijderd.`],
     ],
-    secNote: 'Behandel de link zoals je een sleutel behandelt: wie hem heeft, kan de bestelling zien. Stuur hem gerust door als een collega hem nodig heeft, en vraag ons om een nieuwe als hij ergens belandt waar hij niet hoort.',
+    /* levering 119 (18 november 2026, proefronde P9-05): idem. */
+    secNote: `${DEEL_ZIN.nl} Vraag ons om een nieuwe als hij ergens belandt waar hij niet hoort.`,
 
     closeH: 'Eerst één product van jezelf, als catalogset of carrousel.',
     closeLede: `${TEST_SAMPLE.nl.deliverable}, gemaakt van je eigen foto en vóór levering nagekeken. VISUAILS Studio krijg je bij elke betaalde bestelling.`,

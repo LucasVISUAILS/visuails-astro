@@ -384,6 +384,15 @@ const notSure = nl ? 'Weet ik nog niet' : 'Not sure yet';
       <h2 class="hold-h">{ui.formH}</h2>
       <p class="hold-lead">{ui.formLead}</p>
 
+      {/* levering 118 (17 november 2026, proefronde P4-08): te vaak verstuurd (?error=rate van /api/order, was een witte pagina). initFormRefusal()
+          in interactions.js haalt hidden weg; dezelfde twee wegen als bij de botcheck van het bestelformulier. */}
+      <p class="form-terug" data-form-refusal="rate" role="status" tabindex="-1" hidden>
+        {lang === 'nl'
+          ? 'Je hebt in korte tijd vaak verstuurd, dus is dit niet aangekomen en is er niets afgeschreven. Wacht een paar minuten en probeer het opnieuw, of'
+          : 'You sent this form many times in a short while, so it did not go through and nothing was charged. Wait a few minutes and try again, or'}{' '}
+        <a href={waHref(lang === 'nl' ? 'Hallo VISUAILS, ik probeerde een aanvraag te versturen op de site en dat lukte niet. Kunnen jullie me helpen?' : 'Hello VISUAILS, I tried to send a request on the site and it did not go through. Can you help me?')} target="_blank" rel="noopener">{lang === 'nl' ? 'stuur een WhatsApp' : 'send a WhatsApp'}<NieuwTabblad lang={lang} /></a>{' '}
+        {lang === 'nl' ? 'of mail' : 'or email'} <a href="mailto:hello@visuails.com">hello@visuails.com</a>.
+      </p>
       <form method="post" action="/api/order" class="hold-fields">
         <input type="hidden" name="service" value={wire} />
         <input type="hidden" name="request" value={kind} />

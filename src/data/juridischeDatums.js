@@ -34,9 +34,18 @@
  * waarin je het commit. Alleen de maand: dat is ook wat er op de pagina staat, en een
  * dagnauwkeurige waarde die als maand wordt afgedrukt is nauwkeurigheid die niemand
  * ziet en die je wel elke keer moet bijhouden.
+ *
+ * ── OF DE DAG ERBIJ — levering 117 (17 november 2026, proefronde P6-01) ─────
+ *
+ * De voorwaarden, het privacybeleid en de verwerkersovereenkomst veranderden op
+ * 9 november én op 17 november. Met alleen "november 2026" kan een klant niet zien
+ * welke van de twee versies hij aanvaardde. Een waarde mag daarom ook 'JJJJ-MM-DD'
+ * zijn; dan staat er "Laatst bijgewerkt: 17 november 2026". Een waarde met alleen
+ * de maand blijft "november 2026" geven. De toets tegen git vergelijkt nog steeds
+ * de maand (de eerste zeven tekens).
  */
 
-/** Per document de maand van de laatste inhoudelijke wijziging, als 'JJJJ-MM'. */
+/** Per document de maand van de laatste inhoudelijke wijziging, als 'JJJJ-MM' (of 'JJJJ-MM-DD', zie hierboven). */
 export const LAATST_BIJGEWERKT = {
   /* Oktober 2026 (8 oktober, ronde B): §9a over het abonnement is inhoudelijk
      gewijzigd — bestellen met credits via het gewone formulier, twee termijnen,
@@ -60,8 +69,15 @@ export const LAATST_BIJGEWERKT = {
      Nog steeds oktober, dus de waarde blijft staan.
      9 november 2026 (lijst 87): §6 zegt wanneer een onbetaalde bestelling vervalt
      (B15), §9 noemt aanbetaling en restant bij een offerte met de hand (B14), en
-     §9a zegt dat de tweede termijn uiterlijk op de 28e valt (B19). */
-  terms: '2026-11',
+     §9a zegt dat de tweede termijn uiterlijk op de 28e valt (B19).
+     17 november 2026 (levering 117): §7 noemt nu ook onze eigen kopie tot 2 jaar, met de tabel met termijnen
+     (P6-01), §8 zegt dat die kopie een volgende bestelling dezelfde look geeft, en bijkopen en plannen op maat
+     gaan zolang ze niet te koop zijn "in overleg, via Bespreek met ons" (P9-01). Met de dag erbij.
+     levering 118 (17 november 2026, proefronde P6-03, keuze a): §8 "Ons portfolio" is nu opt-in (alleen als je na de
+     levering ja zegt, ook voor de productfoto's die je stuurde), intrekken kan ook in Studio, binnen een week weg.
+     levering 119 (18 november 2026, proefronde P6-23): §11 zegt nu dat de markering in de geleverde foto's én video's
+     staat (zoals /ai-act; /admin zet hem sinds 11 oktober ook in mp4), en "een geleverd bestand" zonder markering. */
+  terms: '2026-11-18',
   /* 11 oktober 2026 (afvinklijst 2): privacy §5/§6 en verwerkersovereenkomst §8/§12
      inhoudelijk gewijzigd — ByteDance via Magnific, meldtermijn 14 dagen, eigen
      kopieën zolang het account bestaat, geleverde beelden zonder einddatum in het
@@ -70,16 +86,29 @@ export const LAATST_BIJGEWERKT = {
      9 november 2026 (ronde 91, E17): §5 noemt nu ook e-Boekhouden (de boekhouding)
      en VIES (de btw-controle) als ontvanger; die kregen al gegevens.
      9 november 2026 (lijst 87): §3 noemt de logboeken die Cloudflare kort bewaart
-     (A10), en "privélink" heet "de link naar je bestelpagina" (K04). */
-  privacy: '2026-11',
+     (A10), en "privélink" heet "de link naar je bestelpagina" (K04).
+     17 november 2026 (levering 117, P6-01): §6 kreeg de tabel met termijnen, en §5 zegt dat wij wat wij bij
+     Magnific maakten met de hand weghalen binnen de termijn van die tabel.
+     levering 118 (17 november 2026, proefronde P6-12): §8 zegt niet meer "het genereren gebeurt in Spanje", maar dat het
+     contract met Magnific (Spanje) is en dat de modellen van Google (VS) en ByteDance (Singapore) je beeld verwerken.
+     levering 119 (18 november 2026, proefronde P7-07): in het Engels heet VIES nu "European Commission (VIES)". Geen
+     nieuwe ontvanger, wel een andere tekst. */
+  privacy: '2026-11-18',
   /* 15 oktober 2026: vis_in erbij (afvinklijst 31, v31-me = a). Nog oktober, dus dezelfde maand.
-     9 november 2026 (lijst 87, K04): de tipscookie zegt "bestelpagina" in plaats van "privélink". */
-  'cookie-policy': '2026-11',
+     9 november 2026 (lijst 87, K04): de tipscookie zegt "bestelpagina" in plaats van "privélink".
+     levering 119 (18 november 2026, proefronde P6-10): de kop en de zin onder de lijst noemen geen aantal meer ("vijf",
+     "alle vier" bij een lijst van zes). Met de dag erbij, zodat je ziet welke versie je las. */
+  'cookie-policy': '2026-11-18',
   /* 9 november 2026 (ronde 91): de tekst is aangepast. "Jouw eigen portaal" heet nu VISUAILS Studio (§7 / §8), en
      "binnen 24 uur … ook als we dan nog niet alles weten" (§11, NL) is herschreven. Er zijn geen nieuwe plichten. De
      lijst van §8 (partijen met beeld) bleef gelijk: zie SUBVERWERKERS_GEWIJZIGD in subverwerkers.js. Toch een andere
-     tekst, dus een andere maand (test:juridischedatums, 12 november). */
-  'data-processing-agreement': '2026-11',
+     tekst, dus een andere maand (test:juridischedatums, 12 november).
+     17 november 2026 (levering 117, P6-01): §12 kreeg de tabel met termijnen; mail en WhatsApp vallen niet meer onder
+     "de termijnen hieronder" maar onder de tabel (2 jaar na het laatste contact, zoals privacy §6 al zei).
+     levering 119 (18 november 2026, proefronde P6-14): de regel boven de lijst van §8 noemt nu dezelfde datum als het
+     privacybeleid (de lijst van ontvangers, LIJST_GEWIJZIGD) en zegt dat hier alleen de partijen met je beelden staan.
+     De partijen zelf bleven gelijk. */
+  'data-processing-agreement': '2026-11-18',
   /* Oktober 2026: paragraaf 4 (welke foto's verplicht zijn: voorkant, achterkant
      én één close-up; de draagfoto optioneel) en paragraaf 6 ("controle door een
      specialist", "AI-model" in de IPTC-uitleg) zijn inhoudelijk gewijzigd.
@@ -88,8 +117,12 @@ export const LAATST_BIJGEWERKT = {
      9 november 2026 (ronde 91): de tekst is aangepast. "Portaal" heet nu VISUAILS Studio, "we fotograferen het
      opnieuw" is nu "we maken het na vanuit jouw foto's", de foto op model "maken we op basis van" je platte foto's,
      en goedkeuren gebeurt "voordat je bestelling wordt afgerond". Er zijn geen nieuwe plichten, maar het is een andere
-     tekst. */
-  'ai-act': '2026-11',
+     tekst.
+     levering 118 (17 november 2026, proefronde P6-08): het goedkeuringsdossier en "Jij keurt elk beeld goed" zeggen nu
+     ook dat de levering na REVISIE_DAGEN dagen zonder reactie als aanvaard geldt (zoals voorwaarden §10 en de FAQ).
+     levering 119 (18 november 2026, proefronde P6-23): "Wie waarvoor verantwoordelijk is" zegt nu ook "foto's en video's",
+     zoals "Een markering in het bestand" al zei. */
+  'ai-act': '2026-11-18',
 };
 
 const MAANDEN = {
@@ -115,9 +148,10 @@ export function bijgewerktOp(doc, lang = 'en', achtervoegsel = '') {
   const l = lang === 'nl' ? 'nl' : 'en';
   const waarde = LAATST_BIJGEWERKT[doc];
   if (!waarde) throw new Error(`juridischeDatums: onbekend document "${doc}"`);
-  const [jaar, maand] = waarde.split('-');
+  const [jaar, maand, dag] = waarde.split('-');
   const naam = MAANDEN[l][Number(maand) - 1];
-  const kern = `${VOORVOEGSEL[l]}: ${naam} ${jaar}`;
+  /* levering 117: met een dag "17 november 2026" (harde spatie, zoals wetDatum()), anders alleen de maand */
+  const kern = dag ? `${VOORVOEGSEL[l]}: ${Number(dag)}\u00a0${naam} ${jaar}` : `${VOORVOEGSEL[l]}: ${naam} ${jaar}`;
   return achtervoegsel ? `${kern} · ${achtervoegsel}` : kern;
 }
 

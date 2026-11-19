@@ -317,17 +317,22 @@ const VIDEO_V = vh.digest('hex').slice(0, 10);
         const d = document.createElement('div'); d.className = 'o8-st o8-st-clip'; d.append(m.el);
         m.el.className = '';
         const v = document.createElement('video');
-        v.className = 'o8-clip'; v.muted = true; v.playsInline = true; v.preload = 'auto'; v.loop = false;
-        v.poster = `${s.lap}.webp?v=${ver}`; v.src = `${s.mp4}?v=${ver}`; v.setAttribute('aria-hidden', 'true');
+        /* LEVERING 118 (17 november 2026, proefronde T1-02): de clip (6,2 MB) laadde meteen bij binnenkomst, met preload
+           "auto", ook op de telefoon waar hij 219 × 143 px groot is en ver onderaan staat. Nu krijgt hij zijn bron pas als hij
+           gaat spelen (clipZet: de stand staat, de opening is in beeld en loopt); tot dan staat de poster er. */
+        v.className = 'o8-clip'; v.muted = true; v.playsInline = true; v.preload = 'none'; v.loop = false;
+        v.poster = `${s.lap}.webp?v=${ver}`; v.dataset.src = `${s.mp4}?v=${ver}`; v.setAttribute('aria-hidden', 'true');
         d.append(v); clips.set(k, v);
         /* levering 96 (lijst 97, notitie: "de video op de laptop [gaat] automatisch naar de catalog voorbeelden wanneer hij klaar
            is"): ook als de bezoeker nog niet bewoog of met de muis op de laptop staat */
         v.addEventListener('ended', () => { if (clips.get(nu) === v && loopt && !vast) { bewogen = true; gaNaar(nu + 1); toestand(); } });
-        const p = new Promise<void>((r) => { if (v.readyState >= 2) r(); else { v.addEventListener('loadeddata', () => r(), { once: true }); v.addEventListener('error', () => r(), { once: true }); } });
-        return { el: d as HTMLElement, img: m.img, p: Promise.all([klaar(m.img), p]).then(() => {}) };
+        /* klaar is de stand als het stille scherm er staat (de poster); de video komt pas als hij speelt (levering 118) */
+        return { el: d as HTMLElement, img: m.img, p: klaar(m.img) };
       };
       const clipZet = () => clips.forEach((v, j) => {
-        if (j === nu && loopt && zicht && !vast) { if (v.paused) v.play().catch(() => { /* geweigerd (geen autoplay): de poster blijft staan, de stand loopt door */ v.dataset.geweigerd = '1'; }); }
+        if (j === nu && loopt && zicht && !vast) {
+          if (!v.getAttribute('src') && v.dataset.src) { v.preload = 'auto'; v.src = v.dataset.src; }
+          if (v.paused) v.play().catch(() => { /* geweigerd (geen autoplay): de poster blijft staan, de stand loopt door */ v.dataset.geweigerd = '1'; }); }
         else v.pause();
       });
       /* levering 94 (de video eerst): staat de clip vooraan, dan wordt het stille scherm van de eerste stand zijn poster */

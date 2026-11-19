@@ -121,6 +121,13 @@ const t = useTranslations(lang);
     padding: clamp(.9rem, 2vw, 1.15rem) 0;
   }
   .cc[hidden] { display: none; }
+  /* levering 118 (P2-01): op een laag scherm (200 % zoom op een telefoon is 422 px hoog) vulde de balk het hele scherm. Hij
+     is nu hoogstens 60 % van de hoogte; wat er niet in past, schuift binnen de balk. */
+  .cc { max-height: 60svh; overflow-y: auto; overscroll-behavior: contain; }
+  /* levering 118 (17 november 2026, proefronde P11-01, WCAG 2.4.11): zolang de balk er staat, houdt de browser alles wat
+     de focus krijgt boven de balk (consent.js zet --cc-h op zijn hoogte, en op 0 als hij weg is). Gemeten op de oude bouw:
+     galerijtegels en het veld van de Studiobrief kregen de focus onder de balk. */
+  :global(html) { scroll-padding-bottom: calc(var(--cc-h, 0px) + 12px); }
   .cc-in {
     max-width: var(--container);
     margin: 0 auto;
@@ -150,7 +157,14 @@ const t = useTranslations(lang);
        has to say so itself. */
     border-radius: var(--r-pill);
     cursor: pointer;
-    white-space: nowrap;
+    /* levering 118 (17 november 2026, proefronde P2-01): de tekst breekt af in plaats van uit de knop te lopen. Was
+       white-space: nowrap; op 200 % zoom (195 px breed) was "Alleen het noodzakelijke" 192 px in een knop van 147 px en
+       werd hij afgesneden. Nu mag hij op twee regels, en groeit de knop mee (min-height blijft 42). */
+    white-space: normal;
+    overflow-wrap: break-word;
+    line-height: 1.25;
+    padding-block: .55rem;
+    text-align: center;
   }
   .cc-btn:hover, .cc-btn:focus-visible { background: var(--btn-ghost-fill-hover); }
   .cc-btn-primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }

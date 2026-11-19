@@ -44,6 +44,9 @@ const w = v.watNu;
 const samen = !!(w && w.boven && v.featured && w.boven.id === v.featured.id);
 /* Staat er een andere bestelling bovenaan, dan niet nog eens in de rij eronder. */
 const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.id));
+/* Levering 117 (17 november 2026, proefronde P5-07): een aanvraag op maat waar de klant aan zet is (een voorbeeld of een
+   offerte). Staat er al een bestelling in "Nu te doen", dan eronder; anders is dit het blok "Nu te doen". */
+const opMaatNu = v.opMaatNu || [];
 ---
 <StudioLayout tip={st.tip}
   lang={lang} t={t} thema={thema} navDicht={navDicht} actief="overview" customer={customer}
@@ -52,11 +55,11 @@ const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.
   actie={v.actie}
 >
   {/* ── "WAT NU" (punt 3.01) ── */}
-  {w && w.boven && (
+  {((w && w.boven) || opMaatNu.length > 0) && (
     <section class="st-blok st-watnu-blok" aria-label={samen ? t.ovNowTitle : t.ovNuTeDoen}>
       <div class="st-blok-kop"><h2>{samen ? t.ovNowTitle : t.ovNuTeDoen}</h2></div>
-      <Bestelkaart t={t} lang={lang} order={w.boven} events={eventsByOrder.get(w.boven.id) || []} files={filesByOrder.get(w.boven.id) || []} nu={w.nu} />
-      {w.nogMeer.length > 0 && (
+      {w && w.boven && <Bestelkaart t={t} lang={lang} order={w.boven} events={eventsByOrder.get(w.boven.id) || []} files={filesByOrder.get(w.boven.id) || []} nu={w.nu} />}
+      {w && w.nogMeer.length > 0 && (
         <div class="st-kaart-vlak st-nogmeer">
           <p class="st-nogmeer-kop">{w.nogMeerKop}</p>
           <ul class="st-lopend">
@@ -65,6 +68,20 @@ const restZonderBoven = v.rest.filter((o) => !(w && w.boven && o.id === w.boven.
                 <span class="st-ref">{n.ref}</span>
                 <span class="st-meta">{n.zin}</span>
                 <a class="st-link k k-tekst k-klein" data-rol="navigeren" href={n.href} set:html={knopInhoud('navigeren', t.ovOpenOrder)} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {opMaatNu.length > 0 && (
+        <div class="st-kaart-vlak st-nogmeer st-opmaat-nu" data-opmaat-nu>
+          <p class="st-nogmeer-kop">{t.ovOpMaatKop}</p>
+          <ul class="st-lopend">
+            {opMaatNu.map((n) => (
+              <li>
+                <span class="st-ref">{n.ref}</span>
+                <span class="st-meta">{n.zin}</span>
+                <a class="st-link k k-tekst k-klein" data-rol="navigeren" href={n.href} set:html={knopInhoud('navigeren', n.knop)} />
               </li>
             ))}
           </ul>

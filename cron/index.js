@@ -60,7 +60,9 @@ import { koppelSubscription } from '../src/lib/subscribe.js';
 import { grantSlots, subProducten, loadSlots, vensterVoor, kindLabel, CREDIT_KIND } from '../src/lib/slots.js';
 import { TERMS } from '../src/data/plans.js';
 import { planName } from '../src/data/planNames.js';
-import { SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN } from '../src/data/pricing.js';
+import { SERVICE_CREDITS, CREDITS_GELDIG_MAANDEN, VIDEO_OP_AANVRAAG } from '../src/data/pricing.js';
+/* levering 119 (18 november 2026, proefronde P1-12): de proef in de vervalmail, met het bedrag uit pricing.js. */
+import { AMOUNT, SAMPLE_SERVICE, euro } from '../src/data/pricing.js';
 /* Het creditboek (ronde B, migratie 0061): de credits van een vooruitbetaalde
    maand, en de herinnering zeven dagen voordat credits vervallen. */
 import { boekTermijnBij, creditsDieVervallen, plafondInZicht } from '../src/lib/creditboek.js';
@@ -575,7 +577,9 @@ async function cancelStaleApprovals(env) {
          "binnen": in de lijsten, in de tellers, en met haar tegoed
          vastgehouden. Na ONBETAALD_VERVAL_DAGEN vervalt ze nu ook, met
          dezelfde mail. Abonnementswerk (payment_status 'plan') valt erbuiten. */
-      `SELECT id, ref, email, name, lang, reviewed_at, total_cents, vat_cents, details_json, review_state, customer_id
+      /* levering 119 (P1-12): `service` erbij, zodat de vervalmail van een proef over de proef gaat. */
+      /* levering 119 (18 november 2026, proefronde A0-01): en first_name, voor de aanhef. */
+      `SELECT id, ref, email, name, first_name, lang, reviewed_at, total_cents, vat_cents, details_json, review_state, customer_id, service
          FROM orders
         WHERE COALESCE(payment_status, 'unpaid') = 'unpaid'
           AND COALESCE(total_cents, 0) > 0
@@ -675,18 +679,28 @@ async function mailVervallen(env, o, nl) {
      laatste klantmail in platte tekst, en de Nederlandse versie linkte naar de
      Engelse /start. */
   const lang = nl ? 'nl' : 'en';
+  /* ── DE PROEF HEET DE PROEF — levering 119 (18 november 2026, proefronde P1-12) ──────────────────────────────
+     Een vervallen €1-proef kreeg dezelfde mail als een bestelling, met de knop naar /start. Een warme lead hoort
+     terug te komen waar hij vandaan kwam: de proefpagina. Het bedrag uit AMOUNT.testSample. */
+  const proef = o.service === SAMPLE_SERVICE;
+  const proefNaam = nl ? `Je proef van ${euro(AMOUNT.testSample, 'nl')}` : `Your ${euro(AMOUNT.testSample, 'en')} test sample`;
   try {
     await sendMail(env, {
       to: o.email,
       /* Het nummer achteraan, zoals in elk ander onderwerp (17 oktober 2026). */
-      subject: nl ? `Je bestelling is vervallen — ${o.ref}` : `Your order has expired — ${o.ref}`,
+      subject: proef
+        ? (nl ? `${proefNaam} is vervallen — ${o.ref}` : `${proefNaam} has expired — ${o.ref}`)
+        : (nl ? `Je bestelling is vervallen — ${o.ref}` : `Your order has expired — ${o.ref}`),
       html: mailShell({
         lang,
         preheader: nl ? 'Er is niets in rekening gebracht.' : 'Nothing has been charged.',
         body: [
-          mailH1(nl ? 'Je bestelling is vervallen' : 'Your order has expired', mailKenmerk('bestelling', o.ref, lang)),
-          mailP(mailGreeting(o.name, lang)),
-          mailP(nl
+          mailH1(proef ? (nl ? `${proefNaam} is vervallen` : `${proefNaam} has expired`) : (nl ? 'Je bestelling is vervallen' : 'Your order has expired'), mailKenmerk('bestelling', o.ref, lang)),
+          mailP(mailGreeting(o.name, lang, { voornaam: o.first_name })), /* levering 119 (A0-01): de aanhef uit het veld Voornaam */
+          proef ? mailP(nl
+            ? `${proefNaam} (${o.ref}) is vervallen omdat er binnen ${o.review_state === 'approved' ? inWoorden(BETALEN_NA_BTW_AKKOORD, 'nl') : ONBETAALD_VERVAL_DAGEN} dagen niet betaald is. Er is niets in rekening gebracht.`
+            : `${proefNaam} (${o.ref}) has expired because it was not paid within ${o.review_state === 'approved' ? inWoorden(BETALEN_NA_BTW_AKKOORD, 'en') : ONBETAALD_VERVAL_DAGEN} days. Nothing has been charged.`) : '',
+          proef ? '' : mailP(nl
             ? (o.review_state === 'approved'
               ? `Je bestelling ${o.ref} is vervallen omdat er niet betaald is binnen ${inWoorden(BETALEN_NA_BTW_AKKOORD, 'nl')} dagen nadat wij hem hadden nagekeken. Er is niets in rekening gebracht.`
               : `Je bestelling ${o.ref} is vervallen omdat er binnen ${ONBETAALD_VERVAL_DAGEN} dagen niet betaald is. Er is niets in rekening gebracht${tegoedOpBestelling(o) > 0 ? ', en het tegoed dat erop stond, is weer vrij' : ''}.`)
@@ -696,7 +710,14 @@ async function mailVervallen(env, o, nl) {
           mailP(nl
             ? 'Wil je het alsnog, dan kun je gewoon opnieuw bestellen — je gegevens staan er nog.'
             : 'If you still want it, you can simply order again — your details are still there.'),
-          mailButton(`https://visuails.com${nl ? '/nl' : ''}/start`, nl ? 'Opnieuw bestellen' : 'Order again'),
+          /* levering 119 (18 november 2026, proefronde B1-13): wat er met de foto's gebeurt. UPLOAD_DAYS is de termijn
+             die de opruimtaak aanhoudt voor een geannuleerde bestelling (EXPIRED_FILES_SQL in retention.js). */
+          mailP(nl
+            ? `Stuurde je foto’s mee? Die bewaren we nog ${UPLOAD_DAYS} dagen, voor als je opnieuw bestelt. Wil je ze eerder weg? Antwoord dan op deze mail.`
+            : `Did you send photos? We keep them for another ${UPLOAD_DAYS} days, in case you order again. Want them gone sooner? Just reply to this email.`),
+          proef
+            ? mailButton(`https://visuails.com${nl ? '/nl' : ''}/test-sample/`, nl ? 'Proef opnieuw aanvragen' : 'Request the test sample again')
+            : mailButton(`https://visuails.com${nl ? '/nl' : ''}/start`, nl ? 'Opnieuw bestellen' : 'Order again'),
           /* 7.07: de vragenregel in plaats van de contactenregel (V21-1). */
           mailVragen(lang, o.ref),
         ].join(''),
@@ -1364,7 +1385,7 @@ async function issuePendingInvoices(env) {
         /* De webhook kon deze nota niet mailen — hij had toen nog geen pdf. Nu wel,
            dus nu gaat hij alsnog de deur uit (4 september 2026). */
         if (klaar?.status === 'issued') {
-          const wie = await env.DB.prepare('SELECT ref, email, lang, name FROM orders WHERE id = ?1')
+          const wie = await env.DB.prepare('SELECT ref, email, lang, name, first_name FROM orders WHERE id = ?1') /* A0-01: first_name voor de aanhef */
             .bind(note.order_id).first().catch(() => null);
           if (wie) await mailCreditNote(env, { order: wie, note: klaar });
         }
@@ -1491,7 +1512,7 @@ async function grantPrepaidMonths(env, nu = new Date()) {
                maand al?" — één databaseverzoek per vooruitbetaald jaar per nacht,
                op een nacht met een grens van 50. Hoogstens twaalf sleutels. */
             (SELECT group_concat(m.month) FROM subscription_months m WHERE m.subscription_id = s.id) AS maandlijst,
-            c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, ${KLANT_TAAL_SQL} AS lang
+            c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, NULLIF(TRIM(c.first_name), '') AS first_name, ${KLANT_TAAL_SQL} AS lang
        FROM subscriptions s
        LEFT JOIN customers c ON c.id = s.customer_id
       WHERE s.status = 'active' AND s.term = 'prepaid'`
@@ -1590,7 +1611,7 @@ async function mailLaatsteMaand(env, o) {
         preheader: nl ? `Je jaar loopt${tot ? ` tot ${tot}` : ' deze maand af'}.` : `Your year runs${tot ? ` until ${tot}` : ' out this month'}.`,
         body: [
           mailH1(nl ? 'Dit is de laatste maand van je jaar' : 'This is the last month of your year', mailKenmerk('abonnement', o.ref, lang)),
-          mailP(mailGreeting(o.name, lang)),
+          mailP(mailGreeting(o.name, lang, { voornaam: o.first_name })), /* levering 119 (A0-01): de aanhef uit het veld Voornaam */
           mailP(nl
             ? `Je credits voor deze maand staan klaar. Je vooruitbetaalde jaar loopt${tot ? ` tot <strong>${tot}</strong>` : ' deze maand af'}; daarna stopt het vanzelf en wordt er niets afgeschreven.`
             : `Your credits for this month are ready. Your prepaid year runs${tot ? ` until <strong>${tot}</strong>` : ' out this month'}; after that it stops by itself and nothing is charged.`),
@@ -1679,10 +1700,17 @@ function dagenTot(vanIso, totIso) {
  * (8) laten er één over. Een tip die je credits laat verdampen, is precies de
  * verkeerde tip in een mail die daarover gaat.
  */
+/* levering 118 (17 november 2026, proefronde P9-13): alleen diensten die je echt met credits via het bestelformulier
+   bestelt. Hooks zijn op aanvraag (op maat), en video zolang VIDEO_OP_AANVRAAG aanstaat; de mail raadde "41 × hook" aan
+   en Noor liep vast op een gesprek. */
 function creditTips(n, lang = 'nl') {
   const nl = lang !== 'en';
   const uit = [];
+  /* `typeof`: tests/creditherinnering.test.mjs voert deze functie los uit, zonder de import; dan geldt "op aanvraag". */
+  const videoOpAanvraag = typeof VIDEO_OP_AANVRAAG === 'undefined' || VIDEO_OP_AANVRAAG;
+  const kan = (kind) => kind !== 'hooks' && !(videoOpAanvraag && kind.startsWith('video'));
   const diensten = Object.entries(SERVICE_CREDITS)
+    .filter(([kind]) => kan(kind))
     .map(([kind, prijs]) => ({ kind, prijs, aantal: Math.floor(n / prijs), rest: n % prijs }))
     .filter((d) => d.aantal > 0)
     .sort((a, b) => a.rest - b.rest || b.prijs - a.prijs);
@@ -1713,7 +1741,7 @@ async function herinnerCredits(env, nu = new Date()) {
   for (const x of lijst) {
     if (x.aantal < goedkoopste) continue;
     const klant = await env.DB.prepare(
-      `SELECT c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, s.ref, ${KLANT_TAAL_SQL} AS lang
+      `SELECT c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, NULLIF(TRIM(c.first_name), '') AS first_name, s.ref, ${KLANT_TAAL_SQL} AS lang
          FROM customers c
          LEFT JOIN subscriptions s ON s.id = (SELECT id FROM subscriptions WHERE customer_id = c.id ORDER BY id DESC LIMIT 1)
         WHERE c.id = ?1`
@@ -1732,13 +1760,23 @@ async function herinnerCredits(env, nu = new Date()) {
   for (const x of plafond) {
     if (x.boven < goedkoopste) continue;
     const klant = await env.DB.prepare(
-      `SELECT c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, s.ref, ${KLANT_TAAL_SQL} AS lang
+      `SELECT c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, NULLIF(TRIM(c.first_name), '') AS first_name, s.ref, ${KLANT_TAAL_SQL} AS lang
          FROM customers c
          LEFT JOIN subscriptions s ON s.id = ?2
         WHERE c.id = ?1`
     ).bind(x.customerId, x.subscriptionId).first().catch(() => null);
     if (!klant?.email) continue;
-    if (await mailPlafondInZicht(env, { ...klant, ...x, dagen: CREDIT_HERINNERING_DAGEN, geldigMaanden: CREDITS_GELDIG_MAANDEN })) {
+    /* levering 119 (18 november 2026, proefronde P5-14): een jaar zonder bestelling en het saldo aan het plafond,
+       dan zegt de mail dat er elke maand zoveel wegvalt. Eén verzoek, alleen voor wie deze mail krijgt. */
+    let stil = false;
+    if (x.boven >= x.nieuw && x.nieuw > 0) {
+      const jaarGeleden = new Date(nu.getTime() - 365 * 86400000).toISOString().replace('T', ' ').slice(0, 19);
+      const r = await env.DB.prepare(
+        `SELECT COUNT(*) AS n FROM orders WHERE customer_id = ?1 AND status <> 'cancelled' AND created_at >= ?2`
+      ).bind(x.customerId, jaarGeleden).first().catch(() => null);
+      stil = !!r && Number(r.n) === 0;
+    }
+    if (await mailPlafondInZicht(env, { ...klant, ...x, stil, dagen: CREDIT_HERINNERING_DAGEN, geldigMaanden: CREDITS_GELDIG_MAANDEN })) {
       plafondGemaild += 1;
       plafondNamen.push(`${klant.ref || klant.email} (${x.boven} boven ${x.plafond})`);
     }
@@ -1773,7 +1811,7 @@ async function mailPlafondInZicht(env, o) {
         preheader: nl ? `Je kunt ${o.plafond} credits sparen; ${o.boven} vallen anders weg op ${op}.` : `You can save up to ${o.plafond} credits; otherwise ${o.boven} lapse on ${op}.`,
         body: [
           mailH1(nl ? 'Je spaarplafond is in zicht' : 'Your savings limit is in sight'),
-          mailP(mailGreeting(o.name, nl ? 'nl' : 'en')),
+          mailP(mailGreeting(o.name, nl ? 'nl' : 'en', { voornaam: o.first_name })), /* levering 119 (A0-01): de aanhef uit het veld Voornaam */
           /* Bij een overstap die op die dag ingaat (15 oktober 2026): dan geldt het
              plafond van het nieuwe plan, en dat is precies waarom er iets wegvalt. */
           o.overstap
@@ -1784,9 +1822,17 @@ async function mailPlafondInZicht(env, o) {
               ? `Je hebt <strong>${o.saldo} credits</strong> (je kunt er ${o.plafond} sparen). Op <strong>${op}</strong> komen er ${o.nieuw} bij: gebruik er vóór die dag <strong>${o.boven}</strong>, anders vallen ze weg.`
               : `You have <strong>${o.saldo} credits</strong> (you can save up to ${o.plafond}). On <strong>${op}</strong>, ${o.nieuw} more come in: use <strong>${o.boven}</strong> before that day, or they lapse.`),
           /* `geldigMaanden` komt mee uit herinnerCredits() (CREDITS_GELDIG_MAANDEN). */
+          /* levering 119 (18 november 2026, proefronde P5-14): Fatima kreeg dit negen maanden achter elkaar, steeds met
+             "Dit is de enige herinnering". Het is de enige voor DEZE credits. En wie een jaar niets bestelde, hoort
+             eerlijk dat er zo elke maand credits wegvallen (`stil` uit herinnerCredits). */
           mailP(nl
-            ? `Zolang je abonnement loopt, vervallen je credits niet; je kunt tot ${o.geldigMaanden} maanden aan credits sparen. Alleen wat er boven komt, valt weg, op de dag van je termijn. Dit is de enige herinnering.`
-            : `While your plan runs, your credits do not expire; you can save up to ${o.geldigMaanden} months of credits. Only what goes above that lapses, on the day of your payment. This is the only reminder.`),
+            ? `Zolang je abonnement loopt, vervallen je credits niet; je kunt tot ${o.geldigMaanden} maanden aan credits sparen. Alleen wat er boven komt, valt weg, op de dag van je termijn. Dit is de enige herinnering voor deze credits.`
+            : `While your plan runs, your credits do not expire; you can save up to ${o.geldigMaanden} months of credits. Only what goes above that lapses, on the day of your payment. This is the only reminder for these credits.`),
+          o.stil
+            ? mailP(nl
+              ? `Je bestelde het afgelopen jaar niets. Zolang dat zo blijft, vallen er elke maand ${o.nieuw} credits weg: je saldo zit aan je plafond. Past een kleiner abonnement beter? Antwoord dan op deze mail.`
+              : `You did not order anything in the past year. As long as that stays so, ${o.nieuw} credits lapse every month: your balance is at your limit. Would a smaller plan suit you better? Just reply to this email.`)
+            : '',
           tips.length
             ? mailP(nl
               ? `Wat je ervoor kunt laten maken: ${tips.join(', of ')}. Je bestelt zoals altijd via het bestelformulier; ben je ingelogd, dan betaal je met je credits.`
@@ -1817,29 +1863,30 @@ async function mailCreditsVervallen(env, o) {
   try {
     await sendMail(env, {
       to: o.email,
+      /* levering 118 (proefronde P9-13): het onderwerp noemt wat vervalt, niet je saldo ("Je hebt nog 85" bij 208). */
       subject: nl
-        ? `Je hebt nog ${o.over} credits — ze vervallen over ${o.dagen} dagen`
-        : `You still have ${o.over} credits — they expire in ${o.dagen} days`,
+        ? `${o.over} ${o.bijgekocht >= o.over ? 'bijgekochte credits' : 'credits'} vervallen over ${o.dagen} dagen`
+        : `${o.over} ${o.bijgekocht >= o.over ? 'bought credits' : 'credits'} expire in ${o.dagen} days`,
       html: mailShell({
         lang,
         preheader: nl ? `${o.over} credits vervallen op ${op}.` : `${o.over} credits expire on ${op}.`,
         body: [
           mailH1(nl ? 'Er staan nog credits open' : 'You have credits left'),
-          mailP(mailGreeting(o.name, nl ? 'nl' : 'en')),
+          mailP(mailGreeting(o.name, nl ? 'nl' : 'en', { voornaam: o.first_name })), /* levering 119 (A0-01): de aanhef uit het veld Voornaam */
           /* `geldigMaanden` komt mee uit herinnerCredits() (CREDITS_GELDIG_MAANDEN),
              zodat deze functie geen eigen getal kent. */
           mailP(nl
             ? (o.bijgekocht >= o.over
               /* Alleen bijgekochte credits (12 oktober 2026): die hebben hun eigen datum. */
               ? `Er staan nog <strong>${o.over} bijgekochte credits</strong> open die op <strong>${op}</strong> vervallen. `
-                + (o.geldigMaanden ? `Bijgekochte credits blijven ${o.geldigMaanden} maanden geldig vanaf de aankoop; dit is de enige herinnering.` : 'Dit is de enige herinnering.')
+                + (o.geldigMaanden ? `Bijgekochte credits blijven ${o.geldigMaanden} maanden geldig vanaf de aankoop; dit is de enige herinnering voor deze credits.` : 'Dit is de enige herinnering voor deze credits.')
               : `Er staan nog <strong>${o.over} credits</strong> van je abonnement open die op <strong>${op}</strong> vervallen. `
-                + (o.geldigMaanden ? `Na een pauze of opzegging blijven credits geldig tot ${o.geldigMaanden} maanden na je laatste termijn; dit is de enige herinnering.` : 'Dit is de enige herinnering.'))
+                + (o.geldigMaanden ? `Na een pauze of opzegging blijven credits geldig tot ${o.geldigMaanden} maanden na je laatste termijn; dit is de enige herinnering voor deze credits.` : 'Dit is de enige herinnering voor deze credits.'))
             : (o.bijgekocht >= o.over
               ? `You still have <strong>${o.over} bought credits</strong> that expire on <strong>${op}</strong>. `
-                + (o.geldigMaanden ? `Bought credits stay valid for ${o.geldigMaanden} months from the purchase; this is the only reminder.` : 'This is the only reminder.')
+                + (o.geldigMaanden ? `Bought credits stay valid for ${o.geldigMaanden} months from the purchase; this is the only reminder for these credits.` : 'This is the only reminder for these credits.')
               : `You still have <strong>${o.over} credits</strong> from your plan that expire on <strong>${op}</strong>. `
-                + (o.geldigMaanden ? `After a pause or cancellation, credits stay valid until ${o.geldigMaanden} months after your last monthly credits came in; this is the only reminder.` : 'This is the only reminder.'))),
+                + (o.geldigMaanden ? `After a pause or cancellation, credits stay valid until ${o.geldigMaanden} months after your last monthly credits came in; this is the only reminder for these credits.` : 'This is the only reminder for these credits.'))),
           tips.length
             ? mailP(nl
               ? `Wat je er nog voor kunt laten maken: ${tips.join(', of ')}. Je bestelt zoals altijd via het bestelformulier; ben je ingelogd, dan betaal je met je credits.`
@@ -1880,7 +1927,7 @@ async function pauzeVraag(env, nu = new Date()) {
   const grens = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth() - PAUZE_MAX_MAANDEN, nu.getUTCDate()))
     .toISOString().replace('T', ' ').slice(0, 19);
   const { results = [] } = await env.DB.prepare(
-    `SELECT s.id, s.ref, s.plan, s.paused_at, c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, ${KLANT_TAAL_SQL} AS lang
+    `SELECT s.id, s.ref, s.plan, s.paused_at, c.email, c.brand, COALESCE(NULLIF(TRIM(c.first_name), ''), c.name) AS name, NULLIF(TRIM(c.first_name), '') AS first_name, ${KLANT_TAAL_SQL} AS lang
        FROM subscriptions s JOIN customers c ON c.id = s.customer_id
       WHERE s.status = 'paused' AND s.pause_reason = 'customer'
         AND s.pauze_vraag_at IS NULL AND s.paused_at IS NOT NULL AND s.paused_at <= ?1
@@ -1920,7 +1967,7 @@ async function mailPauzeVraag(env, o) {
         preheader: nl ? 'Allebei met één klik in VISUAILS Studio. Doe je niets, dan wordt er niets afgeschreven.' : 'Both take one click in VISUAILS Studio. If you do nothing, nothing is charged.',
         body: [
           mailH1(nl ? 'Hervatten of opzeggen?' : 'Resume or cancel?', mailKenmerk('abonnement', o.ref, nl ? 'nl' : 'en')),
-          mailP(mailGreeting(o.name, nl ? 'nl' : 'en')),
+          mailP(mailGreeting(o.name, nl ? 'nl' : 'en', { voornaam: o.first_name })), /* levering 119 (A0-01): de aanhef uit het veld Voornaam */
           mailP(nl
             ? `Je abonnement staat sinds ${sinds} op pauze. Wil je weer beelden laten maken, dan hervat je het in VISUAILS Studio; de volgende afschrijving volgt dan het gewone ritme. Wil je stoppen, dan zeg je het daar op. Doe je niets, dan blijft het op pauze en wordt er niets afgeschreven.`
             : `Your plan has been paused since ${sinds}. If you want images made again, resume it in VISUAILS Studio; the next payment then follows the usual rhythm. If you want to stop, cancel it there. If you do nothing, it stays paused and nothing is collected.`),

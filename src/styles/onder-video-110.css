@@ -37,4 +37,7 @@ html body.hal .ov110 .ov110-kop {
   html body.hal .ov110 .ov110-kop { margin-inline: auto; }
   .ov110-lbl { justify-content: center; }
   .ov110-zin { margin-inline: auto; }
+  /* levering 119 (18 november 2026, proefronde D1-11): de regel hierboven verloor van ".h-pagina p { margin: 0 }" (hal.css,
+     zwaarder); de zin "Wij nemen het hele beeldproces van je over…" stond 35 px links van het midden (20 px links, 90 rechts) */
+  html body.hal .ov110 .ov110-zin { margin-inline: auto; }
 }

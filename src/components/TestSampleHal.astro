@@ -41,7 +41,9 @@ import BackgroundPicker from './order/BackgroundPicker.astro';
 import ModelKeuze from './order/ModelKeuze.astro';
 import HalBeweging from './HalBeweging.astro';
 import { waHref } from '../data/whatsapp.js';
-import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE, vatLabel } from '../data/pricing.js';
+import { TEST_SAMPLE, turnaround, CATALOG_IMAGES, LIFESTYLE_IMAGES, RESOLUTIE, vatLabel, euro } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P1-03): het bedrag met btw vóór betalen, uit dezelfde som als Mollie (quoteTestSample). */
+import { quoteTestSample } from '../lib/quote.js';
 import { geleverd } from '../data/voorbeeldset.js';
 import { localizedPath } from '../i18n/ui.js';
 import { SAMPLE_METHODS } from '../lib/mollie.js';
@@ -108,7 +110,8 @@ const c = nl ? {
     ['Wij maken het', 'Met dezelfde belichting en afwerking als een betaalde bestelling, en we kijken het na vóór levering.'],
     ['Keur goed en download', `${RESOLUTIE.standaard} px, in VISUAILS Studio en met de link in je mail. ${TIMING.charAt(0).toUpperCase()}${TIMING.slice(1)}.`],
   ],
-  fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} (${vatLabel('excl', 'nl')}) · meer betaal je niet voor de proef.`,
+  /* levering 118 (17 november 2026, proefronde P1-03): bij Mollie staat €1,21; dat staat nu ook hier. */
+  fijndruk: `Eén proef per bedrijf · ${SAMPLE.feeNote} (${vatLabel('excl', 'nl')}; ${euro(quoteTestSample().grossCents / 100, 'nl')} ${vatLabel('incl', 'nl')}) · verder betaal je niets voor de proef.`,
   account: 'Met de proef maken we je account in VISUAILS Studio aan: daar download je je beelden, en je volgende bestelling staat al ingevuld.',
   betaal: 'Betalen met',
   gidsLink: 'Lees de fotogids',
@@ -162,7 +165,8 @@ const c = nl ? {
     ['We make it', 'With the same lighting and finish as a paid order, and we check it before delivery.'],
     ['Approve and download', `${RESOLUTIE.standaard} px, in VISUAILS Studio and with the link in your email. ${TIMING.charAt(0).toUpperCase()}${TIMING.slice(1)}.`],
   ],
-  fijndruk: `One sample per business · a ${SAMPLE.feeNote} (${vatLabel('excl', 'en')}) · that’s all you pay for the sample.`,
+  /* levering 118 (17 november 2026, proefronde P1-03): see the Dutch. */
+  fijndruk: `One sample per business · a ${SAMPLE.feeNote} (${vatLabel('excl', 'en')}; ${euro(quoteTestSample().grossCents / 100, 'en')} ${vatLabel('incl', 'en')}) · that’s all you pay for the sample.`,
   account: 'The test sample sets up your account in VISUAILS Studio: that is where you download your images, and your next order starts filled in.',
   betaal: 'Pay with',
   gidsLink: 'Read the photo guide',
@@ -195,9 +199,11 @@ import TelefoonClip from './TelefoonClip.astro';
         {c.feiten.map((f) => <li><i set:html={ik('check')} />{f}</li>)}
       </ul>
     </div>
+    {/* levering 118 (17 november 2026, proefronde T1-03, deel b): de vier voorbeeldbeelden lazy; de kaartbeelden (korrel, stuk-0) laadt Layout vooraf.
+        Op de telefoon staan ze onder de vouw en hield hun download de LCP (4,2 s) op. */}
     <figure class="h-ts-beelden">
       <ul class="h-vier" role="list">
-        {BEELDEN.map((b, i) => <li class="h-well" style={`--d:${i}`}><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="eager" decoding="async" /></li>)}
+        {BEELDEN.map((b, i) => <li class="h-well" style={`--d:${i}`}><img src={b.src} width={b.w} height={b.h} alt={b.alt} loading="lazy" decoding="async" /></li>)}
       </ul>
       <figcaption class="h-ts-bij">{c.bij}</figcaption>
     </figure>
@@ -219,8 +225,10 @@ import TelefoonClip from './TelefoonClip.astro';
         </div>
         <p class="ts-hp h-ts-hp" aria-hidden="true"><label>Website <input type="text" name="website_hp" tabindex="-1" autocomplete="off" /></label></p>
         <div data-botcheck-plek></div>
-        <p class="h-ts-wacht-ok" data-ts-wacht="ok" role="status" hidden>{c.wachtOk}</p>
-        {Object.entries(c.wachtFout).map(([k, v]) => <p class="h-ts-wacht-fout" data-ts-wacht={k} role="alert" hidden>{v}</p>)}
+        {/* levering 118 (17 november 2026, proefronde P1-11): tabindex -1, zodat het script na het aanmelden de focus op
+            de uitkomst kan zetten. */}
+        <p class="h-ts-wacht-ok" data-ts-wacht="ok" role="status" tabindex="-1" hidden>{c.wachtOk}</p>
+        {Object.entries(c.wachtFout).map(([k, v]) => <p class="h-ts-wacht-fout" data-ts-wacht={k} role="alert" tabindex="-1" hidden>{v}</p>)}
         <p class="h-ts-wacht-noot">{c.wachtNoot} <a href={lp('/privacy')}>{c.privacy}</a></p>
       </form>
     </div>
@@ -377,10 +385,28 @@ import TelefoonClip from './TelefoonClip.astro';
       }
     }
 
+    /* levering 118 (17 november 2026, proefronde P1-11): bij een dichte proef staat het wachtlijstblok bovenaan, vóór de
+       €1-kop; wie nu komt, ziet eerst dat de ronde dicht is. Bij "alleen lifestyle" blijft de kop eerst (de proef kan). */
+    if (stand === 'dicht') {
+      const opening = document.querySelector<HTMLElement>('.h-ts-open');
+      if (opening && opening.previousElementSibling !== blok) opening.before(blok);
+    }
+
     const form = blok.querySelector<HTMLFormElement>('[data-ts-wacht-form]');
     if (uitkomst && form) {
       form.querySelectorAll<HTMLElement>('[data-ts-wacht]').forEach((el) => { el.hidden = el.dataset.tsWacht !== uitkomst; });
       if (uitkomst === 'ok') form.querySelector<HTMLElement>('.ts-wacht-rij')?.setAttribute('hidden', '');
+      /* levering 118 (proefronde P1-11): het blok stond verborgen toen de browser naar #even-dicht sprong, dus bleef de
+         pagina bovenaan en stond "Je staat op de lijst" 982 px lager. Nu schuift het blok onder de balk in beeld en krijgt
+         de uitkomst de focus. Eén keer per bezoek: toon() loopt ook na het antwoord van /api/proef-stand. */
+      const melding = form.querySelector<HTMLElement>(`[data-ts-wacht="${uitkomst}"]`);
+      if (melding && !blok.dataset.tsGetoond) {
+        blok.dataset.tsGetoond = '1';
+        const balk = document.querySelector<HTMLElement>('.site-header');
+        const onder = balk ? Math.max(0, balk.getBoundingClientRect().bottom) : 0;
+        window.scrollTo({ top: Math.max(0, blok.getBoundingClientRect().top + window.scrollY - onder - 16) });
+        melding.focus({ preventScroll: true });
+      }
     }
   }
 

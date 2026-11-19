@@ -241,8 +241,11 @@ const VIER = [
      hal: de regel staat op /start in .h-st-regel (StartHal.astro) en op de twee
      dienstpagina's als eerste zin van de prijsband (.h-pr-band-zin). */
   ['/nl/start/#catalog', '.h-st-regel', eenProductRegel('nl'), 'start'],   /* levering 116: de regel staat in stap 2 */
-  ['/nl/catalog/', '.h-pr-band-zin', eenProductRegel('nl', ['catalog']), 'catalog'],
-  ['/nl/lifestyle/', '.h-pr-band-zin', eenProductRegel('nl', ['lifestyle']), 'lifestyle'],
+  /* levering 118 (17 november 2026, proefronde P2-12 keuze a): op /catalog en /lifestyle staat de regel nu direct onder
+     het vanaf-bedrag in de kop (het eerste feit), en niet meer in de prijsband. */
+  /* levering 118 (17 november 2026, P2-12, hersteller H): de feiten staan in hoofdletters, dus "Één" (hoofdletters: true). */
+  ['/nl/catalog/', '.h-feiten li', eenProductRegel('nl', ['catalog'], { hoofdletters: true }), 'catalog'],
+  ['/nl/lifestyle/', '.h-feiten li', eenProductRegel('nl', ['lifestyle'], { hoofdletters: true }), 'lifestyle'],
 ];
 for (const [pad, sel, regel, naam] of VIER) {
   for (const breed of [390, 1280]) {

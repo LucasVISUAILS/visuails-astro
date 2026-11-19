@@ -97,6 +97,9 @@ import { localizedPath } from '../i18n/ui.js';
    beeld `hooks-kop` als het er is, en anders niets — zie src/data/beeldenNodig.js. */
 import { isEcht, beeldMaat } from '../lib/beeldAanwezig.js';
 import { komendeStijlen } from '../data/komendeStijlen.js';
+/* levering 117 (17 november 2026, proefronde P4-01): één echte clip op deze pagina, de bannerclip van de voorpagina. */
+import { halV } from '../data/beeldVersie.js';
+import { BANNER } from '../data/banner94.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -399,6 +402,25 @@ const COPY = {
 };
 const c = COPY[lang];
 
+/* ── ÉÉN VOORBEELD — levering 117 (17 november 2026, proefronde P4-01) ─────────────────────────
+   De proefronde: /hooks had geen enkele video, en een videopagina zonder beweging zegt "bestaat nog
+   niet". Lucas koos het advies: één voorbeeld, met de bannerclip van de voorpagina. Geen nieuw beeld.
+   Het is GEEN hook (een hook loopt door in het beeld eronder) en de tekst zegt dat ook: anders is
+   het precies de belofte die de kop van dit bestand verbiedt. Zelfde speler als op /video
+   (VideoHal.astro, FILM): de 1280-versie, preload="none", de poster op 0,5 s van dezelfde clip.
+   Zodra er een eigen hook is, hoort die hier in de plaats. */
+const FILM = {
+  src: halV('/img/hal/banner/banner-1280.mp4'),
+  poster: halV('/img/hal/banner/poster-1280.avif'),
+  label: BANNER[lang].video,
+  bijschrift: BANNER[lang].hoek,
+  pil: nl ? 'Voorbeeld' : 'Example',
+  kop: nl ? ['Zo beweegt', 'ons werk.'] : ['This is how', 'our work moves.'],
+  zin: nl
+    ? 'Nog geen hook: dit is de film van onze voorpagina, van één foto van een jas tot een campagne. Onze eerste hooks komen hier.'
+    : 'Not a hook yet: this is the film from our home page, from one photo of a jacket to a campaign. Our first hooks will go here.',
+};
+
 /* ── DE HAL ────────────────────────────────────────────────────────────── */
 /* Een kop met een <br> wordt de kop in twee tonen: eerst het lichte deel. */
 const tonen = (h: string) => h.split(/<br\s*\/?>/).map((d) => d.replace(/<[^>]+>/g, '').trim());
@@ -418,6 +440,9 @@ const feiten = [...c.trust, (nl ? ['In de offerte', 'levertijd'] : ['In the quot
 /* Het beeld in de opening: afvinklijst 20 (v20-opening a), live sinds afvinklijst 21. Zolang het eigen
    beeld er niet is, staat er de getalkaart; staat het er, dan wint het eigen beeld (v21-beelden a). */
 const kaartBeeld = !kopBeeld;
+/* levering 118 (17 november 2026, proefronde P4-07, keuze a): de knoppen openen het contactformulier met het onderwerp
+   Hooks al gekozen (ContactHal.astro leest ?onderwerp=hooks). Eerst stond het formulier op "Vraag over een bestelling". */
+const HOOKS_CONTACT = `${lp('/contact')}?onderwerp=hooks#c-topic`;
 const BEELD = {
   soort: 'getal' as const,
   kaart: true,   /* levering 108: op een kaart van het veld (lijst 105) */
@@ -435,7 +460,7 @@ const BEELD = {
       <h1 class="h-kop h-h1 h-op" style="--d:1"><span class="l">{tonen(c.h1)[0]}</span> <span>{tonen(c.h1)[1]}</span></h1>
       <p class="h-lede h-op" style="--d:2">{c.lead}</p>
       <p class="h-acties h-op" style="--d:3">
-        <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
+        <a class="h-knop k k-lijn" data-rol="navigeren" href={HOOKS_CONTACT}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
         <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.ctaPrices}<Fragment set:html={rolIkoon('navigeren')} /></a>
       </p>
       <ul class="h-feiten h-vd-feiten h-op" style="--d:4" role="list">
@@ -470,6 +495,24 @@ const BEELD = {
     <p class="h-ls-waar h-in"><span>{c.formatsH.replace(/\.$/, '')}</span> <span class="h-chip h-chip-nevel"><b>{c.formatNuNaam}</b>&nbsp;· {c.formatNu.toLowerCase()}</span>{komendeStijlen('hooks', lang).map((k) => <span class="h-chip h-chip-wit h-hk-straks">{k.naam} · {c.formatStraks.toLowerCase()}</span>)}</p>
   </section>
 
+  {/* ── 2b · ÉÉN VOORBEELD (levering 117, P4-01): de bannerclip, en eerlijk dat het geen hook is ── */}
+  <section class="h-sec hk-film-sec" aria-labelledby="hk-film">
+    <header class="h-sec-kop h-in">
+      <div>
+        <p class="h-pil"><span>{FILM.pil}</span></p>
+        <h2 id="hk-film" class="h-kop h-h2"><span class="l">{FILM.kop[0]}</span> {FILM.kop[1]}</h2>
+      </div>
+      <p class="h-vs-kopzin">{FILM.zin}</p>
+    </header>
+    <figure class="hk-film h-in">
+      <video class="hk-film-v" controls preload="none" playsinline muted width="1280" height="720"
+             poster={FILM.poster} aria-label={FILM.label}>
+        <source src={FILM.src} type="video/mp4" />
+      </video>
+      <figcaption class="hk-film-cap">{FILM.bijschrift}</figcaption>
+    </figure>
+  </section>
+
   {/* ── 3 · WAAR JE OP KUNT REKENEN, EN WAT HET KOST ─────────────────────── */}
   <section class="h-sec h-vd-koop-sec" aria-labelledby="hk-schoon">
     <header class="h-sec-kop h-in">
@@ -490,7 +533,7 @@ const BEELD = {
         <p set:html={c.prijsVariant} />
         <p class="h-vd-vast"><b>{c.prijsNietH}</b> {c.prijsNiet}</p>
         <p class="h-acties">
-          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.prijsCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={HOOKS_CONTACT}>{c.prijsCta}<Fragment set:html={rolIkoon('navigeren')} /></a>
         </p>
       </div>
     </div>
@@ -509,7 +552,7 @@ const BEELD = {
         <h2 id="hk-slot" class="h-kop h-h2"><span class="l">{tonen(c.ctaH)[0]}</span> {tonen(c.ctaH)[1]}</h2>
         <p class="h-vd-slot-zin">{c.ctaP}</p>
         <p class="h-acties k-inkt">
-          <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/contact')}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
+          <a class="h-knop k k-lijn" data-rol="navigeren" href={HOOKS_CONTACT}>{c.ctaPrimary}<Fragment set:html={rolIkoon('navigeren')} /></a>
           <a class="h-knop k k-lijn" data-rol="navigeren" href={lp('/pricing')}>{c.ctaPrices}<Fragment set:html={rolIkoon('navigeren')} /></a>
         </p>
         <p class="h-vd-belofte">{c.beloofte}</p>
@@ -518,3 +561,18 @@ const BEELD = {
   </section>
 </div>
 <HalBeweging />
+
+<style is:global>
+  /* levering 117 (17 november 2026, P4-01): het ene voorbeeld. is:global (zie VideoHal.astro: een scoped stijl zet een
+     data-astro-cid op elk element en dat brak toetsen die op de markup zoeken); de klassen hk-film* bestaan alleen hier.
+     16 : 9, hooguit 960 breed (de clip is 1280 breed, dus nooit uitvergroot), in het midden van de kolom. De clip begint
+     op wit, net als de pagina: een haarlijn geeft het vlak een rand; geen zachte schaduw (huisregel, tests/sjabloon).
+     Het bijschrift 13,5 px in grijs 3 op wit: 6,0 : 1. */
+  .hal .hk-film { margin: 0 auto; max-width: 960px; }
+  .hal .hk-film-v {
+    display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover;
+    border-radius: var(--r-kaart, 24px); background: var(--h-wit, #fff);
+    box-shadow: 0 0 0 1px var(--h-lijn, #E7EAE8);
+  }
+  .hal .hk-film-cap { margin: 12px 4px 0; font: 450 var(--h-t-fijn, 13.5px)/1.4 var(--h-letter); color: var(--h-inkt-3, #5E6461); }
+</style>

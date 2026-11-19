@@ -11,6 +11,12 @@
  *   5 · het blok onder de video: na de banner, kop hoogstens 2 regels, tekst minstens 16 px, de grijze tekst haalt 4,5 : 1;
  *   6 · geen horizontale scroll.
  *   node tests/banner-kop-110-browser.test.mjs        (eerst de build)
+ *
+ * LEVERING 120 (19 november 2026, lijst 130 en 132): de kop is één titel in één maat (VISUAILS Display 2 Light) met een
+ * beschrijving, gewone tekst zonder WebGL, links naast de telefoon (of op de grond onder de video). De punten die de oude kop
+ * vastpinden (de blokletter, de aanloop en de grote regel die de kolom vult, het masker van de telefoon, kopKleur in WebGL)
+ * toetsen nu de nieuwe kop; de rest (het blok onder de video, de €1-melding, geen horizontale scroll) blijft. De nieuwe kop
+ * zelf (de kleur op de tijdlijn, de telefoon) staat in tests/levering-120-videokop*.test.mjs.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,26 +31,23 @@ const ok = (naam, cond, extra = '') => { if (cond) goed++; else fout++; console.
 
 console.log('\nVISUAILS — de hoofdkop en het blok onder de video (levering 110)\n\n1 · de bron');
 const lees = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
-ok('de letter staat in public/fonts', fs.existsSync(path.join(ROOT, 'public/fonts/visuails-display/VISUAILSDisplayBlok-Bold.woff2')));
-ok('de bron van de letter staat in docs/letter/bron/blok.py', fs.existsSync(path.join(ROOT, 'docs/letter/bron/blok.py')));
+/* levering 120: de letter is VISUAILS Display 2 Light (was VISUAILS Display Blok, docs/letter/bron/blok.py) */
+ok('de letter staat in public/fonts', fs.existsSync(path.join(ROOT, 'public/fonts/visuails-display/VISUAILSDisplay2-Light.woff2')));
+ok('de bron van de letter staat in docs/letter/bron/familie2.py', fs.existsSync(path.join(ROOT, 'docs/letter/bron/familie2.py')));
 /* als file://-adres: op Windows is een los pad (E:\...) geen geldig adres voor import() (uitrollen, 16 november 2026) */
 const { BANNER } = await import(pathToFileURL(path.join(ROOT, 'src/data/banner94.js')).href);
 for (const taal of ['en', 'nl']) {
-  ok(`${taal}: de titel heeft geen leesteken`, !/[.,;:!?…]/.test(BANNER[taal].kop.join(' ')), BANNER[taal].kop.join(' '));
+  ok(`${taal}: de titel heeft geen leesteken`, !/[.,;:!?…]/.test(BANNER[taal].titel), BANNER[taal].titel);
   ok(`${taal}: het blok onder de video heeft een kop, een label en twee delen tekst`, ['kop', 'label', 'wat', 'waarom'].every((k) => BANNER[taal].onder?.[k]));
 }
-ok('de kop heeft een aanloop en een grote regel', /b94-aanloop/.test(lees('src/components/HalBanner94.astro')) && /b94-groot/.test(lees('src/components/HalBanner94.astro')));
-/* levering 114 (Lucas, 17 november 00:46): de telefoon gaat in de eerste scène over de kop heen */
+/* levering 120: één titel en een beschrijving (was: een aanloop en een grote regel, levering 110) */
+ok('de kop is één titel met een beschrijving eronder (geen aanloop meer)', /<h1 id="b94-h1" class="b94-kop">\{T\.titel\}<\/h1>/.test(lees('src/components/HalBanner94.astro')) && !/b94-aanloop|b94-groot/.test(lees('src/components/HalBanner94.astro')));
+/* levering 114 (Lucas, 17 november 00:46): de telefoon ging in de eerste scène over de kop heen; levering 115: de kleur van
+   de kop gekozen op contrast in WebGL (kopKleur). Levering 120: geen WebGL meer, geen masker, de kleur volgt de tijdlijn */
 {
-  const ban = lees('src/components/HalBanner94.astro'), data = lees('src/data/banner94.js');
-  const plaat = path.join(ROOT, 'public/img/hal/banner/telefoon-masker.webp');
-  ok('levering 114: het masker van de telefoon staat er (8 × 13 vakken van 240 × 135, 102 beelden) en zijn script ook',
-    fs.existsSync(plaat) && fs.existsSync(path.join(ROOT, 'scripts/telefoon-masker.py')) && /beelden: 102, kolommen: 8, rijen: 13/.test(data));
-  ok('levering 114: in de letters staat de video waar de telefoon is (alleen in de eerste scène), de letters tekent WebGL zelf',
-    /uniform float b;/.test(ban) && /a \* \(1\.0 - voor\)\); \}/.test(ban) && /bi < data\.masker\.beelden \? bi : -1/.test(ban) && /tekenLetters/.test(ban));
-  /* levering 115 (lijst 125 C, Lucas 03:40): de hele kop één kleur, gekozen op contrast in lineair licht, met een zachte rand */
-  ok('levering 115: de kop is effen (geen negatief meer), één kleur gekozen op contrast (1,05 / (L + 0,05) tegen (L + 0,05) / 0,0535), met een rand in de andere kleur',
-    /function kopKleur\(\)/.test(ban) && /const cWit = 1\.05 \/ \(deel\(\.6\) \+ \.05\), cInkt = \(deel\(\.4\) \+ \.05\) \/ \.0535;/.test(ban) && /uniform sampler2D hl; uniform float wit;/.test(ban) && !/vec3 n = 1\.0 - c;/.test(ban));
+  const ban = lees('src/components/HalBanner94.astro');
+  ok('levering 120: geen WebGL, geen masker van de telefoon en geen kopKleur meer in de banner',
+    !/getContext\('webgl'/.test(ban) && !/telefoon-masker\.webp'\)/.test(ban.replace(/for \(const f of \[[^\]]*\]\)/, '')) && !/function kopKleur\(\)/.test(ban) && !/tekenLetters/.test(ban));
   ok('levering 114: de €1-melding komt na de bannervideo (interactions.js)', /const b94 = document\.querySelector\('\[data-b94\]'\);\s*if \(b94 && b94\.getBoundingClientRect\(\)\.bottom > 0\) return false;/.test(lees('src/scripts/interactions.js')));
 }
 ok('het blok onder de video staat op de voorpagina', /<HalOnderVideo110\b/.test(lees('src/components/VoorpaginaHal.astro')));
@@ -77,41 +80,38 @@ for (const [pad, taal] of [['/', 'en'], ['/nl/', 'nl']]) {
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(300);
     const m = await page.evaluate(() => {
+      /* levering 120: de kop is het hele vak (titel en beschrijving) */
       const h = document.getElementById('b94-h1'); const vak = h.parentElement; const v = document.querySelector('.b94 .b94-beeld');
-      const a = h.querySelector('.b94-aanloop'), g = h.querySelector('.b94-groot');
       const r = (e) => e.getBoundingClientRect();
-      const lh = (e) => parseFloat(getComputedStyle(e).fontSize) * 0.92;
-      const kb = r(h), vb = r(v);
+      const kb = r(vak), vb = r(v);
       const x = Math.max(0, Math.min(kb.right, vb.right) - Math.max(kb.left, vb.left)), y = Math.max(0, Math.min(kb.bottom, vb.bottom) - Math.max(kb.top, vb.top));
       /* levering 114: de kop staat gecentreerd boven de balk met de stappen (niet meer naast een vlak rechts) */
       const pan = document.querySelector('.b94-paneel'); const grens = innerWidth;
-      const boven = !pan || innerWidth <= 760 || r(h).bottom <= r(pan).top - 16;
-      const breekt = !!h.querySelector('.b94-breekt') && innerWidth <= 760;
+      const boven = !pan || innerWidth < 1100 || r(vak).bottom <= r(pan).top - 16;
+      /* het aantal regels van de titel: de toppen van de regels (Range, per regel één rechthoek) */
+      const rg = document.createRange(); rg.selectNodeContents(h);
+      const regels = new Set([...rg.getClientRects()].map((q) => Math.round(q.top / 4))).size;
       const ov = document.querySelector('.ov110'), ovk = document.querySelector('.ov110-kop'), ovz = document.querySelector('.ov110-zin');
       const ban = document.querySelector('.b94');
       const grond = getComputedStyle(document.documentElement).backgroundColor;
       return {
-        fam: getComputedStyle(h).fontFamily, blok: document.fonts.check('700 20px "VISUAILS Display Blok"'),
-        fs: parseFloat(getComputedStyle(h).fontSize), vul: r(g).width / r(vak).width,
-        uit: Math.max(r(a).right, r(g).right) > grens + 0.5 || Math.min(r(a).left, r(g).left) < -0.5,
+        fam: getComputedStyle(h).fontFamily, blok: document.fonts.check('300 20px "VISUAILS Display 2"'), gewicht: getComputedStyle(h).fontWeight,
+        fs: parseFloat(getComputedStyle(h).fontSize), regels,
+        uit: r(vak).right > grens + 0.5 || r(vak).left < -0.5,
         dekking: x * y / (vb.width * vb.height),
-        aanloopPx: parseFloat(getComputedStyle(a).fontSize), regelsA: Math.round(r(a).height / lh(a)), regelsG: Math.round(r(g).height / lh(g)),
         naBanner: !!ov && ban.compareDocumentPosition(ov) === Node.DOCUMENT_POSITION_FOLLOWING,
         ovRegels: Math.round(r(ovk).height / parseFloat(getComputedStyle(ovk).lineHeight)), ovKopPx: parseFloat(getComputedStyle(ovk).fontSize),
         zinPx: parseFloat(getComputedStyle(ovz).fontSize), zinKleur: getComputedStyle(ovz).color, grond: grond === 'rgba(0, 0, 0, 0)' ? getComputedStyle(document.body).backgroundColor : grond,
-        scroll: document.documentElement.scrollWidth > innerWidth, boven, breekt,
+        scroll: document.documentElement.scrollWidth > innerWidth, boven,
       };
     });
-    ok(`${tag}: de kop staat in VISUAILS Display Blok`, m.blok && /VISUAILS Display Blok/.test(m.fam), m.fam);
-    ok(`${tag}: de grote regel vult de kolom (${(m.vul * 100).toFixed(1)} %)`, m.vul > 0.97 && m.vul <= 1.001);
+    /* levering 120: VISUAILS Display 2 Light (300), één titel van hoogstens twee regels; de kop bedekt op een breed scherm
+       hoogstens 15 % van de video, op een smal scherm niets (hij staat op de grond) */
+    ok(`${tag}: de kop staat in VISUAILS Display 2 Light`, m.blok && /VISUAILS Display 2/.test(m.fam) && m.gewicht === '300', `${m.fam} ${m.gewicht}`);
     ok(`${tag}: niets van de kop steekt uit`, !m.uit);
     ok(`${tag}: de kop staat minstens 16 px boven de balk met de stappen`, m.boven);
-    /* levering 114: op de telefoon staat de lange Nederlandse kop op twee regels (17 november: "verdient gezien / te worden"), dan
-       hoogstens 18 % */
-    ok(`${tag}: de kop bedekt hoogstens ${m.breekt ? 18 : 15} % van de video (${(m.dekking * 100).toFixed(1)} %)`, m.dekking <= (m.breekt ? 0.18 : 0.15));
-    ok(`${tag}: de grote regel is ruim twee keer de aanloop (${m.fs.toFixed(0)} en ${m.aanloopPx.toFixed(0)} px)`, m.fs >= 2.2 * m.aanloopPx);
-    ok(`${tag}: de aanloop is minstens 11,5 px (${m.aanloopPx.toFixed(1)} px)`, m.aanloopPx >= 11.5);
-    ok(`${tag}: de aanloop is één regel, de grote regel ${m.breekt ? 'twee (telefoon, Nederlands)' : 'één'}`, m.regelsA === 1 && m.regelsG === (m.breekt ? 2 : 1), `${m.regelsA} + ${m.regelsG}`);
+    ok(`${tag}: de kop bedekt hoogstens ${breed >= 1100 ? 15 : 0} % van de video (${(m.dekking * 100).toFixed(1)} %)`, m.dekking <= (breed >= 1100 ? 0.15 : 0.001));
+    ok(`${tag}: de titel is hoogstens twee regels (${m.regels}, ${m.fs.toFixed(1)} px)`, m.regels >= 1 && m.regels <= 2);
     ok(`${tag}: het blok staat na de banner`, m.naBanner);
     ok(`${tag}: de kop van het blok is hoogstens 2 regels (${m.ovRegels}, ${m.ovKopPx} px)`, m.ovRegels <= 2);
     ok(`${tag}: de tekst van het blok is minstens 16 px (${m.zinPx} px)`, m.zinPx >= 16);

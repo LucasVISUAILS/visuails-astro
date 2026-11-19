@@ -65,6 +65,8 @@ const c = nl ? {
   weigerBotcheckWa: 'stuur een WhatsApp',
   weigerBotcheckWaTekst: 'Hallo VISUAILS, ik probeerde een bericht te sturen via het contactformulier en dat lukte niet.',
   weigerBotcheckOf: 'of mail',
+  /* levering 118 (17 november 2026, proefronde P4-08): te vaak verstuurd; /api/order stuurt terug met ?error=rate (was een witte pagina). */
+  weigerRate: 'Je hebt in korte tijd vaak verstuurd, dus is dit bericht niet aangekomen. Wacht een paar minuten en probeer het opnieuw, of',
   vNaam: 'Naam',
   vNaamMelding: 'Vul je naam in, dan weten we wie er schrijft.',
   vNaamHouder: 'Je naam',
@@ -84,8 +86,13 @@ const c = nl ? {
     ['order-support', 'Vraag over een bestelling'],
     ['new-order', 'Nieuwe bestelling'],
     ['custom-request', 'Iets op maat'],
+    /* levering 118 (17 november 2026, proefronde P4-07, keuze a): een eigen onderwerp voor hooks; /hooks linkt met ?onderwerp=hooks. */
+    ['hooks', 'Hooks'],
+    /* levering 119 (18 november 2026, proefronde P6-22): een eigen onderwerp voor vragen over privacy (inzage, wissen). */
+    ['privacy', 'Privacy of je gegevens'],
     ['other', 'Anders'],
   ],
+  hooksTekst: 'Hallo VISUAILS, ik wil graag hooks voor mijn merk. Mijn webshop of Instagram: ',
   vBericht: 'Bericht',
   vBerichtMelding: 'Schrijf even waar het over gaat, dan kunnen we meteen inhoudelijk reageren.',
   vBerichtHouder: 'Hoe kunnen we helpen?',
@@ -126,6 +133,8 @@ const c = nl ? {
   weigerBotcheckWa: 'send a WhatsApp',
   weigerBotcheckWaTekst: 'Hello VISUAILS, I tried to send a message through the contact form and it did not go through.',
   weigerBotcheckOf: 'or email',
+  /* levering 118 (17 november 2026, proefronde P4-08): see the Dutch. */
+  weigerRate: 'You sent this form many times in a short while, so this message did not go through. Wait a few minutes and try again, or',
   vNaam: 'Name',
   vNaamMelding: 'Add your name, so we know who is writing.',
   vNaamHouder: 'Your name',
@@ -142,8 +151,13 @@ const c = nl ? {
     ['order-support', 'Order support'],
     ['new-order', 'New order'],
     ['custom-request', 'Custom request'],
+    /* levering 118 (proefronde P4-07): zie de Nederlandse tegenhanger. */
+    ['hooks', 'Hooks'],
+    /* levering 119 (proefronde P6-22): zie de Nederlandse tegenhanger. */
+    ['privacy', 'Privacy or your data'],
     ['other', 'Other'],
   ],
+  hooksTekst: 'Hello VISUAILS, I would like hooks for my brand. My shop or Instagram: ',
   vBericht: 'Message',
   vBerichtMelding: 'Tell us what it is about, so we can answer properly the first time.',
   vBerichtHouder: 'How can we help?',
@@ -226,6 +240,10 @@ const BEELD = {
       <p class="ct-weigering h-ct-weigering" data-form-refusal="botcheck" role="status" tabindex="-1" hidden>
         {c.weigerBotcheck} <a href={waHref(c.weigerBotcheckWaTekst)} target="_blank" rel="noopener">{c.weigerBotcheckWa}<NieuwTabblad lang={lang} /></a> {c.weigerBotcheckOf} <a href="mailto:hello@visuails.com">hello@visuails.com</a>.
       </p>
+      {/* levering 118 (17 november 2026, proefronde P4-08): te vaak verstuurd (?error=rate), met dezelfde twee wegen als bij de botcheck. */}
+      <p class="ct-weigering h-ct-weigering" data-form-refusal="rate" role="status" tabindex="-1" hidden>
+        {c.weigerRate} <a href={waHref(c.weigerBotcheckWaTekst)} target="_blank" rel="noopener">{c.weigerBotcheckWa}<NieuwTabblad lang={lang} /></a> {c.weigerBotcheckOf} <a href="mailto:hello@visuails.com">hello@visuails.com</a>.
+      </p>
 
       {/* data-botcheck: de onzichtbare botcheck van Cloudflare (o03). Het script
           onderaan vraagt bij het versturen eerst een token; zonder script gaat
@@ -259,7 +277,7 @@ const BEELD = {
         </div>
         <div class="field">
           <label for="c-message">{c.vBericht} <span class="req">*</span></label>
-          <textarea class="textarea" id="c-message" name="message" rows="5" required data-melding={c.vBerichtMelding} placeholder={c.vBerichtHouder}></textarea>
+          <textarea class="textarea" id="c-message" name="message" rows="5" required data-melding={c.vBerichtMelding} placeholder={c.vBerichtHouder} data-hooks-tekst={c.hooksTekst}></textarea>
         </div>
         <div class="field">
           {/* Een <span> en geen <label>: de kop van een GROEP (role="radiogroup"). */}
@@ -294,4 +312,15 @@ const BEELD = {
   /* De onzichtbare botcheck op het contactformulier (o03, 8 oktober 2026). */
   import { bindBotcheckForms } from '../scripts/botcheck.js';
   bindBotcheckForms();
+  /* levering 118 (17 november 2026, proefronde P4-07): ?onderwerp=hooks (de knoppen op /hooks) kiest het onderwerp
+     Hooks en zet een begin van het bericht klaar, alleen als het berichtveld nog leeg is. */
+  try {
+    const onderwerp = new URLSearchParams(location.search).get('onderwerp');
+    const kies = document.getElementById('c-topic') as HTMLSelectElement | null;
+    if (onderwerp && kies && [...kies.options].some((o) => o.value === onderwerp)) {
+      kies.value = onderwerp;
+      const bericht = document.getElementById('c-message') as HTMLTextAreaElement | null;
+      if (onderwerp === 'hooks' && bericht && !bericht.value) bericht.value = bericht.dataset.hooksTekst || '';
+    }
+  } catch { /* zonder script kiest de klant het onderwerp zelf */ }
 </script>

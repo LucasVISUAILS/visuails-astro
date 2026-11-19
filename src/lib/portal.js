@@ -93,17 +93,26 @@ import { looksVan } from '../data/looks.js';
    Studio (nuzin.js) en de bedankpagina (verder.js). */
 import { nuZin, nuKnopLabel, statusPad, eersteMistVan, isAfgerond } from './nuzin.js';
 import { leverregel, leveringVan } from './verder.js';
+/* levering 118 (proefronde P12-06): de bewaardag, dezelfde als in de levermail en Studio. */
+import { leverDatumsVan } from './leverdatums.js';
+import { vandaagNL } from './nlDag.js';
 import { ontbrekendVoorOrder, vakNaam as ontbreektVakNaam } from './ontbreekt.js';
 /* 9 november 2026 (ronde 91, K-02): foto's nasturen op de bestelpagina zelf, met
    dezelfde regel en dezelfde opslag als Studio (src/lib/nasturen.js). */
 import { nasturenOpen, bewaarVakFotos, vakVeld, NASTUUR_PER_KEER } from './nasturen.js';
 import { MAX_FILE_BYTES, uploadFormatsSentence } from './uploads.js';
+/* levering 117 (P4-04): wat de klant krijgt en wanneer, uit de offerte. */
+import { offerteAfspraak } from './betaallink.js';
+/* levering 118 (proefronde P4-06): de zakelijke verklaring bij de factuurgegevens. */
+import { BUSINESS_VERSION, currentBusiness } from '../data/business.js';
 /* 9 november 2026 (ronde 91, K-03): de privélink wordt dé bestelpagina, dus ook PNG of
    WebP aanvragen kan hier, met dezelfde tabel en dezelfde regel als Studio. */
 import { formaatView, formatenVoorOrders, formaatMelding, formaatGeldig, formaatKan, vraagFormaatAan } from './formaten.js';
 /* Punt 3.07: "Bestel met dezelfde look" — alleen lookkeuzes in de link. */
 import { herbestelKnop, herbestelHtml } from './herbestel.js';
 import { TIPS, TIP_IDS, tipsUitCookie } from '../data/tips.js';
+/* levering 119 (18 november 2026, proefronde P9-05): de ene zin over het delen van de link. */
+import { DEEL_ZIN } from './deelLink.js';
 import { TIPS_COOKIE, PREFERENCE_COOKIE_DAYS, maxAge } from '../data/cookies.js';
 
 const STUDIO_EMAIL = 'hello@visuails.com';
@@ -241,10 +250,45 @@ const COPY = {
     emptyUnattended: (timing) => `Your files are not ready yet. They appear here as soon as they are finished, and we email you when they do. ${timing}.`,
     emptyRequest: 'This is a request. We reply in writing with a proposal and a price; nothing is made until you say yes.',
     emptyOfferte: 'Your files are not ready yet. They appear here as soon as they are finished, and we email you when they do — within the turnaround in your quote. Not sent your product photos yet? Reply to the quote email with the photos, or send them on WhatsApp.',
+    /* levering 117 (P4-04): met de datum uit de offerte, als die er is. */
+    emptyOfferteDatum: (dag) => `Your files are not ready yet. They will be ready on ${dag}, and we email you when they are. Not sent your product photos yet? Reply to the quote email with the photos, or send them on WhatsApp.`,
+    offerteWat: 'What you get',
+    offerteKlaar: 'Ready on',
+    /* levering 118 (17 november 2026, proefronde P5-01): een aanvraag krijgt een eigen weergave, met wat de klant
+       invulde en de stappen; geen download-, goedkeur- of revisietekst zolang er geen bestelling is. */
+    aanvraagTitle: 'Your request',
+    aanvraagLede: 'What you sent us, and what happens next.',
+    aanvraagDienst: 'Request',
+    aanvraagBriefH: 'What you sent',
+    aanvraagStappen: ['Request', 'Proposal', 'Quote', 'Order'],
+    aanvraagOfferte: 'Your quote is ready. The price is on the payment page; paying is your go-ahead, and then we start.',
+    /* levering 118 (proefronde P12-06): na de bewaartermijn één staat, in plaats van "klaar om te downloaden" én "nog niet klaar". */
+    verlopenH: 'The download period has ended',
+    verlopenBody: (dag) => `The files of this order could be downloaded until ${dag}. They are no longer here. Still need them? Send us a message with the reference, and we will look at what we can do.`,
+    verlopenStudio: 'Open VISUAILS Studio',
+    verlopenWa: 'Message us on WhatsApp',
+    verlopenWaText: (ref) => `Hello VISUAILS, about order ${ref} — the download period has ended and I still need the images.`,
+    verlopenMail: 'Email us',
+    /* levering 118 (proefronde P4-06): de factuurgegevens vóór het betalen van een offerte. */
+    factuurEerst: 'Your quote is ready. Fill in your billing details first: they go on your invoice. Then you go on to pay.',
+    factuurH: 'Your billing details',
+    factuurLede: 'These go on your invoice. Fill them in once; then you go on to pay.',
+    factuurBedrijf: 'Company name',
+    factuurStraat: 'Street and number',
+    factuurPostcode: 'Postcode',
+    factuurPlaats: 'City',
+    factuurLand: (land) => `Country: ${land}. The VAT on your quote follows this country. Not right? Email us before you pay.`,
+    factuurKnop: 'Save and go on to pay',
+    factuurFout: 'Not everything was filled in. Fill in your street, postcode and city, and tick the box.',
+    factuurMelding: { bedrijf: 'Fill in your company name: it goes on your invoice.', straat: 'Fill in your street and number.', postcode: 'Fill in your postcode.', plaats: 'Fill in your city.', zakelijk: 'Tick that you are ordering as a business: only then can we start.' },
+    /* levering 118 (proefronde P4-10): een vastgelegd merkmodel is geen levering van beelden. */
+    merkmodelVast: 'Your brand model is locked. It is yours alone, and you can choose it in your next order.',
+    merkmodelGeenBestanden: 'A brand model has no files to download. You find it in VISUAILS Studio, under Your look.',
     fileGone: 'No longer available here — ask us and we will send it again.',
     closed: 'This order is closed, so the review controls are gone. The files stay on this page until the link expires.',
 
-    footPrivate: (days) => `This link is private to your order. Anyone who has it can see these files, so treat it like a key. It stops working ${days} days after we close the order.`,
+    /* levering 119 (18 november 2026, proefronde P9-05): de ene deelzin (deelLink.js) voorop, de termijn blijft. */
+    footPrivate: (days) => `${DEEL_ZIN.en} It stops working ${days} days after we close the order.`,
     footAsk: 'Anything else,',
 
     /* K-03 (9 november 2026): de klantpagina heet overal "your order page". */
@@ -361,10 +405,41 @@ const COPY = {
     emptyUnattended: (timing) => `Je bestanden zijn nog niet klaar. Ze verschijnen hier zodra ze af zijn, en we mailen je als het zover is. ${timing}.`,
     emptyRequest: 'Dit is een aanvraag. We antwoorden schriftelijk met een voorstel en een prijs; er wordt niets gemaakt voordat jij ja zegt.',
     emptyOfferte: 'Je bestanden zijn nog niet klaar. Ze verschijnen hier zodra ze af zijn, en we mailen je als het zover is — binnen de levertijd uit de offerte. Nog geen productfoto’s gestuurd? Beantwoord de offertemail met de foto’s, of stuur ze via WhatsApp.',
+    /* levering 117 (P4-04): met de datum uit de offerte, als die er is. */
+    emptyOfferteDatum: (dag) => `Je bestanden zijn nog niet klaar. Ze zijn klaar op ${dag}, en we mailen je als het zover is. Nog geen productfoto’s gestuurd? Beantwoord de offertemail met de foto’s, of stuur ze via WhatsApp.`,
+    offerteWat: 'Wat je krijgt',
+    offerteKlaar: 'Klaar op',
+    /* levering 118 (proefronde P5-01 en P12-06): zie de Engelse tegenhangers. */
+    aanvraagTitle: 'Je aanvraag',
+    aanvraagLede: 'Wat je ons stuurde, en wat er nu gebeurt.',
+    aanvraagDienst: 'Aanvraag',
+    aanvraagBriefH: 'Wat je stuurde',
+    aanvraagStappen: ['Aanvraag', 'Voorstel', 'Offerte', 'Bestelling'],
+    aanvraagOfferte: 'Je offerte staat klaar. De prijs staat op de betaalpagina; betalen is je akkoord, en dan beginnen we.',
+    verlopenH: 'De downloadperiode is voorbij',
+    verlopenBody: (dag) => `De bestanden van deze bestelling waren te downloaden tot en met ${dag}. Ze staan hier niet meer. Heb je ze nog nodig? Stuur ons een bericht met de referentie, dan kijken we wat er kan.`,
+    verlopenStudio: 'Open VISUAILS Studio',
+    verlopenWa: 'Stuur een WhatsApp-bericht',
+    verlopenWaText: (ref) => `Hallo VISUAILS, over bestelling ${ref} — de downloadperiode is voorbij en ik heb de beelden nog nodig.`,
+    verlopenMail: 'Mail ons',
+    factuurEerst: 'Je offerte staat klaar. Vul eerst je factuurgegevens in: die komen op je factuur. Daarna ga je door naar betalen.',
+    factuurH: 'Je factuurgegevens',
+    factuurLede: 'Deze komen op je factuur. Eén keer invullen; daarna ga je door naar betalen.',
+    factuurBedrijf: 'Bedrijfsnaam',
+    factuurStraat: 'Straat en huisnummer',
+    factuurPostcode: 'Postcode',
+    factuurPlaats: 'Plaats',
+    factuurLand: (land) => `Land: ${land}. De btw op je offerte volgt dit land. Klopt het niet? Mail ons vóór je betaalt.`,
+    factuurKnop: 'Opslaan, dan betalen',
+    factuurFout: 'Nog niet alles is ingevuld. Vul je straat, postcode en plaats in, en vink het vakje aan.',
+    factuurMelding: { bedrijf: 'Vul je bedrijfsnaam in: die komt op je factuur.', straat: 'Vul je straat en huisnummer in.', postcode: 'Vul je postcode in.', plaats: 'Vul je plaats in.', zakelijk: 'Vink aan dat je zakelijk bestelt: alleen dan kunnen we beginnen.' },
+    merkmodelVast: 'Je merkmodel staat vast. Het is alleen van jou, en je kiest het bij je volgende bestelling.',
+    merkmodelGeenBestanden: 'Een merkmodel heeft geen bestanden om te downloaden. Je vindt het in VISUAILS Studio, onder Je vaste look.',
     fileGone: 'Niet meer beschikbaar hier — vraag het ons en we sturen hem opnieuw.',
     closed: 'Deze bestelling is afgesloten, dus de beoordelingsknoppen zijn weg. De bestanden blijven op deze pagina staan tot de link verloopt.',
 
-    footPrivate: (days) => `Deze link is privé voor jouw bestelling. Iedereen die hem heeft kan deze bestanden zien, dus behandel hem als een sleutel. Hij werkt tot ${days} dagen nadat we de bestelling afsluiten.`,
+    /* levering 119 (18 november 2026, proefronde P9-05): idem. */
+    footPrivate: (days) => `${DEEL_ZIN.nl} Hij werkt tot ${days} dagen nadat we de bestelling afsluiten.`,
     footAsk: 'Verder iets,',
 
     /* K-03: de klantpagina heet overal "je bestelpagina". */
@@ -521,6 +596,8 @@ export async function portalGet(context) {
     if (/^(\d{1,3}|dag|vaak|dicht)$/.test(f)) order.fotosMelding = { fotos: f, mis: Math.min(99, Number.parseInt(q.get('mis') || '0', 10) || 0) };
     /* K-03: na "Ook als PNG/WebP" (?formaat=png|webp|fout); formaatMelding() kent alleen die drie. */
     order.formaatMelding = formaatMelding(String(q.get('formaat') || ''), lang);
+    /* levering 118 (proefronde P4-06): de factuurgegevens kwamen niet volledig binnen. */
+    order.factuurFout = q.get('factuur') === 'fout';
   }
   return renderOrder(env, order, route.token, lang);
 }
@@ -589,6 +666,38 @@ export async function portalPost(context) {
    * per bestelling bovenop POST_LIMIT en de daggrens van /api/upload. De opslag is
    * die van Studio: R2 `aangeleverd/<ref>/…` en een rij in `files` met het vak.
    */
+  /*
+   * ── FACTUURGEGEVENS VÓÓR HET BETALEN — levering 118 (17 november 2026, proefronde P4-06) ──
+   * Een aanvraag (video, eigen look) vraagt geen adres; de factuur ging uit met alleen een naam. Nu vult de klant zijn
+   * adres en de zakelijke verklaring hier in, vóór Mollie. Alleen op de bestelling zelf (het token is het bewijs, net
+   * als bij de foto's): het account verandert niet. Land en btw-nummer blijven zoals de offerte ze zette, want daar
+   * hangt de btw aan. Daarna terug naar deze pagina, waar de knop Betalen staat.
+   */
+  if (form.get('action') === 'factuur') {
+    if (!factuurOpen(order)) return seeOther(home);
+    const veld = (k, max) => String(form.get(k) || '').replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, max);
+    const bedrijf = veld('bedrijf', 120) || String(order.brand || '').trim();
+    const straat = veld('straat', 120);
+    const postcode = veld('postcode', 20);
+    const plaats = veld('plaats', 80);
+    if (!bedrijf || !straat || !postcode || !plaats || form.get('zakelijk') !== 'ja') return seeOther(`${home}?factuur=fout#factuur`);
+    const d = detailsVan(order);
+    d.business_declaration = BUSINESS_VERSION;
+    d.business_bevestigd = 'bestelpagina';
+    try {
+      await env.DB.prepare('UPDATE orders SET brand = ?2, address_line1 = ?3, postal_code = ?4, city = ?5, details_json = ?6 WHERE id = ?1 AND COALESCE(payment_status, \'unpaid\') != \'paid\'')
+        .bind(order.order_id, bedrijf, straat, postcode, plaats, JSON.stringify(d)).run();
+      await env.DB.prepare("INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'customer')")
+        .bind(order.order_id, order.status || 'received', lang === 'nl' ? 'Factuurgegevens en zakelijke verklaring ingevuld op de bestelpagina.' : 'Billing details and business declaration filled in on the order page.').run().catch(() => {});
+    } catch {
+      return plainPage(env, request, 'down', 503);
+    }
+    later(context, bumpUse(env, order.token_id));
+    /* Terug naar deze pagina en niet meteen naar /api/order-pay: form-action 'self' in de CSP geldt ook voor de
+       doorverwijzing naar Mollie na een POST (zie offsite.js). Op de pagina staat nu de gewone knop Betalen, een link. */
+    return seeOther(`${home}#nu`);
+  }
+
   if (form.get('action') === 'fotos') {
     const terug = (q) => seeOther(`${home}?${q}#fotos`);
     if (!nasturenOpen(order)) return terug('fotos=dicht');
@@ -987,7 +1096,7 @@ async function handleRevisionRound(env, context, { order, form, home, lang, requ
      van de ronde. Studio gebruikte al notifyRevisionRound(). En de klant krijgt
      een ontvangstbevestiging, net als in Studio. */
   await notifyRevisionRound(env, { orderId: order.order_id, items: eigen.map((fileId) => ({ fileId, note: perBeeld.get(fileId) || note })) });
-  const best = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(order.order_id).first().catch(() => null);
+  const best = await env.DB.prepare('SELECT ref, email, name, first_name, lang FROM orders WHERE id = ?1') /* levering 119 (A0-01): first_name voor de aanhef */.bind(order.order_id).first().catch(() => null);
   if (best) await mailRondeOntvangen(env, best, eigen.length);
 
   later(context, bumpUse(env, order.token_id));
@@ -1138,6 +1247,8 @@ const ORDER_SQL =
             -- gemailde link een ANDERE map dan het dashboard -- precies de
             -- constructie waar de kop van delivery.js over gaat.
             o.brand, o.name, o.details_json,
+            -- levering 118 (proefronde P4-06): het factuuradres van een offerte, zie factuurNodig().
+            o.address_line1, o.postal_code, o.city, o.country, o.vat_number,
             -- Punt 3.01 (8 oktober 2026): de Nu-zin bovenaan rekent met dezelfde
             -- velden als de bestelkaart in Studio: het moment van de levermail
             -- (revisie- en bewaardatum, leverdatums.js), het bedrag en de
@@ -1433,13 +1544,18 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
       && ['received', 'in_production', 'human_check'].includes(String(order.status || ''))) {
     try { eersteMist = eersteMistVan(await ontbrekendVoorOrder(env.DB, order.order_id), lang); } catch { eersteMist = null; }
   }
-  const ns = nuZin(order, { files, eersteMist, fb: vraagFeedback ? fb : undefined }, lang);
+  let ns = nuZin(order, { files, eersteMist, fb: vraagFeedback ? fb : undefined }, lang);
+  /* levering 118 (proefronde P4-06): ontbreekt het factuuradres bij een offerte, dan eerst dat, dan pas betalen. */
+  const factuurBlokHtml = factuurNodig(order) ? factuurBlok(t, lang, order, { voorvertoning }) : '';
+  if (factuurBlokHtml) ns = { ...ns, zin: t.factuurEerst, knoppen: [] };
+  /* levering 118 (proefronde P4-10): een afgerond merkmodel zegt "staat vast", niet "je beelden staan klaar". */
+  if (order.service === 'brand-model' && isAfgerond(order)) ns = { ...ns, zin: t.merkmodelVast, knoppen: [] };
   /* K-02: het blok om ontbrekende foto's te sturen, direct onder "wat nu". */
   let fotos = '';
   if (nasturenOpen(order)) {
     try { fotos = fotosBlok(t, lang, order, await ontbrekendVoorOrder(env.DB, order.order_id), { voorvertoning }); } catch { fotos = ''; }
   }
-  const top = nuBlok(t, lang, order, token, ns, files) + fotos;
+  const top = nuBlok(t, lang, order, token, ns, files) + factuurBlokHtml + fotos;
 
   /* ── HET AFRONDSCHERM — 8 oktober 2026 (punt 3.05) ─────────────────────────
      Na "Alles goed" landt de klant op /o/<token>#afgerond: bovenaan de
@@ -1460,7 +1576,14 @@ async function renderOrder(env, order, token, lang, { voorvertoning = false } = 
     })
     : '';
 
-  const body = attended
+  /* levering 118 (17 november 2026): twee eigen weergaven vóór de gewone. Een aanvraag zonder betaling (P5-01) is nog
+     geen bestelling; een bestelling waarvan de downloadperiode voorbij is (P12-06) heeft niets meer te downloaden. */
+  const verlopenOp = downloadVerlopenOp(order, files);
+  const body = isAanvraagWeergave(order)
+    ? aanvraagBody(t, lang, order, top)
+    : verlopenOp
+    ? verlopenBody(t, lang, order, verlopenOp)
+    : attended
     ? attendedBody(t, lang, order, token, files, events, fb, afrond ? '' : folder, top, afrond)
     : unattendedBody(t, lang, order, token, files, afrond ? '' : folder, !afrond && vraagFeedback ? feedbackBlock({ lang, action: `/o/${token}`, feedback: fb }) : '', top, afrond);
 
@@ -1708,7 +1831,8 @@ function nuBlok(t, lang, order, token, ns, files) {
   const datums = !isAfgerond(order) && ns.datums && ns.datums.length
     ? `<p class="nu-datums">${ns.datums.map((d) => `<span>${esc(d)}</span>`).join('')}</p>`
     : '';
-  const pad = statusPad(order, { lang });
+  /* levering 118 (proefronde P5-01): bij een aanvraag de stappen Aanvraag → Voorstel → Offerte → Bestelling. */
+  const pad = isAanvraagWeergave(order) ? aanvraagPad(t, order) : statusPad(order, { lang });
   const padHtml = pad.length
     ? `<ol class="pad" aria-label="${esc(t.fStatus)}">${pad.map((s) => `<li class="${s.state}"${s.state === 'is-now' ? ' aria-current="step"' : ''}><span class="pad-stip" aria-hidden="true"></span>${esc(s.label)}</li>`).join('')}</ol>`
     : '';
@@ -1727,6 +1851,181 @@ function nuBlok(t, lang, order, token, ns, files) {
   ${delen.length ? `<div class="nu-knoppen">${delen.join('')}</div>` : ''}
   ${padHtml}
   ${lever}
+</section>`;
+}
+
+// ---- Een aanvraag, en een verlopen download — levering 118 (17 november 2026) --
+
+/*
+ * ── DE AANVRAAG ALS AANVRAAG (proefronde P5-01) ─────────────────────────────
+ * De link "Bekijk je aanvraag" uit de mail na /start/custom-look en /start/video
+ * opende "Je bestanden": download-, goedkeur- en revisieteksten, een leeg blok
+ * Bestanden en de stappen Ontvangen · In productie · Geleverd, maar niets van de
+ * brief zelf. Een aanvraag (video of eigen look, details.request gezet) die nog
+ * niet betaald is, krijgt nu "Je aanvraag": wat de klant invulde, en de stappen
+ * Aanvraag → Voorstel → Offerte → Bestelling. Na betalen is het een bestelling en
+ * geldt de gewone pagina.
+ */
+function detailsVan(order) {
+  try { return JSON.parse(order.details_json || '{}') || {}; } catch { return {}; }
+}
+export function isAanvraagWeergave(order) {
+  if (!order || !['video', 'custom'].includes(String(order.service || ''))) return false;
+  if (String(order.payment_status || '') === 'paid' || String(order.status || '') !== 'received') return false;
+  return !!String(detailsVan(order).request || '').trim();
+}
+/** De vier stappen: zonder bedrag is de aanvraag aan de beurt, met een bedrag (de offerte staat er) de offerte. */
+function aanvraagPad(t, order) {
+  const nu = Number(order.total_cents) > 0 ? 2 : 0;
+  return t.aanvraagStappen.map((label, i) => ({ key: `aanvraag-${i}`, label, state: i < nu ? 'is-done' : i === nu ? 'is-now' : 'is-todo' }));
+}
+/* De velden van het aanvraagformulier (src/components/order/HoldingPage.astro), met de woorden van dat formulier.
+   Hier herhaald omdat dat een Astro-component is; komt er een veld bij, zet het dan ook hier. Wat hier niet staat,
+   toont de pagina niet (de details van een bestelling dragen ook interne velden). */
+const BRIEF = {
+  en: {
+    look_concept: ['Who comes up with the concept?', { own: 'I have the concept — you work it out', us: 'Think it up for us' }],
+    look_service: ['Where should the look be usable?', { lifestyle: 'Lifestyle scenes', catalog: 'Catalog sets', both: 'Both' }],
+    look_world: ['The world', null],
+    look_references: ['References', null],
+    look_avoid: ['It should never look like', null],
+    look_products: ['Roughly how many products', { unsure: 'Not sure yet' }],
+    look_when: ['First set needed', { asap: 'As soon as it is ready', month: 'Within a month', quarter: 'This quarter', open: 'No date yet' }],
+    clips: ['How many clips', null],
+    style: ['Kind of video', null],
+    website: ['Website', null],
+    message: ['Your message', null],
+  },
+  nl: {
+    look_concept: ['Wie bedenkt het concept?', { own: 'Ik heb het concept — jullie werken het uit', us: 'Bedenk het voor ons' }],
+    look_service: ['Waar moet de look te gebruiken zijn?', { lifestyle: 'Lifestylescènes', catalog: 'Catalogsets', both: 'Allebei' }],
+    look_world: ['De wereld', null],
+    look_references: ['Referenties', null],
+    look_avoid: ['Zo mag het er nooit uitzien', null],
+    look_products: ['Ongeveer hoeveel producten', { unsure: 'Weet ik nog niet' }],
+    look_when: ['Eerste set nodig', { asap: 'Zo snel als hij klaar is', month: 'Binnen een maand', quarter: 'Dit kwartaal', open: 'Nog geen datum' }],
+    clips: ['Hoeveel clips', null],
+    style: ['Soort video', null],
+    website: ['Website', null],
+    message: ['Je bericht', null],
+  },
+};
+function briefRegels(order, lang) {
+  const d = detailsVan(order);
+  const b = BRIEF[lang] || BRIEF.en;
+  return Object.entries(b).map(([k, [label, opties]]) => {
+    const ruw = d[k];
+    if (ruw === undefined || ruw === null || String(ruw).trim() === '') return null;
+    const v = String(ruw).trim().slice(0, 2000);
+    return [label, (opties && opties[v]) || v];
+  }).filter(Boolean);
+}
+function aanvraagBody(t, lang, order, top) {
+  const d = detailsVan(order);
+  const naam = order.service === 'custom' && d.request === 'custom-look' ? (lang === 'nl' ? 'Eigen look' : 'Custom look') : (serviceLabel(order.service, lang) || '—');
+  const facts = [
+    [t.fRef, order.ref],
+    [t.aanvraagDienst, naam],
+  ];
+  const brief = briefRegels(order, lang);
+  const offerte = Number(order.total_cents) > 0;
+  /* De brief als lijst; lange tekst houdt zijn regels (referenties staan één per regel). */
+  const briefHtml = brief.length
+    ? `<section class="work" id="aanvraag"><h2>${esc(t.aanvraagBriefH)}</h2><dl class="facts">${brief.map(([k, v]) => `<div class="fact"><dt>${esc(k)}</dt><dd>${esc(v).replace(/\n/g, '<br>')}</dd></div>`).join('')}</dl></section>`
+    : '';
+  const af = offerteAfspraak(order.details_json, lang);
+  const afspraak = offerte && (af.inhoud || af.klaarOp)
+    ? factList([af.inhoud ? [t.offerteWat, af.inhoud] : null, af.klaarOp ? [t.offerteKlaar, af.klaarOpTekst] : null].filter(Boolean))
+    : '';
+  return `<main>
+<div class="head">
+  <h1>${esc(t.aanvraagTitle)}</h1>
+  <p class="lede">${esc(t.aanvraagLede)}</p>
+</div>
+${top}
+${factList(facts)}
+${afspraak}
+<p class="note">${esc(offerte ? t.aanvraagOfferte : t.emptyRequest)}</p>
+${briefHtml}
+</main>`;
+}
+
+/*
+ * ── NA DE BEWAARTERMIJN (proefronde P12-06) ─────────────────────────────────
+ * Op dag 96 zei de link "Je beelden staan klaar om te downloaden" én "Je
+ * bestanden zijn nog niet klaar … we mailen je": de verlopen bestanden vallen uit
+ * de query (expires_at), en dan lijkt een geleverde bestelling een lege. Nu één
+ * staat: tot wanneer er te downloaden viel, de referentie, en de weg naar Studio,
+ * WhatsApp en mail. Verlopen = geleverd, geen levend bestand meer, en de bewaardag
+ * (leverDatumsVan, dezelfde datum als in de levermail) is voorbij.
+ * Geeft de laatste downloaddag (YYYY-MM-DD) of ''.
+ */
+export function downloadVerlopenOp(order, files, vandaag = vandaagNL()) {
+  if (!order || String(order.status || '') !== 'delivered') return '';
+  const levend = (files || []).filter((f) => !f.superseded_at && !(f.expires_at && isExpired(f.expires_at, null)));
+  if (levend.length) return '';
+  const d = leverDatumsVan(order);
+  if (!d || !d.bewaarTot || d.bewaarTot >= vandaag) return '';
+  return d.bewaarTot;
+}
+function verlopenBody(t, lang, order, dag) {
+  const datum = (() => {
+    try { return new Intl.DateTimeFormat(lang === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${dag}T00:00:00Z`)); } catch { return dag; }
+  })();
+  const facts = [
+    [t.fRef, order.ref],
+    [t.fOrder, serviceLabel(order.service, lang) || '—'],
+    [t.fStatus, statPil(order.status, statusLabel(order.status, lang) || order.status), true],
+  ];
+  return `<main>
+<div class="head">
+  <h1>${esc(t.verlopenH)}</h1>
+  <p class="lede">${esc(t.verlopenBody(datum))}</p>
+</div>
+${factList(facts)}
+<section class="nu" id="nu">
+  <div class="nu-knoppen">
+    <a class="btn btn-primary" data-rol="navigeren" href="/account/orders?lang=${lang}">${knopInhoud('navigeren', t.verlopenStudio)}</a>
+    <a class="btn btn-wa" data-rol="contact" href="${esc(waHref(t.verlopenWaText(order.ref)))}" target="_blank" rel="noopener">${esc(t.verlopenWa)}${nieuwTabbladHtml(lang)}</a>
+    <a class="nu-link k k-tekst k-klein" data-rol="contact" href="mailto:${STUDIO_EMAIL}?subject=${encodeURIComponent(order.ref || '')}">${esc(t.verlopenMail)}</a>
+  </div>
+</section>
+</main>`;
+}
+
+/* levering 118 (proefronde P4-06): een offerte die nog betaald moet worden, en de vraag of het adres er al is. */
+function factuurOpen(o) {
+  return isAanvraagWeergave(o) && Number(o.total_cents) > 0;
+}
+function adresCompleet(o) {
+  return !!(String(o.address_line1 || '').trim() && String(o.postal_code || '').trim() && String(o.city || '').trim());
+}
+export function factuurNodig(o) {
+  return factuurOpen(o) && !adresCompleet(o);
+}
+function factuurBlok(t, lang, order, { voorvertoning = false } = {}) {
+  const landNaam = (() => {
+    const cc = String(order.country || '').toUpperCase();
+    if (!cc) return lang === 'nl' ? 'Nederland' : 'the Netherlands';
+    try { return new Intl.DisplayNames([lang === 'nl' ? 'nl' : 'en'], { type: 'region' }).of(cc) || cc; } catch { return cc; }
+  })();
+  const fout = order.factuurFout ? `<p class="rr-fout" role="alert">${esc(t.factuurFout)}</p>` : '';
+  const uit = voorvertoning ? ' disabled' : '';
+  const m = t.factuurMelding;
+  return `<section class="fotos" id="factuur" aria-labelledby="factuur-h">
+  <h2 id="factuur-h">${esc(t.factuurH)}</h2>
+  <p>${esc(t.factuurLede)}</p>
+  ${fout}
+  <form method="post" action="">
+    <input type="hidden" name="action" value="factuur">
+    <label class="fotos-vak"><span class="fotos-vak-naam">${esc(t.factuurBedrijf)}</span><input type="text" name="bedrijf" maxlength="120" autocomplete="organization" required data-melding="${esc(m.bedrijf)}" value="${esc(order.brand || '')}"${uit}></label>
+    <label class="fotos-vak"><span class="fotos-vak-naam">${esc(t.factuurStraat)}</span><input type="text" name="straat" maxlength="120" autocomplete="address-line1" required data-melding="${esc(m.straat)}" value="${esc(order.address_line1 || '')}"${uit}></label>
+    <label class="fotos-vak"><span class="fotos-vak-naam">${esc(t.factuurPostcode)}</span><input type="text" name="postcode" maxlength="20" autocomplete="postal-code" required data-melding="${esc(m.postcode)}" value="${esc(order.postal_code || '')}"${uit}></label>
+    <label class="fotos-vak"><span class="fotos-vak-naam">${esc(t.factuurPlaats)}</span><input type="text" name="plaats" maxlength="80" autocomplete="address-level2" required data-melding="${esc(m.plaats)}" value="${esc(order.city || '')}"${uit}></label>
+    <p class="fotos-hint">${esc(t.factuurLand(landNaam))}</p>
+    <label class="fotos-vak"><input type="checkbox" name="zakelijk" value="ja" required data-melding="${esc(m.zakelijk)}"${uit}> <span>${esc(currentBusiness(lang))}</span></label>
+    <div class="acts"><button class="btn btn-primary" data-rol="doorgaan" type="submit"${uit}>${knopInhoud('doorgaan', t.factuurKnop)}</button></div>
+  </form>
 </section>`;
 }
 
@@ -1862,9 +2161,26 @@ function unattendedBody(t, lang, order, token, files, folder = '', feedback = ''
       })
     /* Ronde 9 (F40): video en eigen look lopen via een offerte. Daar geldt de
        wachtrijzin niet, en de klant moet weten hoe zijn foto's bij ons komen. */
+    /* levering 117 (17 november 2026, proefronde P4-04): wat de klant krijgt en wanneer, uit de offerte.
+       Zonder die twee velden (een offerte van vóór vandaag) de oude zin. */
     : (order.service === 'video' || order.service === 'custom')
-      ? `<p class="note">${esc(String(order.payment_status || '') === 'paid' ? t.emptyOfferte : t.emptyRequest)}</p>`
-      : `<p class="note">${esc(t.emptyUnattended(timing))}</p>`;
+      ? (() => {
+        const af = offerteAfspraak(order.details_json, lang);
+        const betaald = String(order.payment_status || '') === 'paid';
+        const lijst = (af.inhoud || af.klaarOp) && Number(order.total_cents) > 0
+          ? factList([af.inhoud ? [t.offerteWat, af.inhoud] : null, af.klaarOp ? [t.offerteKlaar, af.klaarOpTekst] : null].filter(Boolean))
+          : '';
+        /* levering 118 (17 november 2026, proefronde N3-02): "Dit is een aanvraag…" alleen zolang er nog geen offerte
+           (een bedrag) is; staat de offerte er al, dan zegt het blok "Wat je krijgt / Klaar op" genoeg. */
+        const zin = betaald
+          ? (af.klaarOp ? t.emptyOfferteDatum(af.klaarOpTekst) : t.emptyOfferte)
+          : (Number(order.total_cents) > 0 ? '' : t.emptyRequest);
+        return `${lijst}${zin ? `<p class="note">${esc(zin)}</p>` : ''}`;
+      })()
+      /* levering 118 (proefronde P4-10): een merkmodel wordt niet als bestanden geleverd. */
+      : order.service === 'brand-model'
+        ? `<p class="note">${esc(t.merkmodelGeenBestanden)}</p>`
+        : `<p class="note">${esc(t.emptyUnattended(timing))}</p>`;
   const rr = files.length ? roundBlock(t, lang, order, files) : '';
 
   // De proefvisual heeft geen beoordeelknoppen (zie canReviewOrder), dus hij
@@ -2339,7 +2655,7 @@ function page({ lang, title, body }) {
 <title>${esc(title)} — VISUAILS</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="stylesheet" href="/fonts/gedeeld.css">
-<link rel="preload" as="font" type="font/woff2" href="/fonts/visuails-display/VISUAILSDisplay-Bold.woff2" crossorigin="anonymous">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/visuails-display/VISUAILSDisplay2-Medium.woff2" crossorigin="anonymous">
 <link rel="stylesheet" href="/portal.css">
 <link rel="stylesheet" href="/knoppen.css">
 <!-- Het tevredenheidsblok, uit één stylesheet die ook VISUAILS Studio inlaadt.

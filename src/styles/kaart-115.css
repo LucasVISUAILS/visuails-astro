@@ -9,10 +9,22 @@
    (data-stuk, op volgorde in de pagina); zonder script stuk 0.
    Gemeten: het lichtste punt van elk stuk is luminantie 0,155, wit erop minstens 5,1 : 1 (met de korrel 4,8 : 1).
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* LEVERING 118 (17 november 2026, proefronde D1-02 en D1-03): "Witte tekst op groene kaarten haalt 3,2 – 4,4 : 1". Het
+   lichtste punt van een stuk mét korrel (overlay maakt het doek tot ± 10 % lichter) is luminantie 0,176: wit erop 4,65 : 1,
+   wit op 86 % 3,91, en wit op een pil met 10 % wit erover 3,85. Twee dingen:
+   - een effen laag van 15 % in de grondkleur #04110B bovenop het doek (geen verloop: één kleur van rand tot rand, de vorm
+     linear-gradient(kleur 0 0) is alleen hoe css een effen laag schrijft). Doorgerekend op alle acht stukken met de
+     korrel: wit 5,82 : 1, wit op de pil 4,67 : 1 (op het slechtste beeldpunt);
+   - de tekst op de kaart 100 % wit in plaats van 86 % (de regel hieronder, en hal.css bij de slotkaart en de Studiobrief). */
 html body.hal :is([data-kaart], .h-proef > .h-proef-woord, .h-lk-slot, .site-footer .sb, .h-gd-brief, .h-ed-brief, .h-nf-getal) {
-  background: url('/img/doek/korrel.webp') 0 0 / 256px 256px repeat, var(--kd, url('/img/doek/stuk-0.webp')) 50% 50% / cover no-repeat, #04110B !important;
-  background-blend-mode: overlay, normal, normal !important;
+  background: linear-gradient(rgb(4 17 11 / .15) 0 0), url('/img/doek/korrel.webp') 0 0 / 256px 256px repeat, var(--kd, url('/img/doek/stuk-0.webp')) 50% 50% / cover no-repeat, #04110B !important;
+  background-blend-mode: normal, overlay, normal, normal !important;
 }
+/* levering 118 (D1-02): de tweede tekst op een kaart was wit op 86 % (kaart-108.css); nu wit. Zelfde kiezer, één :not(#k)
+   meer, zodat hij wint. */
+html body.hal .kv-108[data-kaart] :is(p, li, dd, span, small, label):not(.h-pil):not(.h-pil *):not(.h-chip):not(.h-chip *):not(.h-cirkel):not(.h-cirkel *):not(.h-knop):not(.h-knop *):not(.knop):not(.knop *):not(.h-getal):not(b):not(strong):not(.hold-status-word):not(.ps-sum-naam):not([class*="prijs"]):not([class*="bedrag"]):not(#k):not(#k) { color: #FFFFFF !important; }
+/* levering 118 (D1-03): de Studiobrief in de voet en op /guides, wit op 90 % (fotoblok.css, !important); nu wit */
+html body.hal :is(.site-footer .sb, .h-gd-brief) :is(.sb-zin, .sb-noot):not(#k) { color: #FFFFFF !important; }
 html body.hal [data-stuk="0"] { --kd: url('/img/doek/stuk-0.webp'); }
 html body.hal [data-stuk="1"] { --kd: url('/img/doek/stuk-1.webp'); }
 html body.hal [data-stuk="2"] { --kd: url('/img/doek/stuk-2.webp'); }
@@ -23,8 +35,8 @@ html body.hal [data-stuk="6"] { --kd: url('/img/doek/stuk-6.webp'); }
 html body.hal [data-stuk="7"] { --kd: url('/img/doek/stuk-7.webp'); }
 /* het slot op de voorpagina (een eigen zwarte kaart, voorpagina-105.css) ook */
 html body.hal .r105-slot > .r105-slotkaart {
-  background: url('/img/doek/korrel.webp') 0 0 / 256px 256px repeat, var(--kd, url('/img/doek/stuk-4.webp')) 50% 50% / cover no-repeat, #04110B;
-  background-blend-mode: overlay, normal, normal;
+  background: linear-gradient(rgb(4 17 11 / .15) 0 0), url('/img/doek/korrel.webp') 0 0 / 256px 256px repeat, var(--kd, url('/img/doek/stuk-4.webp')) 50% 50% / cover no-repeat, #04110B;
+  background-blend-mode: normal, overlay, normal, normal;
 }
 html body.hal canvas.kv-doek { display: none !important; }
 @media (forced-colors: active) {

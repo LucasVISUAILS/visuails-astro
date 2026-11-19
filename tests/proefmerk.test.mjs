@@ -94,8 +94,10 @@ console.log('\nde stand wordt vastgelegd bij het aannemen, niet bij het lezen');
 {
   const order = lees('functions/api/order.js');
   ok('order.js haalt isTestmodus binnen', /import \{[^}]*isTestmodus[^}]*\} from '\.\.\/\.\.\/src\/lib\/mollie\.js'/.test(order));
+  /* Levering 117 (17 november 2026, P5-08): de UPDATE staat in één gedeelde functie, markeerProefbestelling() in
+     src/lib/betaallink.js, die ook de op-maatofferte en het restant gebruiken. order.js roept hem aan. */
   ok('en zet het merk op de bestelling',
-    /UPDATE orders SET testmodus = 1 WHERE id = \?1/.test(order), 'UPDATE', 'ontbreekt');
+    /UPDATE orders SET testmodus = 1 WHERE id = \?1/.test(lees('src/lib/betaallink.js')) && /markeerProefbestelling\(env, orderId\)/.test(order), 'UPDATE', 'ontbreekt');
   /* ALLEEN IN TESTMODUS. Met een live_-sleutel hoort er geen tweede schrijfactie
      te zijn — geen extra ronde naar D1 op de drukste route van de site. */
   ok('  alleen als de sleutel dat zegt', /if \(orderId && isTestmodus\(env\)\) \{/.test(order));

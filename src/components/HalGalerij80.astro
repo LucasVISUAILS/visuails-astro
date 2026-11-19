@@ -44,13 +44,19 @@ const doel = (it: any) => {
   return { href: lp(`/catalog/${it.stijl}`), naam: s?.name ?? it.stijl, soort: 'Catalog' };
 };
 const bekijk = nl ? 'Bekijk de look' : 'See the look';
+/* LEVERING 118 (17 november 2026, proefronde P11-05): elke look staat maar één keer in de toetsenbordronde en voor een
+   schermlezer. De galerij had 21 tegels voor 6 looks (Flash vier keer, Eigen look acht keer): 21 tabstops. Een tegel
+   waarvan de look al eerder in de galerij stond, blijft een link voor de muis en de vinger, maar is geen tabstop meer
+   (tabindex -1) en verborgen voor een schermlezer (aria-hidden), net als de kopieën die de rij vullen. */
+const gezien = new Set<string>();
 const rijen = (GALERIJ.rijen as any[][]).map((rij) => rij.map((it) => {
   const a = it.b / it.h;
   const d = doel(it);
+  const dubbel = gezien.has(d.href); gezien.add(d.href);
   const srcset = (ext: string) => it.bronnen.map(([w, p]: [number, string]) => `${p}.${ext} ${w}w`).join(', ');
   const groot = it.bronnen.filter(([w]: [number]) => w <= 1200).pop() || it.bronnen[it.bronnen.length - 1];
   return {
-    ...d, a, veeg: it.veeg, alt: it.alt[lang],
+    ...d, a, dubbel, veeg: it.veeg, alt: it.alt[lang],
     avif: srcset('avif'), webp: srcset('webp'), src: `${groot[1]}.webp`,
     /* de breedte op het scherm: de hoogte van de rij (zie --g8-h in galerij-80.css) keer de verhouding */
     sizes: `(max-width: 700px) ${Math.ceil(a * 190)}px, ${Math.ceil(a * 340)}px`,
@@ -67,14 +73,17 @@ const rijen = (GALERIJ.rijen as any[][]).map((rij) => rij.map((it) => {
   <div class="g8-rijen">
     {rijen.map((rij, r) => (
       <div class="g8-rij" data-g8-rij={r}>
-        <div class="g8-baan" data-g8-baan role="list" aria-label={r === 0 ? 'Lifestyle' : 'Catalog'}>
+        {/* levering 118 (P11-05): de tegels zijn links, geen lijstitems (role="listitem" op de <a> nam de schermlezer zijn link
+            af); de rij is een groep met een naam */}
+        <div class="g8-baan" data-g8-baan role="group" aria-label={r === 0 ? 'Lifestyle' : 'Catalog'}>
           {[0, 1].map((kopie) => rij.map((t, i) => (
-            <a class="g8-tegel" href={t.href} role="listitem" style={`--a:${t.a.toFixed(4)}`}
-               data-g8-kopie={kopie ? '' : undefined} aria-hidden={kopie ? 'true' : undefined} tabindex={kopie ? -1 : undefined}
-               aria-label={kopie ? undefined : `${t.naam} · ${t.soort}. ${bekijk}`} draggable="false">
+            <a class="g8-tegel" href={t.href} style={`--a:${t.a.toFixed(4)}`}
+               data-g8-kopie={kopie ? '' : undefined} data-g8-dubbel={!kopie && t.dubbel ? '' : undefined}
+               aria-hidden={kopie || t.dubbel ? 'true' : undefined} tabindex={kopie || t.dubbel ? -1 : undefined}
+               aria-label={kopie || t.dubbel ? undefined : `${t.naam} · ${t.soort}. ${bekijk}`} draggable="false">
               <picture>
                 <source type="image/avif" srcset={t.avif} sizes={t.sizes} />
-                <img src={t.src} srcset={t.webp} sizes={t.sizes} alt={kopie ? '' : t.alt} width={t.b} height={t.h} loading="lazy" decoding="async" draggable="false" />
+                <img src={t.src} srcset={t.webp} sizes={t.sizes} alt={kopie || t.dubbel ? '' : t.alt} width={t.b} height={t.h} loading="lazy" decoding="async" draggable="false" />
               </picture>
               <img class="g8-veeg" src={t.veeg} alt="" aria-hidden="true" loading="lazy" decoding="async" draggable="false" />
               <span class="g8-naam" aria-hidden="true"><b>{t.naam}</b><span>{t.soort}</span></span>

@@ -26,9 +26,11 @@
 // reader being able to see it happen.
 import Layout from '../layouts/Layout.astro';
 import CompareHal from '../components/CompareHal.astro';
-import { SHOOT_DAY, euro, quote, vatLabel } from '../data/pricing.js';
+import { SHOOT_DAY, euro, quote, vatLabel, FORM_MAX_PRODUCTS } from '../data/pricing.js';
 
-const ANCHOR_PRODUCTS = 30;
+// levering 117 (17 november 2026, proefronde P3-01): was 30, maar het formulier
+// stopt bij FORM_MAX_PRODUCTS (20). Zelfde getal als CompareHal en PricingHal.
+const ANCHOR_PRODUCTS = FORM_MAX_PRODUCTS;
 
 const description =
   `A production day runs ${SHOOT_DAY.en.range}. ${ANCHOR_PRODUCTS} products ` +

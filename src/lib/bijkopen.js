@@ -345,7 +345,7 @@ export async function verwerkBijkoop(env, payment, { mode = '' } = {}) {
       const k = await D.prepare('SELECT email, name, first_name, country FROM customers WHERE id = ?1').bind(a.customer_id).first();
       const lang = String(payment.locale || '').startsWith('en') ? 'en' : 'nl';
       await mailBijkoopFactuur(env, {
-        customer: { email: k?.email, name: k?.first_name || k?.name || '', country: k?.country || '' }, invoice: factuur, pakket: a.pakket, lang,
+        customer: { email: k?.email, name: k?.first_name || k?.name || '', first_name: k?.first_name || '', country: k?.country || '' }, invoice: factuur, pakket: a.pakket, lang,
         tot: boek?.vervaltOp ? dagErvoor(boek.vervaltOp) : '',
       });
     } catch (e) {

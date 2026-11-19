@@ -170,8 +170,10 @@ const plan = lees('src/components/order/PlanPicker.astro');
 ok('stap 3: het aparte verklaringsvinkje is weg', !/data-pl-vatconfirm|name="vat_confirmed" value="yes"/.test(flow));
 ok('stap 5: het verborgen veld vat_confirmed staat naast het zakelijk-vinkje', /<input type="hidden" name="vat_confirmed" value="" data-pl-verlegd-veld \/>\s*<label class="pl-consent">/.test(flow));
 ok('stap 5: de zin staat IN het zakelijk-vinkje, vóór de zakelijke verklaring', /<span><span class="pl-verlegd" data-pl-verlegd hidden><\/span>\{currentBusiness\(lang\)\}<\/span>/.test(flow));
-ok('pipeline: zin en veld alleen bij EU (niet NL) met nummer en zonder "geen btw-nummer"',
-  /const applies = !!up && up !== HOME_COUNTRY && isEu\(up\) && !!vat && !noVat;/.test(pipe)
+/* levering 118 (17 november 2026, proefronde L-10): een nummer dat VIES in stap 3 afkeurde, krijgt geen verleggingszin
+   meer (viesStandNu(), BC). De oude regex pinde de regel zonder die voorwaarde vast. */
+ok('pipeline: zin en veld alleen bij EU (niet NL) met nummer, zonder "geen btw-nummer" en niet bij een afgekeurd nummer',
+  /const applies = !!up && up !== HOME_COUNTRY && isEu\(up\) && !!vat && !noVat && viesStandNu\(\) !== 'ongeldig';/.test(pipe)
   && /if \(veld\) veld\.value = tekst \? 'yes' : '';/.test(pipe));
 ok('pipeline: de zin komt uit verleggingZin() met merk en nummer', /verleggingZin\(cfg\.lang, \{ merk, btw: vat \}\)/.test(pipe));
 ok('pipeline: het merk zet de zin ook bij', /n === 'no_vat' \|\| n === 'brand'\) syncVatConfirm\(\)/.test(pipe));

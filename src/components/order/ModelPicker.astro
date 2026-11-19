@@ -271,6 +271,7 @@ const thumbSet = (m) => {
 
     {ROSTER.map((m) => (
       <label class="mp-opt">
+        {/* levering 119 (18 november 2026, proefronde P11-11): alt leeg; de naam staat eronder in .mp-name, anders las de schermlezer "Aaron Aaron". */}
         <img
           class="mp-thumb"
           src={m.thumb}
@@ -278,7 +279,7 @@ const thumbSet = (m) => {
           sizes={strook ? '80px' : '(max-width: 640px) 45vw, 390px'}
           width={m.tw}
           height={m.th}
-          alt={m.name}
+          alt=""
           loading="lazy"
           decoding="async"
         />
@@ -697,8 +698,11 @@ const thumbSet = (m) => {
      draagt hij daarom de korte naam; de volledige zin staat een regel lager,
      in de uitleg die verschijnt zodra je hem kiest. */
   .mp-grid.is-strook .mp-opt-any .mp-name { font-size: 0; }
+  /* levering 119 (18 november 2026, proefronde P11-11): de korte naam is alleen beeld (alt-tekst ""), anders las de
+     schermlezer "Wij kiezen voor jou Wij kiezen". De eerste regel is de terugval voor een browser zonder die vorm. */
   .mp-grid.is-strook .mp-opt-any .mp-name::after {
     content: attr(data-kort); font-size: var(--h-t-label); line-height: 1.2;
+    content: attr(data-kort) / "";
   }
   /* Het bolletje van de radio is op deze maat groter dan de naam ernaast; de
      tegel zelf toont de keuze al met zijn rand en zijn vulling. Verborgen en

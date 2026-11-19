@@ -321,6 +321,15 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
         .bind(rij.id, bv || null, cv || null).run()
         .catch((e) => console.error('[abonnement] verklaringen niet bewaard (migratie 0049?) —', e?.message || e));
     }
+    /* levering 118 (17 november 2026, proefronde P5-11): het raadplegingsnummer van VIES bij een verlegd abonnement,
+       zoals orders.vat_consultation; de factuur van een vooruitbetaald jaar leest het (snapshotFromSubscription).
+       Aparte UPDATE, zodat het abonnement zonder migratie 0075 gewoon blijft staan. */
+    const raadpleging = bedrijf?.btw?.consultation ? String(bedrijf.btw.consultation).slice(0, 64) : '';
+    if (rij?.id && raadpleging && bedrijf.btw.treatment === VAT_TREATMENT.reverseCharge) {
+      await env.DB.prepare('UPDATE subscriptions SET vat_consultation = ?2 WHERE id = ?1')
+        .bind(rij.id, raadpleging).run()
+        .catch((e) => console.error('[abonnement] VIES-nummer niet bewaard (migratie 0075?) —', e?.message || e));
+    }
   } catch (err) {
     console.error('[abonnement] rij niet aangemaakt —', err?.message || err);
     return seeOtherLocal(terug('opslaan', lang));
@@ -373,6 +382,10 @@ export async function handleSubscribeStart(context, customer, offsite, vooraf = 
          ook wat bankoverschrijving als betaalmethode mogelijk maakt. Zie de noot
          bij `sequenceType` in mollie.js. */
       oneOff: isPrepaid(rij.term),
+      /* levering 119 (18 november 2026, proefronde P5-15): bij verlegde btw (of buiten de EU) geen iDEAL, zoals bij
+         een bestelling en een bijkoop (bijkopen.js). */
+      excludeIdeal: (bedrijf?.btw?.treatment || VAT_TREATMENT.standard) !== VAT_TREATMENT.standard,
+      buitenEu: bedrijf?.btw?.treatment === VAT_TREATMENT.outsideScope,
       description: `VISUAILS ${planName(planId, lang)} — ${rij.ref}`,
       lang,
       /* De klant komt terug op /account/plan/return, waar het mandaat wordt
@@ -707,7 +720,7 @@ export async function stopIncasso(env, sub) {
  */
 /* `startDate` (8 oktober 2026, 2.07): een pauze die nog niet was ingegaan
    (de klant hervat vóór de volgende afschrijving) hervat op precies die dag,
-   zodat er geen termijn wegvalt en er geen dubbel komt. Zonder: eersteTermijn(). */
+   zodat er geen termijn wegvalt en er geen dubbel komt. Zonder: volgendeTermijn(sub) (levering 118, P9-12). */
 export async function hervatIncasso(env, sub, origin, { startDate = null } = {}) {
   /* Een vooruitbetaald jaar heeft geen incasso om te hervatten: het is al
      betaald, en er is geen mandaat. `true` en niet `false` — er is niets
@@ -778,7 +791,11 @@ async function maakHervatAbonnement(env, sub, origin, { startDate, times }) {
       valueEuros: subMaandBruto(sub) / 100,
       description: `VISUAILS ${sub.plan} — ${sub.ref}`,
       webhookUrl: `${origin}/api/webhook/mollie`,
-      startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(startDate || '')) ? startDate : eersteTermijn(),
+      /* levering 118 (17 november 2026, proefronde P9-12): zonder startDate de gewone termijndag
+         (volgendeTermijn, uit started_at), niet "vandaag + een maand". Hervatten op 12 februari met
+         termijndag 9 gaf in Mollie 12 maart, terwijl Studio en de bevestigingsmail "het gewone ritme"
+         (9 maart) noemen. Studio rekent met dezelfde termijnEinde(); nu noemen ze dezelfde dag. */
+      startDate: /^\d{4}-\d{2}-\d{2}$/.test(String(startDate || '')) ? startDate : volgendeTermijn(sub),
       times,
     });
     if (!sc?.id) throw new Error('Mollie gaf geen abonnements-id terug');

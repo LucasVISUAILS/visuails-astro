@@ -38,9 +38,19 @@
  * poster is de eerste frame van de clip. Een foto die er alleen op lijkt, is een
  * voorbeeld van werk dat niet bestaat — dezelfde soort belofte die vandaag van
  * /video is afgehaald.
+ *
+ * ── LEVERING 117 (17 november 2026, proefronde P4-01): GEEN LEGE VAKKEN MEER ──
+ *
+ * De proefronde las de lege staat anders dan hij bedoeld was: voor de videoklant is
+ * deze pagina het beslismoment, en een lege speler met "Nog niet opgenomen" zegt
+ * "bestaat nog niet". Lucas koos het advies: zolang er geen eigen clips zijn, staan
+ * er geen lege vakken. Er komen alleen voorbeelden in beeld die klaar zijn
+ * (isReady: clip én poster). Is er bij een stijl nog geen enkele, dan blijft van
+ * deze sectie alleen de leverlijst over, onder een eigen kop ("De bestanden").
+ * Zodra Lucas een clip en een poster invult in src/data/videoExamples.js, komt het
+ * vak met de speler vanzelf terug; er hoeft hier dan niets te veranderen.
  */
 import { examplesFor, isReady, VIDEO_RATIOS, VIDEO_FORMAT, videoFilename } from '../data/videoExamples.js';
-import { ikoon, IKOON } from '../data/iconen.js';
 
 interface Props {
   lang: 'en' | 'nl';
@@ -50,14 +60,16 @@ interface Props {
 const { lang, slug, name } = Astro.props;
 const nl = lang === 'nl';
 const items = examplesFor(slug);
+/* levering 117 (P4-01): alleen wat klaar is, komt in beeld; geen lege vakken. */
+const klaar = items.filter((e) => isReady(e));
 
 const T = nl ? {
   pil: 'Clips',
   /* "Motion in motion" (doorloop 90, S7): bij de stijl Motion alleen "In beweging". */
   h: /motion|beweging/i.test(name) ? 'In beweging' : `${name} in beweging`,
   lead: 'Klik om af te spelen.',
-  soonLabel: 'Nog niet opgenomen',
-  soonBody: 'Komt eraan:',
+  /* levering 117 (P4-01): zonder clips is de leverlijst de sectie; pil en kop voor die stand. */
+  leverPil: 'Bestanden',
   deliverH: 'De bestanden',
   deliverLead: `Standaard verticaal 9:16, als ${VIDEO_FORMAT.name}. Een andere verhouding kan op aanvraag en spreken we af in de offerte; bestel je die, dan heet het bestand zoals hieronder.`,
   fileH: 'Bestand',
@@ -68,8 +80,7 @@ const T = nl ? {
   pil: 'Clips',
   h: /motion/i.test(name) ? 'See it move' : `${name} in motion`,
   lead: 'Click to play.',
-  soonLabel: 'Not filmed yet',
-  soonBody: 'Coming:',
+  leverPil: 'Files',
   deliverH: 'The files',
   deliverLead: `Vertical 9:16 as standard, as ${VIDEO_FORMAT.name}. Another ratio is on request and agreed in the quote; if you order one, the file is named as below.`,
   fileH: 'File',
@@ -87,44 +98,39 @@ const ratioNum = (id: string) => { const [a, b] = ratioCss(id).split('/').map((x
 const metaLine = (e: { seconds: number; ratio: string }) =>
   `${e.seconds} ${nl ? 'seconden' : 'seconds'} · ${ratioOf(e.ratio).name[lang]}`;
 /* "Klik om af te spelen" staat er alleen als er iets te spelen valt. */
-const ietsTeSpelen = items.some((e) => isReady(e));
-const SPEEL = ikoon('afspelen');
+const ietsTeSpelen = klaar.length > 0;
 const kopId = `vx-${slug}`;
 ---
 
 {items.length > 0 && (
   <section class="h-sec h-vx-sec" aria-labelledby={kopId}>
+    {/* levering 117 (P4-01): de kop met "in beweging" alleen als er iets beweegt; anders is de leverlijst de sectie. */}
     <header class="h-sec-kop h-in">
       <div>
-        <p class="h-pil"><span>{T.pil}</span></p>
-        <h2 id={kopId} class="h-kop h-h2">{T.h.startsWith(name) ? <><span class="l">{name}</span> {T.h.slice(name.length).trim()}.</> : <><span class="l">{T.h}</span>.</>}</h2>
+        <p class="h-pil"><span>{ietsTeSpelen ? T.pil : T.leverPil}</span></p>
+        {ietsTeSpelen
+          ? <h2 id={kopId} class="h-kop h-h2">{T.h.startsWith(name) ? <><span class="l">{name}</span> {T.h.slice(name.length).trim()}.</> : <><span class="l">{T.h}</span>.</>}</h2>
+          : <h2 id={kopId} class="h-kop h-h2"><span class="l">{T.deliverH}</span>.</h2>}
       </div>
       {ietsTeSpelen && <p class="h-vs-kopzin">{T.lead}</p>}
     </header>
 
-    <div class="h-vx-rij">
-      {items.map((e, n) => (
+    {ietsTeSpelen && <div class="h-vx-rij">
+      {klaar.map((e, n) => (
         <figure class="vx h-vx h-in" style={`--vx-ratio:${ratioCss(e.ratio)};--vx-r:${ratioNum(e.ratio)};--d:${n}`}>
           <div class="h-vx-grond">
-            {isReady(e) ? (
-              /* preload="none" is het hele punt — zie de kop. playsinline zodat een
-                 iPhone hem in de pagina speelt in plaats van het scherm over te nemen. */
-              <video
-                class="vx-media"
-                controls
-                preload="none"
-                playsinline
-                poster={e.poster}
-                aria-label={e.alt[lang]}
-              >
-                <source src={e.file} type={`video/${VIDEO_FORMAT.ext}`} />
-              </video>
-            ) : (
-              <div class="vx-media vx-soon">
-                <span class="h-cirkel h-cirkel-wit h-vx-speel" aria-hidden="true" set:html={SPEEL} />
-                <span class="vx-soon-label">{T.soonLabel}</span>
-              </div>
-            )}
+            {/* preload="none" is het hele punt — zie de kop. playsinline zodat een
+                 iPhone hem in de pagina speelt in plaats van het scherm over te nemen. */}
+            <video
+              class="vx-media"
+              controls
+              preload="none"
+              playsinline
+              poster={e.poster}
+              aria-label={e.alt[lang]}
+            >
+              <source src={e.file} type={`video/${VIDEO_FORMAT.ext}`} />
+            </video>
           </div>
           {/* De omschrijving staat onder het kader en niet erin: in een verticaal kader
                van 250 px wordt een zin van dertig woorden een kolom van vier letters, en
@@ -133,18 +139,19 @@ const kopId = `vx-${slug}`;
           <figcaption class="vx-cap">
             <strong>{e.title[lang]}</strong>
             <span class="vx-meta">{metaLine(e)}</span>
-            <span class="vx-alt">{isReady(e) ? '' : `${T.soonBody} `}{e.alt[lang]}</span>
+            <span class="vx-alt">{e.alt[lang]}</span>
           </figcaption>
         </figure>
       ))}
-    </div>
+    </div>}
 
     {/* ── DE LEVERLIJST ────────────────────────────────────────────────────
          Exacte bestandsnamen, uit videoFilename() en niet hier getypt: dan kan
          deze lijst niet iets anders beloven dan de levering aanlevert. */}
     <div class="vx-deliver h-vx-lever h-in">
       <div class="h-vx-lever-kop">
-        <h3>{T.deliverH}</h3>
+        {/* zonder clips staat "De bestanden" al als h2 boven deze kaart */}
+        {ietsTeSpelen && <h3>{T.deliverH}</h3>}
         <p class="vx-deliver-lead">{T.deliverLead}</p>
       </div>
       <table class="vx-table">

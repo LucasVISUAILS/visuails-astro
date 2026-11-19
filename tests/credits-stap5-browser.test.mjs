@@ -23,7 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { browserPad } from '../scripts/lib/browserpad.mjs';
-import { SERVICE_CREDITS, PLAN_CREDITS } from '../src/data/pricing.js';
+import { SERVICE_CREDITS, PLAN_CREDITS, VOORRANG } from '../src/data/pricing.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -161,7 +161,19 @@ for (const [url, taal] of [['/nl/start/catalog', 'nl'], ['/start/catalog', 'en']
         await page.locator('[data-pl-credits]').scrollIntoViewIfNeeded();
         await page.screenshot({ path: path.join(OUT, `credits-stap5-genoeg-${taal}-${breed}-${donker ? 'donker' : 'licht'}.png`) });
 
-        /* 2 · voorrang aan: niet met credits, via Mollie. */
+        ok(`${tag}: geen scriptfouten (genoeg)`, fouten, []);
+        await page.close();
+      }
+
+      /* 2 · voorrang aan: niet met credits, via Mollie.
+         Levering 117 (17 november 2026, P8-01 = a): voorrang bestaat alleen nog onder de datumgrens
+         (VOORRANG.maxProducten = WINDOW_THRESHOLD - 1). Bij 12 producten staat het vinkje er niet meer;
+         daarom hier een eigen bestelling van 9 catalogsets (36 credits, ruim binnen de 120). */
+      {
+        const { page, fouten } = await open(url, { breed, donker, me: ME(MET, 5000) });
+        await zetAantal(page, VOORRANG.maxProducten);
+        ok(`${tag}: stap 5 bereikt (${VOORRANG.maxProducten} producten)`, await naarStap5(page), 5);
+        ok(`${tag}:   eerst met credits`, await tekst(page, '[data-pl-submit]'), taal === 'nl' ? 'Bestellen met credits' : 'Order with credits');
         await page.evaluate(() => { const v = document.querySelector('input[name="voorrang"]'); if (v) { v.checked = true; v.dispatchEvent(new Event('change', { bubbles: true })); } });
         await page.waitForTimeout(200);
         const voorrang = await tekst(page, '[data-pl-credits-kop]') || '';

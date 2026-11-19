@@ -33,6 +33,8 @@ import { isBeeldHandtekening, UPLOAD_DAG } from '../../functions/api/upload.js';
 import { ontbrekendRegels, ontbrekendVoorOrder, vakNaam as ontbreektVakNaam, bijbesteldeHoeken } from './ontbreekt.js';
 import { SHOTS as FOTOVAKKEN } from '../data/shots.js';
 import { notifyFotosToegevoegd } from './notify.js';
+/* levering 118 (17 november 2026, proefronde L-16): de voorrangstermijn begint als de foto's compleet zijn. */
+import { markeerFotosCompleet } from './fotosCompleet.js';
 
 /** De diensten met fotovakken per product. */
 export const NASTUUR_DIENSTEN = new Set(['catalog', 'lifestyle', 'drop']);
@@ -139,6 +141,8 @@ export async function bewaarVakFotos(env, { order, form, ip, bron = 'privelink' 
   await env.DB.prepare("INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, 'customer')")
     .bind(orderId, order.status, regel).run().catch(() => {});
   const nogOpen = await ontbrekendVoorOrder(env.DB, orderId).catch(() => null);
+  /* levering 118 (L-16): niets meer open, dan loopt de voorrangstermijn vanaf nu (als hij op foto's wachtte). */
+  await markeerFotosCompleet(env, orderId, nogOpen);
   /* De studiomail "Foto's binnen", zoals bij nasturen in Studio. */
   await notifyFotosToegevoegd(env, {
     orderId, count: uit.aantal,

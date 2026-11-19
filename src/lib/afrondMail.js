@@ -85,7 +85,8 @@ export function afrondEmail({ lang = 'nl', order = {}, link = '', reden = 'goedg
   const d = leverDatumsVan(order);
   const body = [
     h1(t.kop, kenmerk('bestelling', order.ref || '', taal)),
-    p(greeting(order.name, taal, { nu, land: order.country || '' })),
+    /* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam. */
+    p(greeting(order.name, taal, { nu, land: order.country || '', voornaam: order.first_name })),
     p(esc(reden === 'stil' ? t.stil : t.goedgekeurd)),
     p(d ? t.bewaar(datum(d.bewaarTot, taal)) : t.bewaarZonder),
     link ? linkLine(link, t.link) : '',
@@ -111,7 +112,8 @@ export async function mailAfgerond(env, orderId, { reden = 'goedgekeurd', nu = n
   let o = null;
   try {
     o = await env.DB.prepare(
-      `SELECT id, ref, email, name, lang, country, service, status, closed_at,
+      /* levering 119 (18 november 2026, proefronde A0-01): ook first_name, voor de aanhef. */
+      `SELECT id, ref, email, name, first_name, lang, country, service, status, closed_at,
               delivery_mailed_at, delivered_at, reopened_at
          FROM orders WHERE id = ?1`
     ).bind(orderId).first();
@@ -119,7 +121,7 @@ export async function mailAfgerond(env, orderId, { reden = 'goedgekeurd', nu = n
     /* Zonder reopened_at (migratie 0066 niet gedraaid): dan zonder. */
     try {
       o = await env.DB.prepare(
-        `SELECT id, ref, email, name, lang, country, service, status, closed_at, delivery_mailed_at, delivered_at
+        `SELECT id, ref, email, name, first_name, lang, country, service, status, closed_at, delivery_mailed_at, delivered_at
            FROM orders WHERE id = ?1`
       ).bind(orderId).first();
     } catch { o = null; }

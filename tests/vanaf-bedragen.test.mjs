@@ -37,9 +37,10 @@ function tekst(html) {
 }
 
 console.log('\nde regel zelf (pricing.js)');
-ok('NL, beide diensten: precies de regel die /start had',
+/* levering 118 (17 november 2026, proefronde P2-12): de regel noemt nu ook het lage bedrag zelf, in plaats van "het bedrag hierboven". */
+ok('NL, beide diensten: beide bedragen, voor één product en vanaf 20',
   eenProductRegel('nl'),
-  `Eén product kost ${euro(ladderRate('catalog', 1), 'nl')} bij catalog of ${euro(ladderRate('lifestyle', 1), 'nl')} bij lifestyle; het tarief zakt naarmate je meer bestelt, tot het bedrag hierboven vanaf 20 producten.`);
+  `Eén product kost ${euro(ladderRate('catalog', 1), 'nl')} bij catalog of ${euro(ladderRate('lifestyle', 1), 'nl')} bij lifestyle; vanaf 20 producten is dat ${euro(ladderFloor('catalog'), 'nl')} en ${euro(ladderFloor('lifestyle'), 'nl')} per product.`);
 ok('EN, één dienst noemt alleen dat bedrag', eenProductRegel('en', ['lifestyle']).startsWith(`One product costs ${euro(ladderRate('lifestyle', 1), 'en')};`));
 
 const PAGINAS = [
@@ -93,7 +94,10 @@ for (const p of PAGINAS) {
   ok(`${p.url}: er staat minstens één vanaf-bedrag`, vanaf.length > 0);
   ok(`${p.url}: elk vanaf-bedrag is de onderste trede (${[...new Set(vanaf)].join(', ')})`, vanaf.every((b) => vloeren.has(b)));
   ok(`${p.url}: nergens "vanaf" met het tarief van één product`, vanaf.filter((b) => instap.has(b)), []);
-  ok(`${p.url}: de ene uitlegregel staat er${p.kort ? ' (de korte vorm)' : ''}`, t.includes(p.kort ? kort(p.taal) : eenProductRegel(p.taal, p.diensten)));
+  /* levering 118 (17 november 2026, P2-12, hersteller H): op /nl/catalog en /nl/lifestyle staat de regel in de feiten, in
+     hoofdletters, en begint dan met "Één" (eenProductRegel(…, { hoofdletters: true })). Dezelfde regel, anders gespeld. */
+  ok(`${p.url}: de ene uitlegregel staat er${p.kort ? ' (de korte vorm)' : ''}`, p.kort ? t.includes(kort(p.taal))
+    : [eenProductRegel(p.taal, p.diensten), eenProductRegel(p.taal, p.diensten, { hoofdletters: true })].some((r) => t.includes(r)));
 }
 
 console.log('\nde bron');

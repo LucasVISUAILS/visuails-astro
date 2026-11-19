@@ -55,6 +55,8 @@
 import { offsitePage } from '../../src/lib/offsite.js';
 import { aanhefTekst } from '../../src/lib/aanhef.js';
 import { readCalendar } from '../../src/lib/agenda.js';
+/* levering 118 (17 november 2026, proefronde L-16): voorrang loopt vanaf betaald én foto's compleet. */
+import { heeftVoorrang } from '../../src/data/pricing.js';
 import { aftercare, turnaround, tierRow, clause, shouldPromptUpgrade, upgradePrompt, vatPercent, tierFor, FORM_MAX_PRODUCTS, voorrangZin, VOORRANG, VIDEO_OP_AANVRAAG, SAMPLE_SERVICE, LIFESTYLE_IMAGES, LIFESTYLE_BEELDEN_VELD, voorrangWerkdagen, voorrangAgendaOpen } from '../../src/data/pricing.js';
 import { videoStyles as VIDEO_STYLES } from '../../src/data/videoStyles.js';
 /* Dezelfde bron als de swatches op /test-sample — zie de opschoning van de
@@ -82,8 +84,10 @@ import {
 } from '../../src/data/capacity.js';
 import {
   ORDER_QUESTIONS, isProductQuestionId, productQuestion,
+  /* levering 119 (18 november 2026, proefronde P10-02): dezelfde grens als het formulier. */
+  PRODUCT_NAAM_MAX,
 } from '../../src/data/attributes.js';
-import { isWellFormedBatch, listBatch } from '../../src/lib/uploads.js';
+import { isWellFormedBatch, listBatch, batchPrefix } from '../../src/lib/uploads.js';
 import { normalizeEmail, normalizePhone } from '../../src/lib/payer.js';
 import { proefGebruikt } from '../../src/lib/proefGebruikt.js';
 import { voorkeurMet } from '../../src/data/contactvoorkeur.js';
@@ -107,13 +111,21 @@ import { ontbrekendeFotos, ontbrekendRegels, vakNaam } from '../../src/lib/ontbr
 import { NASTUUR_DIENSTEN } from '../../src/lib/nasturen.js';
 /* De klant bereiken bij foto's die ontbreken (punt 7.05): dezelfde waLink() als /admin. */
 import { waLink, contactMail, waNummer } from '../../src/lib/waLink.js';
-import { uitgesteldSleutel, stuurUitgesteld } from '../../src/lib/uitgesteld.js';
-import { SHOT_IDS, isRefShotId, isExtraShotId, isContextShotId } from '../../src/data/shots.js';
+import { uitgesteldSleutel, stuurUitgesteld, bewaarOverzicht } from '../../src/lib/uitgesteld.js';
+import { SHOT_IDS, isRefShotId, isExtraShotId, isContextShotId, MIN_LANGE_ZIJDE } from '../../src/data/shots.js';
 /* De checklistmail (subscriberEmail) leest de fotogids uit dezelfde bron als
    /upload-guidelines en de pdf — punt 5.07, 8 oktober 2026. */
 import { fotogids } from '../../src/data/fotogids.js';
 import { rows as mailRows } from '../../src/lib/mailTemplate.js';
 import { createTestSampleMolliePayment, createOrderMolliePayment, isTestmodus } from '../../src/lib/mollie.js';
+import { markeerProefbestelling } from '../../src/lib/betaallink.js';
+import { merkmodelInAbonnement } from '../../src/lib/slots.js';
+/* levering 119 (18 november 2026, proefronde W2-07): de regelnamen van de factuur voor de opbouw in de melding. */
+import { factuurRegels } from '../../src/lib/invoice.js';
+/* levering 119 (proefronde W2-12 en P9-05): de brief van een aanvraag in gewone woorden, en de ene zin over de link. */
+import { aanvraagBriefRegels, aanvraagBriefStudio } from '../../src/lib/aanvraagBrief.js';
+import { deelZin } from '../../src/lib/deelLink.js';
+import { notifyPaid } from '../../src/lib/notify.js';
 /* PAYABLE_SERVICES en ladderKey stonden hier ook en zijn 23 augustus 2026
    weggehaald: ze werden alleen nog door de servercopie van tierFor() gebruikt,
    en die is weg (zie de noot verderop). isPayableService blijft — zie de lange
@@ -313,7 +325,9 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     if (form.get('mode') === 'json') {
       return json({ ok: false, error: 'rate', retryAfter: rate.retryAfter }, 429, { 'retry-after': retry });
     }
-    return new Response(null, { status: 429, headers: { 'retry-after': retry } });
+    /* levering 118 (17 november 2026, proefronde P4-08): geen lege witte pagina meer, maar terug naar het
+       formulier met ?error=rate, zoals bij de botcheck. Het formulier toont dan [data-form-refusal="rate"]. */
+    return terugNaTeVaak(request, form, retry);
   }
 
   // A multipart field is either a string or a File, and toString() on a File
@@ -508,7 +522,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       if (!streng.allowed) {
         const retry = String(Math.max(1, streng.retryAfter || 60));
         if (wantsJson) return json({ ok: false, error: 'rate', retryAfter: streng.retryAfter }, 429, { 'retry-after': retry });
-        return new Response(null, { status: 429, headers: { 'retry-after': retry } });
+        /* levering 118 (P4-08): ook hier terug naar het formulier in plaats van een witte pagina. */
+        return terugNaTeVaak(request, form, retry);
       }
     }
   }
@@ -867,7 +882,9 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     /* Het formulier heet het veld `topic` (order-support, new-order,
        custom-request, other); hier stond `subject`, dus elk bericht heette
        "Contact form". */
-    const TOPICS = { 'order-support': 'Vraag over een bestelling', 'new-order': 'Nieuwe bestelling', 'custom-request': 'Iets op maat', other: 'Anders' };
+    /* levering 118 (17 november 2026, proefronde P4-07): het onderwerp "Hooks" van /contact (de knoppen op /hooks). */
+    /* levering 119 (18 november 2026, proefronde P6-22): het onderwerp "Privacy of je gegevens" (ContactHal), vóór hooks, zodat hooks en other naast elkaar blijven. */
+    const TOPICS = { 'order-support': 'Vraag over een bestelling', 'new-order': 'Nieuwe bestelling', 'custom-request': 'Iets op maat', privacy: 'Privacy of je gegevens', hooks: 'Hooks', other: 'Anders' };
     const onderwerp = TOPICS[String(get('topic') || '').trim()] || get('subject') || 'Contactformulier';
     const kanaal = contactPreference === 'whatsapp' ? 'WhatsApp' : 'E-mail';
     await safe(() => env.DB && env.DB
@@ -917,7 +934,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     const nlC = lang === 'nl';
     /* Doorloop 27 (B30): de Engelse kopie noemde het onderwerp in het
        Nederlands ("Vraag over een bestelling"). Lucas' mail blijft Nederlands. */
-    const TOPICS_EN = { 'order-support': 'Question about an order', 'new-order': 'New order', 'custom-request': 'Something custom', other: 'Other' };
+    /* levering 119 (18 november 2026, proefronde P6-22): ook hier het onderwerp privacy. */
+    const TOPICS_EN = { 'order-support': 'Question about an order', 'new-order': 'New order', 'custom-request': 'Something custom', privacy: 'Privacy or your data', hooks: 'Hooks', other: 'Other' };
     const vasteOnderwerp = (nlC ? TOPICS : TOPICS_EN)[String(get('topic') || '').trim()] || '';
     /* Doorloop 27 (B29): WhatsApp gekozen zonder nummer. Het formulier vraagt het
        nummer nu wel, maar zonder script (of met een ongeldig nummer) zet
@@ -931,7 +949,10 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       html: shell({
         lang: nlC ? 'nl' : 'en',
         preheader: nlC ? 'Je hoort snel van ons.' : 'You will hear from us soon.',
-        body: h1(nlC ? 'Je bericht is binnen' : 'Your message is in', vasteOnderwerp ? esc(vasteOnderwerp) : undefined)
+        /* levering 119 (18 november 2026, proefronde P6-22): het onderwerp als gewone regel "Onderwerp: …" onder de kop, niet als losse grijze kop.
+           Het bericht zelf staat er bewust niet in ("Je schreef: …" niet gedaan): dat botst met o04 van 8 oktober, zie de noot hierboven. */
+        body: h1(nlC ? 'Je bericht is binnen' : 'Your message is in')
+          + (vasteOnderwerp ? p(`${nlC ? 'Onderwerp' : 'Topic'}: ${esc(vasteOnderwerp)}`) : '')
           + p(nlC
             ? `Bedankt${groet}. We hebben je bericht en antwoorden ${kanaal === 'WhatsApp' ? 'via WhatsApp' : wildeWhatsapp ? 'per mail (je koos WhatsApp, maar er stond geen telefoonnummer bij)' : 'per mail'}, meestal binnen het uur; buiten openingstijden de volgende ochtend.`
             : `Thank you${groet}. We have your message and reply ${kanaal === 'WhatsApp' ? 'on WhatsApp' : wildeWhatsapp ? 'by email (you chose WhatsApp, but there was no phone number)' : 'by email'}, usually within the hour; outside opening hours the next morning.`),
@@ -1074,7 +1095,16 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
        (doorloop 27, B41): het formulier vraagt hem al in stap 3 via
        /api/proef-check, en dat moet hetzelfde antwoord zijn als hier. Het
        registratienummer telt mee (23 september 2026, zie regKey()). */
-    const { used, checked } = await proefGebruikt(env, { email, phone, reg: get('reg_number') });
+    /* levering 118 (17 november 2026, proefronde B1-01): ook bedrijfsnaam + postcode en btw-nummer. Een btw-nummer
+       telt als hard (zoals het KVK-nummer); naam + postcode is een twijfelgeval: aannemen, maar op de nakijklijst
+       (Lucas, lijst 127: advies b). Zie de kop in src/lib/proefGebruikt.js. */
+    const { used, checked, twijfel, twijfelRef } = await proefGebruikt(env, {
+      email, phone, reg: get('reg_number'), brand, postcode: addressParts.postal || get('postal_code'), vat: get('vat'),
+    });
+    if (checked && !(used > 0) && twijfel > 0) {
+      details.proef_twijfel = `zelfde bedrijfsnaam en postcode als eerdere betaalde proef ${twijfelRef || '(onbekend)'}`;
+      console.log('[order] proef aangenomen, maar op de nakijklijst:', details.proef_twijfel);
+    }
 
     if (checked && used > 0) {
       console.log('[order] tweede proefvisual geweigerd voor', email, `(${used} betaald)`);
@@ -1177,10 +1207,58 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     details.uploads = String(staged.length);
     details.upload_batch = batch;
   }
+  /* levering 118 (17 november 2026, proefronde P2-06): foto's die /api/upload te klein vond (onder MIN_LANGE_ZIJDE aan
+     de lange kant). Niet geweigerd; /admin ("Wat de klant koos") en de studiomail noemen ze, zodat de studio om het
+     origineel kan vragen. */
+  {
+    const klein = staged.filter((f) => f.klein);
+    if (klein.length) details.te_klein = klein.slice(0, 40).map((f) => `${String(f.name || '').slice(0, 80)}${f.px ? ` (${f.px.replace('x', ' × ')} px)` : ''}`).join('; ');
+  }
+  /* levering 118 (17 november 2026, proefronde L-16): voorrang met foto's die nog ontbreken ("foto's later", of een
+     leeg verplicht vak). Dan loopt de termijn pas als ze binnen zijn: `fotos_wacht` hier, `fotos_compleet_at` bij de
+     laatste upload (src/lib/fotosCompleet.js). Zonder deze vlag rekent alles vanaf de betaling, zoals altijd. */
+  if (heeftVoorrang(details) && svc !== 'test-sample') {
+    const lijst = staged.length
+      ? ontbrekendeFotos({ productCount: products, details, files: staged.map((f) => ({ kind: 'upload', product_key: f.product || null, shot: f.shot || null })) })
+      : null;
+    if (!staged.length || (Array.isArray(lijst) && lijst.length)) details.fotos_wacht = 1;
+  }
+
+  /* ── DEZE FOTO'S HOREN AL BIJ EEN BESTELLING — levering 118 (17 november 2026, proefronde P10-03) ────────────
+     Twee tabbladen met hetzelfde concept gaven twee bestellingen met dezelfde foto's, en beide werden betaald. De
+     verstuursleutel hierboven (D10) vangt dat niet: elk tabblad heeft zijn eigen sleutel. De uploadbatch is wél
+     dezelfde. Hangt een bestand uit deze batch al aan een bestelling die niet geannuleerd is, dan krijgt deze POST
+     het antwoord van die bestelling (antwoordVoorBestaande: betaald → de bedankpagina, anders /api/order-pay voor
+     dezelfde bestelling) en wordt er niets nieuws gemaakt. Twee bestellingen op dezelfde sleutels zijn ook
+     gevaarlijk: wie de ene opruimt, raakte de foto's van de andere (admin.js, ronde 91 D04).
+     Een vergelijking van het begin van de sleutel en geen LIKE (D1 staat een patroon van hooguit 50 tekens toe;
+     zie levering 117, B1-12). Kan de vraag niet gesteld worden, dan gewoon door: nooit een bestelling verliezen
+     om een controle. Twee POSTs op precies hetzelfde moment kunnen er allebei langs; dat restje vangt de webhook
+     niet, en staat in de notities van levering 118. */
+  if (staged.length && env?.DB) {
+    const prefix = batchPrefix(batch);
+    const al = await env.DB.prepare(
+      `SELECT o.id FROM files f JOIN orders o ON o.id = f.order_id
+        WHERE substr(f.r2_key, 1, ?2) = ?1 AND o.status <> 'cancelled'
+        ORDER BY o.id DESC LIMIT 1`
+    ).bind(prefix, prefix.length).first().catch(() => null);
+    if (al && al.id) {
+      const antwoord = await antwoordVoorBestaande(env, Number(al.id), { back, lang, wantsJson });
+      if (antwoord) {
+        console.log('[order] uploadbatch hangt al aan bestelling', al.id, '— geen tweede bestelling (P10-03)');
+        return antwoord;
+      }
+    }
+  }
 
   // THE GATE, AGAIN, AGAINST LIVE ROWS. See note 1 at the top of this file.
   const asked = { start: get('window_start'), end: get('window_end') };
-  const gate = await clearRequestedWindow(env, { tier, products, service: svc, asked });
+  /* levering 118 (17 november 2026, proefronde P3-08): de extra hoeken tellen mee in de agenda. Dezelfde telling
+     als de prijs verderop (`angles` × producten), hier al nodig voor de poort. */
+  const extraBeelden = isUitbreidbaar(svc) && Number.isInteger(products)
+    ? TELBARE_ANGLE_IDS.filter((id) => get(`angle_${id}`) !== '').length * products
+    : 0;
+  const gate = await clearRequestedWindow(env, { tier, products, service: svc, asked, extras: extraBeelden });
 
   // The window the client chose filled while they were filling in the form. In
   // the pipeline this is recoverable and worth recovering: their answers are
@@ -1216,11 +1294,30 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   const sessieVanDitAdres = !!(sessieKlant && normalizeEmail(sessieKlant.email) === normalizeEmail(email));
   let customerId = null;
   let klantNieuw = false;
+  /* levering 117 (17 november 2026, proefronde P12-01): ingelogd vult een bestelling de lege accountvelden
+     alleen als het vinkje "Bewaar deze gegevens" aan staat, OF als de bestelling voor HETZELFDE merk is als
+     het account. Wie ingelogd voor een ander merk bestelde, kreeg anders diens btw-nummer en adres in de lege
+     velden van zijn eigen account, en dus "op je volgende factuur" een mengsel van twee bedrijven. Bestelt
+     het merk voor zichzelf (een KVK-nummer dat bij de eerste aanvraag nog niet gevraagd werd), dan is er
+     niets te mengen en mag het lege veld gevuld worden (tests/eigen-stijl.test.mjs, blok 4b). Een account
+     zonder merk telt niet als hetzelfde merk. De bestelling zelf houdt altijd haar eigen gegevens. */
+  const merkVorm = (m) => String(m || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  let zelfdeMerk = false;
+  if (sessieVanDitAdres && !saveRequested && merkVorm(brand)) {
+    await safe(async () => {
+      const rij = await env.DB?.prepare('SELECT brand FROM customers WHERE email = ?1').bind(email).first();
+      zelfdeMerk = !!merkVorm(rij?.brand) && merkVorm(rij.brand) === merkVorm(brand);
+    });
+  }
+  const accountBijwerken = sessieVanDitAdres && (saveRequested || zelfdeMerk);
   await safe(async () => {
-    const k = await klantUitFormulier(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }, { bijwerken: sessieVanDitAdres });
+    const k = await klantUitFormulier(env, { email, name, brand, phone, website, vat, country, address, firstName, lastName, noVat, saveRequested, contactPreference, ...addressParts }, { bijwerken: accountBijwerken });
     customerId = k.id; klantNieuw = k.nieuw;
   });
   const metSessie = !!(sessieVanDitAdres && customerId && Number(sessieKlant.customer_id) === Number(customerId));
+  /* levering 118 (17 november 2026, proefronde B1-05): een bestelling zonder sessie op een adres dat al een account had,
+     staat pas na betalen in diens Studio (vreemdeOnbetaald() in src/lib/account.js). */
+  if (customerId && !klantNieuw && !metSessie) details.zonder_inlog = 1;
   /* HET KVK-NUMMER OP DE KLANT — 4 september 2026 (migratie 0043). Een losse
      UPDATE en geen zestiende kolom in upsertWide(): die valt bij een ontbrekende
      kolom al terug op een smallere query, en een derde variant zou het gat
@@ -1229,8 +1326,10 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
      upsertWide): een formulier zonder inlog vult alleen lege velden. */
   {
     const regNr = get('reg_number').trim().slice(0, 40);
-    /* Alleen bij een nieuwe klant, of met de sessie van deze klant (19 oktober 2026). */
-    if (regNr && customerId && (klantNieuw || metSessie)) {
+    /* Alleen bij een nieuwe klant, of met de sessie van deze klant (19 oktober 2026).
+       levering 117 (17 november 2026, proefronde P12-01): en dan alleen met het vinkje "Bewaar" of voor hetzelfde
+       merk, net als de andere accountvelden hierboven; anders komt het KVK-nummer van merk B op het account van A. */
+    if (regNr && customerId && (klantNieuw || (metSessie && accountBijwerken))) {
       await safe(() => env.DB.prepare(
         `UPDATE customers SET reg_number = ?1
           WHERE id = ?2 AND (reg_number IS NULL OR reg_number = '')`
@@ -1658,10 +1757,19 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
 
      `details.style` en niet een aparte draadwaarde: welke soort clip het is,
      staat waar een look bij lifestyle ook staat. Zie de kop van quoteVideo(). */
+  /* levering 117 (17 november 2026, proefronde P5-12): het merkmodel is inbegrepen bij Merk (en Pro met een
+     jaar). Alleen met de sessie van deze klant (via /account/order), net als credits en tegoed: wie alleen het
+     e-mailadres van een abonnee kent, mag zijn inbegrepen merkmodel niet opmaken. Zie merkmodelInAbonnement(). */
+  const merkmodelAbo = (svc === 'brand-model' && sessieKlant && customerId
+    && Number(sessieKlant.customer_id) === Number(customerId)
+    && normalizeEmail(sessieKlant.email) === normalizeEmail(email))
+    ? await safe(() => merkmodelInAbonnement(env, customerId)) || null
+    : null;
+  if (merkmodelAbo) details.merkmodel_inbegrepen = `${merkmodelAbo.plan}/${merkmodelAbo.term}`;
   const quote = svc === 'test-sample'
     ? quoteTestSample({ vatRate: vatCall.rate })
     : svc === 'brand-model'
-      ? quoteBrandModel({ vatRate: vatCall.rate })
+      ? quoteBrandModel({ vatRate: vatCall.rate, inbegrepen: !!merkmodelAbo })
       /* Zolang video op aanvraag is (VIDEO_OP_AANVRAAG in pricing.js), krijgt
          geen enkele clip hier een prijs — ook niet nu de gekozen stijl wél
          bewaard blijft. Tot 24 september was dat toevallig zo, omdat de stijl
@@ -1965,8 +2073,10 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
    * In safe(), want een ontbrekende migratie 0046 mag een aangenomen bestelling
    * niet alsnog laten omvallen. Wat er dan gebeurt is precies de oude situatie —
    * de bestelling telt als echt — en dat is zichtbaar op /admin/diagnose. */
+  /* levering 117 (17 november 2026, proefronde P5-08): dezelfde regel staat nu in één gedeelde functie
+     (markeerProefbestelling in src/lib/betaallink.js), die ook de op-maatofferte en het restant gebruiken. */
   if (orderId && isTestmodus(env)) {
-    await safe(() => env.DB.prepare('UPDATE orders SET testmodus = 1 WHERE id = ?1').bind(orderId).run());
+    await safe(() => markeerProefbestelling(env, orderId));
   }
 
   /*
@@ -2067,7 +2177,7 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   // fact rather than a guess. See loseRaceIfOversold for why the lower id wins.
   let raced = false;
   if (gate.window && orderId) {
-    raced = await loseRaceIfOversold(env, { orderId, products, service: svc, window: gate.window });
+    raced = await loseRaceIfOversold(env, { orderId, products, service: svc, window: gate.window, extras: extraBeelden });
   }
   const finalWindow = raced ? null : gate.window;
 
@@ -2095,6 +2205,14 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     ).bind(orderId, customerId || null, eventNote({
       tier, window: finalWindow, raced, uploads: staged.length, upgrade: upgradeCount,
     })).run().catch(() => {});
+    /* levering 118 (B1-01): een proef die op de nakijklijst hoort, krijgt een eigen logboekregel ('proef.twijfel').
+       /admin kan die lezen; zie de notities van levering 118. */
+    if (details.proef_twijfel) {
+      await env.DB.prepare(
+        `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+         VALUES (NULL, NULL, 'proef.twijfel', ?1, ?2, ?3)`
+      ).bind(orderId, customerId || null, `${ref}: ${details.proef_twijfel}. Aangenomen; even nakijken of het hetzelfde bedrijf is.`).run().catch(() => {});
+    }
   });
 
   // The staged objects become rows now that there is an order to hang them on.
@@ -2172,7 +2290,25 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     const to = env.NOTIFY_EMAIL || 'hello@visuails.com';
     /* In het Nederlands, en "aanvraag" als er geen prijs is (24 september 2026):
        een videoaanvraag kwam binnen als "New video order". */
-    const subject = `${raced ? '[VENSTER KWIJT] ' : ''}${quote ? 'Nieuwe bestelling' : 'Nieuwe aanvraag'} · ${serviceLabel(svc, 'nl') || svc} — ${ref}`;
+    /* ── BETAALD OF NAKIJKEN, AL IN DE MELDING — levering 118 (17 november 2026, proefronde W2-08) ──────────
+       Deze mail gaat uit vóór de klant bij Mollie is, zonder betaalstand. Een bestelling die eerst nagekeken
+       moet worden (btw, zakelijk bewijs, VK, België zonder nummer) zag er net zo uit als een gewone. Nu zegt het
+       onderwerp "NAKIJKEN" en staat er bovenaan een vlak: nakijken (de klant wacht op de betaallink, dus op
+       jou) of nog niet betaald (de klant is naar Mollie; "Betaald" volgt als aparte mail). Dezelfde voorwaarden
+       als de betaallink hieronder (vatReview.payableNow en review.needsReview). */
+    const betaalbaar = !!quote && (isPayableService(svc) || svc === SAMPLE_SERVICE);
+    const nakijkenStudio = betaalbaar && !metCredits && !quote.inbegrepen && (!!review.needsReview || !vatReview.payableNow);
+    const betaalStand = !betaalbaar || metCredits || quote.inbegrepen ? null
+      : nakijkenStudio ? 'nakijken'
+        : volledigMetTegoed ? 'tegoed'
+          : 'open';
+    const nakijkRedenen = nakijkenStudio
+      ? [...(review.reasons || []), ...(!vatReview.payableNow ? (vatReview.reasons || []) : [])].filter((r, i, a) => r && a.indexOf(r) === i)
+      : [];
+    /* levering 119 (18 november 2026, proefronde W2-09): voorrang in het onderwerp. De termijn staat pas vast bij
+       betaald; die komt in het onderwerp van "Betaald" (notifyPaid in notify.js). */
+    const voorrangOnderwerp = heeftVoorrang(details) && svc !== SAMPLE_SERVICE ? 'VOORRANG · ' : '';
+    const subject = `${raced ? '[VENSTER KWIJT] ' : ''}${betaalStand === 'nakijken' || details.proef_twijfel ? 'NAKIJKEN · ' : ''}${voorrangOnderwerp}${quote ? 'Nieuwe bestelling' : 'Nieuwe aanvraag'} · ${serviceLabel(svc, 'nl') || svc} — ${ref}${betaalStand === 'open' ? ' · nog niet betaald' : ''}`;
     // The studio's copy gets the VAT verdict too. It is the only place a human
     // sees the order before the money moves, and "0% charged, VIES said yes,
     // here is the consultation number" is exactly the line an accountant asks
@@ -2180,13 +2316,18 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     const html = notifyEmail(ref, svc, { name, brand, email, phone, vat, website, country: effCountry, address: effAddress }, details, {
       tier, products, window: finalWindow, raced, asked, uploads: staged.length,
       upgrade: upgradeCount, files: staged, portal: portalLink,
-      vat: vatCall, vies, quote,
+      /* levering 118 (W2-10): `zonderNummer` als de klant geen btw-nummer invulde. */
+      vat: { ...vatCall, zonderNummer: !vatParts.number }, vies, quote,
       /* Betaald met credits (ronde B): de studiomail zegt het bovenaan. */
       credits: creditsMail,
       /* De knop "Open in /admin" (9.07). */
       admin: orderId ? `${requestOrigin(request)}/admin/orders/${orderId}/files` : null,
       /* De taal van de bestelling, voor de vaste tekst aan de klant (7.05). */
       lang,
+      /* levering 118 (W2-08): de betaalstand bovenaan. */
+      betaalStand, nakijkRedenen,
+      /* levering 118 (17 november 2026, proefronde W1-09): telefoon of WhatsApp gevraagd, dan een belknop bij de opmerking. */
+      contactVoorkeur: contactPreference,
     });
     await sendMail(env, { to, replyTo: email, subject, html });
   });
@@ -2304,7 +2445,27 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     /* 2.08: ook helemaal met tegoed betaald telt als eerste betaalde bestelling. */
     if (betaaldMetTegoed) await safe(() => vulVasteLookAan(env, orderId));
   }
-  if (orderId && quote && isPayableService(svc) && env.MOLLIE_API_KEY && !volledigMetTegoed && !metCredits
+  /* levering 117 (P5-12): een inbegrepen merkmodel kost niets en is daarmee meteen voldaan: geen Mollie,
+     geen factuur (het abonnement dekt hem), wel "betaald" zodat het werk begint en de studio het hoort. */
+  let merkmodelInbegrepen = false;
+  if (orderId && quote?.inbegrepen) {
+    merkmodelInbegrepen = !!(await safe(async () => {
+      const gezet = await env.DB.prepare(
+        `UPDATE orders SET payment_status = 'paid', payment_provider = 'abonnement', paid_at = datetime('now'), window_expires_at = NULL
+          WHERE id = ?1 AND COALESCE(payment_status, 'unpaid') NOT IN ('paid', 'refunded') RETURNING id`
+      ).bind(orderId).first();
+      if (!gezet) return false;
+      await env.DB.prepare('INSERT INTO order_events (order_id, status, note, actor) VALUES (?1, ?2, ?3, ?4)')
+        .bind(orderId, 'received', lang === 'nl' ? 'Inbegrepen in je abonnement: niets te betalen' : 'Included in your plan: nothing to pay', 'system').run();
+      await env.DB.prepare(
+        `INSERT INTO admin_log (admin_id, admin_email, action, order_id, customer_id, detail)
+         VALUES (NULL, NULL, 'payment.abonnement', ?1, ?2, ?3)`
+      ).bind(orderId, customerId || null, `${ref}: merkmodel inbegrepen in abonnement ${details.merkmodel_inbegrepen}`).run().catch(() => {});
+      await notifyPaid(env, orderId);
+      return true;
+    }));
+  }
+  if (orderId && quote && isPayableService(svc) && env.MOLLIE_API_KEY && !quote.inbegrepen && !volledigMetTegoed && !metCredits
       && vatReview.payableNow && !review.needsReview) {
     const payment = await safe(() => createOrderMolliePayment(env, {
       ref,
@@ -2322,6 +2483,8 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
       excludeIdeal: vatCall.rate === 0,
       /* Buiten de EU ook geen Bancontact/EPS (ronde 91, B13). */
       buitenEu: vatCall.treatment === VAT_TREATMENT.outsideScope,
+      /* levering 118 (17 november 2026, proefronde L-16): bij voorrang geen overboeking. */
+      voorrang: !!quote.voorrang,
     }));
     payUrl = payment?._links?.checkout?.href || null;
   }
@@ -2344,10 +2507,14 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     ? (lang === 'nl' ? `We hebben je bestelling — ${ref}` : `We’ve got your order — ${ref}`)
     : (lang === 'nl' ? `We hebben je aanvraag — ${ref}` : `We’ve got your request — ${ref}`);
   const bevestigingOpties = {
+        /* levering 119 (18 november 2026, proefronde A0-01): de voornaam uit het formulier, voor de aanhef. */
+        voornaam: firstName || '',
         tier, window: finalWindow, upgrade: upgradeLine, portal: portalLink,
         /* Niet de Mollie-link zelf: die verloopt binnen een kwartier tot een
            paar uur. /api/order-pay maakt bij elke klik een verse betaling. */
-        pay: payUrl ? `${requestOrigin(request)}/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${lang}` : null, quote, vat: vatCall,
+        pay: payUrl ? `${requestOrigin(request)}/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${lang}` : null, quote,
+        /* levering 118 (17 november 2026, proefronde W2-10): leeg btw-nummer is iets anders dan "niet te bevestigen". */
+        vat: { ...vatCall, zonderNummer: !vatParts.number },
         inReview: !!review.needsReview, voorrang: !!(quote && quote.voorrang),
         tegoed: tegoedCents, betaaldMetTegoed,
         /* Met credits betaald (ronde B): aantal en wat er overblijft, geen bedrag. */
@@ -2401,10 +2568,16 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     && get('business_version') !== 'admin-namens-klant';
   const betaalOpnieuw = bevestigingOpties.pay
     || (proefNaarKassa ? `${requestOrigin(request)}/api/order-pay?ref=${encodeURIComponent(ref)}&lang=${lang}` : null);
+  /* levering 118 (17 november 2026, proefronde W2-15): deze bewaarde mail gaat pas uit als de betaling mislukt,
+     is afgebroken of verloopt. Dan heette hij "We hebben je bestelling — VIS-…", en stond pas in de tekst dat de
+     betaling niet lukte. Nu zegt het onderwerp het meteen (de voorvertoning staat in customerEmail). */
+  const nietBetaaldOnderwerp = lang === 'nl'
+    ? `Nog niet betaald — je bestelling ${ref} staat klaar`
+    : `Not paid yet — your order ${ref} is waiting`;
   const uitgesteld = naarKassaNu
     ? await bewaarBevestiging(env, orderId, ref, {
       to: email,
-      subject: bevestigingOnderwerp,
+      subject: nietBetaaldOnderwerp,
       html: customerEmail(lang, ref, svc, name, { ...bevestigingOpties, pay: betaalOpnieuw, naMislukking: true }),
       lang, nieuwAdres,
       samenvatting: customerEmail(lang, ref, svc, name, { ...bevestigingOpties, alleenSamenvatting: true }),
@@ -2412,6 +2585,12 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
     : false;
   if (!uitgesteld) {
     await safe(() => sendMail(env, { to: email, subject: bevestigingOnderwerp, html: bevestigingHtml }));
+    /* levering 119 (18 november 2026, proefronde W2-06): de bevestiging ging meteen (nakijken, geen kassa nu). Het
+       overzicht bewaren, zodat de betaalmail met de factuur "Wat je bestelde" ook heeft. Alleen als er nog via
+       Mollie betaald moet worden. */
+    if (quote && orderId && Number(quote.grossCents) > 0 && !betaaldMetTegoed && !(creditsMail && creditsMail.gebruikt > 0) && !quote.inbegrepen) {
+      await safe(() => bewaarOverzicht(env, ref, customerEmail(lang, ref, svc, name, { ...bevestigingOpties, alleenSamenvatting: true })));
+    }
   }
 
   /*
@@ -2445,10 +2624,10 @@ export async function onRequestPost({ request, env, waitUntil, sessieKlant = nul
   /* Helemaal met tegoed betaald: dezelfde terugkeer als ná Mollie (`paid=`),
      zodat de bedankpagina "Betaald" zegt (29 september 2026). */
   /* Met credits betaald: ook meteen `paid=` (ronde B). */
-  const done = (betaaldMetTegoed || metCredits)
+  const done = (betaaldMetTegoed || metCredits || merkmodelInbegrepen)
     /* &credits=1 (doorloop 27, B27): de bedankpagina zegt dan "betaald met je
        credits" en belooft geen aparte factuur. */
-    ? back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref) + (metCredits ? '&credits=1' : '')
+    ? back + (back.includes('?') ? '&' : '?') + 'paid=' + encodeURIComponent(ref) + (metCredits ? '&credits=1' : '') + (merkmodelInbegrepen ? '&soort=merkmodel' : '')
     : back + (back.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref)
       + (payUrl ? `&pay=${encodeURIComponent(payUrl)}` : '')
       + (nakijk ? '&nakijk=1' : '');
@@ -2666,7 +2845,7 @@ export function onRequestGet() {
  * calendar is unreadable is exactly the promise the gate exists to prevent. The
  * order itself is unaffected — see note 3 at the top.
  */
-async function clearRequestedWindow(env, { tier, products, service = 'catalog', asked }) {
+async function clearRequestedWindow(env, { tier, products, service = 'catalog', asked, extras = 0 }) {
   const empty = { window: null, windows: [], listReason: null };
   if (tier !== 'attended') return { ...empty, reason: 'queue' };
   if (!asked?.start) return { ...empty, reason: 'none' };
@@ -2682,7 +2861,7 @@ async function clearRequestedWindow(env, { tier, products, service = 'catalog', 
   // than one window and a count that is not a number are different facts and
   // /start has a different panel for each. Only the "is this worth the I/O"
   // decision is local; if the classification ever moves, this follows it.
-  const early = clearedWindows({ today: todayUTC(), products, service, limit: 0 }).reason;
+  const early = clearedWindows({ today: todayUTC(), products, service, limit: 0, extras }).reason;
   if (early === 'invalid' || early === 'too-large') {
     return { ...empty, reason: 'gone', listReason: early };
   }
@@ -2696,9 +2875,16 @@ async function clearRequestedWindow(env, { tier, products, service = 'catalog', 
     // offered — time does not run backwards — so six would in fact be enough.
     // Twelve costs one more loop iteration and removes that argument from the
     // list of things this correctness depends on.
-    const { windows, reason } = clearedWindows({ today, products, service, booked, blackouts, limit: 12 });
+    const { windows, reason } = clearedWindows({ today, products, service, booked, blackouts, limit: 12, extras });
 
-    const match = windows.find(
+    /* levering 117 (17 november 2026, proefronde P3-09): de gevraagde dag rechtstreeks toetsen.
+       Hier werd de gevraagde start alleen in de eerste twaalf vrije vensters gezocht. De kalender biedt
+       60 dagen aan, dus elke datum na ongeveer twee weken gaf "die leverdatum is weg", ook in een lege
+       agenda. Nu vraagt de poort dezelfde clearedWindows() vanaf de gevraagde dag (`from`, zoals
+       "later →" in de kalender doet) en kijkt of het eerste venster precies daar begint. `windows`
+       blijft de lijst vanaf vandaag, zodat een klant bij 'gone' de vroegste vrije data ziet. */
+    const gevraagd = clearedWindows({ today, products, service, booked, blackouts, limit: 1, from: asked.start, extras }).windows;
+    const match = [...windows, ...gevraagd].find(
       (w) => w.start === asked.start && (!asked.end || w.end === asked.end)
     );
     if (!match) return { window: null, windows, reason: 'gone', listReason: reason };
@@ -2738,12 +2924,16 @@ async function clearRequestedWindow(env, { tier, products, service = 'catalog', 
  *
  * Returns true if the window was surrendered.
  */
-async function loseRaceIfOversold(env, { orderId, products, service = 'catalog', window }) {
+async function loseRaceIfOversold(env, { orderId, products, service = 'catalog', window, extras = 0 }) {
   if (!env?.DB || !orderId || !window?.start) return false;
   try {
     const today = todayUTC();
     const { blackouts, booked } = await readCalendar(env, today, { beforeId: orderId });
-    const { windows } = clearedWindows({ today, products, service, booked, blackouts, limit: 12 });
+    /* levering 117 (17 november 2026, proefronde P3-09): vanaf de eigen startdag zoeken, net als de poort
+       hierboven. Met alleen de eerste twaalf vensters gaf deze controle elke datum na twee weken terug,
+       ook zonder dat er iemand anders in zat. */
+    /* levering 118 (P3-08): met de extra hoeken, zoals de poort. */
+    const { windows } = clearedWindows({ today, products, service, booked, blackouts, limit: 1, from: window.start, extras });
     if (windows.some((w) => w.start === window.start && w.end === window.end)) return false;
 
     await env.DB.prepare('UPDATE orders SET window_start = NULL, window_end = NULL WHERE id = ?1')
@@ -3092,6 +3282,9 @@ function vetAnswer(key, value) {
     const v = String(value).trim();
     return RATIO_IDS.has(v) ? v : '';
   }
+
+  /* levering 119 (18 november 2026, proefronde P10-02): de productnaam hoogstens PRODUCT_NAAM_MAX (80) tekens, zoals het formulier (maxLength). */
+  if (/^product_p\d{1,3}$/.test(key)) return capAnswer(value, PRODUCT_NAAM_MAX);
 
   const m = PRODUCT_ANSWER_KEY.exec(key);
   /* Onbekende velden landden ongeknipt in details_json (4 september 2026):
@@ -3515,6 +3708,31 @@ async function antwoordVoorBestaande(env, orderId, { back, lang, wantsJson }) {
 
 function redirect(location, status = 303) { return new Response(null, { status, headers: { Location: location } }); }
 
+/* ── TE VAAK VERSTUURD, ZONDER SCRIPT — levering 118 (17 november 2026, proefronde P4-08) ──────────────────────
+   Een gewone POST (zonder `mode=json`) kreeg bij de snelheidsgrens `new Response(null, { status: 429 })`: een
+   helemaal witte pagina, zonder tekst of knop. Live kan dat achter één kantoor-ip. Nu terug naar het formulier
+   waar de bezoeker stond (dezelfde Referer-regel als terugMet(): alleen van onszelf), met ?error=rate. Het
+   formulier zet dan het kader [data-form-refusal="rate"] aan (interactions.js, initFormRefusal), met de
+   WhatsApp-knop. Zonder bruikbare Referer: de startpagina in de taal van het formulier. `retry-after` blijft. */
+function terugNaTeVaak(request, form, retry) {
+  const taal = (() => { try { return String(form.get('lang') || '') === 'nl' ? 'nl' : 'en'; } catch { return 'en'; } })();
+  let dest = taal === 'nl' ? '/nl/start/' : '/start/';
+  try {
+    const ref = request.headers.get('Referer');
+    if (ref) {
+      const u = new URL(ref);
+      if (u.origin === new URL(request.url).origin && !u.pathname.startsWith('/api/')) {
+        u.searchParams.delete('error');
+        dest = u.pathname + u.search;
+      }
+    }
+  } catch { /* dan de startpagina */ }
+  return new Response(null, {
+    status: 303,
+    headers: { Location: dest + (dest.includes('?') ? '&' : '?') + 'error=rate', 'retry-after': String(retry || 60), 'cache-control': 'no-store' },
+  });
+}
+
 /* ── NAAR DE KASSA, VANUIT EEN GEWOON FORMULIER — 24 september 2026 ──────────
    Werklijst B7, en het bleek geen beperking van de testomgeving maar een echte
    fout. De site heeft `form-action 'self'` (scripts/csp-scripts.mjs), en Chrome
@@ -3665,7 +3883,9 @@ export function contactAppKnop({ kanaal, phone, country, name, brand }) {
 }
 
 function detailRows(obj) {
-  return Object.entries(obj).map(([k, v]) =>
+  /* levering 119 (18 november 2026, proefronde W2-07): `opbouw` is een lijst met regels en stond hier als
+     "[object Object]"; hij staat nu als eigen tabel boven deze lijst (opbouwTabel). Een ander object als tekst. */
+  return Object.entries(obj).filter(([k]) => k !== 'opbouw').map(([k, v]) => [k, v && typeof v === 'object' ? JSON.stringify(v) : v]).map(([k, v]) =>
     /* word-break op de waarde (9.07, 8 oktober 2026): een upload_batch van 43
        tekens zonder spatie duwde de mail op een telefoon van 390 px tot 545 px
        breed. */
@@ -3780,7 +4000,9 @@ function aanvraagRows(obj) {
   const stijlNaam = (slug) => (VIDEO_STYLES.find((v) => v.slug === slug) || STYLES.find((v) => v.slug === slug) || {}).name || slug;
   return Object.entries(obj)
     .filter(([k, v]) => !AANVRAAG_WEG.has(k) && v !== null && v !== undefined && String(v).trim() !== '')
-    .map(([k, v]) => [AANVRAAG_LABELS[k] || k, k === 'style' ? stijlNaam(String(v)) : v])
+    /* levering 119 (18 november 2026, proefronde W2-12): de velden van de eigen-look-brief in de woorden van /admin,
+       niet "look_concept us". Zie src/lib/aanvraagBrief.js. */
+    .map(([k, v]) => aanvraagBriefStudio(k, v) || [AANVRAAG_LABELS[k] || k, k === 'style' ? stijlNaam(String(v)) : v])
     .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:${MC.muted};vertical-align:top">${esc(k)}</td><td style="padding:4px 0;word-break:break-word;color:${MC.head}"><strong>${esc(v)}</strong></td></tr>`)
     .join('');
 }
@@ -3793,8 +4015,9 @@ function aanvraagRows(obj) {
    amber voor iets om naar te kijken, en amber vol voor de noodgeval-baan. En elke
    alinea krijgt zijn letter: een <p> zonder font-family viel in sommige
    mailapps terug op een schreefletter. */
+/* levering 119 (18 november 2026, proefronde P10-02): ook een vlak breekt lange woorden ("Wat ontbreekt" noemt het product bij naam). */
 const vlak = (bg, ink, html, { size = 14 } = {}) =>
-  `<p style="margin:0 0 16px;padding:12px 14px;background:${bg};color:${ink};font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:1.6;border-radius:12px">${html}</p>`;
+  `<p style="margin:0 0 16px;padding:12px 14px;background:${bg};color:${ink};font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:1.6;border-radius:12px;word-break:break-word;overflow-wrap:anywhere">${html}</p>`;
 const regel = (html, { kleur = MC.text, size = 14 } = {}) =>
   `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:${size}px;line-height:1.6;color:${kleur}">${html}</p>`;
 
@@ -3816,7 +4039,11 @@ function notifyEmail(ref, service, top, details, gate = {}) {
         `<strong>Btw: ${esc(v.treatment)}</strong> tegen ${Math.round(v.rate * 100)}%${gate.quote ? ` — netto ${mailBedragNl(gate.quote.netCents)}, btw ${mailBedragNl(gate.quote.vatCents)}, in rekening ${mailBedragNl(gate.quote.grossCents)}` : ''}<br>
          Reden: ${esc(v.reason)}${top.country ? ` · land ${esc(top.country)}` : ''}
          ${vies ? `<br>VIES: ${vies.ok ? (vies.valid ? 'geldig' : 'ONGELDIG') : `niet bereikbaar (${esc(vies.error || '?')})`}${vies.consultation ? ` · consultatienummer ${esc(vies.consultation)}` : ''}${vies.name ? ` · ${esc(vies.name)}` : ''}` : ''}
-         ${v.reason === 'eu-unconfirmed' ? `<br><strong>${vatPercent()} gerekend bij een EU-klant met een nummer dat we niet konden bevestigen. Even naar kijken vóór de factuur.</strong>` : ''}`, { size: 13 })
+         ${v.reason === 'eu-unconfirmed' ? (v.zonderNummer
+           /* levering 118 (17 november 2026, proefronde W2-10): geen nummer ingevuld is iets anders dan een nummer
+              dat VIES niet bevestigde. */
+           ? `<br><strong>${vatPercent()} gerekend bij een EU-klant die geen btw-nummer invulde.</strong>`
+           : `<br><strong>${vatPercent()} gerekend bij een EU-klant met een nummer dat we niet konden bevestigen. Even naar kijken vóór de factuur.</strong>`) : ''}`, { size: 13 })
     : '';
 
   /* Betaald met abonnementscredits (ronde B, 8 oktober 2026): meteen betaald,
@@ -3834,8 +4061,11 @@ function notifyEmail(ref, service, top, details, gate = {}) {
          terugkomen met de data. <strong>Bel ze.</strong>`)
     : '';
 
+  /* levering 118 (W2-08): "vastgelegd" klopte pas na het betalen; tot dan is het een reservering met een termijn. */
   const reserved = window
-    ? regel(`Venster vastgelegd: <strong style="color:${MC.head}">${esc(window.start)} → ${esc(window.end)}</strong>`)
+    ? regel(gate.betaalStand === 'open' || gate.betaalStand === 'nakijken'
+      ? `Venster gereserveerd: <strong style="color:${MC.head}">${esc(window.start)} → ${esc(window.end)}</strong> — vast zodra er betaald is${gate.betaalStand === 'open' ? ` (vervalt na ${VENSTER_VASTHOUDEN_DAGEN} dagen onbetaald)` : ''}`
+      : `Venster vastgelegd: <strong style="color:${MC.head}">${esc(window.start)} → ${esc(window.end)}</strong>`)
     : tier === 'attended'
       ? regel('Bestelling met leverdatum, maar <strong>zonder vastgelegd venster</strong>.', { kleur: MC.stRevInk })
       : (details && (details.voorrang === '1' || details.voorrang === 1 || details.voorrang === true))
@@ -3890,22 +4120,47 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     ? contactMail(waLink('fotos', { ref, name: top.name, lang: gate.lang, phone: top.phone, country: top.country }, { lijst: ontbreektLijst }),
       { wie: top.brand || top.name || 'de klant', knop: mailButton, regel: linkLine })
     : '';
+  /* levering 119 (18 november 2026, proefronde P10-02): een productnaam van 80 tekens zonder spatie maakte deze <p> (en dus
+     de hele studiomail) 809 px breed op een telefoon. Nu breekt hij, net als de waarden in de tabel erboven. */
   const productBlok = productRegels.length
     ? `<h3 style="margin:20px 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MC.head}">Per product</h3>
-       <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MC.text}">${productRegels.map((r) => esc(r)).join('<br>')}</p>`
+       <p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MC.text};word-break:break-word;overflow-wrap:anywhere">${productRegels.map((r) => esc(r)).join('<br>')}</p>`
     : '';
   const ontbreektBlok = ontbreekt.length
     ? vlak(MC.stRevFill, MC.stRevInk, `<strong>Wat ontbreekt</strong><br>${ontbreekt.map((r) => esc(r)).join('<br>')}`) + ontbreektContact
     : '';
   /* Kenmerk staat onder de kop; dienst, aantal en bedrag in één tabel. */
+  /* levering 118 (W2-08): de look en de extra hoeken in de samenvatting, niet alleen in de ruwe velden. */
+  const lookNaam = (() => {
+    const stijl = String(details?.style || '').trim();
+    if (!stijl || aanvraag) return '';
+    const st = STYLES.find((x) => (x.slug || x.id) === stijl || String(x.name || '').toLowerCase() === stijl.toLowerCase());
+    return st ? st.name : stijl;
+  })();
+  const hoekenStudio = details && !aanvraag ? extraVakken(details) : [];
   const kern = mailRows([
     ['Dienst', esc(serviceLabel(service, 'nl') || service)],
     products ? ['Aantal', `${esc(products)} ${Number(products) === 1 ? 'product' : 'producten'}`] : null,
+    lookNaam ? ['Look', esc(lookNaam)] : null,
+    hoekenStudio.length ? ['Extra hoeken', esc(`${hoekenStudio.map((v) => v.nl).join(', ')} — bij elk product`)] : null,
     /* De complete looks bij naam (levering 60): niet meer "outfit_count 1". */
     ...(details ? lookRegels(details, 'nl', Number(products) || 0).map((r) => ['Complete look', esc(r)]) : []),
     gate.quote ? ['Bedrag', `${esc(mailBedragNl(gate.quote.grossCents))} <span style="font-weight:400;color:${MC.muted}">(netto ${esc(mailBedragNl(gate.quote.netCents))})</span>`] : null,
   ].filter(Boolean));
   const adminKnop = gate.admin ? mailButton(gate.admin, 'Open in /admin') : '';
+  /* levering 119 (18 november 2026, proefronde W2-07): de opbouw van het bedrag als tabel, met de regelnamen van de
+     factuur (factuurRegels in invoice.js). Telt hij niet op tot het netto bedrag, dan geen tabel (zoals de factuur). */
+  const opbouwTabel = (() => {
+    if (aanvraag || !gate.quote || !Array.isArray(details?.opbouw) || !details.opbouw.length) return '';
+    const net = Number(gate.quote.netCents) || 0;
+    const regels = factuurRegels({ d: details, net, svc: serviceLabel(service, 'nl') || service, basis: '', lang: 'nl' });
+    if (!regels.length || (regels.length === 1 && !regels[0].description)) return '';
+    const td = (html, extra = '') => `<td style="padding:4px 12px 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MC.text};vertical-align:top;${extra}">${html}</td>`;
+    const rijen = regels.map((r) => `<tr>${td(esc(r.description))}${td(`${esc(r.qty)} × ${esc(mailBedragNl(r.unitCents))}`, 'white-space:nowrap')}${td(`<strong style="color:${MC.head}">${esc(mailBedragNl(r.totalCents))}</strong>`, 'white-space:nowrap;text-align:right;padding-right:0')}</tr>`).join('');
+    const totaal = `<tr>${td('<strong>Netto</strong>', `border-top:1px solid ${MC.rule}`)}${td('', `border-top:1px solid ${MC.rule}`)}${td(`<strong style="color:${MC.head}">${esc(mailBedragNl(net))}</strong>`, `border-top:1px solid ${MC.rule};white-space:nowrap;text-align:right;padding-right:0`)}</tr>`;
+    return `<h3 style="margin:20px 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MC.head}">Opbouw van het bedrag</h3>
+       <table style="border-collapse:collapse;margin:0 0 16px">${rijen}${totaal}</table>`;
+  })();
 
   /* Ronde 9 (O23): een aanvraag (video, eigen look) heeft geen wachtrij en heet
      geen bestelling — "Nieuwe Aanvraag op maat-bestelling · wachtrij". */
@@ -3919,10 +4174,42 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     uploads ? `${esc(uploads)} ${uploads === 1 ? 'bestand' : 'bestanden'} geüpload` : null,
   ].filter(Boolean).join(' · ');
 
+  /* levering 118 (W2-08): de betaalstand als eerste vlak. De kleuren van "Wat ontbreekt" voor nakijken (jij bent
+     aan zet), mist voor "nog niet betaald" (de klant is aan zet; "Betaald" of "Betaling niet gelukt" volgt als
+     eigen mail). */
+  const betaalVlak = gate.betaalStand === 'nakijken'
+    ? vlak(MC.stRevFill, MC.stRevInk, `<strong>NAKIJKEN · klant wacht op betaallink</strong><br>
+         Er is nog geen betaallink verstuurd. Keur goed in /admin, dan gaat de link vanzelf naar de klant.${(gate.nakijkRedenen || []).length ? `<br>Waarom: ${(gate.nakijkRedenen || []).map((r) => esc(r)).join(' · ')}` : ''}`)
+    : gate.betaalStand === 'open'
+      ? vlak(MC.foot, MC.text, `<strong>Nog niet betaald</strong> — de klant is naar Mollie gestuurd. Je krijgt een aparte mail
+           "Betaald" zodra het geld binnen is, of "Betaling niet gelukt" als het niet doorgaat. Pas dan beginnen.`)
+      : gate.betaalStand === 'tegoed'
+        ? vlak(MC.tintBg, MC.tintInk, '<strong>Met tegoed</strong> — het hele bedrag gaat van het tegoed van de klant af, geen Mollie. Je krijgt "Betaald" zodra het is afgeboekt.')
+        : '';
+  /* levering 118 (B1-01): een proef die mogelijk de tweede is voor dit bedrijf. */
+  const proefTwijfelVlak = details && details.proef_twijfel
+    ? vlak(MC.stRevFill, MC.stRevInk, `<strong>NAKIJKEN · mogelijk een tweede proef</strong><br>${esc(details.proef_twijfel)}. Aangenomen; bel of mail even als het hetzelfde bedrijf is.`)
+    : '';
+  /* levering 118 (17 november 2026, proefronde P2-06): foto's die te klein binnenkwamen, met hun maat. */
+  const teKleinVlak = details && details.te_klein
+    ? vlak(MC.stRevFill, MC.stRevInk, `<strong>Te kleine foto's</strong> (onder ${MIN_LANGE_ZIJDE} px aan de lange kant)<br>${esc(details.te_klein)}<br>Vraag de klant om het origineel.`)
+    : '';
+  /* levering 118 (17 november 2026, proefronde W1-09): de opmerking van de klant bovenaan, met een belknop als hij
+     om telefoon of WhatsApp vroeg. Stond als 23e van 31 ruwe regels. */
+  const opmerking = String(details?.message || '').trim();
+  const belNr = String(top.phone || '').replace(/[^\d+]/g, '');
+  const opmerkingVlak = opmerking
+    ? vlak(MC.stRevFill, MC.stRevInk, `<strong>Opmerking van de klant</strong><br>${esc(opmerking).replace(/\n/g, '<br>')}${gate.contactVoorkeur === 'whatsapp' ? '<br>Wil gebeld of geappt worden.' : ''}`)
+      + (gate.contactVoorkeur === 'whatsapp' && belNr ? mailButton(`tel:${belNr}`, `Bel ${top.name || 'de klant'}`) : '')
+    : '';
   return shell({
     lang: 'nl',
-    preheader: `${kopNaam} · ${ref}${meta ? ` · ${products || ''}` : ''}`.trim(),
+    preheader: `${gate.betaalStand === 'nakijken' ? 'NAKIJKEN · ' : gate.betaalStand === 'open' ? 'Nog niet betaald · ' : ''}${kopNaam} · ${ref}${meta ? ` · ${products || ''}` : ''}`.trim(),
     body: `${banner}
+    ${betaalVlak}
+    ${proefTwijfelVlak}
+    ${opmerkingVlak}
+    ${teKleinVlak}
     ${creditsBlok || vatBlock}
     ${h1(esc(kopNaam), kenmerk('bestelling', ref))}
     ${meta ? `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;color:${MC.muted};font-size:13px">${meta}</p>` : ''}
@@ -3933,6 +4220,7 @@ function notifyEmail(ref, service, top, details, gate = {}) {
     ${reserved}
     ${portalNote}
     ${upgradeNote}
+    ${opbouwTabel}
     <table style="border-collapse:collapse;font-size:14px;font-family:Arial,Helvetica,sans-serif;color:${MC.text}">${rows}</table>`,
   });
 }
@@ -3963,11 +4251,12 @@ export function customerEmail(lang, ref, service, name,
   { tier = 'unattended', window = null, upgrade = null, portal = null, pay = null, quote = null, vat = null,
     inReview = false, voorrang = false, aanvraag = false, tegoed = 0, betaaldMetTegoed = false, details = null, fotos = null,
     nieuwAdres = false, credits = null, alleenSamenvatting = false, naMislukking = false, land = '',
-    ontbreekt = null, fotosLink = '' } = {}) {
+    ontbreekt = null, fotosLink = '', voornaam = '' } = {}) {
   const nl = lang === 'nl';
   /* De klant bestelde net en leest dit nu: de aanhef met het dagdeel in zijn land
      (17 oktober 2026, src/lib/aanhef.js). */
-  const hi = greeting(name, lang, { nu: new Date(), land });
+  /* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam ("Hallo Jan Willem,"). */
+  const hi = greeting(name, lang, { nu: new Date(), land, voornaam });
   const attended = tier === 'attended';
   const dated = attended && window && window.start && window.end;
 
@@ -4029,7 +4318,12 @@ export function customerEmail(lang, ref, service, name,
      hier zijn eigen zin: een merkmodel (richtingen, één correctieronde) en een
      aanvraag (eerst een voorstel). */
   let timing = '';
-  if (service === 'brand-model') {
+  if (service === 'brand-model' && quote?.inbegrepen) {
+    /* levering 117 (P5-12): inbegrepen in het abonnement, dus geen betaling om op te wachten. */
+    timing = nl
+      ? 'Je merkmodel is inbegrepen in je abonnement: je betaalt niets. We gaan meteen aan het werk. Je krijgt eerst een paar richtingen om op te reageren; daarna bouwen we het gezicht, halen het door de uniciteitscontrole en leggen het vast op jouw merk.'
+      : 'Your brand model is included in your plan: you pay nothing. We get to work straight away. You first get a few directions to react to; then we build the face, run the uniqueness check and lock it to your brand.';
+  } else if (service === 'brand-model') {
     /* Geen "vaak binnen een dag": een merkmodel begint met richtingen om op te
        reageren. Dezelfde belofte als stap 5 van het formulier. */
     timing = nl
@@ -4144,9 +4438,8 @@ export function customerEmail(lang, ref, service, name,
   // people who read on a phone and continue on a desktop, both need the text.
   const portalNote = portal
     ? linkLine(portal, aanvraag ? (nl ? 'Bekijk je aanvraag' : 'View your request') : (nl ? 'Bekijk je bestelling' : 'View your order'))
-      + note(nl
-        ? `Deze link is de sleutel tot je bestelling — iedereen die hem heeft, kan meekijken. Deel hem alleen met wie mee moet kijken. <br>${linkUit(portal)}`
-        : `This link is the key to your order — anyone who has it can see it. Only share it with people who need to look. <br>${linkUit(portal)}`)
+      /* levering 119 (18 november 2026, proefronde P9-05): de ene zin over doorsturen, uit src/lib/deelLink.js. */
+      + note(`${esc(deelZin(nl ? 'nl' : 'en', { aanvraag }))} <br>${linkUit(portal)}`)
     : '';
 
   // THE AMOUNT AND THE LINK, in that order and never one without the other. A
@@ -4263,7 +4556,14 @@ export function customerEmail(lang, ref, service, name,
     const st = stijl ? STYLES.find((x) => (x.slug || x.id) === stijl || String(x.name || '').toLowerCase() === stijl.toLowerCase()) : null;
     if (st) uit.push([nl ? 'Look' : 'Look', esc(st.name)]);
     const model = String(d.model || '').trim();
-    if (model) uit.push([nl ? 'Gezicht' : 'Face', esc(model === 'any' ? (nl ? 'Wij kiezen er een' : 'We choose one') : /^c\d+$/.test(model) ? (nl ? 'Je eigen merkmodel' : 'Your own Brand Model') : model.charAt(0).toUpperCase() + model.slice(1))]);
+    /* levering 119 (18 november 2026, proefronde P10-09): een eigen gezicht per product erachter ("Ava · product 2: Seme"); boven drie alleen het aantal, zoals het controlescherm. */
+    const gezichtNaam = (v) => (v === 'any' ? (nl ? 'Wij kiezen er een' : 'We choose one') : /^c\d+$/.test(v) ? (nl ? 'Je eigen merkmodel' : 'Your own Brand Model') : v.charAt(0).toUpperCase() + v.slice(1));
+    const perProduct = Object.keys(d).map((k) => /^model_p(\d{1,3})$/.exec(k)).filter(Boolean)
+      .map((m) => [Number(m[1]), String(d[m[0]] || '').trim()]).filter(([, v]) => v && v !== model).sort((a, b) => a[0] - b[0]);
+    const extra = perProduct.length > 3
+      ? ` · ${perProduct.length} ${nl ? 'producten met een eigen gezicht' : 'products with their own face'}`
+      : perProduct.map(([n, v]) => ` · product ${n}: ${gezichtNaam(v)}`).join('');
+    if (model) uit.push([nl ? 'Gezicht' : 'Face', esc(gezichtNaam(model) + extra)]);
     const bg = String(d.background || '').trim();
     /* Werklijst 27 (15 oktober 2026): een beeld met een eigen achtergrond. */
     const perBeeld = beeldAchtergrondRegel(service, d, nl ? 'nl' : 'en');
@@ -4314,11 +4614,34 @@ export function customerEmail(lang, ref, service, name,
       + note(verklaringen.map((v) => esc(v)).join('<br><br>'))
     : '';
 
+  /* levering 119 (18 november 2026, proefronde W2-11): de mail "in nakijken" noemde geen bedrag. Het netto bedrag
+     staat vast; de btw hangt af van de controle, dus die noemen we nog niet. */
+  const nakijkBedrag = !alleenSamenvatting && !payBlock && inReview && !aanvraag && !proef && quote && Number(quote.netCents) > 0
+    ? [nl ? 'Bedrag' : 'Amount', nl
+      ? `${money(quote.netCents)} excl. btw (btw volgt na controle)`
+      : `${money(quote.netCents)} excl. VAT (VAT follows after the check)`]
+    : null;
   const summary = rows([
     [nl ? 'Dienst' : 'Service', esc(svcName)],
     quote && service !== 'brand-model' ? [nl ? 'Producten' : 'Products', String(quote.products)] : null,
     ...keuzeRijen,
+    nakijkBedrag,
   ].filter(Boolean));
+
+  /* levering 119 (18 november 2026, proefronde W2-12): bij een aanvraag krijgt de klant zijn brief terug, in de
+     woorden van het formulier. Alleen wat hij invulde. */
+  /* levering 119 (18 november 2026, proefronde W2-12, besluit Lucas o04, hersteller H10): alleen de vaste keuzes; vrije
+     tekst en links (de wereld, referenties, het bericht) niet, want deze mail gaat naar elk adres dat iemand invult. Een
+     onbekende videostijl wordt geen regel (anders kwam de getypte waarde terug). */
+  const briefRegels = aanvraag
+    ? aanvraagBriefRegels(d, nl ? 'nl' : 'en', {
+      stijlNaam: (slug) => (slug === 'custom' ? (nl ? 'eigen look' : 'custom look') : (VIDEO_STYLES.find((v) => v.slug === slug) || {}).name || ''),
+    })
+    : [];
+  const briefBlok = briefRegels.length
+    ? p(nl ? '<strong>Wat je ons vroeg</strong>' : '<strong>What you asked us</strong>', { top: 20, bottom: 6 })
+      + rows(briefRegels.map(([k, v]) => [k, esc(v).replace(/\r?\n/g, '<br>')]))
+    : '';
 
   /* B04 (doorloop 27): het overzicht en de verklaringen apart, voor in de
      betaalmail als de bevestiging is uitgesteld. Zie bewaarBevestiging(). */
@@ -4331,9 +4654,14 @@ export function customerEmail(lang, ref, service, name,
     // The inbox preview line. It names the reference rather than repeating the
     // subject, because the two are printed next to each other and saying the
     // same thing twice wastes the only two lines a closed message gets.
-    preheader: nl
-      ? `Referentie ${ref} — we hebben je ${aanvraag ? 'aanvraag' : 'bestelling'} en houden je op de hoogte.`
-      : `Reference ${ref} — we have your ${aanvraag ? 'request' : 'order'} and will keep you posted.`,
+    /* levering 118 (17 november 2026, proefronde W2-15): na een mislukte, afgebroken of verlopen betaling eerst
+       wat de klant wil weten: er is niets afgeschreven, en hij kan opnieuw betalen. */
+    preheader: (naMislukking && pay && !aanvraag)
+      ? (nl ? `Er is niets afgeschreven. Je kunt hieronder opnieuw betalen · ${ref}`
+        : `Nothing has been charged. You can pay again below · ${ref}`)
+      : nl
+        ? `Referentie ${ref} — we hebben je ${aanvraag ? 'aanvraag' : 'bestelling'} en houden je op de hoogte.`
+        : `Reference ${ref} — we have your ${aanvraag ? 'request' : 'order'} and will keep you posted.`,
     body: [
       /* 7.02 (8 oktober 2026): "Je bestelling staat erin" — eerst waar de
          bestelling staat, dan pas de betaalknop en het overzicht. */
@@ -4365,22 +4693,33 @@ export function customerEmail(lang, ref, service, name,
             : 'There is no payment button in this email yet: creating the payment did not work just now. We send you the payment link within one working day. Nothing is needed from you.',
             { top: 4 })
         : '',
+      /* levering 119 (18 november 2026, proefronde W2-11): "Je hoeft zelf niets te doen" en verderop "zet je foto's in
+         Studio" spraken elkaar tegen. Nu gaat het niets-doen over de betaling, en zegt de zin wat er intussen kan. */
       (!payBlock && inReview && !aanvraag && !proef)
         ? p(nl
-            ? 'Er staat nog geen betaalknop in deze mail, en dat klopt: we kijken je gegevens eerst even na. Zodra dat rond is — meestal binnen een werkdag — sturen we je de betaallink. Je hoeft zelf niets te doen.'
-            : 'There is no payment button in this email yet, and that is on purpose: we check your details first. As soon as that is done — usually within one working day — we send you the payment link. Nothing is needed from you.',
+            ? `Er staat nog geen betaalknop in deze mail, en dat klopt: we kijken je gegevens eerst even na. Zodra dat rond is — meestal binnen een werkdag — sturen we je de betaallink. Voor de betaling hoef je niets te doen${fotos || ontbreekt ? '; zet intussen je foto\u2019s klaar' : ''}.`
+            : `There is no payment button in this email yet, and that is on purpose: we check your details first. As soon as that is done — usually within one working day — we send you the payment link. Nothing is needed from you for the payment${fotos || ontbreekt ? '; in the meantime, get your photos ready' : ''}.`,
             { top: 4 })
         : '',
       /* 8 november 2026 (doorloop 90, B23): een EU-klant met een btw-nummer dat de Europese controle niet bevestigde,
          had in de laatste stap verlegging aangevinkt en las hier alleen "we kijken je gegevens na". Nu staat erbij
          waarom, en wat er gebeurt als het nummer niet klopt. */
-      (!payBlock && inReview && !aanvraag && !proef && vat && vat.reason === 'eu-unconfirmed')
+      /* levering 118 (17 november 2026, proefronde W2-10): wie GEEN btw-nummer invulde, las hier dat we "je
+         btw-nummer" niet konden bevestigen. Nu een eigen zin. */
+      (!payBlock && inReview && !aanvraag && !proef && vat && vat.reason === 'eu-unconfirmed' && vat.zonderNummer)
+        ? p(nl
+            ? `Je vulde geen btw-nummer in, dus rekenen we ${vatPercent()} Nederlandse btw. Heb je er wel een? Beantwoord dan deze mail.`
+            : `You did not fill in a VAT number, so we charge ${vatPercent()} Dutch VAT. Do you have one? Just reply to this email.`,
+            { top: 4 })
+        : '',
+      (!(vat && vat.zonderNummer) && !payBlock && inReview && !aanvraag && !proef && vat && vat.reason === 'eu-unconfirmed')
         ? p(nl
             ? `Je btw-nummer konden we bij de Europese controle (VIES) niet bevestigen. Klopt het wel, dan kijken we het met de hand na en wordt de btw verlegd. Klopt het niet, dan rekenen we ${vatPercent()} Nederlandse btw; dat lees je in de mail met de betaallink, vóór je betaalt. Een ander nummer? Beantwoord dan deze mail.`
             : `We could not confirm your VAT number with the European check (VIES). If it is valid, we check it by hand and the VAT is reverse-charged. If it is not, we charge ${vatPercent()} Dutch VAT; you read that in the email with the payment link, before you pay. A different number? Just reply to this email.`,
             { top: 4 })
         : '',
       summary,
+      briefBlok,
       timing ? p(timing, { top: summary ? 8 : 0 }) : '',
       verderBlok,
       fotos ? p(nl

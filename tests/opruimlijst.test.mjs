@@ -198,14 +198,18 @@ console.log('\nB #6 · §17.16 · de termijnen van een onbetaalde bestelling op 
   ok("de cron typt geen '-7 days' meer", /-7 days/.test(cron), false);
   ok('  en geen "zeven dagen" of "seven days" in een mail', /zeven dagen|seven days/.test(cron), false);
   ok('  maar leest de termijnen uit termijnen.js', /from '\.\.\/src\/data\/termijnen\.js'/.test(cron), true);
-  ok('/admin start de vasthoudtermijn met VENSTER_VASTHOUDEN_DAGEN', (code('src/lib/admin.js').match(/\+\$\{VENSTER_VASTHOUDEN_DAGEN\} days/g) || []).length, 2);
+  /* Drie sinds levering 117 (17 november 2026, P5-04): naast "goedkeuren" en "btw alsnog rekenen" start ook
+     de nieuwe knop "btw verleggen" op /admin/vat de betaalklok, want hij stuurt ook een betaallink. */
+  ok('/admin start de vasthoudtermijn met VENSTER_VASTHOUDEN_DAGEN', (code('src/lib/admin.js').match(/\+\$\{VENSTER_VASTHOUDEN_DAGEN\} days/g) || []).length, 3);
 }
 
 console.log('\nB #7, #8 · §17.1, §17.3, §17.4, §17.23 · geen tweede bron, geen oud bedrag');
 {
   const pr = lees('src/data/pricing.js');
-  ok('VOORRANG_COPY.limits leest VOORRANG', /limits: `Available up to \$\{VOORRANG\.maxProducten\} products, or \$\{VOORRANG\.maxClips\} clips/.test(pr), true);
-  ok('  en noemt hetzelfde getal', P.VOORRANG_COPY.nl.limits.includes(`tot ${P.VOORRANG.maxProducten} producten, of ${P.VOORRANG.maxClips} clips`), true);
+  /* levering 119 (18 november 2026, proefronde P6-24): de grens komt uit voorrangGrens(), en de clips staan er pas
+     weer in als video te bestellen is (VIDEO_OP_AANVRAAG). */
+  ok('VOORRANG_COPY.limits leest VOORRANG', /limits: `Available up to \$\{voorrangGrens\('en', \{ komma: true \}\)\}/.test(pr) && /`\$\{VOORRANG\.maxProducten\} products`/.test(pr), true);
+  ok('  en noemt hetzelfde getal', P.VOORRANG_COPY.nl.limits.includes(`tot ${P.voorrangGrens('nl', { komma: true })},`) && P.VOORRANG_COPY.nl.limits.includes(`tot ${P.VOORRANG.maxProducten} producten`), true);
   ok('plans.js noemt het merkmodel niet meer "€ 1.250"', /1\.250/.test(lees('src/data/plans.js')), false);
   ok('het outfitcommentaar rekent niet met oude prijzen', /139\.99|179\.99/.test(pr), false);
   ok('niemand verwijst nog naar "zie eigenStijlCredits()"', /zie eigenStijlCredits\(\)/.test(pr), false);

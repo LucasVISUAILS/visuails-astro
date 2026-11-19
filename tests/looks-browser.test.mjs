@@ -86,6 +86,12 @@ async function open(pad, breed, aantal) {
     const m = document.querySelector('input[name="model"]');
     if (m && !document.querySelector('input[name="model"]:checked')) { m.checked = true; m.dispatchEvent(new Event('change', { bubbles: true })); }
   });
+  /* levering 118 (18 november 2026, P1-06): op de telefoon scrolt de vaste Verder eerst naar de blokken die nog niet in beeld
+     waren ("Nog 2 keuzes"); tik door tot hij weer "Verder" zegt, en dan naar stap 2. */
+  if (breed <= 900) {
+    const onder = page.locator('.wk-onder [data-pl-next]');
+    for (let i = 0; i < 6 && (await onder.evaluate((k) => k.classList.contains('is-omlaag'))); i++) { await onder.click(); await page.waitForTimeout(250); }
+  }
   await page.click(breed <= 900 ? '.wk-onder [data-pl-next]' : '.wk-krijg [data-pl-next]');
   await page.waitForTimeout(250);
   return { ctx, page, fouten };

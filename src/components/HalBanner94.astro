@@ -29,11 +29,22 @@
  *     de zin van de stap die speelt. De zin over VISUAILS (T.zin) staat niet meer in de banner; het blok onder de video zegt
  *     wat VISUAILS doet.
  *
- * WAT ER NIET HAPERT. Er speelt één video: 1920 breed op een scherm dat meer dan 1400 beeldpunten breed tekent, anders 1280.
+ * WAT ER NIET HAPERT. Er speelt één video: 1920 breed op een scherm dat meer dan 1400 (sinds levering 120: 1280) beeldpunten
+ * breed tekent, anders 1280.
  * Hij pauzeert zodra de banner uit beeld is en speelt niet bij "minder beweging".
+ *
+ * LEVERING 120 (19 november 2026, lijst 130 en 132) · DE KOP IS GEWONE TEKST. Wat hierboven over het venster, het negatief,
+ * de twee lagen, de telefoon over de kop en WebGL staat, geldt niet meer:
+ *   - één titel in één maat (VISUAILS Display 2 Light, 300) met een korte beschrijving eronder (DM Sans), in html;
+ *   - geen waas: de kleur van de tekst volgt de video. Ronde 2 (lijst 133, kleur a): de kop kiest zelf zwart of wit uit het
+ *     licht achter de tekst, en wisselt zo weinig mogelijk (kopPlan in banner94.js). Per videobeeld uit de tijd van de
+ *     video, dus na een sprong (een stap kiezen, laden, de lus) meteen goed;
+ *   - de video staat zelf op het scherm (geen basisvlak meer) en zijn midden ligt in het midden van het vrije stuk onder de
+ *     bovenbalk (banner-94.css);
+ *   - de kop staat op een breed scherm links naast de telefoon (hij raakt hem niet), daaronder op de grond onder de video.
  */
 import '../styles/banner-94.css';
-import { BANNER, HOOFDSTUKKEN, DUUR, kaartTabel, KAART_DEEL, MASKER } from '../data/banner94.js';
+import { BANNER, HOOFDSTUKKEN, DUUR } from '../data/banner94.js';
 import { IKOON, rolIkoon } from '../data/iconen.js';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -50,47 +61,29 @@ const { lang, knop, link, klantLink } = Astro.props as Props;
 const T = BANNER[lang];
 /* het teken achter de bestanden: verandert de video, dan haalt elke browser hem opnieuw (/img/* staat zeven dagen) */
 const h = createHash('sha1');
-for (const f of ['banner-1280.mp4', 'banner-1920.mp4', 'poster-1280.webp', 'poster-1920.webp', 'telefoon-masker.webp']) {
+/* levering 118: ook de telefoonversie (banner-540.mp4) en het stille eindbeeld (eind-*.webp) */
+for (const f of ['banner-540.mp4', 'banner-1280.mp4', 'banner-1920.mp4', 'poster-1280.webp', 'poster-1920.webp', 'eind-1280.webp', 'eind-1920.webp', 'telefoon-masker.webp']) {
   const p = path.join(process.cwd(), 'public', 'img', 'hal', 'banner', f);
   if (existsSync(p)) h.update(readFileSync(p));
 }
 const V = h.digest('hex').slice(0, 10);
 const pad = (f: string) => `/img/hal/banner/${f}?v=${V}`;
 
-/* de svg-kaart voor het reservepad (feComponentTransfer verdeelt 0 – 1 in gelijke stukken: 21 punten) */
-const tab = kaartTabel();
-const reeks = (k: number) => Array.from({ length: 21 }, (_, i) => (tab[Math.round(i / 20 * 255) * 3 + k] / 255).toFixed(4)).join(' ');
 const STAPPEN = T.stappen;
-/* levering 114: een lange grote regel staat op de telefoon op twee regels (banner94.js, kopTelefoon) */
-const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
 ---
-<svg width="0" height="0" class="b94-defs" aria-hidden="true" focusable="false"><defs>
-  <filter id="b94-neg" color-interpolation-filters="sRGB">
-    <feColorMatrix in="SourceGraphic" type="matrix" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" result="neg" />
-    <feColorMatrix in="neg" type="matrix" values=".2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  .2126 .7152 .0722 0 0  0 0 0 1 0" result="l" />
-    <feComponentTransfer in="l" result="kaart"><feFuncR type="table" tableValues={reeks(0)} /><feFuncG type="table" tableValues={reeks(1)} /><feFuncB type="table" tableValues={reeks(2)} /></feComponentTransfer>
-    <feComposite in="kaart" in2="neg" operator="arithmetic" k1="0" k2={String(KAART_DEEL)} k3={(1 - KAART_DEEL).toFixed(2)} k4="0" />
-  </filter>
-</defs></svg>
 <section class="b94" data-b94 data-v={V} aria-labelledby="b94-h1">
   <div class="b94-beeld" data-b94-beeld>
     <video class="b94-video" data-b94-video muted playsinline loop preload="metadata" poster={pad('poster-1280.webp')}
-           data-klein={pad('banner-1280.mp4')} data-groot={pad('banner-1920.mp4')} aria-label={T.video}></video>
-    {/* lijst 114 (V1): de video zelf wordt hier getekend, in hetzelfde moment als de letters, zodat ze nooit uit de pas lopen */}
-    <canvas class="b94-basis" data-b94-basis aria-hidden="true"></canvas>
-    {(['gat', 'vul'] as const).map((laag) => (
-      <div class={`b94-laag b94-${laag}`} aria-hidden={laag === 'vul' ? 'true' : undefined} data-b94-laag={laag}>
-        {laag === 'vul' && <canvas class="b94-effect" data-b94-effect></canvas>}
-        <div class="b94-tekst">
-          <div class="b94-kopvak">
-          {/* levering 110 (lijst 122, opbouw b): de eerste regel is een kleine aanloop, de tweede vult de kolom */}
-          {laag === 'gat'
-            ? <h1 id="b94-h1" class="b94-kop" aria-label={T.kop.join(' ')}><span class="b94-aanloop" aria-hidden="true">{T.kop[0]}</span><span class={`b94-groot${GROOT_DELEN ? ' b94-breekt' : ''}`} aria-hidden="true">{GROOT_DELEN ? <Fragment><span class="b94-deel">{GROOT_DELEN[0]}</span> <span class="b94-deel">{GROOT_DELEN[1]}</span></Fragment> : T.kop[1]}</span></h1>
-            : <p class="b94-kop"><span class="b94-aanloop">{T.kop[0]}</span><span class={`b94-groot${GROOT_DELEN ? ' b94-breekt' : ''}`}>{GROOT_DELEN ? <Fragment><span class="b94-deel">{GROOT_DELEN[0]}</span> <span class="b94-deel">{GROOT_DELEN[1]}</span></Fragment> : T.kop[1]}</span></p>}
-          </div>
-        </div>
-      </div>
-    ))}
+           data-telefoon={pad('banner-540.mp4')} data-klein={pad('banner-1280.mp4')} data-groot={pad('banner-1920.mp4')}
+           data-stil-klein={pad('eind-1280.webp')} data-stil-groot={pad('eind-1920.webp')} aria-label={T.video}></video>
+  </div>
+
+  {/* levering 120 (19 november 2026, lijst 130 en 132): de kop is gewone tekst, één titel in één maat en een korte
+      beschrijving, in één kleur die met de video meeloopt (--b94-kleur, zie het script). Op een breed scherm staat hij links
+      naast de telefoon op de video, op een smaller scherm op de grond onder de video (banner-94.css). */}
+  <div class="b94-kopvak" data-b94-kop>
+    <h1 id="b94-h1" class="b94-kop">{T.titel}</h1>
+    <p class="b94-zin">{T.beschrijving}</p>
   </div>
 
   {/* het witte vlak (lijst 94, A2 a), sinds levering 114 een compacte balk onderaan in het midden: de vijf stappen naast
@@ -129,14 +122,15 @@ const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
   </div>
 
   <script type="application/json" data-b94-data set:html={JSON.stringify({
-    hoofdstukken: HOOFDSTUKKEN, duur: DUUR, kaart: kaartTabel(), deel: KAART_DEEL,
-    masker: { ...MASKER, src: pad('telefoon-masker.webp') },
+    hoofdstukken: HOOFDSTUKKEN, duur: DUUR,
   })} />
 </section>
 
 <script>
-  type Data = { hoofdstukken: number[]; duur: number; kaart: number[]; deel: number;
-    masker: { src: string; fps: number; beelden: number; kolommen: number; rijen: number; donker: [number, number] } };
+  /* levering 120, ronde 2: het plan voor de kleur van de kop (het licht achter de kop is gemeten, zie banner94.js) */
+  import { kopPlan } from '../data/banner94.js';
+  type Data = { hoofdstukken: number[]; duur: number };
+  let plan: ReturnType<typeof kopPlan> | null = null;
   let ruim: (() => void) | null = null, loopt: HTMLElement | null = null;
   function start() {
     const sec = document.querySelector<HTMLElement>('[data-b94]');
@@ -147,12 +141,6 @@ const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
     const data = JSON.parse(sec.querySelector('[data-b94-data]')!.textContent || '{}') as Data;
     const beeld = sec.querySelector<HTMLElement>('[data-b94-beeld]')!;
     const vid = sec.querySelector<HTMLVideoElement>('[data-b94-video]')!;
-    let doek = sec.querySelector<HTMLCanvasElement>('[data-b94-effect]')!;
-    /* LIJST 114 (V1): "De negatieve tekst kleuren gaan nog niet perfect mee met de video erachter." De video kwam via de
-       browser op het scherm en de letters via ons canvas, een beeld later. Nu tekenen we de video zelf ook, in hetzelfde
-       moment als de letters (het basisvlak); de video-tag speelt onzichtbaar als bron. */
-    const basis = sec.querySelector<HTMLCanvasElement>('[data-b94-basis]');
-    const bg = basis ? basis.getContext('2d', { alpha: false }) : null;
     const pauze = sec.querySelector<HTMLButtonElement>('[data-b94-pauze]')!;
     const html = document.documentElement;
     const minder = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -174,14 +162,44 @@ const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
     const balk = () => html.classList.toggle('b94-boven', window.scrollY < 4);
     balk(); op('scroll', balk, { passive: true });
 
-    /* ── de video: 1920 als het scherm meer dan 1400 beeldpunten breed tekent, anders 1280 ── */
-    const groot = beeld.clientWidth * Math.min(2, window.devicePixelRatio || 1) > 1400;
-    vid.src = (groot ? vid.dataset.groot : vid.dataset.klein) || '';
-    vid.preload = 'auto';
+    /* ── de video: 1920 als het scherm meer dan 1280 beeldpunten breed tekent (tot levering 120: 1400), anders 1280 ── */
+    /* LEVERING 118 (17 november 2026, proefronde T1-02): "Telefoon haalt 16 MB video op bij binnenkomst". Drie dingen:
+       - op een staand scherm (de telefoon, het beeld smaller dan 0,9 × zijn hoogte) de telefoonversie banner-540.mp4: het
+         midden van de video (810 × 1080 uit de 1920, verkleind naar 540 × 720), precies het stuk dat de telefoon toch laat
+         zien (object-fit: cover), even scherp als de 1280 daar was. 2,1 MB in plaats van 9,8 MB;
+       - preload "metadata" in plaats van "auto": de browser haalt op wat hij nodig heeft om te spelen, niet alles vooraf;
+       - de bron pas zetten als hij gaat spelen (speel()), of als je een stap kiest. Wie minder beweging of databesparing
+         aan heeft, haalt dus geen video op tot hij zelf op afspelen drukt.
+       LEVERING 118 (proefronde P11-06): met minder beweging stond de banner op het eerste beeld van de video, en dat is wit.
+       Nu staat er het stille eindbeeld (eind-*.webp: de jas bij de waterval, 18 s in de video, hoofdstuk 5) en tekent de kop
+       daarop, net als op de video.
+       LEVERING 120 (19 november 2026, lijst 132): "de video blijft van hoge kwaliteit". De video staat iets groter dan de banner
+       als dat nodig is om zijn midden onder de bovenbalk te krijgen (banner-94.css); de keus telt daarom de maat waarop de
+       video echt getekend wordt (cover: de grootste van de breedte en 16/9 × de hoogte van de video-tag), niet de banner. En
+       de grens is 1280 (de breedte van de kleine video) in plaats van 1400: op 1366 breed werd de 1280 met 7 % vergroot. Nu
+       is de video nooit groter getekend dan hij is (behalve de telefoonversie; zie notities-K.md, levering 120). */
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const staand = beeld.clientWidth < beeld.clientHeight * 0.9;
+    const vr = vid.getBoundingClientRect();
+    const getekend = Math.max(beeld.clientWidth, vr.width, vr.height * 16 / 9);
+    const bron = (staand && beeld.clientWidth * dpr <= 1100 && vid.dataset.telefoon) ? vid.dataset.telefoon
+      : (getekend * dpr > 1280 ? vid.dataset.groot : vid.dataset.klein) || '';
+    const zuinig = !!(navigator as any).connection?.saveData;
+    const STIL_T = 18;   /* het eindbeeld is de video op 18 s */
+    const zetBron = () => { if (!vid.getAttribute('src') && bron) { vid.preload = 'metadata'; vid.src = bron; } };
+    /* zolang het stille beeld er staat (als poster van de video), hoort de kop bij 18 s, ook als de video al een (wit) eerste
+       beeld heeft */
+    let stilVast = minder || zuinig;
     opV('error', () => { sec.classList.add('b94-geen'); });
-    let handPauze = minder;
+    let handPauze = minder || zuinig;
+    if (stilVast) {
+      const s = (getekend * dpr > 1280 ? vid.dataset.stilGroot : vid.dataset.stilKlein) || '';
+      vid.poster = s;
+    }
+    const losVanStil = () => { if (stilVast && !vid.paused) { stilVast = false; } };
+    opV('playing', losVanStil); opV('seeked', () => { stilVast = false; });
     /* weigert de browser het afspelen (geen autoplay, stroombesparing), dan staat de knop op afspelen: de bezoeker start hem zelf */
-    const speel = () => { if (!handPauze && zicht) vid.play().catch(() => { handPauze = true; zetPauze(); }); };
+    const speel = () => { if (!handPauze && zicht) { zetBron(); vid.play().catch(() => { handPauze = true; zetPauze(); }); } };
     let zicht = false;
     const io = new IntersectionObserver(([e]) => { zicht = e.isIntersecting; if (zicht) speel(); else vid.pause(); }, { threshold: 0.1 });
     io.observe(beeld); weg.push(() => io.disconnect());
@@ -227,24 +245,39 @@ const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
     let wacht = -1, wachtStap = -1;
     const binnen = (t: number) => { const b = vid.buffered; for (let k = 0; k < b.length; k++) if (t >= b.start(k) && t <= b.end(k) - 0.25) return true; return false; };
     function gaNaar(i: number) {
+      /* levering 118: zonder bron (minder beweging, nog niet gespeeld) laadt de video pas nu, en dan wel helemaal */
+      if (!vid.getAttribute('src')) { zetBron(); vid.preload = 'auto'; }
       const t = H[i] + 0.02;
-      if (binnen(t) || (vid.seekable.length && vid.buffered.length === 0 && t < 0.5)) { wacht = -1; wachtStap = -1; vid.currentTime = t; teken(); stapBij(true); return; }
+      if (binnen(t) || (vid.seekable.length && vid.buffered.length === 0 && t < 0.5)) { wacht = -1; wachtStap = -1; vid.currentTime = t; bij(); stapBij(true); return; }
       wacht = t; wachtStap = i; zetStap(i); haalHeel();
     }
     opV('progress', () => { if (wacht >= 0 && binnen(wacht)) gaNaar(wachtStap); });
     /* Zodra de video speelt, halen we hem in zijn geheel op (meestal uit de cache van de browser, die hem toch al laadt) en
-       spelen we verder vanuit het geheugen, op hetzelfde moment. Daarna is elke stap direct: alles is binnen. Het basisvlak
-       houdt zijn laatste beeld vast, dus de wissel is niet te zien. */
+       spelen we verder vanuit het geheugen, op hetzelfde moment. Daarna is elke stap direct: alles is binnen.
+       levering 120 (19 november 2026, lijst 132): het basisvlak (dat het laatste beeld vasthield) is weg. Daarom is het
+       beeld van dat moment even de poster van de video (cover, dus op precies dezelfde plek), tot de video weer een beeld
+       heeft; daarna weer de gewone poster. Zo is de wissel nog steeds niet te zien. */
     let heel = false;
+    const vastBeeld = () => new Promise<string>((klaar) => {
+      if (vid.readyState < 2 || !vid.videoWidth) return klaar('');
+      try {
+        const c = document.createElement('canvas'); c.width = vid.videoWidth; c.height = vid.videoHeight;
+        c.getContext('2d')!.drawImage(vid, 0, 0);
+        c.toBlob((b) => klaar(b ? URL.createObjectURL(b) : ''), 'image/jpeg', 0.92);
+      } catch { klaar(''); }
+    });
     const haalHeel = async () => {
       if (heel || !vid.currentSrc || vid.currentSrc.startsWith('blob:')) return; heel = true;
       try {
         const r = await fetch(vid.currentSrc); if (!r.ok) return;
         const url = URL.createObjectURL(await r.blob());
         if (!loopt || loopt !== sec) { URL.revokeObjectURL(url); return; }
+        const oud = vid.getAttribute('poster') || '', vast = await vastBeeld();
         const t = vid.currentTime, liep = !vid.paused;
+        if (vast) vid.poster = vast;
         vid.src = url; weg.push(() => URL.revokeObjectURL(url));
         await new Promise((klaar) => vid.addEventListener('loadedmetadata', klaar, { once: true }));
+        if (vast) vid.addEventListener('seeked', () => setTimeout(() => { vid.poster = oud; URL.revokeObjectURL(vast); }, 250), { once: true });
         vid.currentTime = wacht >= 0 ? wacht : t;
         if (wacht >= 0) { wacht = -1; wachtStap = -1; }
         if (liep) speel();
@@ -262,7 +295,8 @@ const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
     }
     function stapBij(dwing = false) {
       if (wacht >= 0) return;   /* de gekozen stap staat al open; de video komt zo */
-      const t = vid.currentTime, d = vid.duration || data.duur;
+      /* levering 118 (P11-06): op het stille eindbeeld staat stap 5 open */
+      const t = stilVast ? STIL_T : vid.currentTime, d = vid.duration || data.duur;
       let i = 0; while (i + 1 < N && t >= H[i + 1]) i++;
       if (vast && !dwing && i !== hs) {
         /* de lijst staat stil: het balkje van de open stap staat vol tot je de lijst loslaat */
@@ -279,267 +313,42 @@ const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
     }
     gas.forEach((b) => b.addEventListener('click', () => gaNaar(+(b.dataset.b94Ga || 0))));
 
-    /* ── het effect: WebGL (het negatief en de kaart in één tekening), anders een canvas met het svg-filter ── */
-    let gl: WebGLRenderingContext | null = null, prog: WebGLProgram | null = null, uDek: WebGLUniformLocation | null = null, vTex: WebGLTexture | null = null;
-    let uB: WebGLUniformLocation | null = null, maskerKlaar = false, mediaTijd = -1, lTex: WebGLTexture | null = null;
-    /* de video in het klein, voor de kleur van de kop (levering 115, lijst 125 C) */
-    const klein = document.createElement('canvas'); klein.width = 192; klein.height = 108;
-    const kc = klein.getContext('2d', { willReadFrequently: true });
-    let hTex: WebGLTexture | null = null, uWit: WebGLUniformLocation | null = null;
-    const halo = document.createElement('canvas'), hc = halo.getContext('2d');
-    const kop = { wit: 0, doel: 0 };
-    const nummers = document.createElement('canvas'), nc = nummers.getContext('2d');
-    /* de letters van de kop: hun rechthoek in het doek (beeldpunten) en hoe wit ze nu zijn */
-    let glyfen: { x0: number; y0: number; x1: number; y1: number; cel: Int32Array; gew: Float32Array }[] = [];
-    let gewSleutel = '';
-    let vorigeTijd = 0, springen = true;
-    /* van sRGB (0 – 255) naar lineair licht: de luminantie telt in lineair licht (WCAG) */
-    const LIN = new Float32Array(256).map((_, i) => { const c = i / 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
-    const letters = document.createElement('canvas'), lc = letters.getContext('2d');
-    try { gl = doek.getContext('webgl', { premultipliedAlpha: false, antialias: false, preserveDrawingBuffer: false }) as WebGLRenderingContext | null; } catch { gl = null; }
-    /* Zonder echte videokaart (SwiftShader, de software-tekenaar van Chrome) gaat elk videobeeld als textuur via het geheugen
-       en wacht de tekenaar ("GPU stall due to ReadPixels"). Daar is het canvas met het svg-filter lichter. */
-    if (gl) {
-      const info = gl.getExtension('WEBGL_debug_renderer_info');
-      const naam = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
-      if (/SwiftShader|llvmpipe|Software/i.test(naam) && !(window as any).__b94ZachtGL) { gl.getExtension('WEBGL_lose_context')?.loseContext(); gl = null; }
+    /* ── LEVERING 120 · DE KLEUR VAN DE KOP volgt de video ──
+       Ronde 1 (lijst 132): vaste tijden (inkt, wit vanaf 4,25 s, aan het eind terug naar inkt). Ronde 2 (lijst 133, kleur a;
+       Lucas: "probeer zo lang mogelijk 1 kleur te houden"): de kop (titel en zin samen) kiest zelf zwart of wit uit het licht
+       achter de tekst; het plan (kopPlan in banner94.js) wisselt zo weinig mogelijk: alleen als de kleur onder 3 : 1 zakt en
+       de andere 15 % beter is, elke kleur minstens 1,5 s, een korte flits slaat hij over, begin en eind in inkt.
+       Per videobeeld uit de tijd van dat beeld (requestVideoFrameCallback). Een wissel tijdens het spelen loopt zacht over
+       (0,35 s, banner-94.css); na een sprong (een stap kiezen, laden, de lus terug naar 0) staat meteen de goede kleur. Op
+       het stille eindbeeld (minder beweging) de kleur van 18 s uit hetzelfde plan (wit; gemeten 13 : 1).
+       De kleur geldt alleen waar de kop op de video staat (een breed scherm); op de grond is hij inkt (banner-94.css). */
+    if (!plan) { try { plan = kopPlan(); } catch { plan = null; } }
+    let mediaTijd = -1, vorigeKleur = '', vorigeT = -1, springt = false;
+    const kleurOp = (t: number) => { if (!plan || !(t >= 0)) return 0; const n = plan.kleur.length; return plan.kleur[Math.max(0, Math.min(n - 1, Math.round(t * plan.fps)))]; };
+    function zetKleur(meteen = false) {
+      const t = stilVast ? STIL_T : (mediaTijd >= 0 ? mediaTijd : vid.currentTime);
+      /* een sprong: de video zoekt (seeking), of de tijd loopt meer dan een paar beelden verder of terug (de lus, een stap
+         kiezen). Het beeld na een sprong kan via requestVideoFrameCallback eerder komen dan "seeked": daarom hier. */
+      if (springt || (vorigeT >= 0 && Math.abs(t - vorigeT) > 0.25)) meteen = true;
+      springt = false;
+      vorigeT = t;
+      const w = kleurOp(t), k = w ? '#FFFFFF' : '#090D0B';
+      if (k === vorigeKleur) return;
+      if (meteen || !vorigeKleur) { sec.classList.add('b94-meteen'); requestAnimationFrame(() => requestAnimationFrame(() => sec.classList.remove('b94-meteen'))); }
+      vorigeKleur = k; sec.style.setProperty('--b94-kleur', k); sec.dataset.b94Wit = String(w);
     }
-    let g2: CanvasRenderingContext2D | null = null;
-    if (gl) {
-      const sh = (t: number, s: string) => { const x = gl!.createShader(t)!; gl!.shaderSource(x, s); gl!.compileShader(x); return x; };
-      prog = gl.createProgram()!;
-      gl.attachShader(prog, sh(gl.VERTEX_SHADER, 'attribute vec2 p; varying vec2 uv; void main(){ uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }'));
-      /* LEVERING 114, DE TELEFOON OVER DE KOP. In de eerste scène staat de telefoon op een effen witte grond (min(r, g, b) =
-         0,988). Waar de video niet bijna wit is (de telefoon, de hand, de mouw) tekenen we in de letters de video zelf in plaats
-         van het negatief: dan staat de telefoon vóór de kop. Die rand komt per beeldpunt uit de video, dus scherp. Het scherm
-         van de telefoon is licht (een houten vloer, de witte sluiterknop); daar vult het masker (scripts/telefoon-masker.py,
-         per videobeeld de vorm met de gaten dicht) het binnenste. b = het beeld in het masker, of -1 buiten de eerste scène.
-         De letters tekent WebGL dan zelf (lt: de kop als plaatje, wit op doorzichtig), met als dekking "letter × niet de
-         telefoon", over het basisvlak heen. Met de twee lagen (gat en vulling) bleef van elke letter onder de telefoon een
-         dunne omtrek zichtbaar (de zachte rand van een letter mengt bij "screen" niet precies terug tot de video). De twee
-         lagen blijven voor wie geen WebGL heeft; de kop in de html blijft er voor een schermlezer. */
-      const M = data.masker;
-      gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float; varying vec2 uv; uniform sampler2D v; uniform sampler2D mk; uniform sampler2D lt; uniform sampler2D hl; uniform float wit; uniform vec4 dek; uniform float b;
-        void main(){ vec2 q = dek.xy + uv * dek.zw; vec3 c = texture2D(v, q).rgb;
-        /* LEVERING 115 (Lucas, 17 november 02:52: "de koptekst op het begin iets minder intens ... met het groene. Het is wat
-           veel"; lijst 125, C): geen beeld meer in de letters. 03:20: "Ik wil dat de kleuren echt perfect kloppen zodat het
-           smooth aanvoelt"; 03:40 koos hij uit de vergelijking: de HELE kop één kleur, met een dunne zachte rand in de andere
-           kleur (hl: de letters vervaagd), zodat hij op elk beeld leest. wit (0 = inkt, 1 = wit) kiest het script uit wat er
-           achter de letters staat (kopKleur) en loopt in ± 0,25 s over. */
-        vec3 inkt = vec3(.035, .051, .043);
-        float voor = 0.0;
-        if (b >= 0.0) {
-          float mn = min(c.r, min(c.g, c.b));
-          float rand = smoothstep(${M.donker[0].toFixed(3)}, ${M.donker[1].toFixed(3)}, mn);
-          vec2 iq = vec2(q.x, 1.0 - q.y);
-          float kol = mod(b, ${M.kolommen.toFixed(1)}), rij = floor(b / ${M.kolommen.toFixed(1)});
-          vec2 a = vec2((kol + clamp(iq.x, 0.002, 0.998)) / ${M.kolommen.toFixed(1)}, (rij + clamp(iq.y, 0.004, 0.996)) / ${M.rijen.toFixed(1)});
-          float vol = texture2D(mk, vec2(a.x, 1.0 - a.y)).r;
-          voor = max(rand, vol);
-        }
-        float letter = texture2D(lt, uv).a;
-        vec3 tk = mix(inkt, vec3(1.0), wit), rk = mix(vec3(1.0), inkt, wit);   /* de letters en hun rand */
-        float aH = texture2D(hl, uv).a * .42 * (1.0 - letter), a = letter + aH;
-        gl_FragColor = vec4((tk * letter + rk * aH) / max(a, .001), a * (1.0 - voor)); }`));
-      gl.linkProgram(prog);
-      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; }
-    }
-    if (gl && prog) {
-      gl.useProgram(prog);
-      const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-      const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      const tex = (eenheid: number) => { const t = gl!.createTexture()!; gl!.activeTexture(gl!.TEXTURE0 + eenheid); gl!.bindTexture(gl!.TEXTURE_2D, t);
-        for (const [p, w] of [[gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE], [gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE], [gl!.TEXTURE_MIN_FILTER, gl!.LINEAR], [gl!.TEXTURE_MAG_FILTER, gl!.LINEAR]]) gl!.texParameteri(gl!.TEXTURE_2D, p, w);
-        return t; };
-      vTex = tex(0);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.uniform1i(gl.getUniformLocation(prog, 'v'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'mk'), 2);
-      uDek = gl.getUniformLocation(prog, 'dek');
-      uB = gl.getUniformLocation(prog, 'b'); gl.uniform1f(uB, -1);
-      /* het masker van de telefoon: één plaat, pas als die binnen is doet de telefoon mee (tot dan het negatief, zoals vroeger) */
-      const mTex = tex(2);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 1, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, new Uint8Array([0]));
-      const mImg = new Image(); mImg.decoding = 'async';
-      mImg.onload = () => { if (!gl) return; gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, mTex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, gl.LUMINANCE, gl.UNSIGNED_BYTE, mImg); maskerKlaar = true; teken(); };
-      mImg.src = data.masker.src;
-      lTex = tex(3);
-      gl.uniform1i(gl.getUniformLocation(prog, 'lt'), 3);
-      hTex = tex(4); gl.uniform1i(gl.getUniformLocation(prog, 'hl'), 4);
-      uWit = gl.getUniformLocation(prog, 'wit'); gl.uniform1f(uWit, 0);
-    } else {
-      /* een canvas dat al webgl was, geeft geen 2d meer: dan een nieuw */
-      g2 = doek.getContext('2d');
-      if (!g2) { const nieuw = doek.cloneNode(false) as HTMLCanvasElement; doek.replaceWith(nieuw); doek = nieuw; g2 = doek.getContext('2d'); }
-      doek.classList.add('b94-svg');
-    }
-    /* LEVERING 113 (Lucas, 16 november 20:45: "Hoe kunnen we ervoor zorgen dat de video op de home page wat soepeler loopt").
-       Per videobeeld kopieerden we de hele video twee keer: naar het basisvlak en, als textuur, naar het effect, allebei op
-       de maat van het scherm keer de pixeldichtheid (op een retina-scherm van 1440 breed: 2880 × 1800, terwijl de video zelf
-       1920 breed is). Nu:
-       - geen doek is groter dan de video zelf (meer beeldpunten dan de video heeft, maakt het niet scherper);
-       - het effect (het negatief in de letters) beslaat alleen de rechthoek van de kop, niet de hele banner: de laag eromheen
-         is zwart, en zwart verandert met "screen" niets. De kop is ongeveer een tiende van de banner. */
-    let vak = { x: 0, y: 0, w: 1, h: 1 };   /* de rechthoek van de kop, in breukdelen van de banner */
-    const kopEl = sec.querySelector<HTMLElement>('.b94-vul .b94-kop');
-    function maat() {
-      const r = beeld.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
-      const max = Math.min(1, (vid.videoWidth || 1920) / Math.max(1, r.width * dpr));   /* nooit meer beeldpunten dan de video */
-      const k = dpr * max;
-      const w = Math.max(1, Math.round(r.width * k)), hh = Math.max(1, Math.round(r.height * k));
-      if (basis && (basis.width !== w || basis.height !== hh)) { basis.width = w; basis.height = hh; }
-      if (kopEl && r.width > 0) {
-        const q = kopEl.getBoundingClientRect(), m = 8;
-        const x0 = Math.max(0, q.left - r.left - m), y0 = Math.max(0, q.top - r.top - m);
-        const x1 = Math.min(r.width, q.right - r.left + m), y1 = Math.min(r.height, q.bottom - r.top + m);
-        vak = { x: x0 / r.width, y: y0 / r.height, w: Math.max(1, x1 - x0) / r.width, h: Math.max(1, y1 - y0) / r.height };
-        Object.assign(doek.style, { inset: 'auto', left: `${x0}px`, top: `${y0}px`, width: `${x1 - x0}px`, height: `${y1 - y0}px` });
-      }
-      const ew = Math.max(1, Math.round(r.width * vak.w * k)), eh = Math.max(1, Math.round(r.height * vak.h * k));
-      if (doek.width !== ew || doek.height !== eh) { doek.width = ew; doek.height = eh; }
-      tekenLetters(r, ew / Math.max(1, r.width * vak.w));
-    }
-    /* de kop als plaatje voor WebGL: elke regel op de plek waar de html hem zet (de lagen staan dan onzichtbaar), in dezelfde
-       letter. De basislijn: midden in de regel, zoals de browser hem zet (de letter is hoger dan de regel, .92). */
-    function tekenLetters(r: DOMRect, k: number) {
-      if (!gl || !lTex || !lc || !kopEl) return;
-      if (!document.fonts.check('700 20px "VISUAILS Display Blok"')) return;
-      letters.width = doek.width; letters.height = doek.height;
-      lc.clearRect(0, 0, letters.width, letters.height); lc.fillStyle = '#FFFFFF'; lc.textBaseline = 'alphabetic';
-      if (nc) { nummers.width = doek.width; nummers.height = doek.height; nc.clearRect(0, 0, nummers.width, nummers.height); nc.textBaseline = 'alphabetic'; nc.lineJoin = 'round'; }
-      glyfen = [];
-      const ox = r.left + vak.x * r.width, oy = r.top + vak.y * r.height;
-      const regels = [...kopEl.querySelectorAll<HTMLElement>('.b94-aanloop, .b94-groot:not(.b94-breekt), .b94-deel')].filter((e) => e.getClientRects().length);
-      for (const e of regels) {
-        const fs = parseFloat(getComputedStyle(e).fontSize), q = e.getBoundingClientRect();
-        lc.font = `700 ${fs * k}px "VISUAILS Display Blok"`;
-        const t = (e.textContent || '').toUpperCase(), mt = lc.measureText(t);
-        const asc = mt.fontBoundingBoxAscent ?? fs * k * .8, desc = mt.fontBoundingBoxDescent ?? fs * k * .2;
-        const rh = q.height * k, basis = (q.top - oy) * k + (rh - (asc + desc)) / 2 + asc;
-        const x0 = (q.left - ox) * k;
-        lc.fillText(t, x0, basis);
-        /* elke letter apart: zijn plek en zijn rechthoek; het nummer tekenen we hieronder */
-        for (let i = 0; i < t.length; i++) {
-          if (t[i] === ' ' || glyfen.length >= 50) continue;
-          const x = x0 + lc.measureText(t.slice(0, i)).width, m = lc.measureText(t[i]);
-          glyfen.push({ x0: x, x1: x + m.width, y0: basis - (m.actualBoundingBoxAscent || fs * k * .72), y1: basis + (m.actualBoundingBoxDescent || 0),
-            cel: new Int32Array(0), gew: new Float32Array(0),
-            ...({ teken: t[i], font: lc.font, bx: x, by: basis, dik: Math.max(2, fs * k * 0.14) } as any) });
-        }
-      }
-      /* Het nummer van elke letter: eerst van alle letters een iets dikkere omtrek (zodat ook de zachte rand een nummer
-         heeft), dan alle letters zelf erover. Zo kan de omtrek van een letter nooit in zijn buurman komen. */
-      if (nc) {
-        for (const pas of ['omtrek', 'vlak'] as const) glyfen.forEach((g: any, id) => {
-          const kleur = `rgb(0, ${id * 5 + 3}, 0)`; nc.font = g.font; nc.fillStyle = kleur; nc.strokeStyle = kleur; nc.lineWidth = g.dik;
-          if (pas === 'omtrek') nc.strokeText(g.teken, g.bx, g.by); else nc.fillText(g.teken, g.bx, g.by);
-        });
-        gewSleutel = '';
-      }
-      if (hc) {
-        halo.width = doek.width; halo.height = doek.height; hc.clearRect(0, 0, halo.width, halo.height); hc.fillStyle = '#FFFFFF'; hc.textBaseline = 'alphabetic';
-        glyfen.forEach((g: any) => { hc.font = g.font; hc.filter = `blur(${(g.dik / 0.14 * 0.09).toFixed(1)}px)`; hc.fillText(g.teken, g.bx, g.by); hc.fillText(g.teken, g.bx, g.by); });
-        hc.filter = 'none';
-        if (hTex) { gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, hTex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, halo); }
-      }
-      springen = true;
-      gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, lTex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, letters);
-      gl.activeTexture(gl.TEXTURE0);
-      sec.classList.add('b94-gl');
-    }
-    /* DE KLEUR VAN DE KOP (levering 115, Lucas 03:20: "Ik wil dat de kleuren echt perfect kloppen zodat het smooth aanvoelt";
-       03:40 koos hij één kleur voor de hele kop). Per videobeeld het licht (lineair, WCAG) achter de letters, alleen waar de
-       letters zelf staan (gewogen naar hun vorm), op de video in het klein (192 × 108, elk punt ± 10 videopunten; nagemeten
-       tegen de video zelf met ffmpeg op 1920 breed: op 0,01 gelijk). Wit leest het slechtst op het lichtste deel, inkt op het
-       donkerste: de kleur met het hoogste contrast op dat deel (het lichtste 40 % voor wit, het donkerste 40 % voor inkt) wint;
-       contrast wit 1,05 / (L + 0,05), inkt (L + 0,05) / 0,0535. De kop wisselt pas als de andere kleur 15 % beter is (zo
-       flikkert hij niet) en vloeit dan over in ± 0,25 s (tau 0,08 s). Na een sprong (laden, een stap kiezen) meteen goed.
-       De dunne zachte rand in de andere kleur (hl) houdt hem leesbaar waar het achter de letters gemengd is. */
-    function kopKleur() {
-      if (!kc || !uWit || !glyfen.length || !doek.width) return;
-      const nu = performance.now(), dt = vorigeTijd ? Math.min(0.1, (nu - vorigeTijd) / 1000) : 0; vorigeTijd = nu;
-      const [ex, ey, ew, eh] = dek(true), W = klein.width, H = klein.height;
-      /* waar elke letter precies staat, in de punten van de video in het klein (gewogen naar hoeveel van de letter erin valt):
-         zo telt alleen het licht achter de letter zelf, niet de lege hoeken van zijn rechthoek (de T, de L) */
-      const sleutel = `${ex.toFixed(5)},${ey.toFixed(5)},${ew.toFixed(5)},${eh.toFixed(5)},${doek.width},${doek.height},${glyfen.length}`;
-      if (sleutel !== gewSleutel && nc && nummers.width) {
-        gewSleutel = sleutel;
-        const nd = nc.getImageData(0, 0, nummers.width, nummers.height).data, NW = nummers.width, NH = nummers.height;
-        const tel = glyfen.map(() => new Map<number, number>());
-        for (let y = 0; y < NH; y++) {
-          const sy = Math.min(H - 1, Math.max(0, Math.floor((ey + (y + .5) / NH * eh) * H)));
-          for (let x = 0; x < NW; x++) {
-            const gr = nd[(y * NW + x) * 4 + 1]; if ((gr - 3) % 5 !== 0) continue;
-            const id = (gr - 3) / 5; if (id >= glyfen.length) continue;
-            const sx = Math.min(W - 1, Math.max(0, Math.floor((ex + (x + .5) / NW * ew) * W)));
-            const c = sy * W + sx, m = tel[id]; m.set(c, (m.get(c) || 0) + 1);
-          }
-        }
-        glyfen.forEach((g, i) => { g.cel = Int32Array.from(tel[i].keys()); g.gew = Float32Array.from(tel[i].values()); });
-      }
-      const px = kc.getImageData(0, 0, W, H).data;
-      const alles: [number, number][] = [];
-      for (const g of glyfen) for (let j = 0; j < g.cel.length; j++) { const o = g.cel[j] * 4; alles.push([.2126 * LIN[px[o]] + .7152 * LIN[px[o + 1]] + .0722 * LIN[px[o + 2]], g.gew[j]]); }
-      if (!alles.length) return;
-      alles.sort((p, q) => p[0] - q[0]);
-      const tot = alles.reduce((t, r) => t + r[1], 0);
-      const deel = (fr: number) => { let a = 0; for (const [l, w] of alles) { a += w; if (a >= fr * tot) return l; } return alles[alles.length - 1][0]; };
-      const cWit = 1.05 / (deel(.6) + .05), cInkt = (deel(.4) + .05) / .0535;
-      if (springen) kop.doel = cWit >= cInkt ? 1 : 0;
-      else if (kop.doel === 1 && cInkt > cWit * 1.15) kop.doel = 0;
-      else if (kop.doel === 0 && cWit > cInkt * 1.15) kop.doel = 1;
-      kop.wit += (kop.doel - kop.wit) * (springen ? 1 : 1 - Math.exp(-dt / 0.08));
-      springen = false;
-      gl!.uniform1f(uWit, kop.wit);
-    }
-    /* het stuk van de video dat de banner toont (object-fit: cover), in breukdelen van de video; deel = alleen de kop */
-    function dekVol(): [number, number, number, number] {
-      const vw = vid.videoWidth || 16, vh = vid.videoHeight || 9, A = beeld.clientWidth / Math.max(1, beeld.clientHeight), Av = vw / vh;
-      return A > Av ? [0, (1 - Av / A) / 2, 1, Av / A] : [(1 - A / Av) / 2, 0, A / Av, 1];
-    }
-    function dek(deel = false): [number, number, number, number] {
-      const [x, y, w, h] = dekVol();
-      return deel ? [x + w * vak.x, y + h * vak.y, w * vak.w, h * vak.h] : [x, y, w, h];
-    }
-    function teken() {
-      if (vid.readyState < 2) return;
-      if (bg && basis) {
-        const [x, y, w, h] = dek(), vw = vid.videoWidth, vh = vid.videoHeight;
-        try { bg.drawImage(vid, x * vw, y * vh, w * vw, h * vh, 0, 0, basis.width, basis.height); sec.classList.add('b94-sync'); } catch { /* het basisvlak blijft uit; de video staat er zelf */ }
-      }
-      if (gl && prog) {
-        gl.viewport(0, 0, doek.width, doek.height);
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, vTex);
-        try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, vid); } catch { return; }
-        gl.useProgram(prog);
-        if (kc) { kc.drawImage(vid, 0, 0, klein.width, klein.height); kopKleur(); }
-        /* de textuur staat op zijn kop (UNPACK_FLIP_Y): in de textuur telt y van onder, dus de rechthoek van de kop omrekenen */
-        const [ex, ey, ew, eh] = dek(true); gl.uniform4fv(uDek, [ex, 1 - ey - eh, ew, eh]);
-        /* het beeld van de video (24 per seconde): uit requestVideoFrameCallback als die er is, anders de tijd van de video */
-        const t = mediaTijd >= 0 ? mediaTijd : vid.currentTime, bi = Math.round(t * data.masker.fps);
-        gl.uniform1f(uB, maskerKlaar && bi >= 0 && bi < data.masker.beelden ? bi : -1);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-      } else if (g2) {
-        const [x, y, w, h] = dek(true), vw = vid.videoWidth, vh = vid.videoHeight;
-        g2.drawImage(vid, x * vw, y * vh, w * vw, h * vh, 0, 0, doek.width, doek.height);
-      }
-    }
-    function tekenNu() { teken(); stapBij(); }
-    /* per nieuw videobeeld (24 keer per seconde, niet 60) */
+    /* de stappen (het balkje loopt mee) en de kleur, per nieuw videobeeld (24 keer per seconde, niet 60) */
+    function bij(meteen = false) { zetKleur(meteen); stapBij(); }
     let actief = true;
     const rv = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
-    const lus = (_nu?: number, meta?: { mediaTime?: number }) => { if (!actief) return; mediaTijd = rv && meta && typeof meta.mediaTime === 'number' ? meta.mediaTime : -1; tekenNu(); if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(() => lus()); };
+    const lus = (_nu?: number, meta?: { mediaTime?: number }) => { if (!actief) return; mediaTijd = rv && meta && typeof meta.mediaTime === 'number' ? meta.mediaTime : -1; bij(); if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(() => lus()); };
     if (rv) (vid as any).requestVideoFrameCallback(lus); else requestAnimationFrame(() => lus());
     weg.push(() => { actief = false; });
-    opV('loadeddata', () => { maat(); tekenNu(); });
-    opV('loadedmetadata', () => { maat(); });
-    /* na een sprong geeft de kleine kopie (een gewoon 2D-doek) soms nog het beeld van vóór de sprong: 0,12 s later nog een
-       keer, zodat ook een stilstaande video de goede kleuren houdt */
-    const naSprong = () => { mediaTijd = -1; springen = true; tekenNu(); };
-    opV('seeked', () => { naSprong(); setTimeout(() => { if (loopt === sec) naSprong(); }, 120); });
-    const ro = new ResizeObserver(() => { maat(); tekenNu(); }); ro.observe(beeld); weg.push(() => ro.disconnect());
-    document.fonts?.ready.then(() => { maat(); tekenNu(); });
-    maat();
+    /* na een sprong (of als de video stilstaat) komt er geen nieuw beeld door de lus: dan de tijd van de video zelf */
+    const naSprong = () => { mediaTijd = -1; bij(true); };
+    opV('seeking', () => { springt = true; });
+    opV('loadeddata', naSprong); opV('seeked', naSprong); opV('emptied', naSprong); opV('pause', () => { mediaTijd = -1; bij(); });
+    bij(true);
     sec.classList.add('b94-aan');
 
     /* ── Wat we maken direct eronder: dicht zolang hij onder het scherm is, open zodra hij voor een vijfde in beeld komt ── */
@@ -550,7 +359,7 @@ const GROOT_DELEN = (T as any).kopTelefoon as [string, string] | undefined;
       mio.observe(maken); weg.push(() => mio.disconnect());
     }
     ruim = () => { weg.forEach((f) => f()); vid.pause(); html.classList.remove('b94-boven'); loopt = null; };
-    (window as any).__b94Stand = () => ({ src: vid.currentSrc, gl: !!gl, gepauzeerd: vid.paused, hand: handPauze, stap: hs, t: vid.currentTime, boven: html.classList.contains('b94-boven') });
+    (window as any).__b94Stand = () => ({ stil: stilVast, bron, src: vid.currentSrc, gepauzeerd: vid.paused, hand: handPauze, stap: hs, t: vid.currentTime, wit: kleurOp(stilVast ? STIL_T : vid.currentTime), kleur: vorigeKleur, wissels: plan ? plan.wissels.map((w) => [w.t, w.naar]) : null, boven: html.classList.contains('b94-boven') });
   }
   start();
   document.addEventListener('astro:page-load', start);

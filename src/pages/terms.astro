@@ -121,6 +121,8 @@ import Layout from '../layouts/Layout.astro';
 import {
   euro, turnaround, ladderRate, ladderFloor, LADDER, WINDOW_THRESHOLD,
   RESOLUTIE, HOOG_PER_PRODUCT, VOORRANG, LIFESTYLE_IMAGES,
+  /* levering 119 (18 november 2026, proefronde P6-24): geen clips in de grens zolang video op aanvraag is. */
+  voorrangGrens,
   /* §10 leest het revisiebeleid uit; zie de noot daar. */
   revisiebeleid,
 } from '../data/pricing.js';
@@ -128,7 +130,11 @@ import {
 // 12 and on four other pages as well; a typed number in a CONTRACT is the most
 // expensive version of that drift, because the client may rely on the text while
 // the nightly task obeys the constant. tests/legal.test.mjs holds this.
-import { UPLOAD_DAYS, DELIVERY_DAYS } from '../lib/retention.js';
+import { UPLOAD_DAYS, DELIVERY_DAYS, ACCOUNT_YEARS } from '../lib/retention.js';
+/* levering 117 (17 november 2026, proefronde P6-01): de tabel met termijnen, dezelfde als privacy §6, de
+   verwerkersovereenkomst §12 en de FAQ. */
+import { bewaarTabel } from '../data/bewaartermijnen.js';
+const BT = bewaarTabel('en');
 /* De privélink heeft zijn eigen klok (30 september 2026): hij loopt vanaf het
    afsluiten van de bestelling, niet vanaf het uploaden. Zie privacy.astro §6. */
 import { PORTAL_TTL_DAYS } from '../lib/token.js';
@@ -149,6 +155,11 @@ import { PORTAL_TTL_DAYS } from '../lib/token.js';
 import { AMOUNT, clause, VIDEO_OP_AANVRAAG, CUSTOM_CREDITS_MIN, customCreditsTotal, CREDITS_GELDIG_MAANDEN, BIJKOOP_MAX_PER_MAAND } from '../data/pricing.js';
 /* Extra credits bijkopen (12 oktober 2026, ab-v3 = c): de pakketten en de korting uit pricing.js. */
 import { bijkoopRegel } from '../data/creditKaart.js';
+/* levering 117 (17 november 2026, proefronde P9-01): zie de NL-tegenhanger. De voorwaarden volgen ABO_EXTRA_ZICHTBAAR,
+   zoals faq.js, PlansHal en PlanPicker: uit = geen bijkooppakketten, kortingen en plan op maat, maar "in consultation,
+   via Talk to us". */
+import { ABO_EXTRA_ZICHTBAAR, bespreekAbo } from '../data/aboZichtbaar.js';
+const BESPREEK = bespreekAbo('en').knop;
 import { PLAN_IDS, monthlyCents } from '../data/plans.js';
 import { planName } from '../data/planNames.js';
 // De datum stond hier uitgetypt, en nog negen keer elders. Zie de kop van
@@ -159,6 +170,8 @@ import { bijgewerktOp } from '../data/juridischeDatums.js';
    images from termijnen.js — no typed numbers. See the NL page. */
 import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd } from '../data/modelChecks.js';
 import { inWoorden, PORTRET_VERVANGEN_WEKEN } from '../data/termijnen.js';
+// levering 118 (17 november 2026, proefronde P6-03): de termijn waarbinnen een ingetrokken portfolio-ja van de site gaat.
+import { TOESTEMMING_WEG_DAGEN, termijnInWoorden } from '../data/termijnen.js';
 import { VERVAL_DAG, BETALEN_NA_BTW_AKKOORD } from '../data/termijnen.js';
 /* Section 6 says when an unpaid order lapses (list 87, B15): the nightly job
    cancels it after VERVAL_DAG days, with an email. Number from termijnen.js. */
@@ -245,7 +258,7 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
         <li><strong>Lifestyle images</strong> — {euro(ladderRate('lifestyle', 1), 'en')} per product, falling to {euro(ladderFloor('lifestyle'), 'en')} from {FLOOR_FROM} products up. A four-photo carousel.</li>
         <li><strong>The rate between those ends</strong> — set out in full on our <a href="/pricing/">pricing page</a>. The rate that applies is the one for the total number of products in your order, and it applies to every product in it.</li>
         <li><strong>Video</strong> — {VIDEO_OP_AANVRAAG ? 'on request: we quote per clip in writing before any work starts, and nothing is charged until you accept.' : `${euro(AMOUNT.video, 'en')} per clip, the same rate whether it is one clip or twenty.`} A clip is not in the list above.</li>
-        <li><strong>Monthly plans</strong> — {euro(planLo / 100, 'en')} to {euro(planHi / 100, 'en')} per month on the monthly term ({planLoNaam} to {planHiNaam}), plus the {planName('maat', 'en')} from {euro(maatVanaf, 'en')} per month, set out in full on our <a href="/plans/">plans page</a>. The yearly term is priced there too.</li>
+        <li><strong>Monthly plans</strong> — {euro(planLo / 100, 'en')} to {euro(planHi / 100, 'en')} per month on the monthly term ({planLoNaam} to {planHiNaam}){ABO_EXTRA_ZICHTBAAR ? <>, plus the {planName('maat', 'en')} from {euro(maatVanaf, 'en')} per month</> : null}, set out in full on our <a href="/plans/">plans page</a>.{!ABO_EXTRA_ZICHTBAAR && <> A different number of credits per month is agreed in consultation, via {BESPREEK}.</>} The yearly term is priced there too.</li>
         <li><strong>Custom work</strong> — quoted individually before you commit.</li>
         <li><strong>Brand Model</strong> — {euro(AMOUNT.brandModel, 'en')}, paid once when the model is designed. Not per visual, not per order, not per year. The design gets one correction round and is then locked; after that each product is charged at the normal rate. A look of your own works the same way: one design fee and one correction round, then the normal rate per product, plus a surcharge per product where the look takes more work. Any surcharge is shown with the look in VISUAILS Studio and is included in the total you see before you pay.</li>
       </ul>
@@ -263,7 +276,8 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p><strong>Two options you can add to an order.</strong></p>
       <ul>
         <li><strong>Higher resolution</strong> — every image is delivered at {RESOLUTIE.standaard} px on the long edge. On lifestyle work you can have all {LIFESTYLE_IMAGES} images of a product delivered at {RESOLUTIE.hoog} px instead, for {euro(HOOG_PER_PRODUCT, 'en')} per product. Catalog images are always {RESOLUTIE.standaard} px; a larger catalog file is a request rather than an option, and is agreed in writing.</li>
-        <li><strong>Priority delivery</strong> — {Math.round(VOORRANG.deel * 100)}% of the order value, with a minimum of {euro(VOORRANG.bodem, 'en')} and a maximum of {euro(VOORRANG.plafond, 'en')}. Your order goes to the front of the queue. Paid on a working day before {VOORRANG.bestelVoorUur}:00, it is delivered by {VOORRANG.klaarUur}:00 the next working day; paid later, by {VOORRANG.klaarUur}:00 the working day after that (Dutch time; working days are Monday to Friday, Dutch public holidays excepted). <strong>If we do not make it, we refund the surcharge</strong> and the order runs on as normal. It can be added up to {VOORRANG.maxProducten} products, or {VOORRANG.maxClips} clips, and only on a style that already exists — a style still being designed cannot be rushed, because designing it is the work.</li>
+        {/* levering 118 (17 november 2026, proefronde L-16 keuze a): de termijn loopt vanaf het latere moment: betaald én alle foto's binnen. */}
+        <li><strong>Priority delivery</strong> — {Math.round(VOORRANG.deel * 100)}% of the order value, with a minimum of {euro(VOORRANG.bodem, 'en')} and a maximum of {euro(VOORRANG.plafond, 'en')}. Your order goes to the front of the queue. Once your payment and all your photos are in on a working day before {VOORRANG.bestelVoorUur}:00, it is delivered by {VOORRANG.klaarUur}:00 the next working day; in later, by {VOORRANG.klaarUur}:00 the working day after that (Dutch time; working days are Monday to Friday, Dutch public holidays excepted). <strong>If we do not make it, we refund the surcharge</strong> and the order runs on as normal. It can be added up to {voorrangGrens('en', { komma: true })}, and only on a style that already exists — a style still being designed cannot be rushed, because designing it is the work.</li>
       </ul>
       <p>New businesses can request one test sample per business, so you can judge our quality before ordering. Prices are confirmed at the time of order. Unless stated otherwise, prices are exclusive of VAT where applicable.</p>
 
@@ -301,12 +315,28 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>Video and other work quoted by hand is on request: the format and the delivery time are agreed in the written quote.</p>
 
       <h2>7. Your files &amp; how long we keep them</h2>
-      <p>Three periods are fixed; what differs is the moment each one starts counting:</p>
+      {/* levering 117 (P6-01): §7 named only the {UPLOAD_DAYS} days; privacy §6 and DPA §12 also our own copy for up to
+          {ACCOUNT_YEARS} years. That copy is now here too, with "email us and it is gone". */}
+      <p>These periods are fixed; what differs is the moment each one starts counting:</p>
       <ul>
-        <li><strong>Source material</strong> — the photos and files you upload are deleted {UPLOAD_DAYS} days after your order closes. If you need us to keep them longer, ask in writing before then and we will agree it with you.</li>
+        <li><strong>Source material</strong> — the photos and files you upload are deleted from our storage {UPLOAD_DAYS} days after your order closes. We keep our own copy of your product photos and style references for up to {ACCOUNT_YEARS} years after your last order, so that a new order keeps the same look. Want that copy gone? Email us and it is gone; you do not need to give a reason. Photos you send by email or WhatsApp are in the table below.</li>
         <li><strong>Delivered visuals</strong> — your finished visuals stay in VISUAILS Studio to download for {DELIVERY_DAYS} days from delivery; after that they are removed there. We keep a copy of the visuals we made in our own archive, with no end date, so that we can keep your look consistent and keep improving it. That is our working archive, not a backup for you, so keep your own copy. Want our copy gone? Email us from the address of your account and we delete it, from that archive too; you do not need to give a reason. Visuals showing a real, recognisable person we keep only for as long as your customer account exists (see our <a href="/privacy/">Privacy Policy</a>, §6).</li>
         <li><strong>Your order link</strong> — the link to your order page, where you download, works for {PORTAL_TTL_DAYS} days after your order closes, then it stops. If you need the files after that, email us and we will send a new link.</li>
       </ul>
+      {/* levering 117 (17 november 2026, proefronde P6-01): deze tabel staat letterlijk zo op vier plekken (§7 hier, privacy §6,
+          verwerkersovereenkomst §12 en de FAQ), uit src/data/bewaartermijnen.js, met de getallen uit retention.js. */}
+      <p id="bewaartabel"><strong>{BT.kop}</strong></p>
+      <div class="table-scroll" tabindex="0" role="region" aria-label={BT.kop}>
+      <table class="files" data-bewaartabel>
+        <thead><tr><th>{BT.kolommen[0]}</th><th>{BT.kolommen[1]}</th></tr></thead>
+        <tbody>
+          {BT.rijen.map((r) => (
+            <tr><td data-label={BT.kolommen[0]}><strong>{r.wat}</strong></td><td data-label={BT.kolommen[1]}>{r.hoeLang}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      </div>
+      <p>{BT.weg}</p>
       <p>Keep your own copy of anything you rely on: after {DELIVERY_DAYS} days we cannot guarantee a re-download. Still need older images? Get in touch — we check whether they are still with us. How we handle your personal data more generally, including how the link to your order page is protected, is set out in our <a href="/privacy/">Privacy Policy</a>.</p>
 
       <h2>8. Intellectual property &amp; usage rights</h2>
@@ -329,9 +359,11 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       </ul>
       <p><strong>If you need the copyright transferred rather than licensed</strong> — for a trademark filing, an investor’s IP schedule, a due diligence list — say so and we will sign a deed of transfer for the order, free of charge. That is not a formality we can skip: under art. 2(2) of the Copyright Act a transfer needs a signed deed, and <strong>a transfer clause in general terms is not valid</strong>. Terms that claim to transfer copyright to you by the act of ordering are making a promise the law does not let them keep. This clause does not do that; it gives you a licence that needs no deed, and a deed on request.</p>
       <p><strong>What cannot be transferred, by anybody.</strong> Moral rights stay with the maker (art. 25 Copyright Act). We waive the right to be named, so you never have to credit us, and we waive our objection to your editing the work — that is what the adaptation right above is for. One thing cannot be waived by law and so is not: the right to object to a distortion of the work that damages the maker’s reputation. In practice that is about using an image to say something it was not made to say, and not about your ordinary editing.</p>
-      <p><strong>The licence you give us, and where it stops.</strong> Making the visuals means copying your photo, cropping it, editing it and sending it to the parties named in our <a href="/data-processing-agreement/">Data Processing Agreement</a>. Every one of those steps needs your permission, because the copyright in that photo is yours and not ours. So you grant VISUAILS a licence to store, copy, crop, edit and adapt the source material you supply, and to submit it to those parties, <strong>for the single purpose of producing and delivering your order</strong>. That licence is non-exclusive, royalty-free, worldwide in reach only because the infrastructure is, and it lasts no longer than we hold the material under §7. It transfers no ownership. We do not use your material for another client, we do not use it to build a model or a dataset of our own, and we do not use it for a purpose you have not asked for. You may withdraw the licence in writing at any time; we then stop work and delete, and what has already been delivered stays yours to use under this section.</p>
-      <p><strong>Our portfolio — the one thing we keep back, and why it has to be written down.</strong> The licence above is exclusive, and exclusive means exclusive: without this paragraph we would be infringing your rights by showing our own work. So we reserve one narrow right for ourselves, and it is the only carve-out in this section. We may show <em>delivered visuals</em> — never your source material — in our portfolio, in a case study and on our own channels, unless you tell us in writing not to. We may not sell them, license them to anyone else, or use them to advertise a different product. If a delivered visual shows a recognisable person from your material, we only show it if that person has agreed to it themselves.</p>
-      <p>Two limits, and the first is the one that matters commercially. <strong>If the product in the image is not yet publicly available, we publish nothing</strong> until you have launched it or have said yes in writing, whichever comes first — a visual of an unreleased product is your commercial secret before it is our showpiece. And you can withdraw this at any time, in one line by email, also years later and also for work already on our site; we take it down. We are asking rather than assuming, and a supplier who needs a clause to keep showing work a client has asked him to remove has a bigger problem than a portfolio.</p>
+      <p><strong>The licence you give us, and where it stops.</strong> Making the visuals means copying your photo, cropping it, editing it and sending it to the parties named in our <a href="/data-processing-agreement/">Data Processing Agreement</a>. Every one of those steps needs your permission, because the copyright in that photo is yours and not ours. So you grant VISUAILS a licence to store, copy, crop, edit and adapt the source material you supply, and to submit it to those parties, <strong>for the single purpose of producing and delivering your order</strong> (and, with our own copy under §7, giving a next order the same look). That licence is non-exclusive, royalty-free, worldwide in reach only because the infrastructure is, and it lasts no longer than we hold the material under §7. It transfers no ownership. We do not use your material for another client, we do not use it to build a model or a dataset of our own, and we do not use it for a purpose you have not asked for. You may withdraw the licence in writing at any time; we then stop work and delete, and what has already been delivered stays yours to use under this section.</p>
+      {/* levering 118 (17 november 2026, proefronde P6-03, keuze a): het portfolio is opt-in, zoals de vraag na de levering
+          (src/lib/feedback.js) en privacy §2 het al zeiden. Hier stond een opt-out ("unless you tell us in writing"). */}
+      <p><strong>Our portfolio — only if you say yes.</strong> The licence above is exclusive, and exclusive means exclusive: without your yes we would be infringing your rights by showing our own work. So we ask. After delivery we ask whether we may show <em>delivered visuals</em> and the product photos you sent in our portfolio, in a case study and on our own channels: with your brand name, without it, or rather not. If you say yes, that is your permission. If you say nothing or rather not, we show nothing. We may not sell them, license them to anyone else, or use them to advertise a different product. If a delivered visual shows a recognisable person from your material, we only show it if that person has agreed to it themselves. We never show photos of someone wearing your product.</p>
+      <p>Two limits, and the first is the one that matters commercially. <strong>If the product in the image is not yet publicly available, we publish nothing</strong> until you have launched it, even if you already said yes, unless you tell us separately in writing that it may go out earlier — a visual of an unreleased product is your commercial secret before it is our showpiece. And you can withdraw this at any time, in VISUAILS Studio or in one line by email, also years later and also for work already on our site; we then take it down within {termijnInWoorden(TOESTEMMING_WEG_DAGEN, 'en')}. We are asking rather than assuming.</p>
 
       <!-- ── DE GEDEELDE MAANDSET — 2 september 2026 ────────────────────────
            Alles hierboven in §8 gaat over EEN BESTELLING, en daar is de licentie
@@ -370,11 +402,13 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
 
       <p><strong>Saving credits, and when they lapse.</strong> While your subscription runs, your credits do not lapse. You can save up to {CREDITS_GELDIG_MAANDEN} months of credits: {CREDITS_GELDIG_MAANDEN} times the number your plan gives you each month (VISUAILS Studio shows the figure). If a new term takes your balance above that, only what goes above it lapses, on the day of that term; we send you a reminder beforehand. Credits that come back, after a cancellation or for a product we could not make, count towards your balance like any other. If you pause or cancel, all your credits stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term and then lapse; here too we send you a reminder beforehand. When you order, the oldest credits are always used first, after any bought credits (see below).</p>
 
-      <p><strong>Buying extra credits.</strong> While your subscription runs, you can buy extra credits in VISUAILS Studio, {bijkoopRegel('en')}, at most {BIJKOOP_MAX_PER_MAAND} per calendar month. You pay for them separately, with their own invoice; they are added as soon as the payment is in. Bought credits are used first, stay valid for {CREDITS_GELDIG_MAANDEN} months from the purchase, also if you pause or cancel, and do not count towards your savings limit.</p>
+      {ABO_EXTRA_ZICHTBAAR
+        ? <p><strong>Buying extra credits.</strong> While your subscription runs, you can buy extra credits in VISUAILS Studio, {bijkoopRegel('en')}, at most {BIJKOOP_MAX_PER_MAAND} per calendar month. You pay for them separately, with their own invoice; they are added as soon as the payment is in. Bought credits are used first, stay valid for {CREDITS_GELDIG_MAANDEN} months from the purchase, also if you pause or cancel, and do not count towards your savings limit.</p>
+        : <p><strong>Extra credits.</strong> If you need more credits once, or a different number each month, we agree it in consultation, via {BESPREEK} on the <a href="/plans/">plans page</a> or in VISUAILS Studio. We confirm what we agree in writing, with the price, before you pay anything. Extra credits we agree are used first, stay valid for {CREDITS_GELDIG_MAANDEN} months from the purchase, also if you pause or cancel, and do not count towards your savings limit.</p>}
 
       {/* Overstappen — 15 oktober 2026 (afvinklijst 30, v30-voorwaarden = a): Studio
           kan het sinds levering 50 (src/lib/overstap.js). */}
-      <p><strong>Switching plans.</strong> On the monthly term you can switch to another plan in VISUAILS Studio, including a plan made to measure. The switch starts with your next monthly payment: from then on we collect the new amount and you get the credits of the new plan. Until that day your current plan stays as it is, and you can undo the switch. If you pause in the meantime, the switch starts when you resume; if you cancel, it lapses. The credits you already have stay. From the switch your savings limit follows the new plan: if it is lower, whatever is above it lapses on that day, and we send you a reminder beforehand. You cannot switch partway through a prepaid year; email us instead. More credits a month is only possible if the studio has room for them; if it does not, VISUAILS Studio says so.</p>
+      <p><strong>Switching plans.</strong> On the monthly term you can switch to another plan in VISUAILS Studio{ABO_EXTRA_ZICHTBAAR ? ', including a plan made to measure' : ''}. {!ABO_EXTRA_ZICHTBAAR && <>A different number than these plans is agreed in consultation, via {BESPREEK}. </>}The switch starts with your next monthly payment: from then on we collect the new amount and you get the credits of the new plan. Until that day your current plan stays as it is, and you can undo the switch. If you pause in the meantime, the switch starts when you resume; if you cancel, it lapses. The credits you already have stay. From the switch your savings limit follows the new plan: if it is lower, whatever is above it lapses on that day, and we send you a reminder beforehand. You cannot switch partway through a prepaid year; email us instead. More credits a month is only possible if the studio has room for them; if it does not, VISUAILS Studio says so.</p>
 
       <p><strong>Cancelling.</strong> You cancel it yourself in VISUAILS Studio; you do not have to email us and there is no notice period. As soon as you cancel we stop the collection, and nothing further is charged. The month you have already paid for remains yours until the end of it, and the credits you already have stay valid until {CREDITS_GELDIG_MAANDEN} months after your last term. After that the subscription closes. We do not refund the current month, and nothing is given in its place. On a prepaid year, cancelling works as set out under <em>Paying up front</em> above.</p>
 
@@ -430,7 +464,8 @@ const FLOOR_FROM = LADDER.catalog[LADDER.catalog.length - 1][0];
       <p>We provide the service with reasonable skill and care, but to the extent permitted by law we are not liable for indirect or consequential losses, lost profits, or losses arising from your use of the visuals. Our total liability for any order is limited to the amount you paid for that order. Nothing in these terms excludes liability that cannot be excluded by law.</p>
       {/* 8 October 2026: who does what for the AI disclosure. See the note at
           the same place on the Dutch page. */}
-      <p><strong>The AI disclosure: who does what.</strong> The visuals are made with AI. We tell you so at delivery, write a machine-readable marking into the delivered photos that records it (the IPTC property DigitalSourceType), and give you an explanation and a sentence to place with the visuals on <a href="/ai-act/">our AI Act page</a>. If a delivered photo is missing that marking, we deliver it again with the marking at your request. From delivery onwards you decide where, when and how a visual appears, and so from that moment the following rests with you:</p>
+      {/* levering 119 (18 november 2026, proefronde P6-23): /admin also writes the marking into mp4 since 11 October 2026 (src/lib/xmp.js), so "photos and videos", as on /ai-act. */}
+      <p><strong>The AI disclosure: who does what.</strong> The visuals are made with AI. We tell you so at delivery, write a machine-readable marking into the delivered photos and videos that records it (the IPTC property DigitalSourceType), and give you an explanation and a sentence to place with the visuals on <a href="/ai-act/">our AI Act page</a>. If a delivered file is missing that marking, we deliver it again with the marking at your request. From delivery onwards you decide where, when and how a visual appears, and so from that moment the following rests with you:</p>
       <ul>
         <li>the visible statement that the visual was made with AI, in every publication where the law or the platform asks for one;</li>
         <li>leaving the marking in the file;</li>

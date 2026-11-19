@@ -1322,7 +1322,8 @@ console.log('\nwat nog niet te bestellen is, staat niet in de balk');
     const u = new URL(`../${pagina}`, import.meta.url);
     if (!existsSync(u)) continue;
     const html = readFileSync(u, 'utf8');
-    const balk = (html.match(/<div class="nav-menu" role="menu"[^>]*>[\s\S]*?<\/div>\s*<\/li>/) || [''])[0];
+    /* levering 118 (P11-03, keuze a): het paneel heeft geen role="menu" meer, wel een id (aria-controls van de knop) */
+    const balk = (html.match(/<div class="nav-menu"[^>]*>[\s\S]*?<\/div>\s*<\/li>/) || [''])[0];
     const lade = (html.match(/<div class="mobile-lijst"[^>]*>[\s\S]*?<\/div>/) || [''])[0];
     const voet = (html.match(/<footer class="site-footer"[^>]*>[\s\S]*?<\/footer>/) || [''])[0];
     for (const [naam, pad] of [['Hooks', 'hooks'], ['Editions', 'editions']]) {

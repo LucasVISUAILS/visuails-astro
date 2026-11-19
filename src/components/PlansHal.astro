@@ -77,13 +77,17 @@ const COPY = {
     overstappen: 'Switch in VISUAILS Studio', aboKop: 'You already have a plan.', aboZin: 'Switching plans or buying credits is done in VISUAILS Studio.', aboLink: 'Go to your plan',
     maatRegel: `Need something else? Choose your own number, from ${CUSTOM_CREDITS_MIN} to ${CUSTOM_CREDITS_MAX} credits a month, from ${e(maatVanaf)} ${ex}.`,
     maatLink: 'Set your own number',
+    /* levering 118 (17 november 2026, proefronde P3-03): /pricing en de voorwaarden noemen je eigen aantal credits; hier
+       nu ook, in de regel "Talk to us". Het bedrag uit customCreditsTotal(), zoals op /pricing. */
+    maatBespreek: `Your own number of credits a month is possible too: ${CUSTOM_CREDITS_MIN} to ${CUSTOM_CREDITS_MAX}, from ${e(maatVanaf)} a month ${ex}.`,
     zoPil: 'How it works', zoKop: ['You order', 'like everyone else.'],
     zoLead: 'Every month your credits come in. You spend them whenever you like, in the regular order form, and pay with credits instead of money.',
     zo: [
       [`Save up to ${CREDITS_GELDIG_MAANDEN} months`, `While your plan runs, nothing expires (${spaarPlafond(PLAN_CREDITS.studio)} credits on ${planName('studio', 'en')}).`],
       ['Pause or stop', `Your credits stay valid until ${CREDITS_GELDIG_MAANDEN} months after your last monthly credits came in.`],
       ['Short one month?', `Buy extra credits in VISUAILS Studio, ${bijkoopRegel('en')} (up to ${BIJKOOP_MAX} a month).`],
-      ['Plus the monthly set', 'With every plan; see below.'],
+      /* levering 119 (18 november 2026, proefronde P6-19): de maandset loopt nog niet (zie #stock, "Coming soon"), dus zegt de regel dat zelf. */
+      ['Coming soon: the monthly set', 'With every plan, once it starts; see below.'],
     ],
     termen: [
       ['Monthly', 'Cancel any month, yourself in VISUAILS Studio.'],
@@ -116,13 +120,16 @@ const COPY = {
     overstappen: 'Overstappen in VISUAILS Studio', aboKop: 'Je hebt al een abonnement.', aboZin: 'Overstappen of credits bijkopen doe je in VISUAILS Studio.', aboLink: 'Naar je abonnement',
     maatRegel: `Iets anders nodig? Kies zelf je aantal, van ${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX} credits per maand, vanaf ${e(maatVanaf)} ${ex}.`,
     maatLink: 'Stel je eigen aantal in',
+    /* levering 118 (proefronde P3-03): zie de Engelse tegenhanger. */
+    maatBespreek: `Een eigen aantal credits per maand kan ook: van ${CUSTOM_CREDITS_MIN} tot ${CUSTOM_CREDITS_MAX}, vanaf ${e(maatVanaf)} per maand ${ex}.`,
     zoPil: 'Hoe het werkt', zoKop: ['Je bestelt', 'zoals iedereen.'],
     zoLead: 'Elke maand komen je credits binnen. Je besteedt ze wanneer je wilt, via het gewone bestelformulier, en betaalt met credits in plaats van met geld.',
     zo: [
       [`Sparen tot ${CREDITS_GELDIG_MAANDEN} maanden`, `Zolang je abonnement loopt, vervalt er niets (bij ${planName('studio', 'nl')} tot ${spaarPlafond(PLAN_CREDITS.studio)} credits).`],
       ['Pauzeren of stoppen', `Je credits blijven geldig tot ${CREDITS_GELDIG_MAANDEN} maanden na je laatste termijn.`],
       ['Een maand tekort?', `Koop in VISUAILS Studio extra credits bij, ${bijkoopRegel('nl')} (hoogstens ${BIJKOOP_MAX} per maand).`],
-      ['Plus de maandset', 'Bij elk abonnement; zie hieronder.'],
+      /* levering 119 (proefronde P6-19): zie de Engelse tegenhanger. */
+      ['Binnenkort: de maandset', 'Bij elk abonnement, zodra hij loopt; zie hieronder.'],
     ],
     termen: [
       ['Maandelijks', 'Elke maand opzegbaar, zelf in VISUAILS Studio.'],
@@ -230,7 +237,7 @@ const BEELD = {
         het abonnement op maat. Het id blijft, zodat een oude link #op-maat hier landt. */}
     {ABO_EXTRA_ZICHTBAAR
       ? <p class="h-pl-maat h-in" id="op-maat"><span>{c.maatRegel}</span> <a class="h-link k k-tekst" data-rol="navigeren" href={maatHref}>{c.maatLink}<Fragment set:html={rolIkoon('navigeren')} /></a></p>
-      : <p class="h-pl-maat h-in" id="op-maat" data-k14-bespreek><span>{bespreek.zin}</span> <a class="h-knop k k-lijn" data-rol="contact" href={bespreek.href} target="_blank" rel="noopener">{bespreek.knop}<NieuwTabblad lang={lang} /></a></p>}
+      : <p class="h-pl-maat h-in" id="op-maat" data-k14-bespreek><span>{bespreek.zin} {c.maatBespreek}</span> <a class="h-knop k k-lijn" data-rol="contact" href={bespreek.href} target="_blank" rel="noopener">{bespreek.knop}<NieuwTabblad lang={lang} /></a></p>}
   </section>
 
   {/* ── 4 · ZO WERKT HET ── vier korte regels en de twee termijnen (6.04). */}

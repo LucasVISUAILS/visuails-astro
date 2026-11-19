@@ -40,7 +40,9 @@ import { VAT_RATE } from './quote.js';
 import { planName } from '../data/planNames.js';
 import { serviceLabel } from '../data/services.js';
 import { getStyle } from '../data/styles.js';
-import { RESOLUTIE } from '../data/pricing.js';
+import { RESOLUTIE, PLAN_CREDITS } from '../data/pricing.js';
+import { TERMS } from '../data/plans.js';
+import { offerteAfspraak } from './betaallink.js';
 
 /*
  * ── HOE SELLER_ADDRESS AANGELEVERD MAG WORDEN — 10 AUGUSTUS 2026 ────────────
@@ -230,6 +232,7 @@ export function isProefNummer(number) {
   return /^PROEF-/.test(String(number || ''));
 }
 
+
 /*
  * De momentopname uit een bestelling.
  *
@@ -365,7 +368,15 @@ export function snapshotFromOrder(order, env, { number, date, dueDate = null } =
   const lookDelen = order.service === 'lifestyle'
     ? lookRegels(d, lang, Number(order.product_count) || 0).map((r) => `Complete look ${r}`)
     : [];
-  const detail = [stijlRegel, ...lookDelen].filter(Boolean).join('\n');
+  /* levering 117 (17 november 2026, proefronde P4-04): bij een offerte (video, eigen look) wat de klant
+     krijgt en wanneer het klaar is, zoals in het offerteformulier van /admin. Een factuur van vóór vandaag
+     heeft die velden niet en blijft zoals hij was. */
+  const afspraak = (order.service === 'video' || order.service === 'custom') ? offerteAfspraak(d, lang) : { inhoud: '', klaarOp: '' };
+  const offerteRegels = [
+    afspraak.inhoud ? `${lang === 'nl' ? 'Wat je krijgt' : 'What you get'}: ${afspraak.inhoud.replace(/\s*\n\s*/g, ' · ')}` : '',
+    afspraak.klaarOp ? `${lang === 'nl' ? 'Klaar op' : 'Ready on'}: ${afspraak.klaarOpTekst}` : '',
+  ];
+  const detail = [stijlRegel, ...lookDelen, ...offerteRegels].filter(Boolean).join('\n');
   const lines = factuurRegels({ d, net, svc, basis: label, detail, lang, aanbetaling });
 
   return {
@@ -789,8 +800,13 @@ export function snapshotFromSubscription({ sub, customer, payment, month, lang: 
   const periode = maandLabel(month, lang);
   /* Extra credits bijkopen (12 oktober 2026, ab-v3 = c): "Extra credits · 25 ·
      Pro", met het plan zoals het heette op het moment van kopen. */
+  /* levering 118 (17 november 2026, proefronde P5-11): een vooruitbetaald jaar (term prepaid) heette "Merk — abonnement
+     november 2026", en een boekhouder zag één maand van het jaarbedrag. Nu de periode en de credits per maand. */
+  const vooruit = !bijkoop && sub && TERMS[sub.term] && TERMS[sub.term].prepaid === true;
   const label = bijkoop
     ? `Extra credits · ${Math.max(0, Math.floor(Number(bijkoop.pakket) || 0))} · ${bijkoop.planLabel || naam}`
+    : vooruit
+      ? jaarRegel(naam, date, Number(TERMS[sub.term].months) || 12, PLAN_CREDITS[sub.plan], lang)
     : lang === 'nl'
       ? `${naam} — abonnement${periode ? ` ${periode}` : ''}`
       : `${naam} — subscription${periode ? ` ${periode}` : ''}`;
@@ -816,9 +832,27 @@ export function snapshotFromSubscription({ sub, customer, payment, month, lang: 
     treatment,
     reference: (sub && sub.ref) || null,
     paidAt: date,
-    viesConsultation: null,
+    /* levering 118 (proefronde P5-11): het VIES-nummer van het abonnement (migratie 0075), bij verlegde btw. */
+    viesConsultation: (treatment === VAT_TREATMENT.reverseCharge && sub && sub.vat_consultation) || null,
     ...(bijkoop ? { kind: 'bijkoop' } : {}),
   };
+}
+
+/** levering 118 (proefronde P5-11): "Merk — 12 maanden vooruit, 17 november 2026 tot 17 november 2027, 290 credits per
+ *  maand". De periode begint op de factuurdag (de dag van de betaling) en loopt tot dezelfde dag `maanden` later;
+ *  "tot", niet "tot en met": op die dag begint de volgende termijn. Zonder datum alleen het aantal maanden. */
+export function jaarRegel(naam, startIso, maanden = 12, credits = 0, lang = 'nl') {
+  const nl = lang !== 'en';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(startIso || ''));
+  let periode = '';
+  if (m) {
+    const van = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+    const tot = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1 + maanden, Number(m[3])));
+    const f = (d) => new Intl.DateTimeFormat(nl ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d);
+    periode = nl ? `, ${f(van)} tot ${f(tot)}` : `, ${f(van)} to ${f(tot)}`;
+  }
+  const c = Number(credits) > 0 ? (nl ? `, ${credits} credits per maand` : `, ${credits} credits a month`) : '';
+  return nl ? `${naam} — ${maanden} maanden vooruit${periode}${c}` : `${naam} — ${maanden} months in advance${periode}${c}`;
 }
 
 /** 'augustus 2026' / 'August 2026' uit 'YYYY-MM'. Leeg als er geen maand bekend is. */

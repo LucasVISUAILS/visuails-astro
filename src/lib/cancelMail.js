@@ -42,6 +42,8 @@ import { verderBlokHtml } from './verder.js';
 import { levertijdDelen } from '../data/pricing.js';
 import { betaalMailContext } from './invoiceMail.js';
 import { formatDate } from './invoicePdf.js';
+/* levering 119 (18 november 2026, proefronde B1-13): hoe lang de foto's van een geannuleerde bestelling blijven. */
+import { UPLOAD_DAYS } from './retention.js';
 
 const SITE = 'https://visuails.com';
 
@@ -92,6 +94,8 @@ const COPY = {
       'credits-niets': () => 'Je betaalde deze bestelling met credits. Die blijven afgeboekt. Heb je daar vragen over, dan beantwoorden we die graag — beantwoord deze mail.',
     },
     portal: 'Naar VISUAILS Studio',
+    /* levering 119 (B1-13): wat er met de foto's gebeurt. UPLOAD_DAYS is de termijn van de opruimtaak (retention.js). */
+    fotos: `Stuurde je foto’s mee? Die bewaren we nog ${UPLOAD_DAYS} dagen, voor als je opnieuw bestelt. Wil je ze eerder weg? Antwoord dan op deze mail.`,
     tail: 'Wil je alsnog iets laten maken, of klopt er iets niet aan deze annulering? Beantwoord deze mail — we lezen elke reactie.',
   },
   en: {
@@ -111,6 +115,7 @@ const COPY = {
       'credits-niets': () => 'You paid for this order with subscription credits. They stay used. If you have questions about that, reply to this email — we are happy to answer them.',
     },
     portal: 'Go to VISUAILS Studio',
+    fotos: `Did you send photos? We keep them for another ${UPLOAD_DAYS} days, in case you order again. Want them gone sooner? Just reply to this email.`,
     tail: 'Would you still like something made, or does something about this cancellation look wrong? Reply to this email — we read every reply.',
   },
 };
@@ -139,12 +144,13 @@ export function cancelEmail({ order = {}, reason = '', money = 'unpaid', grossCe
   }
   const body = [
     h1(t.head, kenmerk('bestelling', order.ref, lang)),
-    p(greeting(order.name, lang)),
+    p(greeting(order.name, lang, { voornaam: order.first_name })), /* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam */
     p(esc(t.lede)),
     /* De reden staat als citaat en niet als lopende tekst: het zijn de woorden
        van de studio en niet van de site, en dat mag te zien zijn. */
     note(esc(String(reason || '').trim())),
     p(esc(geld), { top: 4 }),
+    p(esc(t.fotos)),
     linkLine(studioUrl(SITE, '', lang), t.portal), /* E05 (9 november 2026): rechtstreeks naar Studio, met de taal */
     p(esc(t.tail), { muted: true }),
   ].join('');
@@ -221,7 +227,7 @@ export function creditNoteEmail({ lang = 'nl', order = {}, note: nota, snap = {}
   const body = [
     h1(t.head, kenmerk('creditnota', nota.number, lang)),
     /* De aanhef en de vragenregel, zoals in de factuurmail (17 oktober 2026). */
-    p(greeting(order.name, lang)),
+    p(greeting(order.name, lang, { voornaam: order.first_name })), /* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam */
     p(esc(t.lede(attached))),
     rows([
       [t.rNumber, esc(nota.number)],
@@ -292,7 +298,8 @@ export async function mailCreditNote(env, { order, note: nota }) {
    hoort dat meteen, anders ziet hij alleen een afschrijving zonder uitleg. */
 export async function mailOngewensteBetaling(env, orderId, soort, bedragCents) {
   try {
-    const o = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(orderId).first();
+    /* levering 119 (18 november 2026, proefronde A0-01): ook first_name, voor de aanhef. */
+    const o = await env.DB.prepare('SELECT ref, email, name, first_name, lang FROM orders WHERE id = ?1').bind(orderId).first();
     if (!o?.email) return false;
     const nl = o.lang === 'nl';
     /* Bedragen zoals in elke andere mail: bedrag() uit mailTemplate.js (hier stond
@@ -306,7 +313,7 @@ export async function mailOngewensteBetaling(env, orderId, soort, bedragCents) {
         preheader: nl ? 'Je hebt niets te doen.' : 'There is nothing you need to do.',
         body: [
           h1(nl ? 'Je geld komt terug' : 'Your money is coming back', kenmerk('bestelling', o.ref, nl ? 'nl' : 'en')),
-          p(greeting(o.name, nl ? 'nl' : 'en', { nu: new Date(), land: o.country || '' })), /* hij betaalde net: het dagdeel */
+          p(greeting(o.name, nl ? 'nl' : 'en', { nu: new Date(), land: o.country || '', voornaam: o.first_name })), /* hij betaalde net: het dagdeel; A0-01: de voornaam */
           p(soort === 'geannuleerd'
             ? (nl
               ? `Er kwam een betaling van <strong>${esc(eur(bedragCents))}</strong> binnen voor <strong>${esc(o.ref)}</strong>, maar die bestelling was al geannuleerd. We storten het bedrag terug; het staat binnen een paar werkdagen weer op je rekening.`
@@ -329,7 +336,8 @@ export async function mailOngewensteBetaling(env, orderId, soort, bedragCents) {
    Tot vandaag kreeg alleen de studio een bericht. De studiomail zei zelf "wat wél
    helpt: één bericht aan de klant" — dit is dat bericht. Bij een stilgezet
    abonnement: de credits zijn bewaard maar staan stil tot de betaling lukt. */
-export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragCents = 0, gestopt = false, origin = 'https://visuails.com' }) {
+/* levering 119 (18 november 2026, proefronde A0-01): `voornaam` (het veld Voornaam) gaat voor het eerste woord van `name`. */
+export async function mailIncassoMislukt(env, { subId, ref, email, name, voornaam = '', bedragCents = 0, gestopt = false, origin = 'https://visuails.com' }) {
   if (!email) return false;
   try {
     const rij = await env.DB.prepare('SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1').bind(subId).first().catch(() => null);
@@ -346,7 +354,7 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
         preheader: gestopt ? (nl ? 'Je credits zijn bewaard.' : 'Your credits are kept.') : (nl ? 'We proberen het opnieuw.' : 'We will try again.'),
         body: [
           h1(gestopt ? (nl ? 'Je abonnement staat stil' : 'Your plan is on hold') : (nl ? 'De afschrijving is niet gelukt' : 'The payment did not go through'), kenmerk('abonnement', ref, nl ? 'nl' : 'en')),
-          p(greeting(name, nl ? 'nl' : 'en')),
+          p(greeting(name, nl ? 'nl' : 'en', { voornaam })),
           p(gestopt
             ? (nl
               ? `De afschrijving van <strong>${esc(eur)}</strong> is een paar keer niet gelukt, en de bank heeft de machtiging gestopt. Je abonnement staat daarom stil. Je credits zijn bewaard, maar je kunt ze pas weer gebruiken als de betaling rond is.`
@@ -376,7 +384,8 @@ export async function mailIncassoMislukt(env, { subId, ref, email, name, bedragC
    bankfout zijn, dus deze mail beweert niets: hij zegt wat er gebeurde, wat dat
    betekent, en vraagt of het klopt. Dezelfde toon als de WhatsApp-tekst bij
    'terugboeking' (src/lib/waLink.js). */
-export async function mailTermijnTeruggeboekt(env, { subId, ref, email, name, terugCents = 0, origin = 'https://visuails.com' }) {
+/* levering 119 (18 november 2026, proefronde A0-01): idem. */
+export async function mailTermijnTeruggeboekt(env, { subId, ref, email, name, voornaam = '', terugCents = 0, origin = 'https://visuails.com' }) {
   if (!email) return false;
   try {
     const rij = await env.DB.prepare('SELECT lang FROM subscription_invoices WHERE subscription_id = ?1 ORDER BY id DESC LIMIT 1').bind(subId).first().catch(() => null);
@@ -391,7 +400,7 @@ export async function mailTermijnTeruggeboekt(env, { subId, ref, email, name, te
         preheader: nl ? 'Een betaling is via je bank teruggeboekt.' : 'A payment was reversed through your bank.',
         body: [
           h1(nl ? 'Je abonnement staat even stil' : 'Your plan is on hold for now', kenmerk('abonnement', ref, nl ? 'nl' : 'en')),
-          p(greeting(name, nl ? 'nl' : 'en')),
+          p(greeting(name, nl ? 'nl' : 'en', { voornaam })),
           p(nl
             ? `Een betaling van <strong>${esc(eur)}</strong> voor je abonnement is via je bank teruggeboekt. Daarom staat je abonnement even stil: er wordt niets afgeschreven en de credits van die maand staan vast tot het rond is.`
             : `A payment of <strong>${esc(eur)}</strong> for your plan was reversed through your bank. That is why your plan is on hold for now: nothing is collected, and the credits for that month are held until it is sorted.`),
@@ -416,7 +425,8 @@ export async function mailTermijnTeruggeboekt(env, { subId, ref, email, name, te
    in Studio komt. */
 export async function mailBetalingOntvangen(env, orderId, { uitgesteld = null } = {}) {
   try {
-    const o = await env.DB.prepare('SELECT ref, email, name, lang FROM orders WHERE id = ?1').bind(orderId).first();
+    /* levering 119 (18 november 2026, proefronde A0-01): ook first_name, voor de aanhef. */
+    const o = await env.DB.prepare('SELECT ref, email, name, first_name, lang FROM orders WHERE id = ?1').bind(orderId).first();
     if (!o?.email) return false;
     const nl = o.lang === 'nl';
     const lang = nl ? 'nl' : 'en';
@@ -432,7 +442,7 @@ export async function mailBetalingOntvangen(env, orderId, { uitgesteld = null } 
         preheader: nl ? 'We zijn aan de slag.' : 'We have started.',
         body: [
           h1(nl ? 'Je betaling is binnen' : 'We have your payment', kenmerk('bestelling', o.ref, lang)),
-          p(greeting(o.name, lang, { nu: new Date(), land: o.country || '' })), /* hij betaalde net: het dagdeel */
+          p(greeting(o.name, lang, { nu: new Date(), land: o.country || '', voornaam: o.first_name })), /* hij betaalde net: het dagdeel; A0-01: de voornaam */
           p(nl
             ? 'Bedankt — je betaling is binnen. Je factuur komt in VISUAILS Studio, onder Facturen.'
             : 'Thank you — your payment is in. Your invoice will be in VISUAILS Studio, under Invoices.'),
@@ -468,7 +478,7 @@ export async function mailRondeOntvangen(env, o, n) {
         preheader: nl ? `${n} ${n === 1 ? 'beeld' : 'beelden'} genoteerd.` : `${n} ${n === 1 ? 'image' : 'images'} noted.`,
         body: [
           h1(nl ? 'Je revisieronde is binnen' : 'Your revision round is in', kenmerk('bestelling', o.ref, nl ? 'nl' : 'en')),
-          p(greeting(o.name, nl ? 'nl' : 'en', { nu: new Date(), land: o.country || '' })), /* hij stuurde dit net in */
+          p(greeting(o.name, nl ? 'nl' : 'en', { nu: new Date(), land: o.country || '', voornaam: o.first_name })), /* hij stuurde dit net in; A0-01: de voornaam */
           /* S14 (9 november 2026, de keten live): bij één beeld enkelvoud — "we passen het aan", "de nieuwe versie". */
           p(nl
             ? (n === 1

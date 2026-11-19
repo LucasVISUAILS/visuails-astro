@@ -45,6 +45,10 @@ import { mintToken, hashToken, portalUrl } from './token.js';
 /* 6.03 (8 oktober 2026): credits blijven voor iedereen even lang geldig; de
    doorschuifregel per termijn (rolloverMonths) staat niet meer in deze mail. */
 import { CREDITS_GELDIG_MAANDEN } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P4-09): de termijn voor de richtingen van een merkmodel; als namespace,
+   zodat dit bestand niet omvalt zolang de constante nog niet in termijnen.js staat. */
+import * as TERMIJNEN from '../data/termijnen.js';
+const RICHTINGEN_WERKDAGEN = Number(TERMIJNEN.MERKMODEL_RICHTINGEN_WERKDAGEN) || 0;
 import { VAT_TREATMENT } from '../data/vat.js';
 import { formatDate } from './invoicePdf.js';
 /* E05 (9 november 2026, ronde 91): Studio-links met de taal van de mail. */
@@ -91,7 +95,8 @@ const COPY = {
     /* Ronde 9 (F40): een offerte (video, eigen look) heeft geen uploadformulier
        gehad. Zonder deze zin wist de klant na betalen niet hoe zijn foto's bij
        ons komen. */
-    nextModel: 'Je krijgt eerst een paar richtingen om op te reageren, met één correctieronde. Daarna bouwen we het gezicht, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Je krijgt een mail zodra er iets te bekijken is.',
+    /* levering 118 (17 november 2026, proefronde P4-09): met de termijn, als die in termijnen.js staat. */
+    nextModel: `Je krijgt eerst een paar richtingen om op te reageren${RICHTINGEN_WERKDAGEN ? `, binnen ${RICHTINGEN_WERKDAGEN} werkdagen` : ''}, met één correctieronde. Daarna bouwen we het gezicht, halen het door de uniciteitscontrole en leggen het vast op jouw merk. Je krijgt een mail zodra er iets te bekijken is.`,
     nextOfferte: 'We gaan aan de slag zoals in de offerte staat. Heb je je productfoto’s nog niet gestuurd? Beantwoord dan deze mail met de foto’s, of stuur ze via WhatsApp. Je krijgt een mail zodra er iets klaarstaat om te bekijken.',
   },
   en: {
@@ -111,7 +116,7 @@ const COPY = {
     outside: 'This supply falls outside the scope of European VAT.',
     keep: 'Keep this invoice for your own records.',
     nextH: 'What happens next',
-    nextModel: 'First you get a few directions to react to, with one correction round. Then we build the face, run it through the uniqueness check and tie it to your brand. You get an email as soon as there is something to look at.',
+    nextModel: `First you get a few directions to react to${RICHTINGEN_WERKDAGEN ? `, within ${RICHTINGEN_WERKDAGEN} working days` : ''}, with one correction round. Then we build the face, run it through the uniqueness check and tie it to your brand. You get an email as soon as there is something to look at.`,
     nextOfferte: 'We start as set out in the quote. Not sent your product photos yet? Reply to this email with the photos, or send them on WhatsApp. You get an email as soon as there is something to look at.',
   },
 };
@@ -181,7 +186,8 @@ export function invoiceEmail({ lang = 'nl', order = {}, invoice, snap = {}, atta
     h1(t.head, kenmerk('factuur', invoice.number, lang)),
     /* De aanhef, zoals in elke andere klantmail (ronde 9, O21), ook zonder naam.
        Met `nu` (de klant betaalde net) het dagdeel, zie src/lib/aanhef.js. */
-    p(greeting(order.name, lang, { nu, land: order.country || '' })),
+    /* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam. */
+    p(greeting(order.name, lang, { nu, land: order.country || '', voornaam: order.first_name })),
     p(esc(t.lede(euro(gross, lang), attached))),
     /* De knop bovenaan (7.01): de privélink van deze bestelling. Zonder link
        (een oude bestelling, of het maken van de link lukte niet) gaat hij naar
@@ -484,7 +490,8 @@ export async function mailSubscriptionInvoice(env, { sub, customer, invoice, pla
       h1(eerste ? t.headWelcome : t.headNext, kenmerk(sub.ref ? 'abonnement' : 'factuur', ref, lang)),
       /* Aanhef en vragenregel zoals in de andere klantmails (17 oktober 2026). */
       /* Het welkom leest de klant nu (hij betaalde net); een maandfactuur later. */
-      p(greeting(customer.name, lang, eerste ? { nu: new Date(), land: customer.country || '' } : {})),
+      /* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam. */
+      p(greeting(customer.name, lang, eerste ? { nu: new Date(), land: customer.country || '', voornaam: customer.first_name } : { voornaam: customer.first_name })),
       p(esc(eerste ? (sub.term === 'prepaid' ? t.ledeFirstPrepaid : t.ledeFirst)(planNaam, credits, dag) : t.ledeNext(maand, credits))),
       !eerste && vervallen > 0 && plafond > 0 ? p(esc(t.ledeBoven(vervallen, plafond))) : '',
       ...welkom,
@@ -582,7 +589,8 @@ export async function mailBijkoopFactuur(env, { customer, invoice = null, pakket
     const body = [
       h1(t.head, invoice ? kenmerk('factuur', invoice.number, L) : ''),
       /* De klant kocht dit net bij: het dagdeel (src/lib/aanhef.js). */
-      p(greeting(customer.name, L, { nu: new Date(), land: customer.country || '' })),
+      /* levering 119 (18 november 2026, proefronde A0-01): de aanhef uit het veld Voornaam. */
+      p(greeting(customer.name, L, { nu: new Date(), land: customer.country || '', voornaam: customer.first_name })),
       p(esc(t.lede(Number(pakket) || 0, totTekst))),
       invoice ? rows([
         [t.rPakket, String(Number(pakket) || 0)],

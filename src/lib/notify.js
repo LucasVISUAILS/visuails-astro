@@ -50,8 +50,13 @@ import { shell, h1, p as mailP, rows as rijenHtml, quote as quoteHtml, statusPil
    8 oktober 2026): de knop met de vaste tekst, Bellen voorop bij een
    Nederlandse klant. Zie src/lib/waLink.js. */
 import { button as mailKnop, linkLine } from './mailTemplate.js';
+/* levering 117 (17 november 2026, proefronde P3-10): voor de klantmail "je datum is vervallen". */
+import { greeting as mailGroet, vragen as mailVragen } from './mailTemplate.js';
 import { waLink, contactMail } from './waLink.js';
 import { CREDITS_GELDIG_MAANDEN } from '../data/pricing.js';
+/* levering 119 (18 november 2026, proefronde W2-09): voorrang met dag en uur in het onderwerp van "Betaald". */
+import { heeftVoorrang, voorrangDeadline } from '../data/pricing.js';
+import { voorrangVanaf } from './fotosCompleet.js';
 import { planName } from '../data/planNames.js';
 /* De stand van een abonnement in de studiomail, in gewone woorden. */
 const ABO_STAND = { active: 'loopt', paused: 'gepauzeerd', cancelled: 'opgezegd', pending: 'wacht op eerste betaling', ending: 'loopt af' };
@@ -81,6 +86,8 @@ async function orderFor(env, orderId) {
               /* Voor de vaste tekst aan de klant (7.05): taal, betaalklok en het
                  nummer van de klant als de bestelling er geen heeft. */
               lang, created_at, review_state, reviewed_at, payment_status, status,
+              /* levering 119 (proefronde W2-09): de voorrangstermijn telt vanaf het betalen. */
+              paid_at,
               (SELECT c.phone FROM customers c WHERE c.id = orders.customer_id) AS c_phone,
               (SELECT c.country FROM customers c WHERE c.id = orders.customer_id) AS c_country
          FROM orders WHERE id = ?1`
@@ -123,12 +130,38 @@ async function toStudio(env, subject, body, replyTo = '') {
  * de grote bestelling was. Het venster staat erbij als er een is: dan weet je meteen
  * of dit werk is dat een datum heeft.
  */
+/* ── VOORRANG IN HET ONDERWERP — levering 119 (18 november 2026, proefronde W2-09) ─────────────────────────────
+   Een voorrangsbestelling had hetzelfde onderwerp als elke andere. Pas bij betaald staat de termijn vast (de
+   melding "Nieuwe bestelling" zegt alleen "VOORRANG"), dus hier: "VOORRANG tot wo 18 nov 17:00". Dezelfde som als
+   /admin en Nu doen (voorrangVanaf + voorrangDeadline). Wachten er nog foto's, dan loopt de termijn nog niet. */
+const KORT_DAG = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+const KORT_MAAND = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+export function voorrangKort(d) {
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(String(d.datum || ''))) return '';
+  const t = new Date(`${d.datum}T12:00:00Z`);
+  return `${KORT_DAG[t.getUTCDay()]} ${t.getUTCDate()} ${KORT_MAAND[t.getUTCMonth()]} ${d.uur}:00`;
+}
+export function voorrangStudio(o) {
+  if (!o || o.service === 'test-sample' || !heeftVoorrang(o)) return null;
+  let d = {};
+  try { d = typeof o.details_json === 'string' ? JSON.parse(o.details_json || '{}') || {} : o.details_json || {}; } catch { d = {}; }
+  const regel = Array.isArray(d.opbouw) ? d.opbouw.find((r) => r && r.soort === 'voorrang') : null;
+  const toeslag = regel && Number(regel.totalCents) > 0 ? Number(regel.totalCents) : 0;
+  const vanaf = voorrangVanaf({ ...o, paid_at: o.paid_at || (o.payment_status === 'paid' ? new Date().toISOString() : '') });
+  const tot = vanaf ? voorrangKort(voorrangDeadline(vanaf)) : '';
+  return {
+    onderwerp: tot ? `VOORRANG tot ${tot} · ` : 'VOORRANG (loopt zodra de foto’s compleet zijn) · ',
+    regel: `${tot ? `uiterlijk ${tot} (Nederlandse tijd)` : 'termijn loopt zodra de foto’s compleet zijn'}${toeslag ? ` · toeslag ${cents(toeslag)} excl. btw` : ''}`,
+  };
+}
+
 export async function notifyPaid(env, orderId) {
   try {
     const o = await orderFor(env, orderId);
     const ref = o?.ref || `#${orderId}`;
     const gross = (Number(o?.total_cents) || 0) + (Number(o?.vat_cents) || 0);
-    await toStudio(env, `Betaald · ${ref} · ${cents(gross)}`, [
+    const vr = voorrangStudio(o);
+    await toStudio(env, `${vr ? vr.onderwerp : ''}Betaald · ${ref} · ${cents(gross)}`, [
       h1('Er is betaald', kenmerk('bestelling', ref)),
       mailRows([
         ['Bestelling', ref],
@@ -138,11 +171,80 @@ export async function notifyPaid(env, orderId) {
         ['Producten', String(o?.product_count ?? '')],
         ['Bedrag', `${cents(o?.total_cents)} excl. btw · ${cents(gross)} totaal`],
         ['Venster', o?.window_start ? `${o.window_start}${o.window_end ? ` – ${o.window_end}` : ''}` : 'geen vastgelegde datum'],
+        ...(vr ? [['Voorrang', vr.regel]] : []),
       ]),
       mailP('Het werk kan beginnen. De klant krijgt de betaalbevestiging met factuur (of zonder, als die nog niet klaar is) apart.'),
     ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] betaald-bericht niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/*
+ * ── BETAALD NA EEN VERLOPEN RESERVERING, EN DE DAG IS WEG ───────────────────
+ * levering 117 (17 november 2026, proefronde P3-10). De webhook heeft de datum
+ * leeggemaakt omdat de betaaltermijn voorbij was en een ander de dagen intussen
+ * had geboekt (zie verlopenVensterPastNog in src/lib/agenda.js). Twee berichten:
+ * één aan jou, om een nieuwe datum af te spreken, en één aan de klant, die anders
+ * denkt dat zijn oude datum nog geldt. Beide werpen niet.
+ */
+const vensterTekst = (v, lang) => {
+  if (!v || !v.start) return '';
+  return v.end && v.end !== v.start ? `${datum(v.start, lang)} – ${datum(v.end, lang)}` : datum(v.start, lang);
+};
+
+export async function notifyDatumVervallen(env, { orderId, venster }) {
+  try {
+    const o = await orderFor(env, orderId);
+    const ref = o?.ref || `#${orderId}`;
+    await toStudio(env, `Betaald, maar de datum is weg · ${ref}`, [
+      h1('Betaald na de betaaltermijn: datum leeggemaakt', kenmerk('bestelling', ref)),
+      mailRows([
+        ['Bestelling', ref],
+        ['Klant', who(o)],
+        ['E-mail', o?.email || ''],
+        ['Telefoon', o?.phone || o?.c_phone || ''],
+        ['Was gereserveerd', vensterTekst(venster, 'nl')],
+      ]),
+      mailP('De klant betaalde nadat zijn reservering was verlopen, en die dagen zijn intussen door een ander geboekt. '
+        + 'Om de dag niet dubbel te verkopen is de datum leeggemaakt. De bestelling is betaald en staat zonder datum in /admin. '
+        + 'De klant heeft een mail gekregen dat je contact opneemt voor een nieuwe datum.'),
+    ].join(''), o?.email || '');
+  } catch (err) {
+    console.error('[notify] datum-vervallen-bericht niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+export async function mailKlantDatumVervallen(env, { orderId, venster }) {
+  try {
+    if (!env?.RESEND_API_KEY) return;
+    const o = await orderFor(env, orderId);
+    if (!o || !o.email) return;
+    const lang = o.lang === 'en' ? 'en' : 'nl';
+    const nl = lang === 'nl';
+    const wanneer = esc(vensterTekst(venster, lang));
+    const onderwerp = nl ? `Je betaling is binnen — je leverdatum is vervallen · ${o.ref}` : `Your payment is in — your delivery date has lapsed · ${o.ref}`;
+    await sendMail(env, {
+      to: o.email,
+      subject: onderwerp,
+      html: shell({
+        lang,
+        preheader: onderwerp,
+        body: [
+          h1(nl ? 'We spreken een nieuwe datum met je af' : 'We will agree a new date with you', kenmerk('bestelling', o.ref, lang)),
+          mailP(mailGroet(o.name, lang)),
+          mailP(nl
+            ? `Dank je, je betaling is binnen en je bestelling gaat door. Je gereserveerde leverdatum (${wanneer}) is helaas vervallen: de betaaltermijn was voorbij en die dagen zijn intussen door een andere klant geboekt.`
+            : `Thank you, your payment is in and your order goes ahead. Your reserved delivery date (${wanneer}) has unfortunately lapsed: the payment period had passed and those days have since been booked by another client.`),
+          mailP(nl
+            ? 'We nemen contact met je op om een nieuwe datum af te spreken. Je hoeft zelf niets te doen.'
+            : 'We will contact you to agree a new date. You do not need to do anything.'),
+          mailVragen(lang, o.ref),
+        ].join(''),
+      }),
+    });
+  } catch (err) {
+    console.error('[notify] klantmail datum-vervallen niet verstuurd voor', orderId, '—', err?.message || err);
   }
 }
 
@@ -321,6 +423,51 @@ export async function notifySampleBlocked(env, { orderId, earlierRef, earlierAt,
     ].join(''), o?.email || '');
   } catch (err) {
     console.error('[notify] bericht over tweede proefvisual niet verstuurd voor', orderId, '—', err?.message || err);
+  }
+}
+
+/* ── EN DE KLANT HOORT HET OOK — levering 118 (17 november 2026, proefronde P1-10) ──────────────────────────────
+   De webhook annuleerde een tweede proef en stortte de euro terug, maar de klant kreeg daar geen mail over; alleen
+   de terugkeerpagina zei het, en die zei tegelijk "betaald". Nu een korte mail in zijn taal: wat er gebeurde,
+   waarom, en dat het geld terugkomt (of dat wij het met de hand terugstorten). */
+export async function mailKlantProefDubbel(env, { orderId, earlierRef = '', refunded = false }) {
+  try {
+    if (!env?.RESEND_API_KEY) return;
+    const o = await orderFor(env, orderId);
+    if (!o || !o.email) return;
+    const lang = o.lang === 'en' ? 'en' : 'nl';
+    const nl = lang === 'nl';
+    const bruto = (Number(o.total_cents) || 0) + (Number(o.vat_cents) || 0);
+    const bedragTekst = bruto > 0 ? mailBedrag(bruto, lang) : (nl ? 'je betaling' : 'your payment');
+    const onderwerp = nl
+      ? `Je proef is geannuleerd — ${refunded ? 'je geld komt terug' : 'we storten je geld terug'} · ${o.ref}`
+      : `Your test sample is cancelled — ${refunded ? 'your money is coming back' : 'we will refund you'} · ${o.ref}`;
+    await sendMail(env, {
+      to: o.email,
+      subject: onderwerp,
+      html: shell({
+        lang,
+        preheader: nl ? `Er is al eerder een proef voor je bedrijf gemaakt. ${bedragTekst} gaat terug.` : `Your business already had a test sample. ${bedragTekst} goes back.`,
+        body: [
+          h1(nl ? 'Je proef is geannuleerd' : 'Your test sample is cancelled', kenmerk('bestelling', o.ref, lang)),
+          mailP(mailGroet(o.name, lang)),
+          mailP(nl
+            ? `Voor je bedrijf is al eerder een proef gemaakt${earlierRef ? ` (${esc(earlierRef)})` : ''}. Een proef is één keer per bedrijf, dus deze hebben we geannuleerd. We maken er niets voor.`
+            : `Your business already had a test sample${earlierRef ? ` (${esc(earlierRef)})` : ''}. A test sample is once per business, so we cancelled this one. We will not make anything for it.`),
+          mailP(refunded
+            ? (nl ? `Je betaling van ${esc(bedragTekst)} is teruggestort. Het staat binnen een paar werkdagen weer op je rekening.`
+              : `Your payment of ${esc(bedragTekst)} has been refunded. It is back in your account within a few working days.`)
+            : (nl ? `We storten je betaling van ${esc(bedragTekst)} met de hand terug, binnen een werkdag. Je hoeft zelf niets te doen.`
+              : `We refund your payment of ${esc(bedragTekst)} by hand, within one working day. You do not need to do anything.`)),
+          mailP(nl
+            ? 'Wil je meer zien? Bestel een paar producten, of beantwoord deze mail met je vraag.'
+            : 'Want to see more? Order a few products, or reply to this email with your question.'),
+          mailVragen(lang, o.ref),
+        ].join(''),
+      }),
+    });
+  } catch (err) {
+    console.error('[notify] klantmail tweede proef niet verstuurd voor', orderId, '—', err?.message || err);
   }
 }
 

@@ -96,7 +96,8 @@ const COPY = {
        of whatsapp (meestal sneller) te plaatsen."* De grens zelf staat bij
        UPLOAD_DAG in functions/api/upload.js. */
     limietH: 'You have reached today’s upload limit',
-    limietBody: 'To prevent misuse, each internet connection can send us a limited number of photos per day. A large order can sometimes reach it. Place the order on WhatsApp instead (usually the fastest) or by email: tell us what you would like made and send the photos, and we will set up the order for you.',
+    /* levering 118 (17 november 2026, proefronde P9-09): de gewone oorzaak is een paar bestellingen op één dag, niet één grote; en morgen kan het weer. */
+    limietBody: 'To prevent misuse, each internet connection can send us a limited number of orders with photos per day. After a few orders on one day, or with a very large order, you can reach it. Place the order on WhatsApp instead (usually the fastest) or by email: tell us what you would like made and send the photos, and we will set up the order for you. Tomorrow the site works as usual again.',
     limietWa: 'Order on WhatsApp',
     limietWaText: 'Hello VISUAILS, I was placing an order and reached the upload limit. I would like to place the order on WhatsApp.',
     limietMail: 'Order by email',
@@ -110,7 +111,8 @@ const COPY = {
     off: 'Je kunt op dit moment geen bestanden versturen. Ga gerust verder — we vragen ze per e-mail op, en je bestelling hangt niet van deze stap af.',
     /* Zie de noot bij de Engelse limietH. */
     limietH: 'Je hebt het maximum aantal uploads voor vandaag bereikt',
-    limietBody: 'Om misbruik te voorkomen kan er per internetverbinding per dag een beperkt aantal foto’s naar ons toe. Bij een grote bestelling kom je daar soms aan. Plaats de bestelling dan via WhatsApp (meestal het snelst) of per mail: laat ons weten wat je wilt laten maken en stuur de foto’s mee, dan zetten wij de bestelling voor je klaar.',
+    /* levering 118 (17 november 2026, proefronde P9-09): zie de Engelse limietBody. */
+    limietBody: 'Om misbruik te voorkomen kan er per internetverbinding per dag een beperkt aantal bestellingen met foto’s naar ons toe. Na een paar bestellingen op één dag, of bij een heel grote bestelling, kom je daar soms aan. Plaats de bestelling dan via WhatsApp (meestal het snelst) of per mail: laat ons weten wat je wilt laten maken en stuur de foto’s mee, dan zetten wij de bestelling voor je klaar. Morgen kan het weer gewoon via de site.',
     limietWa: 'Bestel via WhatsApp',
     limietWaText: 'Hallo VISUAILS, ik was een bestelling aan het plaatsen en kwam aan het maximum aantal uploads. Ik wil de bestelling graag via WhatsApp plaatsen.',
     limietMail: 'Bestel per mail',

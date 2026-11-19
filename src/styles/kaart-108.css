@@ -51,7 +51,12 @@ html body.hal .ty-bar.kv-108 { padding: clamp(28px, 3vw, 44px) !important; margi
 html body.hal .ty-bar.kv-108 .ty-check { color: #090D0B; background: #3DFFB0; }
 @media (max-width: 640px) {
   /* op de telefoon past de kop in de kaart op twee regels; het vinkje erboven, alles in het midden */
-  html body.hal .h-form-bedankt .ty-bar.kv-108 .hoog.hoog-2 { font-size: 27px; line-height: 1.06; }
+  /* levering 118 (17 november 2026, proefronde N4 koppen): deze regel verloor van ".h-form:not(.h-ts-form) .s22 .hoog.hoog-2"
+     in hal.css (even zwaar, later geladen): de kop stond op 30 px en liep over drie regels ("Bedankt — we hebben je
+     aanvraag." op 320 – 390 px). Nu zwaarder (:not(#k)), en mee met de breedte: het vak is het venster min 88 px en de
+     langste kop ("Bedankt — je bestelling staat erin.") vraagt breedte / 10,2 voor twee regels; de credits-koppen en de
+     Engelse "al een proef" zijn daarvoor korter gemaakt (ThankYouPage.astro). */
+  html body.hal .h-form-bedankt .ty-bar.kv-108 .hoog.hoog-2:not(#k) { font-size: min(27px, calc((100vw - 88px) / 10.5)); line-height: 1.06; }
   html body.hal .h-form-bedankt .ty-bar.kv-108 .ty-bar-in { align-items: center; text-align: center; }
 }
 

@@ -23,9 +23,12 @@ export async function onRequestPost({ request, env }) {
   const email = String(body?.email || '').trim().slice(0, 254);
   const phone = String(body?.phone || '').trim().slice(0, 40);
   const reg = String(body?.reg_number || '').trim().slice(0, 40);
-  if (!email && !phone && !reg) return antwoord(false);
+  /* levering 118 (17 november 2026, proefronde B1-01): ook het btw-nummer, dat bij het versturen hard telt
+     (proefGebruikt); zo hoort de klant het al in stap 3. Een formulier dat het niet meestuurt, werkt zoals voorheen. */
+  const vat = String(body?.vat || '').trim().slice(0, 32);
+  if (!email && !phone && !reg && !vat) return antwoord(false);
   const gate = await checkRate(env, { ip: clientIp(request), action: 'proef-check', limit: 8, windowSeconds: 600 });
   if (!gate.allowed) return antwoord(false);
-  const { checked, used } = await proefGebruikt(env, { email, phone, reg });
+  const { checked, used } = await proefGebruikt(env, { email, phone, reg, vat });
   return antwoord(checked && used > 0);
 }

@@ -44,7 +44,7 @@ import { SERVICE_CREDITS, PLAN_CREDITS, PLAN_SERVICES, EXTRA_CREDITS, creditsVoo
 /* Alleen de namen van de drie behandelingen — geen beslissing, geen VIES. Zie
    de kop van subBrutoCents(). */
 import { VAT_TREATMENT } from '../data/vat.js';
-import { monthlyCents, productsFor, rolloverMonths, isPrepaid, prepayTotalCents } from '../data/plans.js';
+import { monthlyCents, productsFor, rolloverMonths, isPrepaid, prepayTotalCents, hasBrandModel } from '../data/plans.js';
 
 /** De maandsleutel 'YYYY-MM' van vandaag, of van een datum. */
 export function monthKey(d = new Date()) {
@@ -612,4 +612,32 @@ export async function geefSlotTerug(env, subId, venster, kind, aantal = 1, nu = 
 export async function slotBalans(env, subId, venster, nu = new Date(), tot = '') {
   const maand = /^\d{4}-\d{2}$/.test(String(tot)) ? String(tot) : monthKey(nu);
   return balansUit(await loadSlots(env, subId, venster, nu, maand), maand);
+}
+
+/**
+ * ── HEEFT DEZE KLANT EEN MERKMODEL IN ZIJN ABONNEMENT? ───────────────────────
+ * levering 117 (17 november 2026, proefronde P5-12). Een actief abonnement waarbij
+ * hasBrandModel() (plans.js) ja zegt: Merk altijd, Pro met een jaar. Eén merkmodel
+ * per abonnement: is er al een bestelling met het inbegrepen merkmodel (en die is
+ * niet geannuleerd), dan betaalt een tweede gewoon. Geeft { plan, term } of null.
+ * Werpt niet: zonder antwoord betaalt de klant, zoals vroeger.
+ * Ook bedoeld voor de op-maatschatting (heeftMerkmodel in src/lib/opMaatApi.js).
+ */
+export async function merkmodelInAbonnement(env, customerId) {
+  if (!env?.DB || !customerId) return null;
+  try {
+    const sub = await env.DB.prepare(
+      `SELECT plan, term FROM subscriptions WHERE customer_id = ?1 AND status = 'active' ORDER BY id DESC LIMIT 1`
+    ).bind(customerId).first();
+    if (!sub || !hasBrandModel(sub.plan, sub.term)) return null;
+    const al = await env.DB.prepare(
+      `SELECT 1 AS x FROM orders
+        WHERE customer_id = ?1 AND service = 'brand-model' AND status <> 'cancelled'
+          AND details_json LIKE '%"merkmodel_inbegrepen"%' LIMIT 1`
+    ).bind(customerId).first();
+    if (al) return null;
+    return { plan: sub.plan, term: sub.term };
+  } catch {
+    return null;
+  }
 }

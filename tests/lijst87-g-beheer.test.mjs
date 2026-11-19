@@ -103,10 +103,13 @@ console.log('\nC07 · de echte dag van voorrang in het formulier');
   ok('zaterdag betaald: dinsdag', voorrangDeadline('2026-11-14T10:00:00+01:00'), { datum: '2026-11-17', uur: 17 });
   const flow = lees('src/components/order/OrderFlow.astro');
   ok('OrderFlow: een plek voor de zin, met het sjabloon in beide talen', /<p class="pl-voorrang-dag" data-pl-voorrang-dag data-sjabloon=\{WK\.voorrangDag\} hidden><\/p>/.test(flow)
-    && /voorrangDag: 'Betaal je nu, dan is het uiterlijk \{dag\} om \{uur\}:00 klaar\.'/.test(flow) && /voorrangDag: 'Pay now and it is ready by \{uur\}:00 on \{dag\} at the latest\.'/.test(flow), true);
+    /* levering 118 (17 november 2026, proefronde L-16 keuze a): de dag geldt als ook al je foto's er staan (BC). */
+    && /voorrangDag: 'Betaal je nu en staan al je foto’s er, dan is het uiterlijk \{dag\} om \{uur\}:00 klaar\.'/.test(flow) && /voorrangDag: 'Pay now with all your photos in and it is ready by \{uur\}:00 on \{dag\} at the latest\.'/.test(flow), true);
   const pl = lees('src/scripts/pipeline.js');
   ok('pipeline.js vult hem met voorrangDeadline() (dezelfde som als de server)', /import \{ voorrangDeadline \} from '\.\.\/data\/pricing\.js';/.test(pl) && /const d = aan \? voorrangDeadline\(null\) : null;/.test(pl), true);
-  ok('  en verbergt hem als voorrang niet kan (dicht of te veel producten)', /dagZin\.hidden = !dag;/.test(pl), true);
+  /* levering 119 (18 november 2026, proefronde P8-07): de regel verbergt hem nu óók als voorrang aan staat en de leverzin van de
+     werkplaats de dag al noemt (`!dag || …`); de oude regex pinde de vorm `!dag;`. */
+  ok('  en verbergt hem als voorrang niet kan (dicht of te veel producten)', /dagZin\.hidden = !dag( \|\||;)/.test(pl), true);
   const dag = new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date('2026-11-17T12:00:00Z'));
   ok(`de dagnaam leest als "${dag}"`, dag, 'dinsdag 17 november');
 }

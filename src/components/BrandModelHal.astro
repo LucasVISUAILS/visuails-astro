@@ -36,7 +36,9 @@ import ServiceSwitch from './ServiceSwitch.astro';
    belooft die controle al (brandModel.includes); de vaste reeks noemen we pas als het
    logboek in modelChecks.js compleet is — dezelfde schakelaar als /terms §5 en /ai-act. */
 import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd } from '../data/modelChecks.js';
-import { inWoorden } from '../data/termijnen.js';
+import { inWoorden, MERKMODEL_RICHTINGEN_WERKDAGEN } from '../data/termijnen.js';
+/* levering 118 (17 november 2026, proefronde P6-06): zeggen dat het AI is; dezelfde regel als op /models. */
+import { AI_REGEL } from '../data/styles.js';
 import HalBeweging from './HalBeweging.astro';
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -210,6 +212,8 @@ const COPY = {
     // OUTPUT
     outH: 'Real output, not a mock-up.',
     outAlt: 'A VISUAILS brand model example',
+    /* levering 118 (T1-07): de naam van de strook met voorbeelden (op de telefoon schuift hij) */
+    outStrook: 'Brand model examples. Scroll with the arrow keys.',
 
     // PROCESS
     procH: 'How a Brand Model comes together',
@@ -336,6 +340,7 @@ const COPY = {
     /* Lijst 87 (e15): gelijk aan het Engels, zonder "geleverd" */
     outH: 'Echt resultaat, geen mock-up.',
     outAlt: 'Een voorbeeld van een VISUAILS merkmodel',
+    outStrook: 'Voorbeelden van een merkmodel. Schuif met de pijltjestoetsen.',
 
     procH: 'Hoe een merkmodel tot stand komt',
 
@@ -417,14 +422,16 @@ const DIRECTIONS = {
 const STEPS = {
   en: [
     ['You send', 'You send references and tell us the look you want.'],
-    ['Directions', 'We design two or three directions for you to react to.'],
+    /* levering 118 (17 november 2026, proefronde P4-09): de termijn voor de eerste richtingen, uit termijnen.js (Lucas kiest het getal daar). */
+    ['Directions', `We design two or three directions for you to react to. You get them within ${MERKMODEL_RICHTINGEN_WERKDAGEN} working days.`],
     ['You choose', 'Pick the face that fits. You get one correction round on it.'],
     ['Locked', 'The model is fixed so it cannot drift between orders.'],
     ['Per order', 'From then on you choose per order whether to use it, and on which products.'],
   ],
   nl: [
     ['Jij stuurt', 'Je stuurt referenties en vertelt welke look je wilt.'],
-    ['Richtingen', 'We ontwerpen twee of drie richtingen waarop je kunt reageren.'],
+    /* levering 118 (17 november 2026, proefronde P4-09): zie de Engelse regel. */
+    ['Richtingen', `We ontwerpen twee of drie richtingen waarop je kunt reageren. Je krijgt ze binnen ${MERKMODEL_RICHTINGEN_WERKDAGEN} werkdagen.`],
     ['Jij kiest', 'Kies het gezicht dat past. Daarop krijg je één correctieronde.'],
     ['Vastgezet', 'We leggen het model vast, zodat het niet per bestelling gaat verschuiven.'],
     ['Per bestelling', 'Vanaf dan kies je per bestelling of je het gebruikt, en op welke producten.'],
@@ -493,7 +500,8 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <img src="/img/custom-models-02.webp" alt={c.heroAlt} decoding="sync" width="800" height="1071" fetchpriority="high" />
         <span class="h-pil h-pil-glas h-bm-een-pil"><span>{c.castYours}</span></span>
       </div>
-      <figcaption class="h-bm-noot">{c.castNote}</figcaption>
+      {/* levering 118 (17 november 2026, proefronde P6-06): het onderschrift zegt er nu ook bij dat deze mensen niet bestaan. */}
+      <figcaption class="h-bm-noot">{c.castNote} {AI_REGEL.modellen[lang]}</figcaption>
     </figure>
   </header>
 
@@ -505,7 +513,9 @@ const ik = (n: keyof typeof ICOON) => ikoon(ICOON[n]);
         <h2 id="bm-uit-h" class="h-kop h-h2"><span class="l">{KOP.uit[0]}</span> {KOP.uit[1]}</h2>
       </div>
     </header>
-    <ul class="h-bm-uit" role="list">
+    {/* levering 118 (17 november 2026, proefronde T1-07): op de telefoon schuift deze strook; nu een tabstop met een naam,
+        zodat hij met de pijltjestoetsen te bekijken is. De focusrand staat in hal.css. */}
+    <ul class="h-bm-uit" role="list" tabindex="0" aria-label={c.outStrook}>
       {EXAMPLES.map((photo, i) => (
         <li class="h-well h-in" style={`--d:${i}`}>
           <img src={photo.src} alt={`${c.outAlt} ${i + 1}`} loading="lazy" decoding="async" width={photo.w} height={photo.h} />

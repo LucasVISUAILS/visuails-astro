@@ -165,7 +165,8 @@ console.log('\n2 · de bestelpagina toont de intake, de offerte gaat de deur uit
   ok('  er is nog geen Mollie-betaling (die komt bij de klik)', betalingen.size - voor, 0);
   const mail = mails().filter((m) => /voorbeeld-volt/.test(JSON.stringify(m.to || ''))).pop();
   ok('  de klant krijgt een mail met "offerte" in het onderwerp', /offerte/i.test(mail?.subject || ''));
-  ok('  en de betaallink erin', /\/api\/order-pay\?ref=VIS-[^"&]+&amp;lang=nl|\/api\/order-pay\?ref=VIS-[^"&]+&lang=nl/.test(mail?.html || ''));
+  /* levering 118 (integratie IA, P4-06 van BG): een offerte zonder factuuradres gaat eerst naar de factuurstap op /o/. */
+  ok('  en de betaallink erin', /\/api\/order-pay\?ref=VIS-[^"&]+&amp;lang=nl|\/api\/order-pay\?ref=VIS-[^"&]+&lang=nl|\/o\/[A-Za-z0-9_-]+#factuur/.test(mail?.html || ''));
   const ev = db.prepare(`SELECT note FROM order_events WHERE order_id = ? ORDER BY id DESC LIMIT 2`).all(aanvraag.id).map((r) => r.note).join(' ');
   ok('  en de tijdlijn zegt het', /Offerte vastgelegd/.test(ev));
 

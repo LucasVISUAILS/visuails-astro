@@ -29,6 +29,8 @@ import { ROSTER, TRAITS, modelId, rosterWoord } from '../data/models.js';
    voor élk gezicht compleet is — dezelfde schakelaar als /terms §5 en /ai-act. */
 import { GEZICHTSZOEKERS, rosterVolledigGecontroleerd } from '../data/modelChecks.js';
 import { inWoorden } from '../data/termijnen.js';
+// levering 118 (17 november 2026, proefronde P6-06): de vaste AI-regel, vooraan de openingszin.
+import { AI_REGEL } from '../data/styles.js';
 
 interface Props { lang: 'en' | 'nl'; }
 const { lang } = Astro.props;
@@ -38,7 +40,7 @@ const COPY = {
   en: {
     eyebrow: 'The standard library',
     h1: [`${rosterWoord('en', true)} faces.`, 'Already included.'],
-    lead: 'Included in every order at no extra cost. Pick one, or let us match one to your product.',
+    lead: `${AI_REGEL.modellen.en} Included in every order at no extra cost. Pick one, or let us match one to your product.`,
     ctaPrimary: 'Start an order',
     ctaWa: 'Discuss it on WhatsApp',
     waText: 'Hello VISUAILS, I\'d like to ask about the standard models.',
@@ -67,7 +69,7 @@ const COPY = {
   nl: {
     eyebrow: 'De standaardbibliotheek',
     h1: [`${rosterWoord('nl', true)} gezichten.`, 'Al inbegrepen.'],
-    lead: 'Inbegrepen in elke bestelling, zonder meerprijs. Kies er een, of laat ons er een bij je product zoeken.',
+    lead: `${AI_REGEL.modellen.nl} Inbegrepen in elke bestelling, zonder meerprijs. Kies er een, of laat ons er een bij je product zoeken.`,
     ctaPrimary: 'Start een bestelling',
     ctaWa: 'Bespreek het op WhatsApp',
     waText: 'Hallo VISUAILS, ik wil graag iets vragen over de standaardmodellen.',

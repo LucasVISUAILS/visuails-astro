@@ -78,6 +78,7 @@ export const MELDTERMIJN_DAGEN = 14;
 /*
  * Per partij:
  *   naam   de rechtspersoon (of, bij een modelmaker, het bedrijf met de dienst)
+ *   naamEn alleen als de naam in het Engels anders is (levering 119: de Europese Commissie)
  *   via    bij een modelmaker: het platform waarop het model voor ons draait
  *   beeld  ontvangt het beeldmateriaal van de klant → hoort in de lijst van de
  *          verwerkersovereenkomst. Alles in deze lijst staat in het privacybeleid.
@@ -251,6 +252,8 @@ export const ONTVANGERS = [
   {
     id: 'vies',
     naam: 'Europese Commissie (VIES)',
+    /* levering 119 (18 november 2026, proefronde P7-07): de enige naam die geen eigennaam is, dus per taal. */
+    naamEn: 'European Commission (VIES)',
     beeld: false,
     waar: {
       nl: 'Brussel, België (EU)',
@@ -275,10 +278,10 @@ function inTaal(o, lang) {
   const via = o.via ? ONTVANGERS.find((x) => x.id === o.via) : null;
   return {
     id: o.id,
-    naam: o.naam,
+    naam: (l === 'en' && o.naamEn) || o.naam,
     beeld: !!o.beeld,
     via: o.via || null,
-    viaNaam: via ? via.naam : null,
+    viaNaam: via ? ((l === 'en' && via.naamEn) || via.naam) : null,
     wat: o.wat[l],
     waar: o.waar[l],
     grond: o.grond[l],
@@ -309,9 +312,21 @@ export function lijstGewijzigdOp(lang = 'en', soort = 'alles') {
   return `${d} ${MAANDEN[taal(lang)][m - 1]} ${j}`;
 }
 
-/** De regel boven de lijst: "Last changed: 8 October 2026". */
+/** De regel boven de lijst: "Last changed: 8 October 2026".
+    levering 119 (18 november 2026, proefronde P6-14): het privacybeleid en de verwerkersovereenkomst noemden twee
+    datums (9 november en 11 oktober) en zeiden allebei "deze lijst". Nu tonen ze één datum uit één bron,
+    LIJST_GEWIJZIGD. De verwerkersovereenkomst (soort 'subverwerkers') zegt erbij dat zij alleen de partijen met je
+    beelden toont, zodat de datum ook daar klopt. SUBVERWERKERS_GEWIJZIGD blijft als feit voor het register, maar
+    staat niet meer op een pagina. */
 export function lijstRegel(lang = 'en', soort = 'alles') {
-  return taal(lang) === 'nl'
-    ? `Deze lijst is voor het laatst gewijzigd op ${lijstGewijzigdOp('nl', soort)}.`
-    : `This list was last changed on ${lijstGewijzigdOp('en', soort)}.`;
+  const l = taal(lang);
+  const datum = lijstGewijzigdOp(l);
+  if (soort === 'subverwerkers') {
+    return l === 'nl'
+      ? `De lijst van ontvangers (privacybeleid §5) is voor het laatst gewijzigd op ${datum}. Hier staan alleen de partijen die je beelden krijgen.`
+      : `The list of recipients (Privacy Policy §5) was last changed on ${datum}. Only the parties that receive your images are listed here.`;
+  }
+  return l === 'nl'
+    ? `Deze lijst is voor het laatst gewijzigd op ${datum}.`
+    : `This list was last changed on ${datum}.`;
 }

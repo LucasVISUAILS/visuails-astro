@@ -789,8 +789,9 @@ console.log('\nde korte belofte zegt hetzelfde als de lange, met minder woorden'
   /* 30 september 2026: bij het bestellen wordt de datum GERESERVEERD; hij ligt
      pas vast na betaling. De korte vorm noemt het moment van bestellen, dus het
      woord dat daar hoort is "gereserveerd". */
-  check('kort en zegt dat het vastligt', /reserved when you order/i.test(turnaroundShort('attended', 'en')), true);
-  check('kort nl zegt dat het vastligt', /gereserveerd zodra je bestelt/i.test(turnaroundShort('attended', 'nl')), true);
+  /* levering 119 (18 november 2026, proefronde L-05): het woord is nu "vastgehouden" / "held", zoals in het formulier. */
+  check('kort en zegt dat het vastligt', /held once you order/i.test(turnaroundShort('attended', 'en')), true);
+  check('kort nl zegt dat het vastligt', /vastgehouden zodra je bestelt/i.test(turnaroundShort('attended', 'nl')), true);
   /* ── DIT BEWAAKTE HET WOORD "HUMAN" — 17 SEPTEMBER 2026 ────────────────────
      Er stond: de korte controlebelofte moet over MENSEN gaan (/human/ en /hand/).
      Dat was juist zolang de belofte "human-checked" heette. Lucas koos op 25

@@ -7,7 +7,7 @@
  *               achtergrond kan, puur optioneel;
  *   fotos       stap 2 (je foto's): de verplichte foto's staan bovenaan, de rest
  *               mag erbij;
- *   credits     stap 5 voor een abonnee: wat er met credits gaat en wat niet;
+ *   credits     de laatste stap (Betalen) voor een abonnee: wat er met credits gaat en wat niet;
  *   studio      VISUAILS Studio, het eerste bezoek: je bestellingen, je beelden
  *               goedkeuren, je vaste look;
  *   levering    Studio bij de eerste levering: per beeld goedkeuren of één
@@ -25,6 +25,9 @@
  * Teksten volgen de regels van de site: kort, vijf tot zeven woorden per regel
  * in de opmaak, geen prijs die hier getypt staat.
  */
+/* levering 119 (18 november 2026, proefronde P9-05): de zin over delen komt uit één bron, zoals in de mails en op /o/. */
+import { DEEL_ZIN } from '../lib/deelLink.js';
+
 export const TIP_IDS = ['bgfoto', 'fotos', 'credits', 'studio', 'levering', 'abonnement', 'privelink'];
 
 export const TIPS = {
@@ -43,9 +46,11 @@ export const TIPS = {
       ],
     },
     levering: 'Tip: keur je beelden per stuk goed. Klopt er iets niet, vraag dan één revisieronde aan: alles wat je wilt aanpassen, in één keer.',
-    abonnement: 'Tip: zolang je abonnement loopt, spaar je tot drie maanden aan credits. Je bestelt via het gewone formulier en betaalt in stap 5 met credits.',
+    /* levering 119 (18 november 2026, proefronde P9-03): geen stapnummer; het formulier heeft er 4 (5 bij 10+ producten). */
+    abonnement: 'Tip: zolang je abonnement loopt, spaar je tot drie maanden aan credits. Je bestelt via het gewone formulier en betaalt met credits in de laatste stap, Betalen.',
     /* 9 november 2026 (ronde 91, K-03): de privélink is "je bestelpagina". */
-    privelink: 'Tip: dit is je bestelpagina. Deze link opent je bestelling zonder inloggen; deel hem alleen met wie je vertrouwt.',
+    /* levering 119 (18 november 2026, proefronde P9-05): de ene deelzin (deelLink.js) in plaats van "deel hem alleen met wie je vertrouwt". */
+    privelink: `Tip: dit is je bestelpagina. Deze link opent je bestelling zonder inloggen. ${DEEL_ZIN.nl}`,
   },
   en: {
     begrepen: 'Got it',
@@ -62,8 +67,10 @@ export const TIPS = {
       ],
     },
     levering: 'Tip: approve your images one by one. Is something not right? Ask for one revision round: everything you want changed, in one go.',
-    abonnement: 'Tip: while your plan runs, you save up to three months of credits. You order through the usual form and pay with credits in step 5.',
-    privelink: 'Tip: this is your order page. This link opens your order without signing in; only share it with people you trust.',
+    /* levering 119 (18 november 2026, proefronde P9-03): geen stapnummer. */
+    abonnement: 'Tip: while your plan runs, you save up to three months of credits. You order through the usual form and pay with credits in the last step, Pay.',
+    /* levering 119 (18 november 2026, proefronde P9-05): de ene deelzin (deelLink.js). */
+    privelink: `Tip: this is your order page. This link opens your order without signing in. ${DEEL_ZIN.en}`,
   },
 };
 

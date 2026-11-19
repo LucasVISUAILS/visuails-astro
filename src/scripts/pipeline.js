@@ -232,16 +232,26 @@ import { CONCEPT_SLEUTEL, CONCEPT_DAGEN, TIPS_SLEUTEL } from '../data/cookies.js
 // formulier en de server het ooit oneens worden over of een land in de EU zit,
 // en dan biedt het formulier 0% aan waar de server 21% rekent.
 import { isEu, HOME_COUNTRY, vatShape, vatFormatError } from '../data/vat.js';
+/* levering 118 (17 november 2026, proefronde L-10): dezelfde beslissing als /api/order (btw-soort en de poort naar nakijken),
+   zodat de betaalstap zegt wat de server straks doet. */
+import { vatDecision, vatGate, verleggingTelt, VAT_TREATMENT } from '../data/vat.js';
+import { businessCheck } from '../data/business.js';
 import { VAT_RATE } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P1-03): de btw van de €1-proef met dezelfde som als de kassa (quoteTestSample). */
+import { quoteTestSample } from '../lib/quote.js';
 /* 1.07 (8 oktober 2026): bij welk groter aantal de bestelling evenveel of minder
    kost. Alleen de regel; de som zelf geeft dit script mee (totaalBij()). */
 import { groterGoedkoper } from '../data/pricing.js';
 /* Lijst 87 (C07): de echte dag van voorrang in het formulier. */
 import { voorrangDeadline } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde L-16/P8-04): de uren van voorrang voor de regel op het bevestigscherm. */
+import { VOORRANG } from '../data/pricing.js';
 /* Ronde B (8 oktober 2026): wat een bestelling in credits kost — dezelfde som als
    /account/order, zodat stap 5 nooit een ander getal noemt dan wat afgaat. */
 import { creditKosten, watPast, oudsteEerst, CREDIT_DIENSTEN } from '../data/creditKosten.js';
 import { EXTRA_CREDITS } from '../data/pricing.js';
+/* levering 118 (17 november 2026, proefronde P9-02): credits per product voor "Wat je krijgt" in creditsmodus. */
+import { SERVICE_CREDITS } from '../data/pricing.js';
 /* 1.08: het WhatsApp-nummer en de codering van het bericht, op één plek. */
 import { waHref } from '../data/whatsapp.js';
 /* 8.06: de verleggingszin in het zakelijk-vinkje (ingevuld met merk en nummer). */
@@ -797,6 +807,17 @@ function show(n, opts) {
     }
   }
   paintWkStap(to);
+  /* levering 118 (17 november 2026, proefronde P8-04 en P10-04): bij elke stapwissel de voorrangsdag opnieuw (om 15:00 schuift
+     hij een werkdag op) en de stap onthouden, ook zonder veldwijziging. Na de huidige beurt: show(1) draait al tijdens het laden
+     van dit bestand, en dan bestaan de `let`s verderop nog niet (zie de noot bij boot). Niet bewaren bij de opstart
+     (de eerste show): een leeg formulier bewaart niets. */
+  const opstart = !!(opts && opts.focus === false) && to === 1;
+  setTimeout(() => {
+    if (current !== to) return;
+    syncVoorrang();
+    zetVoorrangKlok();
+    if (!opstart) bewaarConcept();
+  }, 0);
 
   /* ── DE LIFESTYLE-BALK HOORT BIJ STAP 2 ───────────────────────────────────
      Daar vult de klant zijn producten in, en dat is het moment waarop "en er
@@ -916,7 +937,8 @@ function syncVatConfirm() {
   const noVat = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
 
   const up = country.trim().toUpperCase();
-  const applies = !!up && up !== HOME_COUNTRY && isEu(up) && !!vat && !noVat;
+  /* levering 118 (17 november 2026, proefronde L-10): keurde VIES het nummer af, dan verklaart de klant niet "de btw wordt verlegd". */
+  const applies = !!up && up !== HOME_COUNTRY && isEu(up) && !!vat && !noVat && viesStandNu() !== 'ongeldig';
   // Zonder merk of nummer is er geen zin, en dan ook geen verlegging: liever
   // 21% dan een vinkje bij een verklaring met een gat erin.
   const tekst = applies ? verleggingZin(cfg.lang, { merk, btw: vat }) : null;
@@ -1068,8 +1090,7 @@ function syncReg() {
   }
 
   /* O16 (ronde 9): de EU-zin in stap 5 alleen bij een ander EU-land (of nog geen land). */
-  const naEu = q('[data-pl-after-eu]');
-  if (naEu) naEu.hidden = soort === 'nl' || soort === 'other';
+  zetNaEu(soort);
 
   const noVat = !!(noVatBox && noVatBox.checked);
   const toon = soort === 'nl' || soort === 'other' || noVat;
@@ -1096,6 +1117,22 @@ function syncReg() {
     veld.dataset.plErrMsg = nl ? (veld.dataset.errKvk || veld.dataset.plErrMsg) : (veld.dataset.errReg || veld.dataset.plErrMsg);
   }
   syncRequired();
+}
+
+/* levering 118 (17 november 2026, proefronde N4 #7): "Bestel je elders in de EU zonder btw-nummer, dan kijken we eerst…"
+   stond ook bij een BE-klant met een bevestigd btw-nummer (verlegd), waar die uitkomst niet kan. Nu alleen bij een ander
+   EU-land als betaalUitkomst() (dezelfde som als de server) op nakijken uitkomt, of zolang er nog geen land is. Ook vanuit
+   syncBetaalUitkomst(), want het nummer en het antwoord van VIES veranderen zonder syncReg(). */
+function zetNaEu(soort) {
+  const naEu = q('[data-pl-after-eu]');
+  if (!naEu) return;
+  if (soort === undefined) {
+    const land = String((q('select[name="country"]') || {}).value || '').trim().toUpperCase();
+    soort = !land ? '' : land === HOME_COUNTRY ? 'nl' : isEu(land) ? 'eu' : 'other';
+  }
+  let nakijken = true;
+  if (soort === 'eu') { try { nakijken = betaalUitkomst() === 'nakijken'; } catch { nakijken = true; } }
+  naEu.hidden = soort === 'nl' || soort === 'other' || !nakijken;
 }
 
 function isShown(el) {
@@ -1166,6 +1203,9 @@ function bindErrors() {
    beslissing blijft bij het bestellen, op de server. */
 let viesVraag = 0;
 function verbergVies() {
+  /* levering 118 (L-10): een nieuw nummer heeft nog geen uitkomst. */
+  const v0 = q('input[name="vat"]');
+  if (v0 && v0.dataset.lv118Vies) { delete v0.dataset.lv118Vies; syncVatConfirm(); }
   const p = q('[data-pl-vies]');
   if (!p) return;
   p.hidden = true;
@@ -1189,6 +1229,9 @@ async function syncVies() {
   } catch { stand = 'onbekend'; }
   /* Een later antwoord voor een ouder nummer telt niet. */
   if (deze !== viesVraag || (veld.value || '').trim() !== nummer) return;
+  /* levering 118 (17 november 2026, proefronde L-10): de uitkomst onthouden voor de verleggingszin en de betaalstap. */
+  veld.dataset.lv118Vies = JSON.stringify([land, nummer, stand]);
+  syncVatConfirm();
   if (stand !== 'geldig' && stand !== 'ongeldig') return;
   const tekst = q('[data-pl-vies-tekst]', p);
   if (tekst) tekst.textContent = stand === 'geldig' ? (p.dataset.geldig || '') : (p.dataset.ongeldig || '');
@@ -1196,6 +1239,75 @@ async function syncVies() {
   if (knop) knop.hidden = stand !== 'ongeldig';
   p.classList.add(stand === 'geldig' ? 'is-geldig' : 'is-ongeldig');
   p.hidden = false;
+}
+
+/* levering 118 (17 november 2026, proefronde L-10): wat VIES zei over het nummer dat er NU staat: 'geldig', 'ongeldig', 'onbekend' of ''. */
+function viesStandNu() {
+  const veld = q('input[name="vat"]');
+  if (!veld || !veld.dataset.lv118Vies) return '';
+  try {
+    const [land, nummer, stand] = JSON.parse(veld.dataset.lv118Vies);
+    const nuLand = ((q('select[name=country]') || {}).value || '').trim().toUpperCase();
+    return land === nuLand && nummer === (veld.value || '').trim() ? String(stand || '') : '';
+  } catch { return ''; }
+}
+
+/*
+ * ── WAT DE SERVER STRAKS MET DE BETALING DOET — levering 118 (17 november 2026, proefronde L-10) ──
+ * Bij België zonder btw-nummer of bij een nummer dat VIES afkeurde, beloofde de laatste stap "meteen naar Mollie",
+ * terwijl /api/order de bestelling eerst laat nakijken (geen betaallink). Hier dezelfde functies als de server:
+ * vatDecision(), vatGate() en businessCheck(). Uitkomst: 'btw' (21 %), 'verlegd' (VIES bevestigd), 'verlegdMisschien'
+ * (een nummer zonder antwoord van VIES: de oude zin met beide uitkomsten), 'buiten' (buiten de EU) of 'nakijken'.
+ * Het land van het ip-adres (form.dataset.ipLand, uit /api/land) telt mee zoals op de server; zonder dat land niet.
+ * Dit blijft een voorspelling: de server beslist, en de bedankpagina zegt wat er echt gebeurde.
+ */
+function betaalUitkomst() {
+  const land = String((q('select[name="country"]') || {}).value || '').trim().toUpperCase();
+  if (!land) return '';
+  const geenNr = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
+  const nummer = geenNr ? '' : String(value('vat') || '').trim();
+  const stand = nummer ? viesStandNu() : '';
+  const eu = land !== HOME_COUNTRY && isEu(land);
+  /* Zonder antwoord van VIES rekenen we met "klopt": de server vraagt het zelf opnieuw. */
+  const viesValid = eu && nummer ? stand !== 'ongeldig' : null;
+  const bevestigd = (q('[data-pl-verlegd-veld]') || {}).value === 'yes';
+  /* De zakelijke verklaring staat in deze stap en is verplicht: zonder vinkje gaat de knop niet, dus hier telt hij als gezet. */
+  const verklaard = true;
+  const besluit = vatDecision({ country: land, vatValid: verleggingTelt({ vatValid: viesValid === true, bevestigd, namensKlant: false }) });
+  const poort = vatGate({
+    country: land, treatment: besluit.treatment, vatValid: viesValid, vatError: '', confirmed: bevestigd,
+    hadNumber: !!nummer, ipCountry: (form && form.dataset.ipLand) || '', postcode: value('postal_code'),
+  });
+  const zakelijk = businessCheck({ country: land, vat: nummer, viesValid, noVat: geenNr, regNumber: value('reg_number'), declared: verklaard });
+  if (poort.needsReview || !poort.payableNow || !zakelijk.ok) return 'nakijken';
+  if (besluit.treatment === VAT_TREATMENT.outsideScope) return 'buiten';
+  if (besluit.treatment === VAT_TREATMENT.reverseCharge) return stand === 'geldig' ? 'verlegd' : 'verlegdMisschien';
+  return 'btw';
+}
+
+/* levering 118 (L-10): de zinnen en de knop van de betaalstap volgen de uitkomst. Niet bij betalen met credits: dan is er
+   geen nakijken (de server slaat het over) en zet syncCredits() zijn eigen zinnen. */
+function syncBetaalUitkomst() {
+  zetNaEu();
+  const stap = stepNode(STEPS);
+  if (!stap || cfg.samplePrice != null) return;
+  const nakijken = creditsKosten <= 0 && betaalUitkomst() === 'nakijken';
+  const submit = q('[data-pl-submit]');
+  let zin = q('[data-lv118-nakijk]', stap);
+  const lijst = q('.pl-after-list', stap);
+  if (!zin && lijst) {
+    zin = document.createElement('li');
+    zin.dataset.lv118Nakijk = '';
+    zin.textContent = c('lv118.nakijkZin');
+    lijst.prepend(zin);
+  }
+  if (zin) zin.hidden = !nakijken;
+  if (creditsKosten > 0) return;
+  qa('[data-pl-mollie]', stap).forEach((el) => { el.hidden = nakijken; });
+  if (submit) {
+    if (!submit.dataset.plGewoon) submit.dataset.plGewoon = submit.textContent;
+    knopTekst(submit, nakijken ? c('lv118.nakijkKnop') : submit.dataset.plGewoon);
+  }
 }
 
 /* ── AL EEN PROEF? AL IN STAP 3 — 15 oktober 2026 (doorloop 27, B41) ─────────
@@ -1217,12 +1329,40 @@ async function proefAlGehad() {
     });
     const al = r.ok && !!(await r.json())?.al;
     blok.hidden = !al;
+    /* levering 118 (17 november 2026, proefronde P1-04 keuze a): "Bestel gewoon" wordt "Bestel deze look voor €…" en neemt
+       de look en de foto's mee naar het gewone bestelformulier. */
+    if (al) zetProefBestel(blok);
     if (al) { try { blok.focus({ preventScroll: false }); } catch { blok.scrollIntoView({ block: 'center' }); } }
     return al;
   } catch {
     blok.hidden = true;
     return false;
   }
+}
+
+/* ── TWEEDE PROEF: DEZE LOOK GEWOON BESTELLEN — levering 118 (17 november 2026, proefronde P1-04, keuze a) ──
+   Eva koos een look, zette 3 foto's neer en hoorde pas in stap 3 dat ze al een proef had. "Bestel gewoon" begon
+   opnieuw op /start; look en foto's waren weg. Nu schrijft de link een concept (zoals bewaarConcept) voor het gewone
+   formulier van dezelfde soort (catalog of lifestyle), met 1 product en dezelfde batch. Dat formulier zet het bij
+   het openen vanzelf terug (checkConcept, P2-07), met de foto's die nog bij ons staan. */
+function zetProefBestel(blok) {
+  const a = q('a[data-pl-proef-bestel]', blok);
+  const kind = kindOf();
+  if (!a || (kind !== 'catalog' && kind !== 'lifestyle')) return;
+  const pad = `${cfg.lang === 'nl' ? '/nl' : ''}/start/${kind}/`;
+  const prijs = rateFor(kind, 1);
+  a.textContent = prijs !== null && prijs !== undefined ? c('lv118.proefBestel', { prijs: euro(prijs) }) : c('lv118.proefBestelKaal');
+  a.setAttribute('href', pad);
+  if (a.dataset.lv118Bezig) return;
+  a.dataset.lv118Bezig = '1';
+  a.addEventListener('click', () => {
+    const concept = maakConcept();
+    if (!concept) return;
+    concept.pad = pad;
+    concept.stap = 2;
+    concept.velden = concept.velden.filter((v) => v[0] !== 'products').concat([['products', '1']]);
+    try { localStorage.setItem(CONCEPT_SLEUTEL, JSON.stringify(concept)); } catch { /* geen opslag: dan zonder */ }
+  });
 }
 
 /* Knoppensysteem (lijst 88/89): een knop draagt het icoon van zijn rol als <svg class="ik">. Wie de tekst
@@ -1337,6 +1477,10 @@ function syncGateVisible(attended) {
 function askMissing() {
   const box = q('[data-pl-missing]');
   if (!box) return true;
+  /* levering 118 (17 november 2026, proefronde P10-05): zonder verbinding zei dit blok "Je hebt nog geen foto's gekozen".
+     Wachten er foto's op de verbinding, dan zegt het dat, met Wachten en Toch later. */
+  if (vraagWachtend(box)) return false;
+  wachtModus(box, false);
   const short = cards.filter((card) => !cardReady(card));
   const inBak = tray.length;
   if ((!short.length && !inBak) || missingOk) { box.hidden = true; return true; }
@@ -1426,6 +1570,49 @@ function askMissing() {
   return false;
 }
 
+/* ── FOTO'S DIE OP DE VERBINDING WACHTEN — levering 118 (17 november 2026, proefronde P10-05) ──
+   Een vak dat op het netwerk strandde (netwerkWeg) of nog verstuurt terwijl de browser offline
+   is, is geen ontbrekende foto: hervatNaVerbinding() stuurt hem vanzelf zodra de verbinding terug
+   is. Dan zegt het blok dat, en worden de twee knoppen "Wachten" en "Toch later". */
+function wachtendeFotos() {
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  let n = 0;
+  cards.forEach((card) => Object.keys(card.slots || {}).forEach((id) => {
+    const s = card.slots[id];
+    if (!s || !s.file || s.geweigerd) return;
+    if ((s.status === 'failed' && s.netwerkWeg) || (offline && s.status === 'sending')) n += 1;
+  }));
+  return n;
+}
+
+function wachtModus(box, aan, n) {
+  box.dataset.wacht = aan ? '1' : '';
+  const fix = q('[data-pl-missing-fix]', box);
+  const go = q('[data-pl-missing-go]', box);
+  [[fix, 'lv118.wachtKnop'], [go, 'lv118.wachtLater']].forEach(([knop, sleutel]) => {
+    if (!knop) return;
+    if (knop.dataset.lv118Tekst === undefined) knop.dataset.lv118Tekst = knop.textContent.trim();
+    knopTekst(knop, aan ? c(sleutel) : knop.dataset.lv118Tekst);
+  });
+  const lijst = q('[data-pl-missing-list]', box);
+  if (lijst && aan) lijst.textContent = '';
+  const bak = q('[data-pl-missing-tray]', box);
+  if (bak && aan) bak.hidden = true;
+  const h = q('[data-pl-missing-h]', box);
+  if (h && aan) h.textContent = n === 1 ? c('lv118.wachtH1') : c('lv118.wachtH', { n });
+}
+
+function vraagWachtend(box) {
+  if (missingOk) return false;
+  const n = wachtendeFotos();
+  if (!n) return false;
+  wachtModus(box, true, n);
+  box.hidden = false;
+  if (box.tabIndex < 0) box.tabIndex = -1;
+  try { box.focus({ preventScroll: false }); } catch { /* nice-to-have */ }
+  return true;
+}
+
 /**
  * Naar één product toe: in beeld brengen, blik erin. Twee knoppen komen hier
  * uit — "Nu toevoegen" (naar het eerste gat) en een regel in de lijst (naar dát
@@ -1456,6 +1643,15 @@ function bindMissing() {
     show(to);
     if (GATE_STEP !== null && to === GATE_STEP) runGate();
   });
+  /* levering 118 (17 november 2026, proefronde P10-05): wachten er foto's op de verbinding, dan is de eerste knop "Wachten":
+     het blok gaat dicht en de klant blijft waar hij is; de foto's gaan vanzelf zodra de verbinding terug is. In de vangfase op
+     het blok, zodat de gewone sprong naar het eerste product dan niet volgt. */
+  box.addEventListener('click', (e) => {
+    if (box.dataset.wacht !== '1' || !e.target || !e.target.closest || !e.target.closest('[data-pl-missing-fix]')) return;
+    e.stopPropagation();
+    box.hidden = true;
+    wachtModus(box, false);
+  }, true);
 }
 
 /**
@@ -1520,8 +1716,19 @@ function validateStep(n) {
   const kop = anker.querySelector('legend, h2, h3, .pl-veld-fout') || anker;
   try { kop.scrollIntoView({ block: 'center', behavior: reduced() ? 'auto' : 'smooth' }); } catch { /* ok */ }
   const zichtbaar = bad.getClientRects().length > 0 && getComputedStyle(bad).opacity !== '0';
-  if (zichtbaar) bad.reportValidity();
-  else { try { bad.focus({ preventScroll: true }); } catch { /* ok */ } }
+  /* levering 119 (18 november 2026, proefronde L-14): bij een vinkje geen ballon van de browser naast onze regel; de regel staat
+     al onder het label (markeerVeld), en twee meldingen over één vinkje is er één te veel. */
+  if (zichtbaar && bad.type !== 'checkbox') bad.reportValidity();
+  else if (zichtbaar) {
+    /* Het vinkje beschrijven met de regel eronder, zodat de schermlezer hem bij de focus voorleest. */
+    const noot = anker.tagName === 'LABEL' ? anker.nextElementSibling : null;
+    if (noot && noot.classList.contains('pl-veld-fout')) {
+      if (!noot.id) noot.id = `pl-veld-fout-${bad.name || 'vinkje'}`;
+      const al = String(bad.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+      if (!al.includes(noot.id)) bad.setAttribute('aria-describedby', [...al, noot.id].join(' '));
+    }
+    try { bad.focus({ preventScroll: true }); } catch { /* ok */ }
+  } else { try { bad.focus({ preventScroll: true }); } catch { /* ok */ } }
   return false;
 }
 
@@ -1536,7 +1743,18 @@ function foutTekst(veld) {
 /** Eén regel met de fout, direct onder de kop van het veld of de groep. */
 function markeerVeld(anker, tekst) {
   if (!anker) return;
-  let noot = anker.querySelector(':scope > .pl-veld-fout');
+  /* levering 119 (18 november 2026, proefronde L-14): is het anker een <label> (het zakelijk-vinkje: een flexrij van vakje en
+     zin), dan komt de regel ONDER het label, over de volle breedte, en niet als smalle kolom van 159 px in de rij zelf. */
+  const naLabel = anker.tagName === 'LABEL';
+  const volgende = anker.nextElementSibling;
+  let noot = naLabel
+    ? (volgende && volgende.classList.contains('pl-veld-fout') ? volgende : null)
+    : anker.querySelector(':scope > .pl-veld-fout');
+  if (!noot && naLabel) {
+    noot = document.createElement('p');
+    noot.className = 'pl-veld-fout';
+    anker.after(noot);
+  }
   if (!noot) {
     noot = document.createElement('p');
     noot.className = 'pl-veld-fout';
@@ -1581,6 +1799,8 @@ function clearStepError(node) {
   }
   qa('[aria-invalid]', node).forEach((el) => el.removeAttribute('aria-invalid'));
   qa('.pl-veld-fout', node).forEach((el) => el.remove());
+  /* levering 119 (L-14): de verwijzing naar de regel onder een vinkje gaat mee weg. */
+  qa('[aria-describedby*="pl-veld-fout-"]', node).forEach((el) => el.removeAttribute('aria-describedby'));
   if (box && box.id) {
     qa(`[aria-describedby="${box.id}"]`, node).forEach((el) => el.removeAttribute('aria-describedby'));
   }
@@ -1915,15 +2135,26 @@ function bindQty() {
     push(String(v));
     paint();
   };
+  /* levering 119 (18 november 2026, proefronde P3-02): boven het maximum niet stil terug naar 20, maar het paneel "Meer dan 20
+     producten?" open, net als de knop eronder. Zonder dat paneel (geen optie "meer") blijft het het maximum. */
+  const meerDanMax = () => {
+    if (!moreVal) return false;
+    input.value = '';
+    push(moreVal);
+    paint();
+    return true;
+  };
   input.addEventListener('input', () => {
     const n = Number.parseInt(input.value, 10);
     if (!Number.isInteger(n)) { push(''); paint(); return; }
+    if (n > max && meerDanMax()) return;
     if (n < 1 || n > max) { push(String(clamp(n))); paint(); return; }
     push(String(n));
     paint();
   });
   input.addEventListener('blur', () => {
     const n = Number.parseInt(input.value, 10);
+    if (Number.isInteger(n) && n > max && meerDanMax()) return;
     if (Number.isInteger(n) && (n < 1 || n > max)) apply(n);
   });
   const dec = q('[data-pl-qty-dec]', box);
@@ -2243,6 +2474,8 @@ function syncSummaries() {
        samenvatting in stap 5), geen leeg veld — het overzicht zei "Gezicht —". */
     modelText = c('sum.modelKort');
   }
+  /* levering 119 (18 november 2026, proefronde P10-09): ook hier het eigen gezicht per product ("Ava · product 2: Seme"). */
+  if (modelText) modelText += modelAfwijkingen();
   setSummary('data-pl-sum-model', modelText);
   wkKleurPaint();
   wkLookPaint();
@@ -2294,21 +2527,43 @@ function paintWkStap(to) {
   });
 }
 
+/* De leverzin bij 04 Levering. levering 119 (18 november 2026, proefronde P8-07): met voorrang aan staat hier de voorrangsdag
+   ("Betaal je nu en staan al je foto's er, dan is het uiterlijk donderdag 19 november om 17:00 klaar.") in plaats van "vaak
+   binnen een dag, soms een paar dagen"; dezelfde zin onder de schakelaar gaat dan weg (syncVoorrang), zodat er één antwoord staat.
+   Vanuit wkOverzicht() en syncVoorrang() (de klok van elke minuut). */
+function zetWkLever() {
+  const lever = q('[data-wk-lever]');
+  const t = lever && q('[data-wk-lever-t]', lever);
+  if (!t) return;
+  const n = productCount();
+  const boven = Number.isInteger(n) && n > 0 && n >= Number(lever.dataset.wkDrempel || 10);
+  const dagZin = q('[data-pl-voorrang-dag]');
+  const dag = !boven && voorrangAan() && dagZin ? String(dagZin.textContent || '').trim() : '';
+  t.textContent = dag || (boven ? lever.dataset.wkBoven : lever.dataset.wkOnder) || t.textContent;
+  lever.classList.toggle('is-voorrang', !!dag);
+}
+
 function wkOverzicht(kind, n, quote, voorrang) {
   if (!werkAan()) return;
+  /* levering 118 (17 november 2026, proefronde P9-02): onthouden, zodat zetCreditPrijzen() dit opnieuw kan tekenen als de
+     creditsmodus later (na het laden van het account) aan of uit gaat. En in creditsmodus: credits in plaats van euro's,
+     geen prijstrap en geen "excl. btw". */
+  if (form) form.__wkArgs = [kind, n, quote, voorrang];
+  const inCredits = prijzenInCredits || creditsKosten > 0;
+  const perCredits = Number((SERVICE_CREDITS || {})[kind]) || 0;
   const geldig = Number.isInteger(n) && n > 0;
+  qa('[data-wk-trap]').forEach((ul) => { ul.hidden = inCredits; });
   qa('[data-wk-trap] li[data-wk-van]').forEach((li) => {
     const lo = Number(li.dataset.wkVan);
     const hi = Number(li.dataset.wkTot);
     const laatste = li === li.parentElement.lastElementChild;
-    li.classList.toggle('is-nu', geldig && n >= lo && (n <= hi || laatste));
+    const nu = geldig && n >= lo && (n <= hi || laatste);
+    li.classList.toggle('is-nu', nu);
+    /* levering 119 (18 november 2026, proefronde P11-15): de trede die geldt, ook voor de schermlezer. */
+    const knop = li.querySelector('button');
+    if (knop) knop.setAttribute('aria-pressed', String(nu));
   });
-  const lever = q('[data-wk-lever]');
-  if (lever) {
-    const t = q('[data-wk-lever-t]', lever);
-    const boven = geldig && n >= Number(lever.dataset.wkDrempel || 10);
-    if (t) t.textContent = (boven ? lever.dataset.wkBoven : lever.dataset.wkOnder) || t.textContent;
-  }
+  zetWkLever();
   const rate = kind && geldig ? rateFor(kind, n) : null;
   /* levering 88: het tarief naast het getal, boven de lat */
   qa('[data-pl-qty-tarief]').forEach((el) => {
@@ -2316,11 +2571,11 @@ function wkOverzicht(kind, n, quote, voorrang) {
     if (rate === null || rate === undefined) return;
     const [voor, na] = String(cfg.werk.hoekPer || '{prijs} per product').split('{prijs}');
     const b = document.createElement('b');
-    b.textContent = euro(rate);
+    b.textContent = inCredits && perCredits ? `${perCredits} credits` : euro(rate);
     el.append(voor || '', b, na || '');
   });
   qa('[data-wk-sum-producten]').forEach((el) => {
-    el.textContent = rate !== null && rate !== undefined ? `${n} × ${euro(rate)}` : '—';
+    el.textContent = rate !== null && rate !== undefined ? `${n} × ${inCredits && perCredits ? `${perCredits} credits` : euro(rate)}` : '—';
   });
   const blok = q('[data-pl-voorrang]');
   const rij = q('[data-wk-rij-voorrang]');
@@ -2331,14 +2586,15 @@ function wkOverzicht(kind, n, quote, voorrang) {
   const beelden = geldig ? beeldenPerProductNu() * n + lookBeeldenNu() : 0;
   wkLooksPaint(geldig);
   qa('[data-wk-onder-zin]').forEach((el) => {
-    el.textContent = beelden > 0
-      ? `${String(cfg.werk.beelden || '{n}').replace('{n}', String(beelden))} · ${cfg.werk.excl || ''}`
+    const beeldZin = beelden > 0 ? String(cfg.werk.beelden || '{n}').replace('{n}', String(beelden)) : '';
+    el.textContent = inCredits ? beeldZin
+      : beelden > 0 ? `${beeldZin} · ${cfg.werk.excl || ''}`
       : String(cfg.werk.excl || '');
   });
   const hp = q('[data-wk-hoek-prijs]');
   if (hp && geldig) {
     if (hp.dataset.wkLeeg === undefined) hp.dataset.wkLeeg = hp.textContent;
-    hp.textContent = String(cfg.werk.hoekPer || '{prijs}').replace('{prijs}', euro(extraRateNow()));
+    hp.textContent = String(cfg.werk.hoekPer || '{prijs}').replace('{prijs}', inCredits ? `+${EXTRA_CREDITS.photo} credits` : euro(extraRateNow()));
   }
 }
 
@@ -2537,9 +2793,10 @@ function paintWkVorm() {
 }
 
 function bindWkVorm() {
-  const groep = q('[data-wk-vormen]');
-  if (!groep) return;
-  qa('[data-wk-vorm]', groep).forEach((b) => b.addEventListener('click', () => {
+  /* levering 118 (17 november 2026, proefronde P1-06): twee groepen (het blok in stap 1 op de telefoon en "Wat je krijgt"),
+     dus alle knoppen; de radio is de bron, paintWkVorm() zet ze allemaal gelijk. */
+  if (!q('[data-wk-vormen]')) return;
+  qa('[data-wk-vormen] [data-wk-vorm]').forEach((b) => b.addEventListener('click', () => {
     const r = q(`input[name="ratio"][value="${b.dataset.wkVorm}"]`);
     if (!r || r.disabled) return;
     if (!r.checked) {
@@ -2565,19 +2822,36 @@ function bindWkHoeken() {
       try { leeg.focus(); } catch { /* jammer */ }
       return;
     }
+    /* levering 118 (P3-05): een <dialog> sluit met close(); `hidden` erbij voor de browser zonder showModal(). */
+    if (typeof dlg.close === 'function' && dlg.open) dlg.close();
     dlg.hidden = true;
     try { open.focus({ preventScroll: true }); } catch { open.focus(); }
     syncSummaries();
   };
+  /* levering 118 (17 november 2026, proefronde P3-05): de twee vinkjes "Zelf bedenken" (één per hoekgroep) kregen dezelfde
+     naam voor de schermlezer. Nu met de naam van de groep erbij. */
+  qa('.pl-hoek-groep', dlg).forEach((g) => {
+    const groep = (q('.pl-hoek-groep-h', g) || {}).textContent || '';
+    qa('.pl-hoek-eigen input[type="checkbox"]', g).forEach((box) => {
+      const naam = (q('.pl-hoek-naam', box.closest('label') || g) || {}).textContent || '';
+      if (naam && groep.trim()) box.setAttribute('aria-label', `${naam.trim()} · ${groep.trim()}`);
+    });
+  });
   open.addEventListener('click', () => {
     dlg.hidden = false;
+    /* levering 118 (P3-05): showModal() dimt alles en houdt de focus binnen het venster. */
+    if (typeof dlg.showModal === 'function' && !dlg.open) { try { dlg.showModal(); } catch { /* dan zoals vroeger */ } }
     qa('details', dlg).forEach((d) => { d.open = true; });
     const eerste = q('input:not([type="hidden"]), button', q('[data-pl-angles]', dlg) || dlg);
     if (eerste) { try { eerste.focus({ preventScroll: true }); } catch { eerste.focus(); } }
   });
   qa('[data-wk-hoeken-dicht]', dlg).forEach((b) => b.addEventListener('click', sluit));
   dlg.addEventListener('click', (e) => { if (e.target === dlg) sluit(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.contains(dlg) && !dlg.hidden) sluit(); });
+  /* levering 118 (P3-05): Esc op een <dialog> is een `cancel`; die gaat via sluit(), zodat een lege eigen hoek eerst gezegd wordt. */
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); sluit(); });
+  /* Sluit de browser hem toch (een tweede Esc mag hij niet tegenhouden), dan dezelfde eindstand. */
+  dlg.addEventListener('close', () => { if (!dlg.hidden) { dlg.hidden = true; syncSummaries(); } });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.contains(dlg) && !dlg.hidden && !dlg.open) sluit(); });
 }
 
 function bindWkHulp() {
@@ -2614,7 +2888,8 @@ function bindWkTips() {
   const pauze = q('[data-wk-tip-pauze]', balk);
   const terug = q('[data-wk-tips-terug]');
   let nu = 0;
-  let loopt = !reduced();
+  /* levering 118 (17 november 2026, proefronde P2-05): de tip wisselt niet meer vanzelf; de pijl toont de volgende. Een tekst die om de 7 s verspringt, leest niemand die vastloopt. */
+  let loopt = false;
   let stil = false;
   let klok = 0;
   const toon = (i) => {
@@ -2668,6 +2943,63 @@ function bindWkTips() {
   zet();
 }
 
+/* ── DE VASTE VERDER OP DE TELEFOON SCROLT EERST — levering 118 (17 november 2026, proefronde P1-06) ──
+   Na "Hoeveel producten?" ging de vaste Verder onderin meteen naar stap 2; "Wie draagt het?", voorrang en de verhouding
+   waren dan nooit in beeld geweest. Nu: zolang er in stap 1 een blok is dat nog niet in beeld kwam, zegt de knop
+   "Nog 2 keuzes" (pijl omlaag) en brengt hij het volgende blok in beeld. Daarna gewoon Verder. Alleen de knop in de balk
+   onderaan (die bestaat alleen tot 900 px); de Verder onder de stap en naast het formulier blijven zoals ze waren.
+   Zonder IntersectionObserver gaat alles zoals vroeger. */
+function bindWkVolgendBlok() {
+  /* levering 118 (17 november 2026, proefronde N4 P1-06): '[data-wk-onder]' vond eerst <p class="wk-lever-zin"
+     data-wk-onder="…"> (de leverzin in stap 1 draagt dat attribuut ook, met een tekst), dus knop = null en de functie
+     stopte meteen; "Nog 2 keuzes" verscheen nooit. Alleen de balk zelf (div.wk-onder) telt. */
+  const balk = q('div.wk-onder[data-wk-onder]');
+  const knop = balk && q('[data-pl-next]', balk);
+  const stap1 = stepNode(1);
+  if (!knop || !stap1 || typeof IntersectionObserver !== 'function') return;
+  const tekst = q('span', knop);
+  if (tekst && tekst.dataset.lv118Tekst === undefined) tekst.dataset.lv118Tekst = tekst.textContent;
+  const gezien = new WeakSet();
+  const open = () => qa('[data-wk-blok]', stap1).filter((b) => isShown(b) && !gezien.has(b));
+  const verf = () => {
+    const n = current === 1 && isShown(knop) ? open().length : 0;
+    knop.classList.toggle('is-omlaag', n > 0);
+    if (tekst) tekst.textContent = n > 0 ? (n === 1 ? c('lv118.nogKeuze1') : c('lv118.nogKeuzes', { n })) : (tekst.dataset.lv118Tekst || tekst.textContent);
+  };
+  const io = new IntersectionObserver((rijen) => {
+    rijen.forEach((r) => { if (r.isIntersecting) gezien.add(r.target); });
+    verf();
+  }, { threshold: 0.4 });
+  qa('[data-wk-blok]', stap1).forEach((b) => io.observe(b));
+  /* levering 118 (18 november 2026, H3 P1-06): wie in een blok iets kiest of intikt, heeft het gezien, ook als er minder dan
+     40 % van in beeld stond (het aantal op 390 px: het veld onderin het scherm, het blok 33 % in beeld). Anders zei de knop na
+     alle keuzes nog "Nog 1 keuze" en scrolde hij terug. */
+  const raak = (e) => {
+    const b = e.target && e.target.closest ? e.target.closest('[data-wk-blok]') : null;
+    if (b && stap1.contains(b) && !gezien.has(b)) { gezien.add(b); verf(); }
+  };
+  ['focusin', 'click', 'input', 'change'].forEach((t) => stap1.addEventListener(t, raak));
+  /* In de vangfase op de balk, zodat bindNav() (op de knop zelf) het niet meer ziet als we eerst scrollen. */
+  balk.addEventListener('click', (e) => {
+    if (current !== 1 || !e.target || !e.target.closest || e.target.closest('[data-pl-next]') !== knop) return;
+    const rest = open();
+    if (!rest.length) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const doel = rest[0];
+    gezien.add(doel);
+    const kop = q('.wk-h', doel) || doel;
+    const balkHoog = Number.parseFloat(getComputedStyle(form).getPropertyValue('--wk-balk')) || 60;
+    window.scrollTo({ top: Math.max(0, doel.getBoundingClientRect().top + window.scrollY - balkHoog - 16), behavior: 'auto' });
+    if (kop.tabIndex < 0) kop.tabIndex = -1;
+    try { kop.focus({ preventScroll: true }); } catch { /* fijn, niet nodig */ }
+    verf();
+  }, true);
+  form.addEventListener('change', verf);
+  window.addEventListener('resize', verf, { passive: true });
+  verf();
+}
+
 /* ── IN DE WERKPLAATS STAAT ER METEEN EEN PRIJS — levering 59 (afvinklijst 36,
    b-werkplaats): "Het lege totaal van nu is weg: er staat meteen een prijs, bij 1
    product." Na het binden van de uploader (anders bouwt syncCards een kaart die de
@@ -2689,6 +3021,7 @@ function wkStandaardAantal() {
 
 function bindWerk() {
   if (!werkAan()) return;
+  bindWkVolgendBlok();
   bindWkKleur();
   bindWkVorm();
   bindWkHoeken();
@@ -2971,6 +3304,8 @@ function bindBeeldBg() {
   if (form) form.addEventListener('change', (e) => {
     const n = (e.target && e.target.name) || '';
     if (/^angle_/.test(n) || n === 'channels') syncSummaries();
+    /* levering 118 (17 november 2026, proefronde P3-08): gaat er een hoek aan of uit terwijl de datums in beeld staan, dan opnieuw vragen. */
+    if (/^angle_(?!note_)/.test(n) && GATE_STEP !== null && current === GATE_STEP) runGate();
   });
   if (form) form.addEventListener('input', (e) => { if (/^angle_note_/.test((e.target && e.target.name) || '')) syncSummaries(); });
   /* Een tegel in "Wat je krijgt" kiezen: de keuze opent op dat beeld. In de werkplaats
@@ -4600,6 +4935,8 @@ function buildCard(card) {
   input.className = 'input pu-name';
   input.type = 'text';
   input.name = `product_${card.key}`;
+  /* levering 119 (18 november 2026, proefronde P10-02): een naam heeft een grens (cfg.productNaamMax, uit OrderFlow.astro). */
+  input.maxLength = Number(cfg.productNaamMax) || 80;
   input.placeholder = c('pu.productName');
   input.setAttribute('aria-label', `${c('pu.productName')} — ${c('pu.product', { n: card.n })}`);
   input.autocomplete = 'off';
@@ -4943,6 +5280,19 @@ function buildSoort(card) {
   return wrap;
 }
 
+/* levering 119 (18 november 2026, proefronde L-15): de gekozen optie leest "Jas · zoals product 1" zolang de soort van een kaart
+   erboven komt; de andere opties houden hun eigen naam. De schermlezer hoort hetzelfde (de optie is de waarde van de lijst). */
+function zetSoortVoorstel(card, van) {
+  const sel = card && card.soortEl;
+  if (!sel) return;
+  [...sel.options].forEach((o) => {
+    if (!o.value) return;
+    if (o.dataset.plNaam === undefined) o.dataset.plNaam = o.textContent;
+    o.textContent = van && o.selected ? c('lv119.soortZoals', { soort: o.dataset.plNaam, n: van }) : o.dataset.plNaam;
+  });
+  sel.classList.toggle('is-voorstel', !!van);
+}
+
 /** De soort van dit product: wat er staat, of '' zolang er niets gekozen is. */
 function soortVan(card) {
   return card && card.soortEl ? card.soortEl.value : '';
@@ -4956,6 +5306,7 @@ function soortVan(card) {
 function syncSoorten() {
   if (cfg.sample || !cfg.styling) return;
   let vorige = '';
+  let bron = 0;
   cards.forEach((card) => {
     if (!card.soortEl) return;
     if (!card.soortEigen && vorige && card.soortEl.value !== vorige) {
@@ -4963,6 +5314,11 @@ function syncSoorten() {
       ontkoppelAlles(card);
       paintErbij(card);
     }
+    /* levering 119 (18 november 2026, proefronde L-15): een overgenomen soort zegt dat hij overgenomen is ("Jas · zoals
+       product 1"), zodat niemand stil met de verkeerde soort bestelt. Wie zelf kiest, maakt er een gewone keuze van. */
+    const overgenomen = !card.soortEigen && !!vorige && card.soortEl.value === vorige;
+    zetSoortVoorstel(card, overgenomen ? bron : 0);
+    if (card.soortEl.value && !overgenomen) bron = card.n;
     vorige = card.soortEl.value || vorige;
   });
   let veld = q('input[name="garment"]');
@@ -5548,9 +5904,14 @@ function paintErbij(card) {
         const naam = document.createElement('b');
         naam.textContent = spec.toevoegen || '';
         const sub = document.createElement('small');
+        /* levering 119 (18 november 2026, proefronde P10-01): het verschil in het totaal, niet het tarief van de nieuwe trede. Bij 4
+           lifestyleproducten stond "+ €80" terwijl het totaal van €440 naar €450 ging. totaalBij() is dezelfde som als syncTotal(). */
         const n = productCount();
-        const rate = Number.isInteger(n) ? rateFor(kindOf(), n + 1) : null;
-        sub.textContent = String(t.toeSub || '').replace('{prijs}', rate !== null && rate !== undefined ? euro(rate) : '');
+        const nu = Number.isInteger(n) ? totaalBij(kindOf(), n) : null;
+        const straks = Number.isInteger(n) ? totaalBij(kindOf(), n + 1) : null;
+        const verschil = nu !== null && straks !== null ? round2(straks - nu) : null;
+        const sjabloon = verschil === null || verschil > 0 ? t.toeSub : verschil === 0 ? t.toeSubNul : t.toeSubMinder;
+        sub.textContent = String(sjabloon || t.toeSub || '').replace('{prijs}', verschil !== null ? euro(Math.abs(verschil)) : '');
         tekst.append(naam, sub);
         b.append(duim, tekst);
         li.appendChild(b);
@@ -6153,7 +6514,8 @@ function vulModelTegels(card) {
     /* Eén luisteraar op de rij en niet één per tegel: de tegels worden opnieuw
        gemaakt zodra er bovenaan iets verandert, en dan zouden de luisteraars
        meeverdwijnen of zich opstapelen. */
-    rij.addEventListener('change', () => { paintCard(card); syncCopyDown(cards[0]); });
+    /* levering 119 (P10-09): en het overzicht ernaast noemt het gezicht per product. */
+    rij.addEventListener('change', () => { paintCard(card); syncCopyDown(cards[0]); syncSummaries(); });
   }
 }
 
@@ -6228,8 +6590,14 @@ function vraagVoorrangAgenda() {
 function syncVoorrang(net) {
   const blok = q('[data-pl-voorrang]');
   if (!blok || !cfg.voorrang || !cfg.voorrang.aan) return;
+  /* levering 118 (17 november 2026, proefronde P8-04): zonder bedrag (de klok van elke minuut, een stapwissel) het laatste bedrag van syncTotal(). */
+  if (arguments.length) blok.__net = net; else net = blok.__net;
   const n = productCount();
-  const kan = Number.isInteger(n) && n > 0 && n <= cfg.voorrang.maxProducten;
+  /* levering 117 (17 november 2026, proefronde P8-01, keuze a): niet vanaf de datumgrens
+     (cfg.windowThreshold). Daar kiest de klant een leverdatum en volgt alles die datum; voorrang
+     erbij was een toeslag voor een belofte die niemand nakwam. quoteOrder() rekent hem dan ook niet. */
+  const drempel = Number(cfg.windowThreshold) || Infinity;
+  const kan = Number.isInteger(n) && n > 0 && n <= cfg.voorrang.maxProducten && n < drempel;
   blok.hidden = !kan;
   const aan = kan && !voorrangDicht;
   qa('input, button, select', blok).forEach((el) => { el.disabled = !aan; });
@@ -6260,8 +6628,34 @@ function syncVoorrang(net) {
     const d = aan ? voorrangDeadline(null) : null;
     const dag = d ? voorrangDagNaam(d.datum) : '';
     dagZin.textContent = dag ? String(dagZin.dataset.sjabloon || '').replace('{dag}', dag).replace('{uur}', String(d.uur)) : '';
-    dagZin.hidden = !dag;
+    /* levering 119 (18 november 2026, proefronde P8-07): staat voorrang aan én is er een leverzin (werkplaats), dan staat de dag
+       daar; hier niet nog eens. */
+    dagZin.hidden = !dag || (voorrangAan() && !!q('[data-wk-lever-t]'));
   }
+  zetWkLever();
+}
+
+/* levering 118 (17 november 2026, proefronde P8-04): de dag van voorrang elke minuut opnieuw. Om 14:58 stond er "donderdag",
+   om 15:00 nog steeds; pas na een wijziging "vrijdag". Eén klok per pagina (op het formulier bewaard, niet in een module-variabele:
+   init() draait vóór de rest van dit bestand), en op het bevestigscherm ook de samenvatting. */
+function zetVoorrangKlok() {
+  if (!form || form.__voorrangKlok || !cfg || !cfg.voorrang || !cfg.voorrang.aan) return;
+  form.__voorrangKlok = setInterval(() => {
+    if (!document.contains(form)) { clearInterval(form.__voorrangKlok); form.__voorrangKlok = 0; return; }
+    syncVoorrang();
+    if (current === STEPS && voorrangAan()) renderSummary();
+  }, 60000);
+}
+
+/* levering 118 (17 november 2026, proefronde L-16 keuze a en P8-04): de regel op het bevestigscherm. Voorrang telt vanaf het
+   latere moment: betaald én alle foto's binnen. Staan ze er allemaal, dan de echte dag als je nu betaalt; anders zegt hij dat de klok
+   pas loopt als de foto's er zijn. */
+function voorrangSamenvatting() {
+  const compleet = cards.length > 0 && cards.every((card) => cardReady(card));
+  if (!compleet) return c('lv118.voorrangSumFotos', { voor: String(VOORRANG.bestelVoorUur), uur: String(VOORRANG.klaarUur) });
+  const d = voorrangDeadline(null);
+  const dag = d ? voorrangDagNaam(d.datum) : '';
+  return dag ? c('lv118.voorrangSumDag', { dag, uur: String(d.uur) }) : c('sum.voorrangJa');
 }
 
 /** 'YYYY-MM-DD' → "dinsdag 10 november" / "Tuesday 10 November", in de taal van de pagina. */
@@ -7283,7 +7677,8 @@ function paintSlot(card, id) {
   /* Alleen als er iets te herhalen IS. Een knop op een vakje dat aan het versturen
      is, zou een tweede upload van hetzelfde bestand starten; op een geslaagd vakje
      zou hij suggereren dat er iets mis is. */
-  if (el.retryBtn) el.retryBtn.hidden = !(filled && s.status === 'failed');
+  /* levering 118 (17 november 2026, proefronde P2-06): een foto die de meting weigerde (te klein) krijgt geen "Opnieuw", alleen "Vervangen": opnieuw sturen maakt hem niet groter. */
+  if (el.retryBtn) el.retryBtn.hidden = !(filled && s.status === 'failed' && !s.geweigerd);
   el.replaceBtn.hidden = !filled;
   el.removeBtn.hidden = !filled;
   if (el.skipBtn) el.skipBtn.hidden = filled || s.status === 'skipped';
@@ -7309,6 +7704,10 @@ function paintSlot(card, id) {
 
 /** De regel op de kaart: af, of wat er nog moet. */
 function cardStateText(card, ready) {
+  /* levering 118 (17 november 2026, proefronde P2-05): een mislukte foto staat bovenaan het product, niet alleen klein in het vak. */
+  const fout = Object.keys(card.slots || {}).filter((id) => { const s = card.slots[id]; return s && s.file && s.status === 'failed'; });
+  card.el && card.el.classList.toggle('has-fout', fout.length > 0);
+  if (fout.length) return c('lv118.kaartFout', { list: shotListText(fout) });
   if (ready) return c('pu.ready');
   const mist = missingRequired(card);
   if (mist.length) return c('pu.needsShots', { list: shotListText(mist) });
@@ -8116,6 +8515,8 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 function retrySlot(card, id) {
   const s = card.slots[id];
   if (!s.file) return;
+  /* levering 118 (17 november 2026, proefronde P2-06): een geweigerde (te kleine) foto gaat nooit alsnog naar de server; alleen Vervangen helpt. */
+  if (s.geweigerd) { paintSlot(card, id); return; }
 
   s.tries = 0;
   if (uploadsOff) {
@@ -8816,6 +9217,8 @@ function zetCreditPrijzen(aan) {
   document.querySelectorAll('[data-pl-alleen-credits]').forEach((el) => { el.hidden = !prijzenInCredits; });
   document.querySelectorAll('[data-pl-alleen-euro]').forEach((el) => { el.hidden = prijzenInCredits; });
   paintAngles();
+  /* levering 118 (17 november 2026, proefronde P9-02): "Wat je krijgt" volgt de creditsmodus ook als die buiten syncTotal() wisselt. */
+  if (form && form.__wkArgs) wkOverzicht(...form.__wkArgs);
 }
 
 /* ── MET CREDITS: GEEN EUROREGELS IN DE SAMENVATTING — 14 oktober 2026 ──────
@@ -8846,6 +9249,8 @@ function zetGeldRegels() {
   qa('[data-pl-geld-credits]', host).forEach((el) => { el.hidden = !credits; });
   const dd = q('dd[data-pl-geld-credits]', host);
   if (dd && credits) dd.textContent = c('sum.creditsWaarde', { n: creditsKosten });
+  /* levering 118 (17 november 2026, proefronde L-10): na de credits-zinnen de zinnen van de betaalstap (nakijken of Mollie). */
+  syncBetaalUitkomst();
 }
 
 function bindPrefill() {
@@ -8899,6 +9304,8 @@ function vulLandVoor() {
     .then((r) => (r.ok ? r.json() : null))
     .then((uit) => {
       const land = uit && typeof uit.land === 'string' ? uit.land : '';
+      /* levering 118 (L-10): het land van het ip-adres, voor betaalUitkomst() (net als vatGate op de server). */
+      if (land && form) form.dataset.ipLand = land;
       if (!land || select.value) return;
       if (!Array.from(select.options).some((o) => o.value === land)) return;
       select.value = land;
@@ -10087,8 +10494,12 @@ function runGate(from = null) {
   const svcDeel = dienst ? `&service=${encodeURIComponent(dienst)}` : '';
 
   const vanaf = typeof from === 'string' ? `&from=${encodeURIComponent(from)}` : '';
+  /* levering 118 (17 november 2026, proefronde P3-08): de extra hoeken wegen mee in de agenda. Dezelfde telling als de prijs (extrasCount(): hoeken ×
+     producten); de server rekent ze om met extraBeeldPunten() in src/data/capacity.js. */
+  const extras = extrasCount();
+  const extrasDeel = extras > 0 ? `&extras=${extras}` : '';
 
-  fetch(`/api/capacity?products=${encodeURIComponent(products)}&tier=attended${svcDeel}${vanaf}`, {
+  fetch(`/api/capacity?products=${encodeURIComponent(products)}&tier=attended${svcDeel}${vanaf}${extrasDeel}`, {
     headers: { accept: 'application/json' },
   })
     .then((r) => r.json().then((b) => ({ status: r.status, body: b })))
@@ -10124,7 +10535,10 @@ function renderGate(body) {
     });
   }
 
-  if (panel === 'ok') renderWindows(body.windows || [], { from: body.from, earlier: body.earlier, more: body.more });
+  /* levering 118 (P3-11): `vol` (de volle dagen) als de server die meegeeft; zonder blijft het zoals het was. */
+  if (panel === 'ok') renderWindows(body.windows || [], { from: body.from, earlier: body.earlier, more: body.more, vol: body.vol });
+  /* levering 119 (P11-13): geen dagen getekend, dan ook geen focussprong bij een latere ronde. */
+  else { const h = q('[data-pl-windows]'); if (h) delete h.dataset.plFocus; }
   /* Ronde 91 (C06): de poort zegt meteen of voorrang nog kan. */
   if (typeof body.voorrangOpen === 'boolean') zetVoorrangDicht(!body.voorrangOpen);
   gateShow(panel);
@@ -10193,8 +10607,45 @@ function renderWindows(windows, meta) {
     rij.appendChild(leeg);
   }
 
+  /* ── VOLLE DAGEN IN BEELD — levering 118 (17 november 2026, proefronde P3-11) ──
+     Met 29–30 november vol toonde de rij 27, 28, 1, 2: de volle dagen waren stil weg, en het venster ervoor rekte op tot
+     "za 28 nov – di 1 dec". Nu een grijze kaart "vol" op de plek van een volle dag, en bij een venster over volle dagen
+     "(29–30 vol)". Alleen als /api/capacity `vol` (ISO-dagen) en per venster `days` meegeeft; zie de notities van
+     levering 118 voor de serverkant. Zonder die velden is de rij zoals hij was. */
+  const isIso = (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const volSet = new Set(Array.isArray(info.vol) ? info.vol.filter(isIso) : []);
+  const dagenTekst = (lijst) => {
+    if (!lijst.length) return '';
+    const nrs = lijst.map((d) => deel(taal, d, { day: 'numeric' }));
+    const opEen = lijst.every((d, i) => i === 0 || dagNa(lijst[i - 1]) === d);
+    return opEen && lijst.length > 1 ? `${nrs[0]}–${nrs[nrs.length - 1]}` : nrs.join(', ');
+  };
+  const volKaart = (iso) => {
+    const kaart = document.createElement('span');
+    kaart.className = 'pl-dag is-vol';
+    kaart.setAttribute('role', 'img');
+    kaart.setAttribute('aria-label', `${day(iso)}: ${c('lv118.vol')}`);
+    const wd = document.createElement('span');
+    wd.className = 'pl-dag-wd';
+    wd.textContent = deel(taal, iso, { weekday: 'short' });
+    const nr = document.createElement('span');
+    nr.className = 'pl-dag-nr';
+    nr.textContent = deel(taal, iso, { day: 'numeric' });
+    const woord = document.createElement('span');
+    woord.className = 'pl-dag-mnd';
+    woord.textContent = c('lv118.vol');
+    kaart.append(wd, nr, woord);
+    return kaart;
+  };
+  const volGetoond = new Set();
+  const laatsteStart = geldig.length ? geldig[geldig.length - 1].start : '';
+
   geldig.forEach((w) => {
     const eind = w.end || w.start;
+    /* De volle dagen vóór deze kaart (en na de vorige), op hun eigen plek in de rij. */
+    [...volSet].sort().forEach((d) => {
+      if (d < w.start && !volGetoond.has(d) && (!gateFrom || d >= gateFrom)) { rij.appendChild(volKaart(d)); volGetoond.add(d); }
+    });
     const knop = button('', 'pl-dag');
     knop.dataset.start = w.start;
     knop.dataset.end = eind;
@@ -10218,9 +10669,28 @@ function renderWindows(windows, meta) {
       tot.textContent = `– ${deel(taal, eind, { weekday: 'short', day: 'numeric' })}`;
       knop.appendChild(tot);
     }
+    /* levering 118 (P3-11): een venster dat over volle dagen heen springt, zegt welke. */
+    const binnen = Array.isArray(w.days) ? w.days.filter(isIso) : [];
+    if (binnen.length && eind !== w.start) {
+      const gat = [];
+      for (let d = dagNa(w.start), n = 0; d < eind && n < 14; d = dagNa(d), n += 1) if (!binnen.includes(d) && volSet.has(d)) gat.push(d);
+      if (gat.length) {
+        const noot = document.createElement('span');
+        noot.className = 'pl-dag-tot pl-dag-vol';
+        noot.textContent = c('lv118.volTussen', { dagen: dagenTekst(gat) });
+        knop.appendChild(noot);
+        knop.setAttribute('aria-label', `${knop.getAttribute('aria-label')} ${noot.textContent}`);
+      }
+    }
     knop.addEventListener('click', () => kiesVenster(knop, host, keuze));
     rij.appendChild(knop);
   });
+  /* De volle dagen tussen de laatste kaart en het eind van deze bladzijde (niet verder dan die laatste start + 7). */
+  if (laatsteStart) {
+    [...volSet].sort().forEach((d) => {
+      if (d > laatsteStart && d <= addDaysIso(laatsteStart, 7) && !volGetoond.has(d) && !info.more) { rij.appendChild(volKaart(d)); volGetoond.add(d); }
+    });
+  }
   host.appendChild(rij);
 
   /* Eerder / later. Alleen tonen wat er is: een knop naar een lege bladzijde
@@ -10229,13 +10699,20 @@ function renderWindows(windows, meta) {
   nav.className = 'pl-dagen-nav';
   const eerder = button(c('gate.earlier'), 'pl-dagen-knop');
   eerder.hidden = !(info.earlier && gateStapel.length);
+  /* levering 119 (18 november 2026, proefronde P11-13): onthouden welke knop het bladeren startte. De rij wordt hieronder opnieuw
+     getekend en dan viel de focus op body; nu gaat hij terug naar dezelfde knop (of de andere, of de eerste dag als die weg is),
+     en een live-zin zegt welke dagen er nu staan. Op het vak zelf (dataset), want dat overleeft het opnieuw tekenen. */
+  eerder.dataset.plDagenNaar = 'eerder';
   eerder.addEventListener('click', () => {
+    host.dataset.plFocus = 'eerder';
     const terug = gateStapel.pop();
     runGate(terug === undefined ? null : terug);
   });
   const later = button(c('gate.later'), 'pl-dagen-knop');
   later.hidden = !info.more || !geldig.length;
+  later.dataset.plDagenNaar = 'later';
   later.addEventListener('click', () => {
+    host.dataset.plFocus = 'later';
     gateStapel.push(gateFrom);
     const laatste = geldig[geldig.length - 1];
     runGate(dagNa(laatste.start));
@@ -10251,6 +10728,41 @@ function renderWindows(windows, meta) {
   if (!eerder.hidden || !later.hidden) host.appendChild(nav);
 
   host.appendChild(keuze);
+  /* levering 119 (P11-13): na het bladeren de focus terug en de nieuwe reeks hardop. */
+  dagenNaBladeren(host, geldig, taal);
+}
+
+/* levering 119 (18 november 2026, proefronde P11-13): de focus na "Eerder" of "Later →" en de zin "Nu: 27 november tot
+   2 december" in een live-regio die buiten het vak staat (een regio die zelf nieuw is, wordt vaak niet voorgelezen). */
+function dagenNaBladeren(host, geldig, taal) {
+  const was = host.dataset.plFocus;
+  if (!was) return;
+  delete host.dataset.plFocus;
+  /* In de stap en niet in het paneel: dat paneel staat tijdens het vragen even op hidden (gateShow('checking')). */
+  let live = q('[data-pl-dagen-live]');
+  const stap = host.closest('[data-pl-step]') || host.parentNode;
+  if (!live && stap) {
+    live = document.createElement('p');
+    live.className = 'pl-sr';
+    live.setAttribute('data-pl-dagen-live', '');
+    live.setAttribute('aria-live', 'polite');
+    stap.appendChild(live);
+  }
+  if (live) {
+    live.textContent = geldig.length
+      ? c('lv119.dagenNu', {
+        van: deel(taal, geldig[0].start, { day: 'numeric', month: 'long' }),
+        tot: deel(taal, geldig[geldig.length - 1].end || geldig[geldig.length - 1].start, { day: 'numeric', month: 'long' }),
+      })
+      : c('gate.none');
+  }
+  /* Na de huidige beurt: runGate() zet het paneel pas ná renderWindows() weer zichtbaar (gateShow), en een verborgen knop
+     neemt geen focus. */
+  setTimeout(() => {
+    const knoppen = qa('[data-pl-dagen-naar]', host).filter((b) => !b.hidden && b.isConnected && !!b.closest('.pl-dagen-nav').parentNode);
+    const doel = knoppen.find((b) => b.dataset.plDagenNaar === was) || knoppen[0] || q('.pl-dag', host);
+    if (doel) { try { doel.focus({ preventScroll: true }); } catch { /* ok */ } }
+  }, 0);
 }
 
 /** Eén deel van een datum, in de taal van de pagina. */
@@ -10259,6 +10771,13 @@ function deel(taal, iso, opties) {
     return new Intl.DateTimeFormat(taal, { ...opties, timeZone: 'UTC' })
       .format(new Date(`${iso}T00:00:00Z`)).replace(/\.$/, '');
   } catch { return iso; }
+}
+
+/** levering 118 (P3-11): `n` dagen na een ISO-datum, als ISO-datum. */
+function addDaysIso(iso, n) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
 }
 
 /** De dag na een ISO-datum, als ISO-datum. */
@@ -10333,6 +10852,9 @@ function renderSummary() {
   const rows = [];
   if (kind) rows.push([c('sum.kind'), c(`kind.${kind}`)]);
   if (count && count.value) rows.push([c('sum.count'), count.textContent.trim()]);
+  /* levering 119 (18 november 2026, proefronde L-04): wat de klant zelf invulde, per product de naam (en de soort). */
+  const producten = productenRegel();
+  if (producten) rows.push([c('lv119.producten'), producten]);
 
   /*
    * ── WAAR DE KLANT VERKOOPT, EN WAT DAT VASTZET ────────────────────────────
@@ -10356,7 +10878,10 @@ function renderSummary() {
   const chBoxes = qa('[data-pl-ch-box]');
   const chOn = chBoxes.filter((b) => b.checked);
   const chWhite = chOn.some((b) => b.dataset.plChWhite === '1');
-  if (chField) {
+  /* levering 119 (18 november 2026, proefronde L-03, keuze a): in de werkplaats staat de kanaalvraag verborgen (.wk-opslag).
+     Dan geen regel "Waar je verkoopt: Niet gezegd" voor een vraag die niemand zag; wel als een kopie of de merkkit er een zette. */
+  const chGevraagd = !!chField && (!chField.closest('.wk-opslag') || chOn.length > 0);
+  if (chGevraagd) {
     const namen = chOn.map((b) => {
       const n = b.closest('.ch-opt') && b.closest('.ch-opt').querySelector('.ch-name');
       return n ? n.textContent.trim() : b.value;
@@ -10378,7 +10903,13 @@ function renderSummary() {
   if (bgHex) {
     const picked = q('input[name="background"]:checked');
     const bgName = picked ? picked.dataset.plBgName : '';
-    const basis = bgName ? `${bgName} — ${bgHex}` : bgHex;
+    /* levering 119 (18 november 2026, proefronde L-04): een kleur met een naam zonder hexcode ("Wit", niet "Wit — #FFFFFF");
+       alleen een eigen kleur houdt zijn code, want dan ís de code het antwoord. */
+    const eigenKleur = !!(picked && picked.dataset.plBgCustom !== undefined);
+    /* levering 119 (18 november 2026, proefronde P3-14): in de werkplaats per hoek, alleen de afwijkingen: "Voorkant beige · rest
+       wit". Hier stond de kleur van de voorkant alsof hij voor alles gold. */
+    const perHoek = achtergrondPerHoek();
+    const basis = perHoek || (bgName && !eigenKleur ? bgName : bgName ? `${bgName} — ${bgHex}` : bgHex);
     // En waar hij vandaan komt, als de klant hem niet zelf heeft gekozen.
     rows.push([c('sum.bg'), chWhite ? `${basis} · ${c('sum.bgLocked')}` : basis]);
   }
@@ -10464,7 +10995,8 @@ function renderSummary() {
      in 4K" is ruis. */
   const hoogN = hoogResCount();
   if (hoogN > 0) rows.push([c('sum.hoogRes'), c(hoogN === 1 ? 'sum.hoogRes1' : 'sum.hoogResN', { n: hoogN, px: String((cfg.hoogRes && cfg.hoogRes.hoog) || '') })]);
-  if (voorrangAan()) rows.push([c('sum.voorrang'), c('sum.voorrangJa', { uren: String((cfg.voorrang && cfg.voorrang.uren) || 24) })]);
+  /* levering 118 (17 november 2026, proefronde L-16 en P8-04): de echte dag, of dat de klok pas loopt als de foto's er zijn. */
+  if (voorrangAan()) rows.push([c('sum.voorrang'), voorrangSamenvatting()]);
 
   /* De hoeken bij NAAM. Het bedrag staat al in de totaalregel; wat hier hoort is
      WAT er gemaakt wordt, want dat is het enige op dit scherm dat de klant nog
@@ -10506,6 +11038,18 @@ function renderSummary() {
   const vast = cfg.samplePrice != null ? Number(cfg.samplePrice) : null;
   if (vast !== null && Number.isFinite(vast)) {
     rows.push([c('sum.net'), euro(vast)]);
+    /* levering 118 (17 november 2026, proefronde P1-03): de btw en het totaal vóór betalen. Bij Mollie stond €1,21 en hier
+       alleen €1. Dezelfde offerte als de kassa (quoteTestSample); 0 % bij verlegging of buiten de EU, zoals de server. */
+    const uitkomstProef = betaalUitkomst();
+    if (uitkomstProef === 'verlegdMisschien') {
+      const p21 = quoteTestSample({ vatRate: VAT_RATE });
+      rows.push([c('sum.pay'), c('sum.payReverse', { net: euro(p21.netCents / 100), gross: euro(p21.grossCents / 100), pct: String(Math.round(VAT_RATE * 100)) })]);
+    } else {
+      const nul = uitkomstProef === 'verlegd' || uitkomstProef === 'buiten';
+      const proef = quoteTestSample({ vatRate: nul ? 0 : VAT_RATE });
+      rows.push([c('lv118.btwRegel', { pct: String(Math.round(proef.vatRate * 100)) }), euro(proef.vatCents / 100)]);
+      rows.push([c('lv118.totaalRegel'), euro(proef.grossCents / 100)]);
+    }
   } else {
     /* ── HETZELFDE GETAL ALS IN DE ZIJBALK — 19 september 2026 ──────────────
        Dit stond als quoteFor(kind, n, outfits): zonder extra hoeken, zonder
@@ -10538,9 +11082,16 @@ function renderSummary() {
         const bruto = round2(net * (1 + VAT_RATE));
         const pct = String(Math.round(VAT_RATE * 100));
         const buiten = !isEu(land) && land !== HOME_COUNTRY;
-        const verlegd = !buiten && land !== HOME_COUNTRY && btwNr && !geenNr;
-        if (buiten) {
-          rows.push([c('sum.pay'), c('sum.payOutside', { net: euro(net) }), 'geld']);
+        /* levering 118 (17 november 2026, proefronde L-10): de regel volgt wat de server besluit (betaalUitkomst). Verlegd met een
+           door VIES bevestigd nummer: "btw verlegd · €0"; buiten de EU: "btw €0"; nakijken: eerst nakijken, de betaallink volgt. */
+        const uitkomst = betaalUitkomst();
+        const verlegd = uitkomst === 'verlegd' || uitkomst === 'verlegdMisschien';
+        if (uitkomst === 'nakijken') {
+          rows.push([c('sum.pay'), c('lv118.payNakijken', { bedrag: euro(buiten ? net : bruto), pct: buiten ? '0' : pct }), 'geld']);
+        } else if (buiten) {
+          rows.push([c('sum.pay'), c('lv118.payBuiten', { net: euro(net), nul: euro(0) }), 'geld']);
+        } else if (uitkomst === 'verlegd') {
+          rows.push([c('sum.pay'), c('lv118.payVerlegd', { net: euro(net), nul: euro(0) }), 'geld']);
         } else if (verlegd) {
           rows.push([c('sum.pay'), c('sum.payReverse', { net: euro(net), gross: euro(bruto), pct }), 'geld']);
         } else {
@@ -10573,6 +11124,8 @@ function renderSummary() {
   // It is an advisory here as everywhere else: it says what is short and then
   // the send button works anyway.
   const sent = progressText() || c('upload.count', { n: staged.length, max: cfg.maxBatchFiles });
+  /* levering 119 (18 november 2026, proefronde L-04): zonder foto's is de klant zelf aan zet (in Studio), niet wij; de zin
+     sum.noFiles zegt dat nu (OrderFlow.astro). */
   rows.push([c('sum.files'), staged.length ? sent : c('sum.noFiles')]);
 
   // The one row that is allowed to contain a date, and only when the gate put
@@ -10606,15 +11159,33 @@ function renderSummary() {
    * vorm; vandaar de terugval op de waarde, zoals bij de kanalen hierboven.
    */
   const mp = q('input[name="model"]:checked');
+  /* levering 119 (18 november 2026, proefronde P10-09): een eigen gezicht per product erachter ("Ava · product 2: Seme"). De keuze
+     was goed bewaard, maar hier stond alleen het gezicht van de bestelling. */
+  const perProduct = modelAfwijkingen();
   if (mp && !mp.matches(':disabled')) {
     if (mp.value === 'any') {
-      rows.push([c('sum.model'), c('sum.modelAny')]);
+      rows.push([c('sum.model'), `${c('sum.modelAny')}${perProduct}`]);
     } else if (mp.value) {
       const naam = mp.closest('.mp-opt') && mp.closest('.mp-opt').querySelector('.mp-name');
-      rows.push([c('sum.model'), naam ? naam.textContent.trim() : mp.value]);
+      rows.push([c('sum.model'), `${naam ? naam.textContent.trim() : mp.value}${perProduct}`]);
     }
   }
 
+  /* levering 119 (18 november 2026, proefronde L-04): het bericht letterlijk, en hoe we de klant bereiken. Wie iets vraagt, wil
+     vlak voor betalen zien dat het meegaat. */
+  /* levering 119 (18 november 2026, proefronde L-04): het bericht is een <textarea>; value() zoekt alleen een <input>, dus
+     "Je bericht" kwam nooit op het controlescherm. Eerst de textarea, dan (oude opbouw) een input. */
+  const berichtVeld = q('textarea[name="message"]') || q('input[name="message"]');
+  const bericht = String((berichtVeld && berichtVeld.value) || '').trim();
+  if (bericht) rows.push([c('lv119.bericht'), bericht, 'bericht']);
+  const voorkeur = q('input[name="contact_preference"]:checked');
+  const voorkeurNaam = voorkeur && voorkeur.closest('label') ? String(voorkeur.closest('label').textContent || '').trim() : '';
+  if (voorkeurNaam) rows.push([c('lv119.contact'), voorkeurNaam]);
+
+  /* levering 118 (17 november 2026, proefronde P12-05): op welk bedrijf de factuur komt, met "Wijzig" terug naar de gegevens.
+     Ingelogd staat stap 3 vooringevuld; hier zag je alleen het e-mailadres. */
+  const factuur = factuurRegel();
+  if (factuur) rows.push([c('lv118.factuurAan'), factuur, 'factuur']);
   const email = q('input[name="email"]');
   if (email && email.value) rows.push([c('sum.email'), email.value]);
 
@@ -10627,11 +11198,83 @@ function renderSummary() {
     const dd = document.createElement('dd');
     dd.textContent = v;
     if (soort === 'geld') { dt.dataset.plGeld = ''; dd.dataset.plGeld = ''; }
+    /* levering 119 (L-04): het bericht met zijn eigen regels (werkplaats.css: white-space pre-line). */
+    if (soort === 'bericht') dd.classList.add('pl-sum-bericht');
     if (soort === 'credits') { dt.dataset.plGeldCredits = ''; dd.dataset.plGeldCredits = ''; }
+    if (soort === 'factuur') {
+      const wijzig = document.createElement('button');
+      wijzig.type = 'button';
+      wijzig.className = 'pl-sum-wijzig';
+      wijzig.dataset.rol = 'wijzigen';
+      wijzig.textContent = c('lv118.wijzig');
+      wijzig.setAttribute('aria-label', `${c('lv118.wijzig')}: ${k}`);
+      wijzig.addEventListener('click', () => show(3));
+      dd.append(' ', wijzig);
+    }
     host.appendChild(dt);
     host.appendChild(dd);
   });
   zetGeldRegels();
+}
+
+/* levering 118 (17 november 2026, proefronde P12-05): "Merk BV · Teststraat 1, 1234 AB Teststad, Nederland · NL…B01".
+   Uit de velden van stap 3 zoals ze nu staan; zonder merk of adres (de proef) niets. */
+function factuurRegel() {
+  const merk = String(value('brand') || '').trim();
+  const straat = [value('address_line1'), value('address_line2')].map((x) => String(x || '').trim()).filter(Boolean).join(' ');
+  const plaats = [value('postal_code'), value('city')].map((x) => String(x || '').trim()).filter(Boolean).join(' ');
+  const landSel = q('select[name="country"]');
+  const land = landSel && landSel.value && landSel.selectedIndex >= 0 ? String(landSel.options[landSel.selectedIndex].textContent || '').trim() : '';
+  const adres = [straat, plaats, land].filter(Boolean).join(', ');
+  const geenNr = !!(q('input[type="checkbox"][name="no_vat"]') || {}).checked;
+  const btw = geenNr ? '' : String(value('vat') || '').trim().toUpperCase();
+  if (!merk && !straat) return '';
+  return [merk, adres, btw].filter(Boolean).join(' · ');
+}
+
+/* levering 119 (18 november 2026, proefronde L-04): "01 Hoodie (jas) · 02 Jeans (broek)". Alleen als de klant iets invulde of er
+   een soort staat; anders zegt de regel "Producten" erboven alles. Hoogstens acht bij naam, daarna "+N". */
+function productenRegel() {
+  if (!cards.length) return '';
+  const metIets = cards.some((k) => (k.input && k.input.value.trim()) || soortVan(k));
+  if (!metIets) return '';
+  const delen = cards.slice(0, 8).map((k) => {
+    const soort = cfg.styling && soortVan(k) ? soortNaam(k) : '';
+    return `${String(k.n).padStart(2, '0')} ${cardLabel(k)}${soort ? ` (${soort.toLocaleLowerCase()})` : ''}`;
+  });
+  if (cards.length > 8) delen.push(`+${cards.length - 8}`);
+  return delen.join(' · ');
+}
+
+/* levering 119 (18 november 2026, proefronde P10-09): " · product 2: Seme" voor elk product met een eigen gezicht; boven de drie
+   alleen het aantal. Leeg als alle producten de bestelling volgen. */
+function modelAfwijkingen() {
+  const eigen = cards.filter((k) => modelVan(k));
+  if (!eigen.length) return '';
+  if (eigen.length > 3) return ` · ${c('lv119.modelPerN', { n: eigen.length })}`;
+  return eigen.map((k) => ` · ${c('pu.product', { n: k.n }).toLocaleLowerCase()}: ${modelNaamVan(k)}`).join('');
+}
+
+/* levering 119 (18 november 2026, proefronde P3-14): de achtergrond per hoek in de werkplaats, met alleen de afwijkingen.
+   Eén kleur overal: die naam ("Wit"). Anders "Voorkant beige · rest wit": de kleur die de meeste hoeken hebben is "rest",
+   bij gelijkspel de kleur van de laatste hoek (dan is de voorkant de uitzondering). Buiten de werkplaats '' (de oude regel). */
+function achtergrondPerHoek() {
+  if (!werkAan()) return '';
+  const knoppen = qa('[data-wk-kleur]').filter((b) => { const li = b.closest('li'); return !(li && li.hidden); });
+  if (!knoppen.length) return '';
+  const namen = {};
+  qa('[data-wk-c]').forEach((x) => { if (x.dataset.wkC !== 'eigen') namen[String(x.dataset.wkC).toUpperCase()] = (x.childNodes[1] && x.childNodes[1].textContent || '').trim(); });
+  const naam = (hex) => namen[hex] || hex;
+  const per = knoppen.map((b) => ({ hoek: String(b.dataset.wkHoekNaam || '').trim(), hex: String(wkKleurVan(b.dataset.wkKleur) || '#FFFFFF').toUpperCase() }));
+  const tel = {};
+  per.forEach((p) => { tel[p.hex] = (tel[p.hex] || 0) + 1; });
+  const kleuren = Object.keys(tel);
+  if (kleuren.length === 1) return naam(kleuren[0]);
+  let rest = per[per.length - 1].hex;
+  kleuren.forEach((h) => { if (tel[h] > tel[rest]) rest = h; });
+  const klein = (hex) => (namen[hex] ? naam(hex).toLocaleLowerCase() : hex);
+  const uitzonderingen = per.filter((p) => p.hex !== rest).map((p) => `${p.hoek} ${klein(p.hex)}`);
+  return [...uitzonderingen, c('lv119.bgRest', { kleur: klein(rest) })].join(' · ');
 }
 
 /**
@@ -10685,29 +11328,9 @@ function renderStrip({ bgHex, bgName, ratioId, mp }) {
       t.appendChild(im);
     }
   }
-  if (bgHex) {
-    const t = item(bgName ? `${bgName} · ${bgHex}` : bgHex, 'is-bg');
-    t.style.background = bgHex;
-    /* RONDE 9, F6 — hier stond het voorbeeldbeeld van de achtergrondkiezer op
-       (een zwart T-shirt). Naast de roze jeans van de klant las dat als "jullie
-       maken het verkeerde product". De kleur zegt genoeg; een staal is een staal. */
-  }
-  if (ratioId) {
-    const tile = q(`[data-pl-ratio-tile="${ratioId}"] .ratio-shape`);
-    const t = item(c(`ratio.name.${ratioId}`), 'is-ratio');
-    t.style.aspectRatio = tile && tile.style.aspectRatio ? tile.style.aspectRatio : '1 / 1';
-    t.style.height = '84px';
-    /* Het kader met de EIGEN voorkant erin (F6), niet het voorbeeldshirt: zo
-       zie je je eigen product in de verhouding die je koos. Geen foto (nog):
-       dan een leeg kader in de juiste vorm. */
-    const eigen = shown[0] && shown[0].slots[front].url;
-    if (eigen) {
-      const im = document.createElement('img');
-      im.alt = '';
-      im.src = eigen;
-      t.appendChild(im);
-    }
-  }
+  /* levering 119 (18 november 2026, proefronde P1-07 en L-04): geen staal van de achtergrond en geen voorbeeldtegel van de
+     verhouding meer. De staal was op wit een leeg vierkantje met een hexcode, en de verhouding toonde de eerste voorkant nog eens
+     ("de hoodie, 1:1 · Vierkant": bij drie producten een vierde tegel). Beide staan als regel in de lijst eronder. */
   strip.hidden = !strip.childElementCount;
 }
 
@@ -11178,6 +11801,65 @@ function leesConcept() {
 
 function wisConcept() {
   try { localStorage.removeItem(CONCEPT_SLEUTEL); } catch { /* geen opslag */ }
+  /* levering 118 (P10-04): en de gegevens van stap 3 in dit tabblad. */
+  try { sessionStorage.removeItem('vis-bestelling-s3'); } catch { /* geen opslag */ }
+}
+
+/* ── STAP 3 OVERLEEFT VERVERSEN — levering 118 (17 november 2026, proefronde P10-04) ──
+   Na F5 in stap 3 waren naam, adres en bericht weg en stond de klant weer in stap 1. De gegevens gaan NIET in het
+   concept (localStorage, blijft dagen staan), maar in sessionStorage: alleen dit tabblad, weg zodra het sluit. Zo komt
+   het terug na verversen of na een trage Mollie, en nooit op een ander apparaat of na het sluiten. De sleutel staat
+   als tekst in de functies en niet als const bovenaan: boot() draait vóór de rest van dit bestand (zie `reached`). */
+function stap3Velden() {
+  const node = stepNode(3);
+  if (!node) return [];
+  const uit = [];
+  qa('input, select, textarea', node).forEach((f) => {
+    if (!f.name || f.disabled) return;
+    if (f.type === 'file' || f.type === 'hidden' || f.type === 'password') return;
+    if (f.type === 'radio') { if (f.checked) uit.push([f.name, f.value, 1]); return; }
+    if (f.type === 'checkbox') { uit.push([f.name, f.value, f.checked ? 1 : 0]); return; }
+    uit.push([f.name, String(f.value || '').slice(0, 2000)]);
+  });
+  return uit;
+}
+
+function bewaarStap3() {
+  if (!stepNode(3)) return;
+  try { sessionStorage.setItem('vis-bestelling-s3', JSON.stringify({ pad: location.pathname, velden: stap3Velden() })); } catch { /* geen opslag */ }
+}
+
+function leesStap3() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem('vis-bestelling-s3') || 'null');
+    return s && Array.isArray(s.velden) && s.pad === location.pathname ? s : null;
+  } catch { return null; }
+}
+
+/** De velden van stap 3 terug, alleen in stap 3 (een naam als `message` kan elders ook bestaan). */
+function herstelStap3() {
+  const s = leesStap3();
+  const node = stepNode(3);
+  if (!s || !node) return false;
+  let iets = false;
+  s.velden.forEach(([naam, waarde, aan]) => {
+    const els = qa('input, select, textarea', node).filter((f) => f.name === naam && !f.disabled);
+    if (!els.length) return;
+    const el0 = els[0];
+    if (el0.type === 'radio') {
+      const r = els.find((f) => f.value === waarde);
+      if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+    } else if (el0.type === 'checkbox') {
+      const b = els.find((f) => f.value === waarde) || el0;
+      if (b.checked !== !!aan) { b.checked = !!aan; b.dispatchEvent(new Event('change', { bubbles: true })); }
+    } else if (String(waarde || '') && el0.value !== waarde) {
+      el0.value = waarde;
+      el0.dispatchEvent(new Event('input', { bubbles: true }));
+      el0.dispatchEvent(new Event('change', { bubbles: true }));
+    } else return;
+    iets = true;
+  });
+  return iets;
 }
 
 /** De velden van stap 1 en 2, als [naam, waarde, aan]. Nooit stap 3 en verder. */
@@ -11204,6 +11886,17 @@ function bewaarConcept() {
   conceptTimer = setTimeout(() => {
     conceptTimer = 0;
     if (!conceptKlaar || !form || !document.contains(form)) return;
+    /* levering 118 (17 november 2026, proefronde P10-04): stap 3 in sessionStorage (alleen dit tabblad, weg bij sluiten). */
+    bewaarStap3();
+    const concept = maakConcept();
+    if (!concept) { wisConcept(); return; }
+    try { localStorage.setItem(CONCEPT_SLEUTEL, JSON.stringify(concept)); } catch { /* vol of geblokkeerd: dan niet */ }
+  }, 500);
+}
+
+/* levering 118 (17 november 2026, proefronde P1-04): het concept zelf, los van het schrijven, zodat de tweede proef het
+   ook voor het gewone formulier kan maken. null als er niets is om naar terug te keren. */
+function maakConcept() {
     const fotos = [];
     cards.forEach((card) => {
       Object.keys(card.slots).forEach((id) => {
@@ -11214,12 +11907,13 @@ function bewaarConcept() {
     const velden = conceptVelden();
     const aantal = productCount();
     /* Niets gekozen en niets gestuurd: dan is er ook niets om naar terug te keren. */
-    if (!fotos.length && !Number.isInteger(aantal)) { wisConcept(); return; }
+    if (!fotos.length && !Number.isInteger(aantal)) return null;
     const concept = {
       v: 1,
       t: Date.now(),
       pad: location.pathname,
-      stap: Math.min(current, 2),
+      /* levering 118 (17 november 2026, proefronde P10-04): tot en met stap 3 (de gegevens staan in sessionStorage). */
+      stap: Math.min(current, 3),
       velden,
       eigen: cards.filter((k) => k.soortEigen).map((k) => k.key),
       refs: Object.fromEntries(cards.filter((k) => k.refs).map((k) => [k.key, k.refs])),
@@ -11231,8 +11925,7 @@ function bewaarConcept() {
       batch: fotos.length ? batch : '',
       fotos,
     };
-    try { localStorage.setItem(CONCEPT_SLEUTEL, JSON.stringify(concept)); } catch { /* vol of geblokkeerd: dan niet */ }
-  }, 500);
+    return concept;
 }
 
 function bindConcept() {
@@ -11241,7 +11934,12 @@ function bindConcept() {
   const bewaar = (e) => {
     const stap = e.target && e.target.closest ? e.target.closest('[data-pl-step]') : null;
     const n = stap ? Number(stap.dataset.plStep) : 0;
-    if (n !== 1 && n !== 2) return;
+    /* levering 118 (P10-04): stap 3 ook, maar die gaat alleen naar sessionStorage (bewaarStap3). */
+    if (n !== 1 && n !== 2 && n !== 3) return;
+    /* levering 118 (17 november 2026, P10-04, hersteller H): in stap 3 alleen wat de klant zelf doet. Het land uit /api/land
+       en de gegevens uit het account komen er met een `change` van het script in; daarmee bewaarde een onaangeraakt
+       formulier een concept, en kreeg iedereen bij terugkomst "Je was bezig" zonder iets gedaan te hebben. */
+    if (n === 3 && !e.isTrusted) return;
     /* Laat de klant het blok links liggen en begint hij gewoon te kiezen, dan
        is dat opnieuw beginnen: het blok gaat weg en vanaf nu wordt dít bewaard.
        Alleen bij een echte handeling (isTrusted), niet bij het terugzetten. */
@@ -11258,6 +11956,14 @@ function bindConcept() {
   if (opnieuw) opnieuw.addEventListener('click', () => {
     wisConcept();
     blok.hidden = true;
+    /* levering 118 (17 november 2026, proefronde P2-07): het concept staat er al weer in (automatisch hersteld), dus
+       opnieuw beginnen is een leeg formulier: niets meer bewaren en de pagina opnieuw laden, met een nieuwe batch. */
+    if (blok.dataset.lv118Hersteld) {
+      conceptKlaar = false;
+      if (conceptTimer) { clearTimeout(conceptTimer); conceptTimer = 0; }
+      try { location.replace(location.pathname + location.search); } catch { location.reload(); }
+      return;
+    }
     conceptKlaar = true;
   });
   if (verder) verder.addEventListener('click', () => {
@@ -11285,7 +11991,9 @@ function checkConcept() {
   try { van = new URLSearchParams(location.search).get('van') || ''; } catch { /* dan niet */ }
   if (/^\d{1,12}$/.test(van)) { klaar(); return; }
   const oud = !(Date.now() - Number(c0.t || 0) < CONCEPT_DAGEN * 864e5);
-  if (oud || c0.pad !== location.pathname) {
+  /* levering 118 (P1-04): /nl/start/catalog en /nl/start/catalog/ zijn dezelfde pagina. */
+  const zelfdePad = String(c0.pad || '').replace(/\/+$/, '') === location.pathname.replace(/\/+$/, '');
+  if (oud || !zelfdePad) {
     /* Te oud: weg. Van een andere bestelpagina: laten staan voor die pagina. */
     if (oud) wisConcept();
     klaar();
@@ -11308,6 +12016,21 @@ function checkConcept() {
     }
     blok.__concept = { concept: c0, daar };
     blok.hidden = false;
+    /* levering 118 (17 november 2026, proefronde P2-07, keuze a): automatisch herstellen. Mark tikte op de grote groene
+       Verder onderin en kreeg een lege stap 2; nu staat alles meteen terug. Het blok blijft als melding staan, met alleen
+       "Opnieuw beginnen"; "Verder gaan" is niet meer nodig. */
+    const verderKnop = q('[data-pl-concept-verder]', blok);
+    if (verderKnop) verderKnop.hidden = true;
+    const kop = q('.pl-lost-h', blok);
+    if (kop) kop.textContent = c('lv118.conceptTerugH');
+    blok.dataset.lv118Hersteld = '1';
+    /* Na de huidige beurt: zonder foto's draait dit nog tijdens het laden van dit bestand (zie de noot bij boot). */
+    setTimeout(() => {
+      if (!document.contains(blok)) return;
+      herstelConcept(c0, daar);
+      conceptKlaar = true;
+      bewaarConcept();
+    }, 0);
   };
   if (!fotos.length || !c0.batch) { toon([]); return; }
   /* Welke foto's staan er nog? Alleen eigen uploads: het kenmerk is de sleutel.
@@ -11448,6 +12171,14 @@ function herstelConcept(c0, daar) {
   }
   syncOrder();
   refreshUploader();
+  /* levering 118 (17 november 2026, proefronde P10-04): de gegevens van stap 3 uit dit tabblad, en terug naar stap 3 als
+     de klant daar was. Niet als er foto's weg zijn: dan eerst stap 2, waar het blok zegt welke. */
+  const s3 = herstelStap3();
+  const noot = q('[data-pl-concept] .pl-concept-noot[data-acct="out"]');
+  if (noot && s3) noot.hidden = true;
+  const fotosWeg = (Array.isArray(c0.fotos) ? c0.fotos.length : 0) > (daar ? daar.length : 0);
+  const doel = Number(c0.stap);
   /* Terug naar de stap waar de klant was, als stap 1 nog klopt. */
-  if (Number(c0.stap) === 2 && validateStep(1)) show(2);
+  if (doel >= 3 && !fotosWeg && validateStep(1)) show(3);
+  else if (doel >= 2 && validateStep(1)) show(2);
 }

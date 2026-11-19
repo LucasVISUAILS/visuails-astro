@@ -59,6 +59,9 @@ html body.hal.hal .h-voor > .slot96.r105-slot {
 .r105-slot .slot96-zin { margin: 0; }
 .r105-slot > .r105-slotkaart { grid-column: 7 / 13; display: grid; gap: 22px; align-content: end; min-height: clamp(220px, 20vw, 300px); padding: clamp(28px, 3vw, 44px); border-radius: 18px; background: #090D0B; color: #FFFFFF; box-sizing: border-box; }
 .r105-slotregel { margin: 0; max-width: 22em; font: 600 clamp(20px, 1.8vw, 26px)/1.25 var(--h-letter); color: #FFFFFF; text-wrap: balance; }
+/* levering 118 (17 november 2026, proefronde P8-08): de voorrangsregel onder de levertijd. Wit op inkt (19,6 : 1), 15 px;
+   dichter op de levertijd (22 − 12 = 10 px) omdat hij erbij hoort. */
+.r105-voorrang { margin: -12px 0 0; max-width: 34em; font: 450 15px/1.45 var(--h-letter); color: #FFFFFF; }
 .r105-slotkaart .slot96-knoppen { margin: 0; justify-content: flex-start; }
 .r105-slotkaart .slot96-knoppen > a { width: auto; }
 html body.hal .r105-slotkaart .h-link.k-tekst { color: #FFFFFF; }

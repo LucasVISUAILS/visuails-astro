@@ -17,6 +17,19 @@
      (900 ms, de golf: cubic-bezier(.7, 0, .2, 1)). Minder beweging: 200 ms vervagen.
    - Noodrem: na 8 s gaat het scherm hoe dan ook weg (ook als het script ergens vastloopt: de css doet het).
 
+   LEVERING 117 (17 november 2026, proefronde T1-01): op Slow 4G zag een bezoeker 11,5 s alleen de grijze V. Het
+   scherm wachtte op window 'load' (alle eager beelden, op Slow 4G 10 tot 13 s), en de noodrem telde 8 s vanaf het
+   script, dat zelf pas op ± 2,5 s draait (een inline script wacht op de stylesheets erboven), plus 900 ms opengaan.
+   De meters (LCP 2,6 s) zien dat niet. Nu:
+   - het scherm wacht alleen op de letters (de bannerkop, de kopletter, de tekstletter) en het eerste beeld (de
+     poster van de bannervideo; zonder banner het beeld van de opening). Niet meer op 'load';
+   - de noodrem staat op NOODREM = 2500 ms vanaf het begin van het laden: performance.now() telt vanaf de navigatie,
+     dus de wachttijd is NOODREM − performance.now() (draait het script pas op 2,5 s, dan meteen). Is het scherm
+     dan nog niet aan het opengaan, dan vervaagt het in 200 ms (zoals bij minder beweging): geen golf van 900 ms
+     meer na de noodrem, en ook geen golf die pas na de noodrem zou beginnen;
+   - de css-noodrem (als het script vastloopt) staat op 3,4 s: na de laatste golf die vóór de noodrem kan beginnen
+     (2,5 + 0,9 s). Hij telt vanaf het moment dat het scherm getekend wordt, en dat is vrijwel het begin.
+
    Het merk is het V-merk (#markglyph in Layout.astro), hier letterlijk dezelfde twee paden: het scherm staat
    vóór de sprite in de pagina. Geen nieuw logo, alleen het bestaande en zijn vlagje.
    ═══════════════════════════════════════════════════════════════════════════════ */
@@ -51,7 +64,10 @@ const VLAG = 'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.
     if (!h.classList.contains('vl8-aan')) { el.remove(); return; }
     var minder = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     var vul = el.querySelector('[data-vl8-vul]'), gat = el.querySelector('[data-vl8-gat]'), v = el.querySelector('.vl8-v');
-    var getoond = 0, klaar = false, weg = false, p = 0, gedaan = 0, TOTAAL = 3;
+    /* levering 117 (T1-01): twee stappen (de letters, het eerste beeld), niet meer drie (zonder 'load'), en de noodrem
+       vanaf het begin van het laden */
+    var NOODREM = 2500;
+    var getoond = 0, klaar = false, weg = false, opent = false, nood = false, p = 0, gedaan = 0, TOTAAL = 2;
     function zet(x) { p = Math.max(p, Math.min(1, x)); vul.setAttribute('y', String(813.25 * (1 - p))); vul.setAttribute('height', String(813.25 * p)); }
     function stap() { gedaan++; zet(gedaan / TOTAAL); if (gedaan >= TOTAAL) klaarNu(); }
     function ruim() { if (weg) return; weg = true; h.classList.remove('vl8-aan'); if (el.parentNode) el.parentNode.removeChild(el); }
@@ -61,8 +77,13 @@ const VLAG = 'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.
       /* het vlagje mag even vol staan: minstens 450 ms na het verschijnen */
       setTimeout(open, Math.max(120, 450 - (performance.now() - getoond)));
     }
+    function vervaag() { el.style.transition = 'opacity .2s linear'; el.style.opacity = '0'; setTimeout(ruim, 220); }
     function open() {
-      if (weg) return;
+      if (weg || opent) return;
+      opent = true;
+      /* na de noodrem geen golf van 900 ms meer: dan alleen vervagen */
+      /* nood: een timer kan een fractie vóór zijn tijd afgaan (gemeten in Chromium: 2499,9 ms), dus niet alleen de klok */
+      if (nood || performance.now() >= NOODREM) { el.style.pointerEvents = 'none'; vervaag(); return; }
       if (minder) { el.style.transition = 'opacity .2s linear'; el.style.opacity = '0'; setTimeout(ruim, 220); return; }
       el.style.pointerEvents = 'none';
       var W = innerWidth, H = innerHeight, r = v.getBoundingClientRect();
@@ -81,24 +102,37 @@ const VLAG = 'M 701.75 0.0 L 543.25 366.25 L 507.25 453.75 L 652.0 259.25 L 702.
       }
       requestAnimationFrame(tik);
     }
-    /* de voortgang: de letters, het eerste beeld van de opening, de pagina */
-    /* de letters: de kopletter en de tekstletter echt laden (fonts.ready is al klaar zolang er nog niets gevraagd is) */
-    if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('700 1em "VISUAILS Display"'), document.fonts.load('400 1em "DM Sans"')]).then(stap, stap); else stap();
+    /* de voortgang: de letters en het eerste beeld (levering 117: niet meer de hele pagina) */
+    /* de letters: de bannerkop, de kopletter en de tekstletter echt laden (fonts.ready is al klaar zolang er nog niets
+       gevraagd is) */
+    /* levering 120 (19 november 2026, lijst 132): de bannerkop staat in VISUAILS Display 2 Light (was VISUAILS Display Blok) */
+    /* levering 121 (19 november 2026, lijst 134): de andere koppen in VISUAILS Display 2 Medium (was VISUAILS Display Bold) */
+    if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('300 1em "VISUAILS Display 2"'), document.fonts.load('500 1em "VISUAILS Display 2"'), document.fonts.load('400 1em "DM Sans"')]).then(stap, stap); else stap();
+    /* het eerste beeld: de poster van de bannervideo bovenaan (een poster heeft geen load-gebeurtenis, dus hetzelfde adres
+       als Image: de browser haalt het één keer); zonder banner het beeld van de opening (HalOpening80) */
+    function eersteBeeld() {
+      var video = document.querySelector('[data-b94-video]');
+      var poster = video && video.getAttribute('poster');
+      if (poster) { var i = new Image(); i.decoding = 'async'; i.src = poster; return i; }
+      return document.querySelector('[data-o8-beeld]');
+    }
     function beeld() {
-      var img = document.querySelector('[data-o8-beeld]');
+      var img = eersteBeeld();
       if (!img || (img.complete && img.naturalWidth)) { stap(); return; }
       var een = function () { img.removeEventListener('load', een); img.removeEventListener('error', een); stap(); };
       img.addEventListener('load', een); img.addEventListener('error', een);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', beeld, { once: true }); else beeld();
-    if (document.readyState === 'complete') stap(); else addEventListener('load', stap, { once: true });
-    setTimeout(function () { if (!klaar && !weg) { getoond = performance.now(); el.classList.add('is-zichtbaar'); } }, 350);
-    setTimeout(function () { if (!weg) { klaar = true; getoond ? open() : ruim(); } }, 8000);
+    /* levering 117 (T1-01): hier stond een derde stap op window 'load'; die wachtte op elk beeld van de pagina */
+    setTimeout(function () { if (!klaar && !weg && performance.now() < NOODREM) { getoond = performance.now(); el.classList.add('is-zichtbaar'); } }, 350);
+    /* de noodrem: 2,5 s vanaf het begin van het laden (performance.now() telt vanaf de navigatie), niet vanaf dit script */
+    setTimeout(function () { nood = true; if (!weg) { klaar = true; getoond ? open() : ruim(); } }, Math.max(0, NOODREM - performance.now()));
   })();
 </script>
 <style is:global>
   .vl8 { display: none; }
-  html.vl8-aan .vl8 { display: block; position: fixed; inset: 0; z-index: 2147483000; animation: vl8-nood 0s 8.5s forwards; }
+  /* levering 117 (T1-01): de css-noodrem op 3,4 s (was 8,5 s): de js-noodrem staat op 2,5 s, plus de golf van 0,9 s */
+  html.vl8-aan .vl8 { display: block; position: fixed; inset: 0; z-index: 2147483000; animation: vl8-nood 0s 3.4s forwards; }
   @keyframes vl8-nood { to { visibility: hidden; } }
   .vl8-doek { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
   .vl8-v { position: absolute; left: 50%; top: 50%; width: auto; height: clamp(56px, 8svh, 84px); aspect-ratio: 702 / 813.25; transform: translate(-50%, -50%); opacity: 0; transition: opacity .24s cubic-bezier(.2, .8, .2, 1); }

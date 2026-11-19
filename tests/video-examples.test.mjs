@@ -204,8 +204,9 @@ console.log('\nen het staat op elke stijlpagina die gebouwd wordt (sinds lijst 1
     for (const slug of videoOpPagina.map((s) => s.slug)) {
       for (const pre of ['', 'nl/']) {
         const html = alleenMarkup(read(`dist/${pre}video/${slug}/index.html`));
+        /* levering 117 (17 november 2026, P4-01): geen lege vakken meer zolang er geen clips zijn; alleen de leverlijst */
         const leeg = (html.match(/vx-soon-label/g) || []).length;
-        ok(`${pre}video/${slug}: twee lege voorbeelden`, leeg, 2);
+        ok(`${pre}video/${slug}: geen lege voorbeelden (levering 117)`, leeg, 0);
         ok('  met de leverlijst eronder', /1-vertical-9x16\.mp4/.test(html), true);
         /* Geen enkele gebouwde pagina mag een videobestand aanhalen zolang er geen
            is. Zou dat wel zo zijn, dan staat er een <source> naar een 404. */

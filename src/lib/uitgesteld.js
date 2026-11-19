@@ -21,7 +21,29 @@ import { sendMail } from './mail.js';
 
 export const uitgesteldSleutel = (ref) => `mail-uitgesteld/${String(ref || '').trim().toUpperCase()}.json`;
 
-/** De bewaarde bevestiging, of null. */
+/*
+ * ── HET OVERZICHT BLIJFT VOOR DE BETAALMAIL — levering 119 (18 november 2026, proefronde W2-06) ──────────────
+ * Na een eerst mislukte betaling ging de bewaarde bevestiging uit en werd hij gewist; betaalde de klant daarna,
+ * dan miste de mail met de factuur "Wat je bestelde". Hetzelfde bij een bestelling die eerst werd nagekeken (de
+ * bevestiging ging meteen). Nu blijft er onder dezelfde sleutel een "alleen overzicht" staan:
+ * { samenvatting, alVerstuurd: true }, zonder `to` en `html`. De betaalmail leest het overzicht (leesUitgesteld),
+ * maar er wordt nooit een tweede bevestiging van gemaakt (stuurUitgesteld kijkt naar `to` en `html`).
+ */
+const alleenOverzicht = (samenvatting) => JSON.stringify({ samenvatting: String(samenvatting), alVerstuurd: true, nieuwAdres: false });
+
+/** Na een bevestiging die meteen uitging: het overzicht bewaren voor de betaalmail met de factuur. */
+export async function bewaarOverzicht(env, ref, samenvatting) {
+  if (!env?.UPLOADS || !ref || !samenvatting) return false;
+  try {
+    await env.UPLOADS.put(uitgesteldSleutel(ref), alleenOverzicht(samenvatting), { httpMetadata: { contentType: 'application/json' } });
+    return true;
+  } catch (err) {
+    console.warn('[uitgesteld] overzicht niet bewaard voor', ref, '—', err?.message || err);
+    return false;
+  }
+}
+
+/** De bewaarde bevestiging (of alleen het overzicht, zie hierboven), of null. */
 export async function leesUitgesteld(env, ref) {
   if (!env?.UPLOADS || !ref) return null;
   try {
@@ -29,6 +51,7 @@ export async function leesUitgesteld(env, ref) {
     if (!obj) return null;
     const tekst = typeof obj.text === 'function' ? await obj.text() : '';
     const mail = JSON.parse(tekst || 'null');
+    if (mail && mail.alVerstuurd && mail.samenvatting) return { samenvatting: mail.samenvatting, alVerstuurd: true, nieuwAdres: false };
     return mail && mail.to && mail.html ? mail : null;
   } catch (err) {
     console.warn('[uitgesteld] niet leesbaar voor', ref, '—', err?.message || err);
@@ -52,10 +75,13 @@ export async function wisUitgesteld(env, ref) {
  */
 export async function stuurUitgesteld(env, ref) {
   const mail = await leesUitgesteld(env, ref);
-  if (!mail) return false;
+  /* levering 119 (W2-06): een "alleen overzicht" is al verstuurd; nooit een tweede bevestiging. */
+  if (!mail || !mail.to || !mail.html) return false;
   await wisUitgesteld(env, ref);
   try {
     await sendMail(env, { to: mail.to, subject: mail.subject, html: mail.html });
+    /* levering 119 (W2-06): het overzicht blijft staan voor de betaalmail, als de klant daarna alsnog betaalt. */
+    if (mail.samenvatting) await bewaarOverzicht(env, ref, mail.samenvatting);
     return true;
   } catch (err) {
     console.error('[uitgesteld] bevestiging niet verstuurd voor', ref, '—', err?.message || err);

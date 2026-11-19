@@ -771,7 +771,9 @@ console.log('\nen er is een ratelimiet op de bestelroute');
   ok('en wordt weggeschreven', atLimit.ordersWritten, 1);
 
   const over = await post({ hits: 11 });
-  ok('de elfde krijgt 429', over.status, 429);
+  /* levering 118 (integratie IA, P4-08): een gewone POST krijgt geen witte 429 meer maar gaat met ?error=rate terug
+     naar het formulier (terugNaTeVaak() in order.js); de JSON-weg blijft 429. Er wordt nog steeds niets weggeschreven. */
+  ok('de elfde krijgt geen witte 429 maar gaat terug naar het formulier (levering 118, P4-08)', over.status, 303);
   ok('en er wordt niets weggeschreven', over.ordersWritten, 0);
   ok('en er gaat geen betaling uit', over.payments, 0);
   ok('en er gaat geen mail uit', over.mails, 0);

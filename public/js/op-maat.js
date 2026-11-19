@@ -86,12 +86,19 @@
     if (!r || !r.schatting) return;
     var box = document.getElementById('om-regels');
     box.textContent = '';
+    /* levering 119 (18 november 2026, besluit Lucas na P5-16): video op aanvraag (r.schatting.opAanvraag): alleen de namen
+       van de keuzes, geen bedrag; "op aanvraag" en de zin eronder staan al in de pagina (op-maat.astro). */
+    var opAanvraag = !!r.schatting.opAanvraag;
     r.schatting.regels.forEach(function (g) {
-      var p = document.createElement('p'); var a = document.createElement('span'); var b = document.createElement('span');
-      a.textContent = g.naam; b.textContent = eur(g.bedrag); p.appendChild(a); p.appendChild(b); box.appendChild(p);
+      var p = document.createElement('p'); var a = document.createElement('span');
+      a.textContent = g.naam; p.appendChild(a);
+      if (!opAanvraag) { var b = document.createElement('span'); b.textContent = eur(g.bedrag); p.appendChild(b); }
+      box.appendChild(p);
     });
-    document.getElementById('om-totaal').textContent = eur(r.schatting.totaal);
-    document.getElementById('om-aanbet').textContent = T('Na de offerte de helft vooraf: ongeveer ', 'After the quote, half up front: about ') + eur(r.schatting.aanbetaling) + '.';
+    if (!opAanvraag) {
+      document.getElementById('om-totaal').textContent = eur(r.schatting.totaal);
+      document.getElementById('om-aanbet').textContent = T('Na de offerte de helft vooraf: ongeveer ', 'After the quote, half up front: about ') + eur(r.schatting.aanbetaling) + '.';
+    }
     var mist = document.getElementById('om-mist');
     mist.textContent = '';
     (r.ontbreekt || []).forEach(function (k) {
@@ -123,7 +130,9 @@
   var timer = 0, bezig = false, nog = false, merkTimer = 0;
   function melding(t) { if (stand) stand.textContent = t; }
   function bewaar() {
-    if (!id || !bewerk) return;
+    if (!bewerk) return;
+    /* levering 119 (18 november 2026, proefronde P12-09): zonder aanvraag eerst beginnen, pas nu er iets is ingevuld. */
+    if (!id) { begin().then(function (ja) { if (ja) bewaar(); }); return; }
     if (bezig) { nog = true; return; }
     bezig = true; melding(T('Opslaan…', 'Saving…'));
     post({ doe: 'opslaan', id: id, versie: versie, inhoud: lees() }).then(function (r) {
@@ -180,24 +189,46 @@
 
   /* ── een referentie uploaden ───────────────────────────────────────────────────────────────────────────── */
   var bestand = document.getElementById('om-bestand');
+  /* levering 119 (18 november 2026, proefronde P5-16): bij een geweigerde referentie de reden, niet alleen "Niet toegevoegd".
+     De grenzen staan als data-max-mb en data-max-n op het veld (uit REF_BYTES en REF_MAX in src/lib/opMaat.js). */
+  var refStand = document.getElementById('om-ref-stand');
+  function refMelding(t) { if (!refStand) return; refStand.textContent = t || ''; refStand.hidden = !t; }
+  function refReden(r) {
+    var mb = bestand && bestand.dataset.maxMb, n = bestand && bestand.dataset.maxN;
+    switch (r && r.reden) {
+      case 'soort': return T('Niet toegevoegd: dit soort bestand kan niet. Alleen jpg, png, webp, heic, mp4 of mov.', 'Not added: this kind of file does not work. Only jpg, png, webp, heic, mp4 or mov.');
+      case 'groot': return T('Niet toegevoegd: het bestand is te groot. Hoogstens ' + mb + ' MB.', 'Not added: the file is too large. At most ' + mb + ' MB.');
+      case 'vol': return T('Niet toegevoegd: je hebt al ' + n + ' referenties. Meer kan niet.', 'Not added: you already have ' + n + ' references. That is the maximum.');
+      case 'stand': return T('Niet toegevoegd: deze aanvraag is al verstuurd.', 'Not added: this request has already been sent.');
+      case 'te-vaak': return T('Niet toegevoegd: even te veel tegelijk. Probeer het over een minuut nog eens.', 'Not added: a little too much at once. Try again in a minute.');
+      default: return T('Niet toegevoegd. Er ging iets mis bij ons. Probeer het nog eens.', 'Not added. Something went wrong on our side. Please try again.');
+    }
+  }
   if (bestand) bestand.addEventListener('change', function () {
-    if (!bestand.files || !bestand.files[0] || !id) return;
+    if (!bestand.files || !bestand.files[0]) return;
+    /* levering 119 (P12-09): een referentie is een eerste wijziging; zonder aanvraag eerst beginnen. */
+    if (!id) { begin().then(function (ja) { if (ja) bestand.dispatchEvent(new Event('change')); }); return; }
+    refMelding('');
     var fd = new FormData();
     fd.append('id', String(id)); fd.append('bestand', bestand.files[0]);
     form.querySelectorAll('input[name="ref-wat"]:checked').forEach(function (c) { fd.append('wat', c.value); });
     melding(T('Uploaden…', 'Uploading…'));
-    fetch(API, { method: 'POST', credentials: 'same-origin', body: fd }).then(function (r) { return r.json(); }).then(function (r) {
+    fetch(API, { method: 'POST', credentials: 'same-origin', body: fd }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, reden: 'server' }; });
+    }).then(function (r) {
       melding(r.ok ? T('Toegevoegd', 'Added') : T('Niet toegevoegd', 'Not added'));
+      refMelding(r.ok ? '' : refReden(r));
       bestand.value = '';
       return laad();
-    }, function () { melding(T('Geen verbinding', 'No connection')); });
+    }, function () { melding(T('Geen verbinding', 'No connection')); refMelding(T('Niet toegevoegd: geen verbinding. Probeer het nog eens.', 'Not added: no connection. Please try again.')); });
   });
 
   /* ── versturen ─────────────────────────────────────────────────────────────────────────────────────────── */
   var verstuur = document.getElementById('om-verstuur');
   if (verstuur) verstuur.addEventListener('click', function () {
     clearTimeout(timer); clearTimeout(merkTimer);
-    post({ doe: 'merk', merk: leesMerk() }).then(function () {
+    /* levering 119 (P12-09): versturen zonder iets ingevuld maakt nu pas de aanvraag (de server zegt dan wat er mist). */
+    begin().then(function (ja) { if (!ja) throw new Error('begin'); return post({ doe: 'merk', merk: leesMerk() }); }).then(function () {
       return post({ doe: 'opslaan', id: id, versie: versie, inhoud: lees() });
     }).then(function (r) {
       if (r.ok) versie = r.aanvraag.versie;
@@ -266,18 +297,28 @@
   }
   /* De merknaam staat al ingevuld (uit zijn gegevens); bewaar hem meteen, anders mist hij bij het versturen. */
   var naamVeld = form.querySelector('[data-merk="naam"]');
-  if (bewerk && naamVeld && naamVeld.value && naamVeld.defaultValue === naamVeld.value) post({ doe: 'merk', merk: leesMerk() });
-  if (id) laad();
-  else if (dienst && bewerk) {
-    post({ doe: 'begin', dienst: dienst, taal: nl ? 'nl' : 'en' }).then(function (r) {
-      if (!r.ok) { melding(T('Kon niet beginnen', 'Could not start')); return; }
-      /* Een open concept van deze dienst: laad de pagina met wat hij al had. Nieuw: verder zonder herladen. */
-      if (r.aanvraag.versie > 1 || (r.aanvraag.inhoud && Object.keys(r.aanvraag.inhoud).length)) { location.replace('/account/op-maat?id=' + r.aanvraag.id); return; }
+  var merkMeteen = function () { if (bewerk && naamVeld && naamVeld.value && naamVeld.defaultValue === naamVeld.value) post({ doe: 'merk', merk: leesMerk() }); };
+  /* ── levering 119 (18 november 2026, proefronde P12-09): alleen kijken maakt geen aanvraag meer ──────────────
+     Tot nu toe deed het openen van ?dienst=hooks meteen POST begin (en merk): wie alleen keek, had daarna "Custom
+     hooks — Not sent yet" in zijn lijst, en /admin ook. Nu maakt de eerste wijziging de aanvraag: een veld, een stap,
+     een rij, een referentie of Versturen. Een open concept van deze dienst opent de server al vóór het laden
+     (account.js, sectie opmaat), dus hier is het bijna altijd een nieuwe. */
+  var beginBelofte = null;
+  function begin() {
+    if (id) return Promise.resolve(true);
+    if (!dienst || !bewerk) return Promise.resolve(false);
+    if (!beginBelofte) beginBelofte = post({ doe: 'begin', dienst: dienst, taal: nl ? 'nl' : 'en' }).then(function (r) {
+      if (!r.ok) { beginBelofte = null; melding(T('Kon niet beginnen', 'Could not start')); return false; }
+      /* Toch een open concept met inhoud (bijvoorbeeld uit een ander tabblad): laad de pagina met wat hij al had. */
+      if (r.aanvraag.versie > 1 || (r.aanvraag.inhoud && Object.keys(r.aanvraag.inhoud).length)) { location.replace('/account/op-maat?id=' + r.aanvraag.id); return false; }
       id = r.aanvraag.id; versie = r.aanvraag.versie;
       history.replaceState(null, '', '/account/op-maat?id=' + id);
-      bewaar();
-    });
+      merkMeteen();
+      return true;
+    }, function () { beginBelofte = null; melding(T('Geen verbinding', 'No connection')); return false; });
+    return beginBelofte;
   }
+  if (id) { merkMeteen(); laad(); }
   /* ── de stand in 3D (lijst 113): een eigen module, alleen bij catalog ───────────────────────────────────── */
   if (document.getElementById('om-standen')) import('/js/op-maat-3d.js').catch(function () {
     var g = document.querySelector('#om-standen [data-geen-3d]'); if (g) g.hidden = false;

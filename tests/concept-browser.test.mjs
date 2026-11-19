@@ -212,9 +212,13 @@ console.log('\n2 · terugkomen: "Je was bezig met een bestelling"');
   await page.waitForSelector('[data-pl-concept]:not([hidden])', { timeout: 5000 }).catch(() => {});
   ok('het formulier vraagt eerst welke foto\'s er van die batch nog staan', lijstVragen, [B]);
   ok('het blok staat er', await page.isVisible('[data-pl-concept]'), true);
-  ok('  met wat er was', (await page.textContent('[data-pl-concept-wat]')).trim(), 'Catalogsets · 3 producten · 3 foto’s');
+  /* levering 118 (17 november 2026, proefronde P2-10): de dienst heet overal Catalog. */
+  ok('  met wat er was', (await page.textContent('[data-pl-concept-wat]')).trim(), 'Catalog · 3 producten · 3 foto’s');
   ok('  en wat er niet meer is', (await page.textContent('[data-pl-concept-weg]')).trim(), 'Eén foto is niet meer bij ons; zet die opnieuw neer.');
-  ok('  met "Verder gaan" en "Opnieuw beginnen"', [await page.textContent('[data-pl-concept-verder]'), await page.textContent('[data-pl-concept-opnieuw]')].map((t) => t.trim()), ['Verder gaan', 'Opnieuw beginnen']);
+  /* levering 118 (17 november 2026, proefronde P2-07 keuze a): het formulier zet alles meteen zelf terug. Het blok blijft als melding staan, met een andere
+     kop en alleen "Opnieuw beginnen"; "Verder gaan" is verborgen. */
+  ok('  de kop zegt dat hij is teruggezet', (await page.textContent('[data-pl-concept] .pl-lost-h')).trim(), 'We hebben je bestelling teruggezet');
+  ok('  "Verder gaan" is verborgen, "Opnieuw beginnen" staat er', [await page.isVisible('[data-pl-concept-verder]'), (await page.textContent('[data-pl-concept-opnieuw]')).trim()], [false, 'Opnieuw beginnen']);
   /* Leesbaar: contrast en lettergrootte van wat er in het blok staat. */
   const maat = await page.evaluate(() => [...document.querySelectorAll('[data-pl-concept] p:not([hidden]), [data-pl-concept] h2')].map((el) => {
     const rgb = (c) => (c.match(/[\d.]+/g) || []).map(Number);
@@ -228,9 +232,9 @@ console.log('\n2 · terugkomen: "Je was bezig met een bestelling"');
   ok('  het blok is leesbaar (contrast ≥ 4,5, tekst ≥ 11,5 px)', maat.length > 0 && maat.every((m) => m.ratio >= 4.5 && m.px >= 11.5), true);
   fs.mkdirSync(path.join(ROOT, '.render'), { recursive: true });
   await page.locator('[data-pl-concept]').screenshot({ path: path.join(ROOT, '.render', 'f3-concept-blok.png') });
-  await page.click('[data-pl-concept-verder]');
+  /* levering 118 (17 november 2026, proefronde P2-07): geen klik meer nodig; na het laden staat het formulier meteen in stap 2 met de foto's. */
   await page.waitForTimeout(500);
-  ok('Verder gaan: terug in stap 2', await huidigeStap(page), 2);
+  ok('vanzelf terug in stap 2', await huidigeStap(page), 2);
   ok('  met drie kaarten', await page.locator('.pu-card').count(), 3);
   const vak = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.pu-card')[0].querySelectorAll('.pu-slots .pu-slot')].map((s) => [s.dataset.puSlot, s.dataset.state])));
   ok('  de foto\'s die er nog staan in hun vak, de weggevallen leeg', vak, { front: 'filled', back: 'filled', detail: 'filled', worn: 'empty' });
@@ -253,8 +257,10 @@ console.log('\n3 · opnieuw beginnen');
   const { page, fouten } = await open(ctx);
   await page.waitForSelector('[data-pl-concept]:not([hidden])', { timeout: 5000 }).catch(() => {});
   ok('het blok staat er weer', await page.isVisible('[data-pl-concept]'), true);
-  await page.click('[data-pl-concept-opnieuw]');
-  await page.waitForTimeout(700);
+  /* levering 118 (17 november 2026, proefronde P2-07): Opnieuw beginnen laadt de pagina leeg opnieuw (location.replace), dus wachten op het laden. */
+  await Promise.all([page.waitForNavigation({ waitUntil: 'load' }).catch(() => {}), page.click('[data-pl-concept-opnieuw]')]);
+  await page.waitForSelector('#pl-form.is-live').catch(() => {});
+  await page.waitForTimeout(300);
   ok('Opnieuw beginnen wist het concept', await concept(page), null);
   /* Levering 59 (afvinklijst 36, b-werkplaats): een leeg formulier staat op 1 product, met
      meteen een prijs. Het is de standaard en geen keuze (data-wk-standaard). */

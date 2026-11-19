@@ -16,6 +16,19 @@ const SET = `${LIFESTYLE_IMAGES} photos per product — on a model front and bac
 /* Levertijd en controle staan in de feitenrij van de detailpagina, niet
    meer ook in "Wat je krijgt" (29 september 2026: twee keer dezelfde zin). */
 
+/* levering 118 (17 november 2026, proefronde P6-06): de vaste regel dat beeld en gezichten met AI gemaakt zijn. /lifestyle,
+   /catalog-looks en /models noemden "AI" niet. Eén bron voor de lookpagina's (LookDetailHal.astro) en /models (ModelsHal.astro). */
+export const AI_REGEL = {
+  look: {
+    en: 'Made with AI from your product photos. The faces are not real people.',
+    nl: 'Gemaakt met AI uit jouw productfoto’s. De gezichten bestaan niet.',
+  },
+  modellen: {
+    en: 'Made with AI: these people do not exist.',
+    nl: 'Gemaakt met AI: deze mensen bestaan niet.',
+  },
+};
+
 // grid: the 3x3 product-scene grid on each style page. `photo` is a real
 // asset path when the source page used one, otherwise null (renders the
 // SVG placeholder icon instead — same behavior as the static site).
@@ -216,7 +229,9 @@ export const styles = [
       { title: 'Already the right shape for a feed', body: 'Delivered in the aspect ratio Instagram uses, so you do not have to crop it yourself.' },
     ],
     bestFor: ['Social-first brands and UGC-style ads', 'Products that sell on relatability', 'Founders building trust before polish', "Organic content that shouldn’t look like ads"],
-    whatYouGet: [SET, 'Authentic, phone-real lifestyle scenes', 'Natural, single-source lighting', 'Feed-ready crops from day one'],
+    /* levering 117 (17 november 2026, proefronde P6-05): stond 'Authentic, phone-real lifestyle scenes'. De AI Act-pagina
+       zegt dat niets een echte plek of shoot is; hier dus niet 'real'. */
+    whatYouGet: [SET, 'Lifestyle scenes that look as if they were shot on a phone', 'Natural, single-source lighting', 'Feed-ready crops from day one'],
   },
   {
     slug: 'custom',

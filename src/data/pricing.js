@@ -186,8 +186,12 @@ export function ladderFloor(kind) {
  * geschreven. "Het bedrag hierboven" is het vanaf-bedrag: zet de regel dus
  * onder de kaarten of tegels die het noemen.
  */
-export function eenProductRegel(lang = 'en', kinds = ['catalog', 'lifestyle']) {
+/* levering 118 (17 november 2026, P2-12, hersteller H): `hoofdletters` voor een plek die de regel in hoofdletters zet
+   (de feiten op /catalog en /lifestyle). Daar wordt "Eén" "EÉN"; in het Nederlands is dat "ÉÉN" (zie korte-zinnen.test).
+   Aan het begin van een gewone zin blijft het "Eén". */
+export function eenProductRegel(lang = 'en', kinds = ['catalog', 'lifestyle'], { hoofdletters = false } = {}) {
   const nl = lang === 'nl';
+  if (hoofdletters && nl) return eenProductRegel(lang, kinds).replace(/^Eén /, 'Één ');
   const lijst = kinds.filter((k) => LADDER[k]);
   if (!lijst.length) throw new Error('pricing.js: eenProductRegel() zonder bekende dienst');
   const drempels = [...new Set(lijst.map((k) => LADDER[k][LADDER[k].length - 1][0]))];
@@ -199,9 +203,17 @@ export function eenProductRegel(lang = 'en', kinds = ['catalog', 'lifestyle']) {
   const kost = lijst.length === 1
     ? prijs(lijst[0])
     : lijst.map((k) => (nl ? `${prijs(k)} bij ${k}` : `${prijs(k)} for ${k}`)).join(nl ? ' of ' : ' or ');
+  /* levering 118 (17 november 2026, proefronde P2-12, keuze a): de regel noemt nu zelf ook het lage bedrag, in plaats van
+     "het bedrag hierboven". Zo kan hij direct onder het vanaf-bedrag staan en klopt hij ook los gelezen. */
+  const laag = lijst.map((k) => euro(ladderFloor(k), lang)).join(nl ? ' en ' : ' and ');
+  if (lijst.length > 1) {
+    return nl
+      ? `Eén product kost ${kost}; vanaf ${drempels[0]} producten is dat ${laag} per product.`
+      : `One product costs ${kost}; from ${drempels[0]} products, that is ${laag} per product.`;
+  }
   return nl
-    ? `Eén product kost ${kost}; het tarief zakt naarmate je meer bestelt, tot het bedrag hierboven vanaf ${drempels[0]} producten.`
-    : `One product costs ${kost}; the rate drops as you order more, down to the price above from ${drempels[0]} products.`;
+    ? `Eén product kost ${kost}; vanaf ${drempels[0]} producten ${laag} per product.`
+    : `One product costs ${kost}; from ${drempels[0]} products, ${laag} per product.`;
 }
 
 /*
@@ -1641,7 +1653,11 @@ export const VOORRANG = {
   bodem: 50,            // ronde bedragen, lijst 111 (was 49)
   plafond: 250,         // was 249
   uren: 24,              // alleen nog voor oude teksten; de belofte staat hieronder
-  maxProducten: 20,      // catalog/lifestyle/complete — 20 producten
+  /* levering 117 (17 november 2026, proefronde P8-01, keuze a): onder de datumgrens. Hier stond 20; bij
+     10–20 producten kon je voorrang én een leverdatum kiezen, en volgden bedankpagina, mail en /admin
+     alleen de datum. Vanaf WINDOW_THRESHOLD is de vroegste datum de snelle keuze. De voorwaarden,
+     /pricing en het formulier lezen dit getal, dus die gaan vanzelf mee. */
+  maxProducten: WINDOW_THRESHOLD - 1, // catalog/lifestyle — 9 producten
   maxClips: 10,          // video en hooks
   /* ── EEN HARDE TERMIJN — 29 september 2026 ─────────────────────────────────
      Lucas: *"Bedenk een harde, waardevolle maar wel haalbare termijn voor de
@@ -1652,7 +1668,7 @@ export const VOORRANG = {
        later betaald → de werkdag daarna, ook vóór 17:00.
      Werkdag = maandag tot en met vrijdag, behalve Nederlandse feestdagen;
      Nederlandse tijd. Halen we het niet, dan komt de toeslag terug. Haalbaar
-     omdat voorrang al begrensd is (20 producten of 10 clips, een bestaande
+     omdat voorrang al begrensd is (onder de datumgrens of 10 clips, een bestaande
      stijl) en niet wordt aangeboden als de agenda vol zit. */
   bestelVoorUur: 15,
   klaarUur: 17,
@@ -1791,9 +1807,37 @@ export function voorrangZin(lang, betaaldIso = null) {
       ? `Voorrang — geleverd uiterlijk ${dag} om ${d.uur}:00, of de toeslag komt terug`
       : `Priority — delivered by ${d.uur}:00 on ${dag}, or the surcharge comes back`;
   }
-  return nl
-    ? `Voorrang — geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 als je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00 betaalt (anders de werkdag daarna), of de toeslag komt terug`
-    : `Priority — delivered by ${VOORRANG.klaarUur}:00 the next working day when you pay on a working day before ${VOORRANG.bestelVoorUur}:00 (otherwise the working day after), or the surcharge comes back`;
+  /* levering 118 (17 november 2026, proefronde P8-06): de regel zelf staat nu in voorrangBelofte(), met "(Nederlandse tijd)". */
+  return nl ? `Voorrang — ${voorrangBelofte('nl')}` : `Priority — ${voorrangBelofte('en')}`;
+}
+
+/**
+ * ── DE ENE ZIN OVER VOORRANG — levering 118 (17 november 2026, proefronde P8-06) ──
+ * /pricing, de FAQ, het formulier en de bedankpagina noemden elk een deel: alleen de voorwaarden zeiden "Nederlandse
+ * tijd" en "betaal je later, dan de werkdag daarna". Een klant in het VK wist niet welke 15:00 bedoeld was. Dit is de
+ * belofte zonder kop, in kleine letters, zodat hij midden in een zin past; voorrangZin() zet er "Voorrang — " voor.
+ * Met `hoofdletter` begint hij met een hoofdletter, voor een losse regel.
+ */
+export function voorrangBelofte(lang, hoofdletter = false) {
+  /* levering 118 (17 november 2026, proefronde L-16 keuze a): de termijn loopt vanaf het latere moment, betaald én alle
+     foto's binnen. Zo staat het nu ook in het formulier en de voorwaarden; deze ene zin gaat naar alle andere plekken. */
+  const zin = lang === 'nl'
+    ? `geleverd uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 (Nederlandse tijd) als je betaling én al je foto’s op een werkdag vóór ${VOORRANG.bestelVoorUur}:00 binnen zijn (anders de werkdag daarna), of de toeslag komt terug`
+    : `delivered by ${VOORRANG.klaarUur}:00 the next working day (Dutch time) when your payment and all your photos are in on a working day before ${VOORRANG.bestelVoorUur}:00 (otherwise the working day after), or the surcharge comes back`;
+  return hoofdletter ? zin[0].toUpperCase() + zin.slice(1) : zin;
+}
+
+/**
+ * ── VOORRANG BIJ DE LEVERTIJD — levering 118 (17 november 2026, proefronde P8-08) ──
+ * Op de voorpagina, /catalog, /lifestyle en /start stond het woord voorrang niet; in het formulier pas twee schermen
+ * diep. Deze ene korte regel hoort bij de levertijd. De bedragen en de grens komen uit VOORRANG.
+ */
+export function voorrangTip(lang) {
+  const pct = Math.round(VOORRANG.deel * 100);
+  const bodem = euro(VOORRANG.bodem, lang);
+  return lang === 'nl'
+    ? `Morgen nodig? Kies voorrang als je bestelt: +${pct}%, minstens ${bodem}, tot ${VOORRANG.maxProducten} producten.`
+    : `Need it tomorrow? Choose priority when you order: +${pct}%, at least ${bodem}, up to ${VOORRANG.maxProducten} products.`;
 }
 
 /** Mag deze bestelling voorrang kopen? Buiten de grenzen wordt hij niet getoond. */
@@ -1804,19 +1848,33 @@ export function voorrangKan({ kind, products, clips }) {
   return n > 0 && n <= VOORRANG.maxProducten;
 }
 
+/* ── VOORRANG OP CLIPS PAS ALS VIDEO TE BESTELLEN IS — levering 119 (18 november 2026, proefronde P6-24) ──────
+   De voorwaarden en /pricing zeiden "tot 9 producten of 10 clips", terwijl video en hooks op aanvraag zijn
+   (VIDEO_OP_AANVRAAG): niemand kan clips met voorrang bestellen. Zolang dat zo is, noemen we de clips niet.
+   voorrangGrens() is de woordgroep voor elke plek die de grens noemt; voorrangKan() blijft de clips kennen. */
+export const VOORRANG_CLIPS_TE_KOOP = !VIDEO_OP_AANVRAAG;
+export function voorrangGrens(lang = 'en', { komma = false } = {}) {
+  const nl = lang === 'nl';
+  const producten = nl ? `${VOORRANG.maxProducten} producten` : `${VOORRANG.maxProducten} products`;
+  if (!VOORRANG_CLIPS_TE_KOOP) return producten;
+  return nl ? `${producten}${komma ? ',' : ''} of ${VOORRANG.maxClips} clips` : `${producten}${komma ? ',' : ''} or ${VOORRANG.maxClips} clips`;
+}
+
 export const VOORRANG_COPY = {
   en: {
     label: 'Priority delivery',
-    line: `Your order goes to the top of the list. Pay on a working day before ${VOORRANG.bestelVoorUur}:00 and it is delivered by ${VOORRANG.klaarUur}:00 the next working day (Dutch time); pay later and it is the working day after that. If we do not make it, the surcharge comes back and your order runs on as normal.`,
+    /* levering 118 (17 november 2026, proefronde P8-06): de belofte uit voorrangBelofte(), net als op de andere plekken. */
+    line: `Your order goes to the top of the list: ${voorrangBelofte('en')}. Your order then runs on as normal.`,
     /* De twee grenzen uit VOORRANG en niet getypt (8 oktober 2026, punt 9.01,
        §17.3): hier stonden ${20} en ${10} — dezelfde getallen, maar een tweede bron. */
-    limits: `Available up to ${VOORRANG.maxProducten} products, or ${VOORRANG.maxClips} clips, on a style that already exists — a house style or a custom look that has been built. A style still being designed cannot be rushed, because designing it is the work.`,
+    /* levering 119 (P6-24): de grens uit voorrangGrens(); de clips pas als video te bestellen is. */
+    limits: `Available up to ${voorrangGrens('en', { komma: true })}, on a style that already exists — a house style or a custom look that has been built. A style still being designed cannot be rushed, because designing it is the work.`,
     busy: 'Priority is not available for this week — the calendar is full. Saying so here is better than taking the surcharge and giving it back.',
   },
   nl: {
     label: 'Voorrang bij levering',
-    line: `Je bestelling gaat bovenaan de lijst. Betaal je op een werkdag vóór ${VOORRANG.bestelVoorUur}:00, dan leveren we uiterlijk de volgende werkdag om ${VOORRANG.klaarUur}:00 (Nederlandse tijd); betaal je later, dan de werkdag daarna. Halen we dat niet, dan komt de toeslag terug en loopt je bestelling gewoon door.`,
-    limits: `Mogelijk tot ${VOORRANG.maxProducten} producten, of ${VOORRANG.maxClips} clips, op een stijl die al bestaat — een vaste look of een eigen look die al gebouwd is. Een stijl die nog ontworpen wordt, kan niet sneller: dat ontwerpen ís het werk.`,
+    line: `Je bestelling gaat bovenaan de lijst: ${voorrangBelofte('nl')}. Je bestelling loopt dan gewoon door.`,
+    limits: `Mogelijk tot ${voorrangGrens('nl', { komma: true })}, op een stijl die al bestaat — een vaste look of een eigen look die al gebouwd is. Een stijl die nog ontworpen wordt, kan niet sneller: dat ontwerpen ís het werk.`,
     busy: 'Voorrang kan deze week niet — de agenda zit vol. Dat hier zeggen is beter dan de toeslag aannemen en hem daarna terugstorten.',
   },
 };
@@ -1833,11 +1891,13 @@ export const VOORRANG_COPY = {
   const kleinste = LADDER.catalog[0][2];                 // één catalogproduct
   if (Math.ceil(kleinste * deel) >= bodem) throw new Error('VOORRANG.bodem bijt nergens — hij ligt onder 20% van de kleinste bestelling');
   /* HET PLAFOND BIJT SINDS 14 OKTOBER 2026 NIET MEER, EN DAT IS GEEN FOUT. Hij
-     beet op een complete bestelling (€ 65 × 20); compleet bestaat niet meer, en de
-     grootste fotobestelling die voorrang kan krijgen (19 lifestyleproducten, € 1.216)
-     geeft 20% = € 244, onder € 249. Het plafond blijft staan als grens voor als
-     VOORRANG.maxProducten ooit omhoog gaat; een lager plafond is een prijsbesluit
-     (afvinklijst 24). Wat wél nog moet kloppen: het plafond ligt boven de bodem. */
+     beet op een complete bestelling (€ 65 × 20); compleet bestaat niet meer.
+     levering 119 (18 november 2026, proefronde P8-09): hier stond "19 lifestyleproducten, € 1.216 → € 244, onder
+     € 249". Dat klopte niet meer: 19 × € 65 is € 1.235, het plafond is € 250, en sinds levering 117 is
+     VOORRANG.maxProducten 9. De grootste fotobestelling die voorrang kan krijgen, is nu 9 lifestyleproducten à € 80
+     = € 720; 20% = € 144, ruim onder het plafond. tests/levering-119-achterkant.test.mjs rekent deze getallen na
+     uit LADDER en VOORRANG. Het plafond blijft staan als grens voor als VOORRANG.maxProducten ooit omhoog gaat;
+     een lager plafond is een prijsbesluit (afvinklijst 24). Wat wél nog moet kloppen: het plafond ligt boven de bodem. */
   void plafond;
 })();
 
@@ -2616,9 +2676,10 @@ export const TIERS = {
     /* 30 september 2026, Lucas: de datum wordt gereserveerd bij het bestellen,
        staat zeven dagen vast terwijl de betaling openstaat, en ligt na betaling
        definitief vast. "Vast zodra je bestelt" sloeg de betaalstap over. */
+    /* levering 119 (18 november 2026, proefronde L-05): één begrip met het formulier: "vastgehouden zodra je bestelt, vast zodra je betaalt". */
     turnaroundShort: {
-      en: 'A delivery date, reserved when you order',
-      nl: 'Een leverdatum, gereserveerd zodra je bestelt',
+      en: 'A delivery date, held once you order',
+      nl: 'Een leverdatum, vastgehouden zodra je bestelt',
     },
     queue: {
       // Reworded with the model, and the promise is now about SIZE rather than
